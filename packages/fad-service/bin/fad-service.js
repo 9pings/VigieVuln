@@ -9,6 +9,10 @@
  *   fad-service backup  [--config f.json] [--db f] (--out file.db | --dir d [--keep 7])
  *   fad-service config  [--config f.json]          print the effective configuration
  *   fad-service seed    --ecosystem npm|pypi|maven|gem|composer|nuget|golang (--list f | --popular)
+ *   fad-service keygen  --out <dir>                 Ed25519 key pair that signs dumps
+ *   fad-service dump    [--kind public|private|full] [--since <ISO date>] [--out <dir>] [--include-packages]
+ *   fad-service restore <x.manifest.json> [--trust-key pub.pem]
+ *   fad-service verify  <x.manifest.json> --trust-key pub.pem
  *
  * Configuration: see lib/config.js (defaults ← JSON file ← flags). Upstream API keys come
  * from the environment only: FAD_SERVICE_NVD_KEY, FAD_SERVICE_GITHUB_TOKEN,
@@ -48,6 +52,10 @@ const USAGE = `fad-service ${VERSION}
   fad-service token  add --role client|admin [--label <text>] | list | revoke <id>   [--db f]
   fad-service backup [--config f.json] [--db f] (--out <file.db> | --dir <dir> [--keep 7])
   fad-service config [--config f.json]
+  fad-service keygen --out <dir>
+  fad-service dump   [--config f.json] [--kind public|private|full] [--since <ISO date>] [--out <dir>] [--include-packages]
+  fad-service restore [--config f.json] <x.manifest.json> [--trust-key <pub.pem>]
+  fad-service verify <x.manifest.json> --trust-key <pub.pem>
   fad-service seed   [--config f.json] --ecosystem npm|pypi|maven|gem|composer|nuget|golang (--list <file> | --popular) [--concurrency 4]`;
 
 function openAll(dbFile) {
@@ -90,7 +98,7 @@ function serveProcess(cfg, { logger, pushMetrics = null }) {
 		store, tokens, assets, jobStatus: jobs.status, logSalt, version: VERSION, region: String(cfg.region),
 		ratePerMinute: cfg.rateLimit.client, publicRatePerMinute: cfg.rateLimit.public, cacheSeconds: cfg.cacheSeconds,
 		trustProxy: !!cfg.trustProxy, maxInFlight: cfg.maxInFlight, maxConnections: cfg.maxConnections, brand: cfg.brand, analytics: cfg.analytics, serverAnalytics, counters,
-		logger: cfg.log.access ? logger : null, keys: secretsFromEnv(), registry,
+		logger: cfg.log.access ? logger : null, keys: secretsFromEnv(), registry, dumps: cfg.dumps,
 		fetcher: createUpstreamFetcher(globalThis.fetch, { mavenMirrors: cfg.upstream.mavenMirrors }),
 	});
 	server.listen(cfg.listen.port, cfg.listen.host, () => {
@@ -186,10 +194,14 @@ async function worker(cfg, args) {
 	process.on("SIGHUP", () => logger.reopen());
 	const { db, assets } = openAll(cfg.db);
 	const list = args.jobs ? String(args.jobs) : (cfg.jobs.enabled ? cfg.jobs.enabled.join(",") : null);
-	const names = list ? list.split(",").map(s => s.trim()).filter(Boolean) : Object.keys(JOBS);
+	const names = list ? list.split(",").map(s => s.trim()).filter(Boolean)
+		: Object.keys(JOBS).filter(n => !JOBS[n].optIn || (n === "dump" && cfg.dumps.daily));
 	for (const n of names) if (!JOBS[n]) throw new Error(`unknown job ${n} (known: ${Object.keys(JOBS).join(", ")})`);
 	const owner = `${os.hostname()}:${process.pid}`;
-	const runner = createJobRunner({ assets, owner, log: line => logger.info(line), jobOptions: { osvEcosystems: cfg.jobs.osvEcosystems, resourceCacheMaxBytes: cfg.jobs.resourceCacheBytes } });
+	let runner;
+	runner = createJobRunner({ assets, owner, log: line => logger.info(line), jobOptions: { osvEcosystems: cfg.jobs.osvEcosystems,
+		resourceCacheMaxBytes: cfg.jobs.resourceCacheBytes, dumps: cfg.dumps, baseUrl: cfg.brand.baseUrl, version: VERSION,
+		instance: { name: cfg.brand.name, baseUrl: cfg.brand.baseUrl }, sources: () => runner.status() } });
 	const stop = () => {
 		logger.info("worker stopping, releasing leases", { owner });
 		try { db.prepare("UPDATE job_runs SET lease_until = 0, last_status = 'interrupted' WHERE owner = ? AND lease_until > 0").run(owner); } catch { /* db gone */ }
@@ -261,6 +273,62 @@ async function seedCommand(cfg, args) {
 	}
 }
 
+/** An Ed25519 key pair for signing dumps: private 0600, public to publish. */
+function keygen(args) {
+	const dir = String(args.out || "");
+	if (!dir || args.out === true) throw new Error("keygen needs --out <dir>");
+	fs.mkdirSync(dir, { recursive: true });
+	const priv = path.join(dir, "dump-signing.key"), pub = path.join(dir, "dump-signing.pub.pem");
+	if (fs.existsSync(priv)) throw new Error(`${priv} exists — refusing to overwrite a signing key`);
+	const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
+	fs.writeFileSync(priv, privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
+	fs.writeFileSync(pub, publicKey.export({ type: "spki", format: "pem" }));
+	const { keyFingerprint } = require("../lib/fad").fad("dump-format");
+	console.log(`private key ${priv} (keep it secret, set dumps.signingKeyFile)\npublic key  ${pub} (publish it; fingerprint ${keyFingerprint(fs.readFileSync(pub, "utf8"))})`);
+}
+
+async function dumpCommand(cfg, args) {
+	const { buildDump, pruneDumps } = require("../lib/dumps/build");
+	const kind = String(args.kind || "public");
+	const { db, assets } = openAll(cfg.db);
+	const { createJobRunner } = require("../lib/jobs");
+	try {
+		const dir = args.out && args.out !== true ? path.resolve(String(args.out)) : path.join(cfg.dumps.dir, kind === "full" ? "full" : kind);
+		const since = args.since ? Date.parse(String(args.since)) : null;
+		if (args.since && !Number.isFinite(since)) throw new Error("--since must be an ISO date");
+		const t0 = Date.now();
+		const m = await buildDump({ db, assets, dir, kind, since, includePackages: !!args["include-packages"] || cfg.dumps.publicIncludesPackages,
+			signingKeyPem: cfg.dumps.signingKeyFile ? fs.readFileSync(cfg.dumps.signingKeyFile, "utf8") : null,
+			baseUrl: cfg.brand.baseUrl, trackers: cfg.dumps.trackers, instance: { name: cfg.brand.name, baseUrl: cfg.brand.baseUrl },
+			version: VERSION, sources: createJobRunner({ assets }).status() });
+		console.log(`${m.id}: ${(m.payload.bytes / 1048576).toFixed(1)} MB in ${((Date.now() - t0) / 1000).toFixed(1)} s — ${JSON.stringify(m.counts)}${cfg.dumps.signingKeyFile ? ", signed" : ", NOT signed (no dumps.signingKeyFile)"}${m.torrent ? `\n${m.torrent.magnet}` : ""}`);
+		if (!args.out || args.out === true) for (const id of pruneDumps(dir, cfg.dumps.keep)) console.log(`removed ${id}`);
+	} finally { db.close(); }
+}
+
+async function restoreCommand(cfg, args) {
+	const { restoreDump } = require("../lib/dumps/restore");
+	const manifestPath = args._[1];
+	if (!manifestPath) throw new Error("restore <x.manifest.json>");
+	const { db, assets, store } = openAll(cfg.db);
+	try {
+		const publicKeyPem = args["trust-key"] && args["trust-key"] !== true ? fs.readFileSync(String(args["trust-key"]), "utf8") : null;
+		if (!publicKeyPem) console.warn("warning: no --trust-key — integrity checked (sha256), origin NOT verified");
+		const t0 = Date.now();
+		const { manifest, counts } = await restoreDump({ assets, store, manifestPath: path.resolve(manifestPath), publicKeyPem });
+		console.log(`restored ${manifest.id} in ${((Date.now() - t0) / 1000).toFixed(1)} s — ${JSON.stringify(counts)}`);
+	} finally { db.close(); }
+}
+
+async function verifyCommand(args) {
+	const { openDump, keyFingerprint } = require("../lib/fad").fad("dump-format");
+	const manifestPath = args._[1];
+	if (!manifestPath || !args["trust-key"] || args["trust-key"] === true) throw new Error("verify <x.manifest.json> --trust-key <pub.pem>");
+	const pem = fs.readFileSync(String(args["trust-key"]), "utf8");
+	const { manifest } = await openDump(path.resolve(manifestPath), { publicKeyPem: pem });
+	console.log(`OK ${manifest.id} — signed by ${keyFingerprint(pem)}, payload sha256 ${manifest.payload.sha256}`);
+}
+
 function token(cfg, args) {
 	const { db, tokens } = openAll(cfg.db);
 	try {
@@ -282,7 +350,9 @@ function main(argv = process.argv.slice(2)) {
 	const args = parseArgs(argv);
 	if (args.version || args.v) { console.log(VERSION); return; }
 	const cmd = args._[0];
-	if (!["serve", "worker", "token", "backup", "config", "seed"].includes(cmd)) { console.error(USAGE); process.exitCode = 2; return; }
+	if (cmd === "keygen") return keygen(args);
+	if (cmd === "verify") return verifyCommand(args).catch(fail);
+	if (!["serve", "worker", "token", "backup", "config", "seed", "dump", "restore"].includes(cmd)) { console.error(USAGE); process.exitCode = 2; return; }
 	const { loadConfig } = require("../lib/config");
 	const cfg = loadConfig(args);
 	if (cmd === "config") { console.log(JSON.stringify({ ...cfg, metrics: { ...cfg.metrics, token: cfg.metrics.token ? "(set)" : null } }, null, 2)); return; }
@@ -291,6 +361,8 @@ function main(argv = process.argv.slice(2)) {
 	if (cmd === "token") return token(cfg, args);
 	if (cmd === "backup") return backup(cfg, args);
 	if (cmd === "seed") return seedCommand(cfg, args).catch(fail);
+	if (cmd === "dump") return dumpCommand(cfg, args).catch(fail);
+	if (cmd === "restore") return restoreCommand(cfg, args).catch(fail);
 }
 
 function fail(error) { console.error(`fad-service: ${error.message}`); process.exitCode = 1; }

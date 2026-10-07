@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS job_runs (
 const SIGNAL_COLUMNS = ["kev", "epss_score", "epss_percentile", "epss_date", "euvd_id", "euvd_exploited_since", "certfr"];
 const JSON_COLUMNS = new Set(["kev", "certfr"]);
 /** Columns added after the first release: [table, column, type], created on open so an old database upgrades in place. */
-const MIGRATIONS = [];
+const MIGRATIONS = [["assets", "aliases", "TEXT"], ["cve_nvd", "updated_at", "INTEGER"]];
 
 /** Turn free text into a safe FTS5 query: quoted tokens, prefix match on the last one. */
 function ftsQuery(text) {
@@ -94,12 +94,17 @@ function createAssetStore(db) {
 	db.exec(SCHEMA);
 	for (const [table, column, type] of MIGRATIONS) {
 		const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
-		if (!cols.includes(column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+		if (cols.includes(column)) continue;
+		db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+		// Aliases used to live only in the search index: copy them back so a dump carries them.
+		if (table === "assets" && column === "aliases")
+			db.exec("UPDATE assets SET aliases = (SELECT f.aliases FROM assets_fts f WHERE f.rowid = assets.id)");
 	}
 	const q = {
 		find: db.prepare("SELECT id FROM assets WHERE type = ? AND key = ?"),
-		insert: db.prepare("INSERT INTO assets (type, key, title, summary, data, sources, published, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
-		update: db.prepare("UPDATE assets SET title = ?, summary = ?, data = ?, sources = ?, published = ?, updated_at = ? WHERE id = ?"),
+		insert: db.prepare("INSERT INTO assets (type, key, title, summary, data, sources, published, updated_at, aliases) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"),
+		update: db.prepare("UPDATE assets SET title = ?, summary = ?, data = ?, sources = ?, published = ?, updated_at = ?, aliases = ? WHERE id = ?"),
+		findAt: db.prepare("SELECT id, updated_at FROM assets WHERE type = ? AND key = ?"),
 		ftsDel: db.prepare("DELETE FROM assets_fts WHERE rowid = ?"),
 		ftsAdd: db.prepare("INSERT INTO assets_fts (rowid, key, aliases, title, summary) VALUES (?, ?, ?, ?, ?)"),
 		get: db.prepare("SELECT type, key, title, summary, data, sources, published, updated_at FROM assets WHERE type = ? AND key = ?"),
@@ -110,8 +115,8 @@ function createAssetStore(db) {
 			WHERE assets_fts MATCH ? AND a.published = 1 AND (? IS NULL OR a.type = ?)
 			ORDER BY rank LIMIT ?`),
 		count: db.prepare("SELECT type, COUNT(*) AS n FROM assets WHERE published = 1 GROUP BY type"),
-		nvdPut: db.prepare(`INSERT INTO cve_nvd (cve, last_modified, data) VALUES (?, ?, ?)
-			ON CONFLICT(cve) DO UPDATE SET last_modified = excluded.last_modified, data = excluded.data`),
+		nvdPut: db.prepare(`INSERT INTO cve_nvd (cve, last_modified, data, updated_at) VALUES (?, ?, ?, ?)
+			ON CONFLICT(cve) DO UPDATE SET last_modified = excluded.last_modified, data = excluded.data, updated_at = excluded.updated_at`),
 		nvdGet: db.prepare("SELECT last_modified, data FROM cve_nvd WHERE cve = ?"),
 		linkDel: db.prepare("DELETE FROM advisory_cve WHERE advisory = ?"),
 		linkAdd: db.prepare("INSERT OR IGNORE INTO advisory_cve (advisory, cve) VALUES (?, ?)"),
@@ -142,14 +147,22 @@ function createAssetStore(db) {
 	const api = {
 		db,
 		/** Insert or replace one asset and its search entry. */
-		upsert({ type, key, title = null, summary = null, aliases = [], data = {}, sources = [], published = true }) {
-			const now = Date.now();
+		upsert({ type, key, title = null, summary = null, aliases = [], data = {}, sources = [], published = true, updatedAt = Date.now() }) {
 			const row = q.find.get(type, key);
+			const al = aliases.join(" ");
 			let id;
-			if (row) { id = row.id; q.update.run(title, summary, JSON.stringify(data), JSON.stringify(sources), published ? 1 : 0, now, id); q.ftsDel.run(id); }
-			else id = Number(q.insert.run(type, key, title, summary, JSON.stringify(data), JSON.stringify(sources), published ? 1 : 0, now).lastInsertRowid);
-			q.ftsAdd.run(id, key, aliases.join(" "), title || "", summary || "");
+			if (row) { id = row.id; q.update.run(title, summary, JSON.stringify(data), JSON.stringify(sources), published ? 1 : 0, updatedAt, al, id); q.ftsDel.run(id); }
+			else id = Number(q.insert.run(type, key, title, summary, JSON.stringify(data), JSON.stringify(sources), published ? 1 : 0, updatedAt, al).lastInsertRowid);
+			q.ftsAdd.run(id, key, al, title || "", summary || "");
 			return id;
+		},
+		/** A dumped asset row → stored when fresher than ours. → true when written. */
+		importAsset(r) {
+			const cur = q.findAt.get(r.type, r.key);
+			if (cur && cur.updated_at >= r.updatedAt) return false;
+			api.upsert({ type: r.type, key: r.key, title: r.title, summary: r.summary, aliases: r.aliases ? String(r.aliases).split(" ").filter(Boolean) : [],
+				data: r.data, sources: r.sources, published: !!r.published, updatedAt: r.updatedAt });
+			return true;
 		},
 		get(type, key, { includeUnpublished = false } = {}) {
 			const row = q.get.get(type, key);
@@ -192,8 +205,8 @@ function createAssetStore(db) {
 			return q.byPrefix.all(type, prefix, prefix + "\uffff").map(r => ({ key: r.key, data: JSON.parse(r.data) }));
 		},
 		/** rows: [{ id, lastModified, ... }] — NVD's enrichment, kept apart from the CVE record. */
-		setNvd(rows) {
-			api.transaction(() => { for (const r of rows) q.nvdPut.run(r.id, r.lastModified || null, JSON.stringify(r)); });
+		setNvd(rows, updatedAt = Date.now()) {
+			api.transaction(() => { for (const r of rows) q.nvdPut.run(r.id, r.lastModified || null, JSON.stringify(r), updatedAt); });
 		},
 		nvd(cve) {
 			const row = q.nvdGet.get(cve);

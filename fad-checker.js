@@ -305,7 +305,22 @@ if (process.argv[2] === "serve-cache") {
 	if (storeDir === clientRoot || storeDir.startsWith(clientRoot + path.sep)) {
 		console.warn(chalk.yellow(`⚠️  --cache-dir is inside the client cache root (${clientRoot}) — --export-cache/--import-cache would bundle or swap the shared base together with the scan's own caches. Keep the two stores separate.`));
 	}
-	startProxyCacheServer({
+	// --seed <dump.manifest.json>: fill the store from a fad-service dump before serving
+	// (an air-gapped relay seeded from a signed build). --trust-key <public.pem> makes the
+	// signature mandatory; the payload sha256 is always checked. --seed-only exits after.
+	const seedManifest = arg("--seed", null);
+	const trustKey = arg("--trust-key", null);
+	const seeding = !seedManifest ? Promise.resolve() : (async () => {
+		const { openDump, seedResourceStore, keyFingerprint } = require("./lib/dump-format");
+		const publicKeyPem = trustKey ? fs.readFileSync(trustKey, "utf8") : null;
+		const { manifest, payloadPath } = await openDump(seedManifest, { publicKeyPem });
+		if (!publicKeyPem) console.warn(chalk.yellow("⚠️  --seed without --trust-key: integrity checked (sha256), origin NOT verified"));
+		else console.log(chalk.gray(`   signature ok — key ${keyFingerprint(publicKeyPem)}`));
+		const r = await seedResourceStore(createCacheStore(storeDir), payloadPath);
+		console.log(chalk.green(`✅  seeded from ${manifest.id} (${manifest.createdAt}): ${r.imported} entries imported, ${r.kept} kept (fresher locally)`));
+		if (process.argv.includes("--seed-only")) process.exit(0);
+	})();
+	seeding.then(() => startProxyCacheServer({
 		port, host,
 		store: createCacheStore(storeDir),
 		overrideTtlMs: ttlS > 0 ? ttlS * 1000 : null,
@@ -316,7 +331,7 @@ if (process.argv[2] === "serve-cache") {
 		maxConcurrent: Number(arg("--max-concurrent", "16")),
 		maxEntries: Number(arg("--max-entries", "10000")),
 		token, swr, keys,
-	}).then(({ server, url }) => {
+	})).then(({ server, url }) => {
 		console.log(chalk.green(`✅  proxy-cache listening on ${url}`));
 		console.log(chalk.gray(`   store:    ${storeDir}  (persists across restarts; separate from the scan's own ~/.fad-checker/ caches)`));
 		console.log(chalk.gray(`   upstream: ${upstreamProxy ? `via corporate proxy ${upstreamProxy}` : "direct"}`));

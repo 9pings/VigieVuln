@@ -22,6 +22,8 @@ const JOBS = {
 	nvd: { every: 6 * HOUR, run: (...a) => require("./nvd").run(...a), label: "NVD (fkie-cad mirror)" },
 	osv: { every: HOUR, run: (ctx) => require("./osv").run({ ...ctx, ...(ctx.options.osvEcosystems ? { ecosystems: ctx.options.osvEcosystems } : {}) }), label: "OSV.dev" },
 	maintenance: { every: 24 * HOUR, run: (...a) => require("./maintenance").run(...a), label: "Database maintenance" },
+	// Opt-in (dumps.daily): a signed public build every day, older ones pruned.
+	dump: { every: 24 * HOUR, optIn: true, run: (...a) => require("./dump").run(...a), label: "Public dump build" },
 };
 const LEASE_MS = 6 * HOUR;
 
@@ -55,7 +57,7 @@ function createJobRunner({ assets, fetcher = globalThis.fetch, log = () => {}, o
 	}
 
 	/** Run every job whose last finish is older than its period. */
-	async function runDue(names = Object.keys(JOBS)) {
+	async function runDue(names = Object.keys(JOBS).filter(n => !JOBS[n].optIn)) {
 		const last = Object.fromEntries(q.all.all().map(r => [r.job, r]));
 		const out = {};
 		for (const name of names) {
@@ -69,7 +71,7 @@ function createJobRunner({ assets, fetcher = globalThis.fetch, log = () => {}, o
 	/** Freshness of every source, for /sources and the provenance of a page. */
 	function status() {
 		const rows = Object.fromEntries(q.all.all().map(r => [r.job, r]));
-		return Object.entries(JOBS).map(([name, job]) => ({ job: name, label: job.label,
+		return Object.entries(JOBS).filter(([name, job]) => !job.optIn || rows[name]).map(([name, job]) => ({ job: name, label: job.label,
 			lastFinished: rows[name]?.last_finished || null, status: rows[name]?.last_status || "never", detail: rows[name]?.last_detail || "" }));
 	}
 

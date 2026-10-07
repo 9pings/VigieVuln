@@ -59,7 +59,7 @@ ${path !== "/" ? searchForm(t, locale, q) : ""}
 ${path === "/" ? `<section class="hero"><h1>${t("Search CVEs, advisories, packages")}</h1><p class="lead">${site.brand?.tagline ? esc(site.brand.tagline) : t("Vulnerability data hosted in Europe, for fad-checker and for you.")}</p>${searchForm(t, locale)}</section>` : path === "/search" && !body ? `<h1>${t("Search")}</h1><p>${t("Enter an identifier, product or keyword to begin.")}</p>` : ""}
 ${body}
 </main>
-<footer><p>${brand.footer ? esc(brand.footer) + " · " : ""}${t("Data from the sources listed on each page, under their own licences.")}</p><nav aria-label="${esc(t("Service information"))}"><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a>${contact ? `<a href="${esc(contact)}">${t("Contact")}</a>` : ""}</nav></footer>
+<footer><p>${brand.footer ? esc(brand.footer) + " · " : ""}${t("Data from the sources listed on each page, under their own licences.")}</p><nav aria-label="${esc(t("Service information"))}"><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/dumps?lang=${locale}">${t("Data dumps")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a>${contact ? `<a href="${esc(contact)}">${t("Contact")}</a>` : ""}</nav></footer>
 </body>
 </html>`;
 }
@@ -232,6 +232,24 @@ ${d.dependencies?.length ? `<h2>${t("Dependencies of the latest version")}</h2><
 <h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`;
 }
 
+const mb = n => `${(n / 1048576).toFixed(1)} MB`;
+function dumpsPage({ t, builds = [], fingerprint }) {
+	return `<h1>${t("Data dumps")}</h1>
+<p class="lead">${t("Signed builds of the published data, to seed a local instance or an air-gapped relay.")}</p>
+${fingerprint ? `<p>${t("Signing key")} : <a href="/dumps/signing-key.pem">signing-key.pem</a> · <code>${esc(fingerprint)}</code></p>` : `<p class="muted">${t("Builds are not signed on this instance.")}</p>`}
+${builds.length ? `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Build")}</th><th scope="col">${t("Created")}</th><th scope="col">${t("Size")}</th><th scope="col">${t("Download")}</th></tr></thead><tbody>${
+	builds.map(b => {
+		const f = n => `/dumps/files/${encodeURIComponent(n)}`;
+		const links = [`<a href="${f(b.payload.file)}">${t("data")}</a>`, `<a href="${f(b.id + ".manifest.json")}">manifest</a>`,
+			`<a href="${f(b.id + ".manifest.sig")}">sig</a>`, ...(b.torrent ? [`<a href="${f(b.torrent.file)}">torrent</a>`, `<a href="${esc(b.torrent.magnet)}">magnet</a>`] : [])];
+		return `<tr><td><code>${esc(b.id)}</code>${b.delta ? ` <span class="badge">${t("delta since {date}", { date: esc(String(b.since).slice(0, 10)) })}</span>` : ""}<br><span class="muted">sha256 ${esc(b.payload.sha256.slice(0, 16))}…</span></td><td>${date(b.createdAt)}</td><td>${esc(mb(b.payload.bytes))}</td><td>${links.join(" · ")}</td></tr>`;
+	}).join("")}</tbody></table></div>` : `<p>${t("No public build yet.")}</p>`}
+<h2>${t("Use a build")}</h2>
+<pre><code>fad-service verify fad-public-….manifest.json --trust-key signing-key.pem
+fad-service restore fad-public-….manifest.json --trust-key signing-key.pem
+fad-checker serve-cache --seed fad-private-….manifest.json --trust-key signing-key.pem</code></pre>`;
+}
+
 function sourcesPage({ t, jobs }) {
 	return `<h1>${t("Data sources")}</h1>
 <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Source")}</th><th scope="col">${t("Last update")}</th><th scope="col">${t("Status")}</th></tr></thead><tbody>${
@@ -268,4 +286,4 @@ function notFound({ t }) {
 	return `<h1>${t("Not found")}</h1><p>${t("This item is not in the service.")}</p>`;
 }
 
-module.exports = { layout, home, results, cvePage, advisoryPage, osvAdvisoryPage, packagePage, pkgPath, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };
+module.exports = { layout, home, results, cvePage, advisoryPage, osvAdvisoryPage, packagePage, pkgPath, dumpsPage, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };

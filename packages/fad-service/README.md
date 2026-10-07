@@ -7,7 +7,8 @@ Design: `docs/SPEC-fad-service.md` (repository root). **Production: [docs/OPERAT
 Status: milestone 4 — `/v1/resource`, tokens, admin routes, `--workers`, the vulnerability
 mirrors (cvelistV5, NVD via fkie, OSV, CISA KEV, EPSS, ENISA EUVD, CERT-FR; GCVE ids
 computed), package metadata (projections, Maven EU mirror, K-client publication rule, seed),
-full-text search and the public pages. Dumps and PostgreSQL follow.
+full-text search, the public pages, and signed dumps (public/private/full, deltas, torrent,
+restore, `fad-checker serve-cache --seed`). PostgreSQL follows.
 
 Requires Node ≥ 22.13 (built-in `node:sqlite`), `xz` for the NVD mirror. One dependency (`fflate`).
 

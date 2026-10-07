@@ -158,6 +158,34 @@ naming the package and, per version, whether it is affected — **only where the
 exact** (Maven ComparableVersion, SemVer 2.0 for npm and Go, or the advisory's explicit version
 list); elsewhere the range is shown and the verdict is "?".
 
+## Dumps (seed another instance, a relay, an air-gapped site)
+
+A dump is `<id>.manifest.json` (signed: contents, freshness of every source, sha256 of the
+payload), `<id>.manifest.sig` (Ed25519), `<id>.jsonl.gz` (the data, one JSON object per
+line) and, for public builds, `<id>.torrent`.
+
+| Kind | Contains | Who gets it |
+|---|---|---|
+| `public` | published CVEs, advisories, signals (KEV/EPSS/EUVD/CERT-FR), NVD, links | anyone — listed on `/dumps`, HTTPS + torrent |
+| `private` | public + published package pages + the `/v1/resource` cache a relay needs (never an unpublished package, never an entry fetched with a client's credentials) | client tokens — `/dumps/private/…` |
+| `full` | everything | your own instances and backups — never served |
+
+```bash
+fad-service keygen --out /etc/fad-service/keys            # once; set dumps.signingKeyFile, publish the .pub.pem
+fad-service dump --kind public                             # into <dumps.dir>/public, newest dumps.keep kept
+fad-service dump --kind private --since 2026-10-01         # a delta
+fad-service verify  fad-public-….manifest.json --trust-key dump-signing.pub.pem
+fad-service restore fad-public-….manifest.json --trust-key dump-signing.pub.pem   # merge, fresher wins, replay-safe
+fad-checker serve-cache --seed fad-private-….manifest.json --trust-key dump-signing.pub.pem [--seed-only]
+```
+
+`"dumps": { "daily": true }` makes the worker build and prune a public dump every day. With
+`brand.baseUrl` set, each public build gets a `.torrent` and a magnet link whose web seed is
+the HTTPS file (`/dumps/files/…` supports Range), so it downloads with no peer online;
+`dumps.trackers` adds announce URLs. Registry projections stay out of public builds
+(`dumps.publicIncludesPackages` to change it once their terms are cleared). Large files can
+also be served by the reverse proxy straight from `<dumps.dir>/public`.
+
 ## Backups and restore
 
 `fad-service backup --dir /var/lib/fad-service/backups --keep 7` (the systemd timer and the

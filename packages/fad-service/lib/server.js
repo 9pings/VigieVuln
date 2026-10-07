@@ -56,6 +56,29 @@ const ID_PATTERNS = [
 		id => `/advisory/osv/${/^GHSA/i.test(id) ? "GHSA" + id.slice(4).toLowerCase() : id.toUpperCase()}`],
 ];
 const ROUTES = new Set(["/health", "/ready", "/v1/resource", "/admin/stats", "/admin/analytics", "/admin/purge"]);
+const DUMP_FILE = /^fad-(public|private)-\d{8}T\d{6}Z(?:-delta)?\.(jsonl\.gz|manifest\.json|manifest\.sig|torrent)$/;
+const DUMP_TYPES = { "jsonl.gz": "application/gzip", "manifest.json": "application/json", "manifest.sig": "text/plain; charset=utf-8", torrent: "application/x-bittorrent" };
+
+/** Serve a file with single-range support (web seeds and resumed downloads need it). */
+function sendFile(req, res, file, type, extra = {}) {
+	let st;
+	try { st = fs.statSync(file); } catch { res.writeHead(404, { "content-type": "application/json" }); return res.end('{"error":"not found"}'); }
+	const headers = { "content-type": type, "accept-ranges": "bytes", "last-modified": st.mtime.toUTCString(),
+		"cache-control": "public, max-age=86400, immutable", ...extra };
+	const m = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ""));
+	if (m && (m[1] || m[2])) {
+		let start = m[1] ? Number(m[1]) : st.size - Number(m[2]);
+		let end = m[1] && m[2] ? Number(m[2]) : st.size - 1;
+		start = Math.max(0, start); end = Math.min(st.size - 1, end);
+		if (start > end || start >= st.size) { res.writeHead(416, { "content-range": `bytes */${st.size}` }); return res.end(); }
+		res.writeHead(206, { ...headers, "content-range": `bytes ${start}-${end}/${st.size}`, "content-length": end - start + 1 });
+		if (req.method === "HEAD") return res.end();
+		return fs.createReadStream(file, { start, end }).pipe(res);
+	}
+	res.writeHead(200, { ...headers, "content-length": st.size });
+	if (req.method === "HEAD") return res.end();
+	fs.createReadStream(file).pipe(res);
+}
 const LOGO_TYPES = { ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
 
 function readBody(req, maxBytes) {
@@ -107,7 +130,7 @@ function addressBucket(ip) {
 function routeFamily(pathname) {
 	if (ROUTES.has(pathname)) return pathname;
 	if (pathname === "/") return "/";
-	return /^\/(cve|advisory\/certfr|advisory\/osv|pkg|api\/search|api\/cve|search|sources|legal|static)\b/.exec(pathname)?.[0] || "/*";
+	return /^\/(cve|advisory\/certfr|advisory\/osv|pkg|api\/search|api\/cve|search|sources|legal|static|dumps)\b/.exec(pathname)?.[0] || "/*";
 }
 
 const cspString = parts => Object.entries(parts).map(([k, v]) => `${k} ${[...new Set(v)].join(" ")}`).join("; ");
@@ -121,7 +144,7 @@ const cspString = parts => Object.entries(parts).map(([k, v]) => `${k} ${[...new
 function createServiceServer(opts = {}) {
 	const { store, tokens, region = "unknown", version = "0", keys = {}, log = null, logger = null, ratePerMinute = 600,
 		assets = null, jobStatus = () => [], publicRatePerMinute = 300, cacheSeconds = 300, trustProxy = false,
-		brand = {}, analytics = null, serverAnalytics = null, counters = null, registry = null } = opts;
+		brand = {}, analytics = null, serverAnalytics = null, counters = null, registry = null, dumps = null } = opts;
 	if (!store || !tokens) throw new Error("fad-service needs a store and a token store");
 	const { createResourceEngine, upstreamHeadersFor, sendJson } = fad("resource-cache/engine");
 	const stats = { startedAt: Date.now(), requests: 0, hits: 0, misses: 0, coalesced: 0, stale: 0, upstream: 0, errors: 0 };
@@ -153,6 +176,12 @@ function createServiceServer(opts = {}) {
 	const contentHash = buf => crypto.createHash("sha1").update(buf || "").digest("hex").slice(0, 10);
 	const assetVersions = { css: contentHash(SITE_CSS), brand: contentHash(brandCss), logo: logo ? contentHash(logo.body) : null };
 	const site = { brand: { ...brand, hasLogo: !!logo }, analyticsHead: client.head, assetVersions };
+	// The public half of the dump-signing key, published so anyone can verify a build.
+	let signingPub = null;
+	if (dumps?.signingKeyFile) {
+		try { signingPub = crypto.createPublicKey(fs.readFileSync(dumps.signingKeyFile, "utf8")).export({ type: "spki", format: "pem" }); }
+		catch { signingPub = null; }
+	}
 
 	// Home-page counters: a GROUP BY over the whole table, cached for a minute.
 	let countsCache = { at: 0, value: null };
@@ -199,11 +228,52 @@ function createServiceServer(opts = {}) {
 		return false;
 	}
 
+	/** /dumps: public builds (HTML list, files, latest manifest, signing key); private ones need a client token. */
+	function routeDumps(req, res, url, principal) {
+		const p = url.pathname;
+		if (!dumps || !p.startsWith("/dumps")) return false;
+		const { listDumps } = require("./dumps/build");
+		const pubDir = path.join(dumps.dir, "public"), privDir = path.join(dumps.dir, "private");
+		if (p === "/dumps/signing-key.pem") {
+			if (!signingPub) return sendJson(res, 404, { error: "no signing key configured" }), true;
+			return sendPublic(req, res, 200, "application/x-pem-file", signingPub), true;
+		}
+		if (p === "/dumps/latest.json") {
+			const m = listDumps(pubDir).find(x => !x.delta);
+			return (m ? sendPublic(req, res, 200, "application/json", JSON.stringify(m, null, 2)) : sendJson(res, 404, { error: "no public build yet" })), true;
+		}
+		let m = /^\/dumps\/files\/([^/]+)$/.exec(p);
+		if (m) {
+			if (!DUMP_FILE.test(m[1]) || !m[1].startsWith("fad-public-")) return sendJson(res, 404, { error: "not found" }), true;
+			return sendFile(req, res, path.join(pubDir, m[1]), DUMP_TYPES[m[1].replace(/^[^.]+\./, "")]), true;
+		}
+		m = /^\/dumps\/private\/([^/]+)$/.exec(p);
+		if (m) {
+			if (!principal) return sendJson(res, 401, { error: "unauthorized" }, { "www-authenticate": "Bearer" }), true;
+			if (m[1] === "latest.json") {
+				const x = listDumps(privDir).find(d => !d.delta);
+				return (x ? sendJson(res, 200, x) : sendJson(res, 404, { error: "no private build yet" })), true;
+			}
+			if (!DUMP_FILE.test(m[1]) || !m[1].startsWith("fad-private-")) return sendJson(res, 404, { error: "not found" }), true;
+			return sendFile(req, res, path.join(privDir, m[1]), DUMP_TYPES[m[1].replace(/^[^.]+\./, "")], { "cache-control": "private, no-store" }), true;
+		}
+		if (p === "/dumps") {
+			const locale = pickLocale(url.searchParams.get("lang"), req.headers["accept-language"]);
+			const t = makeT(locale);
+			const { keyFingerprint } = fad("dump-format");
+			sendPublic(req, res, 200, "text/html; charset=utf-8", web.layout({ t, locale, title: t("Data dumps"), path: "/dumps", site,
+				body: web.dumpsPage({ t, builds: listDumps(pubDir), fingerprint: signingPub ? keyFingerprint(signingPub) : null }) }));
+			return true;
+		}
+		return false;
+	}
+
 	/** Public pages and JSON. → true when the request was answered. */
 	function routePublic(req, res, url, ctx) {
 		const p = url.pathname;
 		if (req.method !== "GET" && req.method !== "HEAD") return false;
 		if (p.startsWith("/static/")) return routeStatic(req, res, p, url);
+		if (p.startsWith("/dumps")) return routeDumps(req, res, url, ctx.principal);
 		if (!assets) return false;
 		const isPage = ["/", "/search", "/sources", "/legal"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p)
 			|| /^\/pkg\/(npm|pypi|maven|gem|composer|nuget|golang)\/.+$/.test(p);
@@ -348,16 +418,18 @@ function createServiceServer(opts = {}) {
 		res.setHeader("x-request-id", rid);
 		if (draining) res.setHeader("connection", "close");
 		const pathOnly = String(req.url || "").split("?")[0];
-		if (inFlight >= maxInFlight && pathOnly !== "/health" && pathOnly !== "/ready") {
+		// A dump download streams a file for minutes at almost no CPU: it must not occupy a
+		// slot of the overload guard, or a few dozen downloads would shed every page.
+		const download = /^\/dumps\/(files|private)\//.test(pathOnly);
+		if (!download && inFlight >= maxInFlight && pathOnly !== "/health" && pathOnly !== "/ready") {
 			res.writeHead(503, { "content-type": "application/json", "retry-after": "5" });
 			res.end(JSON.stringify({ error: "overloaded" }));
 			counters?.observe({ route: "overload", status: 503, ms: 0 });
 			return;
 		}
-		inFlight++;
-		res.once("close", () => { inFlight--; });
+		if (!download) { inFlight++; res.once("close", () => { inFlight--; }); }
 		const principal = authenticate(req);
-		const ctx = { search: false, asset: null };
+		const ctx = { search: false, asset: null, principal };
 		res.once("finish", () => {
 			const family = routeFamily(new URL(req.url, "http://service.invalid").pathname);
 			const ms = Date.now() - started;

@@ -51,6 +51,10 @@ const DEFAULTS = {
 	registry: { publishThreshold: 5 },
 	// Upstream routing: Maven Central requests go to these official mirrors first.
 	upstream: { mavenMirrors: ["https://maven-central-eu.storage-download.googleapis.com/maven2/"] },
+	// Dumps (spec §8): where builds go, the Ed25519 key that signs them (`fad-service
+	// keygen`), how many to keep, optional trackers for the torrents, and a daily public
+	// build by the worker. Public builds leave registry projections out unless asked.
+	dumps: { dir: null, signingKeyFile: null, keep: 7, trackers: [], publicIncludesPackages: false, daily: false },
 };
 
 const isObj = v => v && typeof v === "object" && !Array.isArray(v);
@@ -93,7 +97,7 @@ function loadConfig(args = {}, env = process.env) {
 		cfg = merge(cfg, raw);
 		// Relative paths in the file are relative to the file, not to the cwd.
 		const dir = path.dirname(path.resolve(file));
-		for (const p of [["db"], ["log", "file"], ["brand", "logo"]]) {
+		for (const p of [["db"], ["log", "file"], ["brand", "logo"], ["dumps", "dir"], ["dumps", "signingKeyFile"]]) {
 			const holder = p.length === 1 ? cfg : cfg[p[0]];
 			const k = p[p.length - 1];
 			if (typeof holder[k] === "string" && holder[k] !== ":memory:" && !path.isAbsolute(holder[k])) holder[k] = path.join(dir, holder[k]);
@@ -114,6 +118,7 @@ function loadConfig(args = {}, env = process.env) {
 	const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => [k, isObj(v) ? clean(v) : v]));
 	cfg = merge(cfg, clean(flags));
 	if (cfg.db !== ":memory:") cfg.db = path.resolve(String(cfg.db));
+	cfg.dumps.dir = path.resolve(cfg.dumps.dir || path.join(cfg.db === ":memory:" ? process.cwd() : path.dirname(cfg.db), "dumps"));
 	cfg.log.maxBytes = parseSize(cfg.log.maxSize);
 	cfg.jobs.resourceCacheBytes = parseSize(cfg.jobs.resourceCacheMaxBytes);
 	if (!["text", "json"].includes(cfg.log.format)) throw new Error(`log.format must be "text" or "json"`);
