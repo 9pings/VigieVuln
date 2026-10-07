@@ -217,6 +217,19 @@ function createServiceServer(opts = {}) {
 	// Home-page / readiness counters: a GROUP BY over the whole table, memoised for a minute
 	// in the asset store (shared with the metrics scrape).
 	const counts = () => assets.counts({ maxAgeMs: 60000 });
+	// When each data source was last imported successfully (shown on every page), memoised a minute.
+	let updatesMemo = { at: 0, value: [] };
+	async function updates() {
+		if (!jobStatus) return [];
+		if (Date.now() - updatesMemo.at < 60000) return updatesMemo.value;
+		let value = [];
+		try {
+			value = (await jobStatus()).filter(j => j.lastFinished && j.status === "ok" && !["maintenance", "dump"].includes(j.job))
+				.map(j => ({ job: j.job, label: j.label, at: j.lastFinished }));
+		} catch { /* a page never fails for its footer */ }
+		updatesMemo = { at: Date.now(), value };
+		return value;
+	}
 	// The versions panel: versions × advisories verdicts, per package, memoised (bounded LRU).
 	const PANEL_MAX_VERSIONS = 2000, panelMemo = new Map();
 	function panelVerdicts(asset, advisories, versionAffected) {
@@ -368,8 +381,9 @@ function createServiceServer(opts = {}) {
 		const t = makeT(locale);
 		const q = String(url.searchParams.get("q") || "").slice(0, 200).trim();
 		const type = ["cve", "advisory", "package"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : null;
+		const sourceUpdates = await updates();
 		const page = (code, title, body) => sendPublic(req, res, code, "text/html; charset=utf-8",
-			web.layout({ t, locale, title, body, q, path: p + keptQuery(url, q), site }));
+			web.layout({ t, locale, title, body, q, path: p + keptQuery(url, q), site, updates: sourceUpdates }));
 
 		if (p === "/api/search") {
 			ctx.search = true;
@@ -385,13 +399,13 @@ function createServiceServer(opts = {}) {
 			return true;
 		}
 		if (p === "/") {
-			const [critical, libraries, exploited, kev] = await Promise.all(["critical", "libraries", "exploited", "kev"].map(k => cveList(k, 10)));
-			page(200, t("Search"), web.home({ t, locale, counts: await counts(), lists: { critical, libraries, exploited, kev }, site }));
+			const [libraries, exploited, kev] = await Promise.all(["libraries", "exploited", "kev"].map(k => cveList(k, 10)));
+			page(200, t("Search"), web.home({ t, locale, counts: await counts(), lists: { libraries, exploited, kev }, updates: sourceUpdates, site }));
 			return true;
 		}
 		if (p === "/cves") {
 			const kind = url.searchParams.get("list") || "critical";
-			page(200, t(web.CVE_LISTS[kind].title), web.cveListPage({ t, locale, kind, rows: await cveList(kind, 100) }));
+			page(200, t(web.CVE_LISTS[kind].title), web.cveListPage({ t, locale, kind, rows: await cveList(kind, 100), updates: sourceUpdates }));
 			return true;
 		}
 		if (p === "/sources") { page(200, t("Data sources"), web.sourcesPage({ t, jobs: await jobStatus() })); return true; }
@@ -625,7 +639,7 @@ function createServiceServer(opts = {}) {
 	server.fadStats = stats;
 	server.fadStore = store;
 	/** Compute what the home page needs before the first visitor asks (memoised afterwards). */
-	server.warm = () => assets ? Promise.all([counts(), ...["critical", "libraries", "exploited", "kev"].map(k => cveList(k, 10))]) : Promise.resolve();
+	server.warm = () => assets ? Promise.all([counts(), ...["libraries", "exploited", "kev"].map(k => cveList(k, 10))]) : Promise.resolve();
 	server.fadEngine = engine;
 	return server;
 }

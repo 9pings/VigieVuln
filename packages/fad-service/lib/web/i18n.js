@@ -119,7 +119,6 @@ const FR = {
 	"cve": "CVE",
 	"advisory": "avis",
 	// CVE lists (home page, /cves) and version pages
-	"Latest critical": "Derniers critiques",
 	"Most exploited": "Plus exploitées",
 	"Latest critical vulnerabilities": "Dernières vulnérabilités critiques",
 	"Published CVEs whose headline CVSS score — from the CNA or from NVD — is 9.0 or more, newest first.": "CVE publiées dont le score CVSS de référence — celui du CNA ou celui de la NVD — atteint 9,0 ou plus, les plus récentes d’abord.",
@@ -131,6 +130,10 @@ const FR = {
 	"Title": "Titre",
 	"Critical in libraries": "Critiques des libs",
 	"Library": "Bibliothèque",
+	"Data updated {date}": "Données mises à jour le {date}",
+	"by source": "par source",
+	"Updated": "Mise à jour",
+	"Data updates": "Mises à jour des données",
 	"Built from the advisories that name this package: its registry metadata (versions, licence, dependencies) has not been fetched by this service yet.": "Page établie d’après les avis qui citent ce paquet : ses métadonnées de registre (versions, licence, dépendances) n’ont pas encore été récupérées par ce service.",
 	"{n} published vulnerability names this product.": "{n} vulnérabilité publiée cite ce produit.",
 	"{n} published vulnerabilities name this product.": "{n} vulnérabilités publiées citent ce produit.",

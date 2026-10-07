@@ -107,8 +107,9 @@ test("pages: home lists, /cves?list=…, strict list parameter", opts, async () 
 	try {
 		const home = await s.get("/?lang=en");
 		assert.equal(home.status, 200);
-		for (const h of ["Latest critical vulnerabilities", "Most likely to be exploited", "Recently added to CISA KEV"]) assert.ok(home.body.includes(h), h);
-		assert.ok(home.body.includes('href="/cve/CVE-2026-0002?lang=en"'));
+		for (const h of ["Libraries recently hit by a critical vulnerability", "Most likely to be exploited", "Recently added to CISA KEV"]) assert.ok(home.body.includes(h), h);
+		assert.ok(!home.body.includes("<h2>Latest critical vulnerabilities</h2>"), "the generic critical column is gone from the home page");
+		assert.ok(home.body.includes('href="/cve/CVE-2026-0006?lang=en"'));
 		const crit = await s.get("/cves?list=critical&lang=fr");
 		assert.equal(crit.status, 200);
 		assert.ok(crit.body.includes("Dernières vulnérabilités critiques"));
@@ -283,5 +284,30 @@ test("links: products and libraries go to their pages, fixed versions to their v
 		assert.ok(ghost.body.includes("&lt; 3.0.0") && !ghost.body.includes("version=3.0.0"));
 		assert.equal((await get("/pkg/npm/ghost?version=3.0.0")).status, 404, "no version page without registry versions");
 		assert.equal((await get("/pkg/npm/nobody-names-me")).status, 404);
+	} finally { await new Promise(ok => server.close(ok)); }
+});
+
+test("pages: last update of each source — footer everywhere, per source on the home page, the list's own sources on a list", opts, async () => {
+	const { createServiceServer } = require("../lib/server");
+	const s = await open(":memory:");
+	await seedLists(s.assets);
+	const at = Date.UTC(2026, 9, 7, 9, 46);
+	const jobStatus = async () => [
+		{ job: "cvelist", label: "CVE List", lastFinished: Date.UTC(2026, 9, 7, 9, 14), status: "ok" },
+		{ job: "epss", label: "EPSS", lastFinished: Date.UTC(2026, 9, 7, 9, 11), status: "ok" },
+		{ job: "osv", label: "OSV.dev", lastFinished: at, status: "ok" },
+		{ job: "kev", label: "CISA KEV", lastFinished: Date.UTC(2026, 9, 7, 10, 0), status: "failed" },     // failed: not shown
+		{ job: "maintenance", label: "Maintenance", lastFinished: Date.UTC(2026, 9, 7, 11, 0), status: "ok" }];
+	const server = createServiceServer({ store: s.store, tokens: s.tokens, assets: s.assets, jobStatus });
+	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
+	const get = async p => (await fetch(`http://127.0.0.1:${server.address().port}${p}`)).text();
+	try {
+		const home = await get("/?lang=en");
+		assert.ok(home.includes('Data updated <time datetime="2026-10-07T09:46:00.000Z">2026-10-07 09:46 UTC</time>'), "footer: the newest successful import");
+		assert.match(home, /<b>Data updates<\/b> : <span class="upd">CVE List <time[^>]*>2026-10-07 09:14 UTC<\/time><\/span> · <span class="upd">EPSS/);
+		assert.ok(!home.includes("CISA KEV <time") && !home.includes("Maintenance <time"), "a failed import or the maintenance job is not a data update");
+		const exploited = await get("/cves?list=exploited&lang=en");
+		assert.match(exploited, /<p class="updates">Updated : <span class="upd">EPSS <time[^>]*>2026-10-07 09:11 UTC<\/time><\/span><\/p>/, "only the list's own source");
+		assert.ok(exploited.includes('<table class="cve-table"><colgroup><col class="c-id"><col class="c-what"><col class="c-title">'));
 	} finally { await new Promise(ok => server.close(ok)); }
 });

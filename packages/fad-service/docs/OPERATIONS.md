@@ -172,7 +172,11 @@ every version with how many advisories affect it — rendered in the page, not a
 site forbids framing, `frame-ancestors 'none'`), memoised per package. Withdrawn advisories (OSV `withdrawn`) are
 listed apart and never give a verdict.
 
-**CVE lists** — on the home page (10 each) and at `/cves?list=critical|libraries|exploited|kev`
+**Freshness** — every page's footer gives the time of the newest successful import, the home
+page one line per source, each list page the time of its own sources (EPSS for the most
+exploited, KEV for KEV…); read from the job runs, memoised a minute.
+
+**CVE lists** — on the home page (10 each: libraries, most exploited, KEV) and at `/cves?list=critical|libraries|exploited|kev`
 (100): the latest CVEs whose headline CVSS — the CNA's or NVD's (newest CVSS version, NVD
 Primary first) — is 9.0 or more; the **libraries** most recently hit by one — one row per library: its affected versions,
 severity, CWE (or the CVE title), fixed versions and how many critical CVEs it has; the highest EPSS probabilities; the

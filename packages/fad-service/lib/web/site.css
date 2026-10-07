@@ -57,6 +57,11 @@ p { margin: 0 0 16px; }
 td.nw { white-space: nowrap; overflow-wrap: normal; }
 th { overflow-wrap: normal; }
 .list-tabs { font-size: .9375rem; }
+.updates { font-size: .875rem; color: var(--muted); }
+.updates .upd { white-space: nowrap; }
+/* CVE list tables: what is vulnerable ~20 %, the title gets the room it gave up. */
+table.cve-table col.c-what { width: 20%; }
+table.cve-table col.c-title { width: 30%; }
 
 /* Package and version pages: the content, and the versions panel on the right. */
 .pkg-layout { display: grid; gap: 32px; }
@@ -85,7 +90,7 @@ th { overflow-wrap: normal; }
 @media (min-width: 1600px) {
 	header, main, footer { max-width: 1480px; padding-left: 48px; padding-right: 48px; }
 	.pkg-layout { grid-template-columns: minmax(0, 1fr) 20rem; gap: 40px; }
-	.cve-lists { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+	.cve-lists { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 	.desc, .lead, .record-title { max-width: 90ch; }
 }
 @media (min-width: 2200px) {

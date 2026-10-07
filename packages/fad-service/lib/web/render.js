@@ -30,8 +30,13 @@ const badge = (sev, score) => {
 };
 
 const DEFAULT_NAME = "fad · vulnerabilities";
+/** A moment, to the minute, in UTC: <time datetime="…">2026-10-07 09:46 UTC</time>. */
+const moment = ms => { const iso = new Date(ms).toISOString(); return `<time datetime="${iso}">${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC</time>`; };
+/** "CVE List 09:14 UTC · NVD …" for the given jobs (all when null). */
+const updatesLine = (updates = [], jobs = null) => (updates || []).filter(u => !jobs || jobs.includes(u.job))
+	.map(u => `<span class="upd">${esc(u.label)} ${moment(u.at)}</span>`).join(" · ");
 
-function layout({ t, locale, title, body, q = "", path = "/", site = {} }) {
+function layout({ t, locale, title, body, q = "", path = "/", site = {}, updates = [] }) {
 	const brand = site.brand || {};
 	const name = brand.name || DEFAULT_NAME;
 	const other = locale === "fr" ? "en" : "fr";
@@ -53,27 +58,27 @@ ${site.analyticsHead || ""}
 <a class="skip-link" href="#content">${t("Skip to content")}</a>
 <header class="site-header">
 <a class="brand" href="/?lang=${locale}">${brand.hasLogo ? `<img src="/static/logo${site.assetVersions?.logo ? "?v=" + site.assetVersions.logo : ""}" alt="" height="28"> ` : ""}${esc(name)}</a>
-<nav aria-label="${esc(t("Main navigation"))}"><a href="/cves?list=critical&amp;lang=${locale}">${t("Latest critical")}</a><a href="/cves?list=libraries&amp;lang=${locale}">${t("Critical in libraries")}</a><a href="/cves?list=exploited&amp;lang=${locale}">${t("Most exploited")}</a><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a><a href="${esc(path + sep + "lang=" + other)}" hreflang="${other}" lang="${other}" aria-label="${esc(t("Language"))}: ${esc(t(other === "fr" ? "French" : "English"))}">${other.toUpperCase()}</a></nav>
+<nav aria-label="${esc(t("Main navigation"))}"><a href="/cves?list=libraries&amp;lang=${locale}">${t("Critical in libraries")}</a><a href="/cves?list=exploited&amp;lang=${locale}">${t("Most exploited")}</a><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a><a href="${esc(path + sep + "lang=" + other)}" hreflang="${other}" lang="${other}" aria-label="${esc(t("Language"))}: ${esc(t(other === "fr" ? "French" : "English"))}">${other.toUpperCase()}</a></nav>
 ${path !== "/" ? searchForm(t, locale, q) : ""}
 </header>
 <main id="content" tabindex="-1">
 ${path === "/" ? `<section class="hero"><h1>${t("Search CVEs, advisories, packages")}</h1><p class="lead">${site.brand?.tagline ? esc(site.brand.tagline) : t("Vulnerability data hosted in Europe, for fad-checker and for you.")}</p>${searchForm(t, locale)}</section>` : path === "/search" && !body ? `<h1>${t("Search")}</h1><p>${t("Enter an identifier, product or keyword to begin.")}</p>` : ""}
 ${body}
 </main>
-<footer><p>${brand.footer ? esc(brand.footer) + " · " : ""}${t("Data from the sources listed on each page, under their own licences.")}</p><nav aria-label="${esc(t("Service information"))}"><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/dumps?lang=${locale}">${t("Data dumps")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a>${contact ? `<a href="${esc(contact)}">${t("Contact")}</a>` : ""}</nav></footer>
+<footer>${updates?.length ? `<p>${t("Data updated {date}", { date: moment(Math.max(...updates.map(u => u.at))) })} · <a href="/sources?lang=${locale}">${t("by source")}</a></p>` : ""}<p>${brand.footer ? esc(brand.footer) + " · " : ""}${t("Data from the sources listed on each page, under their own licences.")}</p><nav aria-label="${esc(t("Service information"))}"><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/dumps?lang=${locale}">${t("Data dumps")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a>${contact ? `<a href="${esc(contact)}">${t("Contact")}</a>` : ""}</nav></footer>
 </body>
 </html>`;
 }
 
 /** The CVE lists of the home page and of /cves: what each one is, said on the page. */
 const CVE_LISTS = {
-	critical: { title: "Latest critical vulnerabilities",
+	critical: { title: "Latest critical vulnerabilities", jobs: ["cvelist", "nvd"],
 		intro: "Published CVEs whose headline CVSS score — from the CNA or from NVD — is 9.0 or more, newest first." },
-	libraries: { title: "Libraries recently hit by a critical vulnerability",
+	libraries: { title: "Libraries recently hit by a critical vulnerability", jobs: ["cvelist", "nvd", "osv"],
 		intro: "One row per library, from its newest critical CVE (CVSS 9.0 or more, from the CNA or NVD) that an OSV / GitHub advisory ties to it: the affected versions, the weakness, the fix." },
-	exploited: { title: "Most likely to be exploited",
+	exploited: { title: "Most likely to be exploited", jobs: ["epss"],
 		intro: "Highest EPSS probability (FIRST.org) of exploitation activity in the next 30 days, across every published CVE." },
-	kev: { title: "Recently added to CISA KEV",
+	kev: { title: "Recently added to CISA KEV", jobs: ["kev"],
 		intro: "Latest additions to the CISA Known Exploited Vulnerabilities catalogue: exploitation observed in the wild." },
 };
 const severityOf = score => score == null ? null : score >= 9 ? "CRITICAL" : score >= 7 ? "HIGH" : score >= 4 ? "MEDIUM" : score > 0 ? "LOW" : "NONE";
@@ -125,7 +130,7 @@ function cveMiniList(t, locale, rows) {
 }
 
 function cveTable(t, locale, rows) {
-	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">CVE</th><th scope="col">${t("Library / product — vulnerable versions")}</th><th scope="col">${t("Title")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Published")}</th><th scope="col">EPSS</th><th scope="col">${t("Exploitation")}</th></tr></thead><tbody>${
+	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table class="cve-table"><colgroup><col class="c-id"><col class="c-what"><col class="c-title"><col><col><col><col></colgroup><thead><tr><th scope="col">CVE</th><th scope="col">${t("Library / product — vulnerable versions")}</th><th scope="col">${t("Title")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Published")}</th><th scope="col">EPSS</th><th scope="col">${t("Exploitation")}</th></tr></thead><tbody>${
 		rows.map(r => `<tr><td class="nw">${cveLink(r.cve, locale)}</td><td>${affectedCell(t, locale, r)}</td><td${r.title && r.title.length > 140 ? ` title="${esc(r.title)}"` : ""}>${esc(r.title && r.title.length > 140 ? r.title.slice(0, 137) + "…" : r.title || "")}</td><td class="nw">${badge(severityOf(r.score), r.score)}</td><td class="nw">${r.published ? date(r.published) : ""}</td><td class="nw">${pct(r.epss)}</td><td class="nw">${kevMark(t, r.kev)}${r.kev?.dateAdded ? `<br><span class="muted">${date(r.kev.dateAdded)}</span>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
@@ -190,22 +195,25 @@ function libraryMiniList(t, locale, rows) {
 	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${libraryLink(locale, r)} <code>${affectedOf(locale, r)}</code></span><span>${badge(severityOf(r.score), r.score)} ${weaknessText(locale, r, 80)}</span><span class="muted">${cveLink(r.cve, locale)}${otherCriticals(t, r)}</span></li>`).join("")}</ol>`;
 }
 
-function cveListPage({ t, locale, kind, rows }) {
+function cveListPage({ t, locale, kind, rows, updates = [] }) {
 	const L = CVE_LISTS[kind];
+	const upd = updatesLine(updates, L.jobs);
 	const tabs = Object.keys(CVE_LISTS).map(k => k === kind ? `<b>${t(CVE_LISTS[k].title)}</b>` : `<a href="/cves?list=${k}&amp;lang=${locale}">${t(CVE_LISTS[k].title)}</a>`).join(" · ");
 	return `<h1>${t(L.title)}</h1>
 <p class="lead">${t(L.intro)}</p>
+${upd ? `<p class="updates">${t("Updated")} : ${upd}</p>` : ""}
 <p class="list-tabs">${tabs}</p>
 ${rows.length ? (kind === "libraries" ? librariesTable(t, locale, rows) : cveTable(t, locale, rows)) : `<div class="empty-state"><p>${t("Nothing yet — the data is being imported.")}</p></div>`}`;
 }
 
-function home({ t, locale = "en", counts, lists = null }) {
+function home({ t, locale = "en", counts, lists = null, updates = [] }) {
 	const block = kind => lists?.[kind] ? `<section><h2>${t(CVE_LISTS[kind].title)}</h2>${(kind === "libraries" ? libraryMiniList : cveMiniList)(t, locale, lists[kind])}<p><a href="/cves?list=${kind}&amp;lang=${locale}">${t("See the full list")}</a></p></section>` : "";
 	return `<div class="stats">
 <div><b>${esc((counts.cve || 0).toLocaleString("fr-FR"))}</b>${t("Published vulnerabilities")}</div>
 <div><b>${esc((counts.advisory || 0).toLocaleString("fr-FR"))}</b>${t("Advisories")}</div>
 </div>
-${lists ? `<div class="cve-lists">${block("critical")}${block("libraries")}${block("exploited")}${block("kev")}</div>` : ""}
+${updates.length ? `<p class="updates"><b>${t("Data updates")}</b> : ${updatesLine(updates)}</p>` : ""}
+${lists ? `<div class="cve-lists">${block("libraries")}${block("exploited")}${block("kev")}</div>` : ""}
 <section class="home-sources"><h2>${t("Public data, traceable sources")}</h2>
 <p>${t("CVE records and NVD scores, OSV/GHSA package advisories and CERT-FR publications, brought together in one place.")}</p>
 <p>${t("CISA KEV, ENISA and EPSS add exploitation context. Each record links to its sources and licences.")}</p></section>`;
