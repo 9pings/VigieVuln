@@ -53,6 +53,43 @@ p { margin: 0 0 16px; }
 .cve-mini-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 650; }
 .cve-mini .muted { overflow-wrap: anywhere; }
 .list-tabs { font-size: .9375rem; }
+
+/* Package and version pages: the content, and the versions panel on the right. */
+.pkg-layout { display: grid; gap: 32px; }
+.pkg-main { min-width: 0; }
+.versions-panel { border: 1px solid var(--line); border-radius: 4px; background: var(--soft); padding: 16px 0 8px; align-self: start; min-width: 0; }
+.versions-panel h2 { border: 0; margin: 0 16px 8px; padding: 0; font-size: 1rem; }
+.versions-panel ol { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto; }
+.versions-panel li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 6px 16px; font-size: .875rem; border-top: 1px solid var(--line); }
+.versions-panel li a { font-weight: 600; overflow-wrap: anywhere; }
+.versions-panel li.current { background: var(--bg); box-shadow: inset 3px 0 0 var(--accent); }
+.versions-panel li.current a { color: var(--fg); text-decoration: none; }
+.versions-panel .v-meta { margin-left: auto; display: inline-flex; gap: 8px; color: var(--muted); font-size: .8125rem; white-space: nowrap; }
+.versions-panel .ok { color: var(--low); }
+.versions-panel .badge { font-size: .6875rem; padding: 1px 6px; }
+.versions-panel > p { margin: 8px 16px 0; font-size: .75rem; }
+@media (min-width: 960px) {
+	.pkg-layout { grid-template-columns: minmax(0, 1fr) 17rem; }
+	.versions-panel { position: sticky; top: 16px; max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+	.versions-panel ol { max-height: none; flex: 1 1 auto; min-height: 0; }
+}
+
+/* Wide screens: use the width instead of a 1080px column in the middle. */
+@media (min-width: 1280px) {
+	header, main, footer { max-width: 1240px; }
+}
+@media (min-width: 1600px) {
+	header, main, footer { max-width: 1480px; padding-left: 48px; padding-right: 48px; }
+	.pkg-layout { grid-template-columns: minmax(0, 1fr) 20rem; gap: 40px; }
+	.cve-lists { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+	.desc, .lead, .record-title { max-width: 90ch; }
+}
+@media (min-width: 2200px) {
+	html { font-size: 112.5%; }
+	body { font-size: 18px; }
+	header, main, footer { max-width: 1760px; }
+	.pkg-layout { grid-template-columns: minmax(0, 1fr) 22rem; }
+}
 .summary { margin: 24px 0 32px; padding: 24px; background: var(--soft); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 4px; }
 .summary h2 { border: 0; padding: 0; margin: 0 0 20px; font-size: 1rem; }
 dl.kv { display: grid; grid-template-columns: minmax(100px, 160px) minmax(0, 1fr); gap: 10px 24px; margin: 0; }

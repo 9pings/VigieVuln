@@ -165,13 +165,18 @@ naming the package and, per version, whether it is affected — **only where the
 exact** (Maven ComparableVersion, SemVer 2.0 for npm and Go, or the advisory's explicit version
 list); elsewhere the range is shown and the verdict is "?". Each version links to its own page
 (`/pkg/<eco>/<name>?version=<v>`, only for a version the registry listed): the advisories that
-affect it with their CVEs, CVSS, KEV and EPSS, the "fixed" versions each advisory gives, and
-the **closest newer version no advisory affects**. Withdrawn advisories (OSV `withdrawn`) are
+affect it with their CVEs, CVSS, KEV and EPSS, the fix of each affected branch (or "≤ x, no
+fix" for a branch left without one), and the **closest newer version no advisory affects**.
+Both pages carry a **versions panel** on the right (below the content on a narrow screen):
+every version with how many advisories affect it — rendered in the page, not an iframe (the
+site forbids framing, `frame-ancestors 'none'`), memoised per package. Withdrawn advisories (OSV `withdrawn`) are
 listed apart and never give a verdict.
 
-**CVE lists** — on the home page (10 each) and at `/cves?list=critical|exploited|kev` (100):
-the latest CVEs whose headline CVSS — the CNA's or NVD's (newest CVSS version, NVD Primary
-first) — is 9.0 or more; the highest EPSS probabilities; the latest CISA KEV additions. They
+**CVE lists** — on the home page (10 each) and at `/cves?list=critical|libraries|exploited|kev`
+(100): the latest CVEs whose headline CVSS — the CNA's or NVD's (newest CVSS version, NVD
+Primary first) — is 9.0 or more; the same restricted to those an OSV/GHSA advisory ties to a
+**library** (with the package and its fixed versions); the highest EPSS probabilities; the
+latest CISA KEV additions. They
 read the `cve_rank` table, kept in step by every CVE / NVD write (jobs and dump restores) and
 filled once from the existing data when an older database is opened (402 586 CVEs: 15 s).
 Computed at startup, then memoised 10 minutes.

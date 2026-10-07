@@ -146,3 +146,61 @@ test("pages: a version page lists what affects it, the closest safe upgrade, nev
 		assert.equal((await s.get("/pkg/npm/demo?version=1.1.0&x=1")).status, 400);
 	} finally { await s.close(); }
 });
+
+test("lists: latest critical vulnerabilities in libraries — CVE → advisory → package, withdrawn excluded", opts, async () => {
+	const { assets } = await open(":memory:");
+	await seedLists(assets);
+	const adv = (id, cves, pkgs, extra = {}) => ({ type: "advisory", key: `osv:${id}`, title: id, sources: [],
+		data: { id, affected: pkgs.map(n => ({ ecosystem: "npm", name: n, ranges: [{ type: "SEMVER", events: [{ introduced: "0" }, { fixed: "1.0.0" }] }] })), ...extra }, cves, pkgs });
+	const advs = [
+		adv("GHSA-1", ["CVE-2026-0002"], ["lib-a", "lib-b"]),
+		adv("GHSA-2", ["CVE-2026-0007"], ["lib-c"], { withdrawn: "2026-01-01" }),   // withdrawn: CVE-0007 has no library
+		adv("GHSA-3", ["CVE-2026-0006"], ["lib-d"]),                                 // CVE-0006 is not critical (5.0)
+	];
+	await assets.upsertMany(advs.map(({ cves, pkgs, ...a }) => a));
+	await assets.linkMany(advs.map(a => ({ advisory: a.key, cves: a.cves, packages: a.pkgs.map(n => `pkg:npm/${n}`) })));
+	const rows = await assets.listLibraries(10);
+	assert.deepEqual(rows.map(r => r.cve), ["CVE-2026-0002"]);
+	assert.deepEqual(rows[0].packages.map(p => p.key), ["pkg:npm/lib-a", "pkg:npm/lib-b"]);
+	assert.equal(rows[0].packages[0].advisory, "osv:GHSA-1");
+	assert.equal(rows[0].score, 9.1);
+	const one = await assets.listLibraries(10, { packagesPerCve: 1 });
+	assert.equal(one[0].packages.length, 1);
+	assert.equal(one[0].packagesTotal, 2);
+});
+
+test("pages: /cves?list=libraries, the versions panel on package and version pages, a branch without a fix is said so", opts, async () => {
+	const { createServiceServer } = require("../lib/server");
+	const { packageAsset } = require("../lib/registry");
+	const s = await open(":memory:");
+	await seedLists(s.assets);
+	await s.assets.upsert(packageAsset(PKG, true));
+	const a = { type: "advisory", key: "osv:GHSA-two", title: "two branches", sources: [], data: { id: "GHSA-two", affected: [
+		{ ecosystem: "npm", name: "demo", ranges: [{ type: "SEMVER", events: [{ introduced: "1.0.0" }, { fixed: "1.2.0" }] }] },
+		{ ecosystem: "npm", name: "demo", ranges: [{ type: "SEMVER", events: [{ introduced: "2.0.0" }, { last_affected: "2.1.0" }] }] }] } };
+	await s.assets.upsertMany([a]);
+	await s.assets.linkMany([{ advisory: a.key, cves: ["CVE-2026-0002"], packages: ["pkg:npm/demo"] }]);
+	const server = createServiceServer({ store: s.store, tokens: s.tokens, assets: s.assets });
+	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
+	const base = `http://127.0.0.1:${server.address().port}`;
+	const get = async p => (await fetch(base + p)).text();
+	try {
+		const libs = await get("/cves?list=libraries&lang=en");
+		assert.ok(libs.includes("Latest critical vulnerabilities in libraries"));
+		assert.ok(libs.includes('href="/pkg/npm/demo?lang=en"'), "a library with a public page links to it");
+		assert.ok(libs.includes("1.2.0") && libs.includes("≤ 2.1.0, no fix"), "each branch: its fix, or no fix");
+		const home = await get("/?lang=en");
+		assert.ok(home.includes("Latest critical vulnerabilities in libraries"));
+
+		const pkg = await get("/pkg/npm/demo?lang=en");
+		assert.match(pkg, /<div class="pkg-layout"><div class="pkg-main"><h1>demo<\/h1>/);
+		assert.match(pkg, /<aside class="versions-panel"[^>]*><h2>Versions <span class="muted">\(5\)<\/span><\/h2>/);
+		assert.match(pkg, /version=2\.1\.0&amp;lang=en">2\.1\.0<\/a><span class="v-meta"><time[^>]*>2025-01-01<\/time> <span class="flag"[^>]*>1<\/span>/, "the 2.x branch without a fix");
+		assert.match(pkg, /version=1\.2\.0&amp;lang=en">1\.2\.0<\/a><span class="v-meta"><time[^>]*>2025-01-01<\/time> <span class="ok"/);
+
+		const v = await get("/pkg/npm/demo?version=2.1.0&lang=en");
+		assert.match(v, /<li class="current"><a href="\/pkg\/npm\/demo\?version=2\.1\.0&amp;lang=en" aria-current="page">2\.1\.0<\/a>/);
+		assert.ok(v.includes("≤ 2.1.0, no fix"));
+		assert.ok(v.includes("No newer version is free of known advisories"));
+	} finally { await new Promise(ok => server.close(ok)); }
+});

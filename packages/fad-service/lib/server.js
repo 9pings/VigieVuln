@@ -46,7 +46,7 @@ function querySpec(p) {
 	if (p === "/api/search") return { q: Q.text(200), type: Q.oneOf(["cve", "advisory", "package"]), limit: Q.int(1, 100), lang: Q.lang };
 	if (p === "/admin/analytics") return { days: Q.int(1, 366) };
 	if (p.startsWith("/static/")) return { v: Q.hex(10) };
-	if (p === "/cves") return { list: Q.oneOf(["critical", "exploited", "kev"]), lang: Q.lang };
+	if (p === "/cves") return { list: Q.oneOf(["critical", "libraries", "exploited", "kev"]), lang: Q.lang };
 	if (p.startsWith("/pkg/")) return { version: Q.version, lang: Q.lang };
 	if (["/", "/sources", "/legal", "/dumps"].includes(p) || /^\/(cve|advisory)\//.test(p)) return { lang: Q.lang };
 	return {};
@@ -217,6 +217,30 @@ function createServiceServer(opts = {}) {
 	// Home-page / readiness counters: a GROUP BY over the whole table, memoised for a minute
 	// in the asset store (shared with the metrics scrape).
 	const counts = () => assets.counts({ maxAgeMs: 60000 });
+	// The versions panel: versions × advisories verdicts, per package, memoised (bounded LRU).
+	const PANEL_MAX_VERSIONS = 2000, panelMemo = new Map();
+	function panelVerdicts(asset, advisories, versionAffected) {
+		const k = `${asset.key}|${asset.updatedAt}|${advisories.map(a => a.key).join(",")}`;
+		const hit = panelMemo.get(k);
+		if (hit && Date.now() - hit.at < LIST_TTL_MS) return hit.value;
+		const value = new Map();
+		for (const v of (asset.data.versions || []).slice(0, PANEL_MAX_VERSIONS)) {
+			let n = 0, unknown = 0;
+			for (const a of advisories) { const x = versionAffected(asset.data.type, v.version, a.entries); if (x === true) n++; else if (x === null) unknown++; }
+			value.set(v.version, { hit: n, unknown });
+		}
+		panelMemo.delete(k); panelMemo.set(k, { at: Date.now(), value });
+		while (panelMemo.size > 500) panelMemo.delete(panelMemo.keys().next().value);
+		return value;
+	}
+	/** Critical CVEs that name a library: the packages' own affected entries, and whether each has a page. */
+	async function librariesList(limit) {
+		const { packageOfOsv } = require("./registry/purl");
+		const rows = await assets.listLibraries(limit);
+		const withPage = new Set(await assets.publishedPackages([...new Set(rows.flatMap(r => r.packages.map(p => p.key)))]));
+		return rows.map(r => ({ ...r, packages: r.packages.map(p => ({ key: p.key, advisory: p.advisory, hasPage: withPage.has(p.key),
+			entries: (p.data.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === p.key) })) }));
+	}
 	// The CVE lists (home page, /cves): a few indexed queries, memoised and single-flight —
 	// they change with the hourly imports, not with each visit.
 	const LIST_TTL_MS = 10 * 60 * 1000;
@@ -224,7 +248,7 @@ function createServiceServer(opts = {}) {
 	const cveList = (kind, limit) => {
 		const k = `${kind}:${limit}`, m = listMemo.get(k);
 		if (m && (m.pending || Date.now() - m.at < LIST_TTL_MS)) return m.pending || Promise.resolve(m.value);
-		const pending = assets.listCves(kind, limit).then(value => { listMemo.set(k, { at: Date.now(), value }); return value; },
+		const pending = (kind === "libraries" ? librariesList(limit) : assets.listCves(kind, limit)).then(value => { listMemo.set(k, { at: Date.now(), value }); return value; },
 			e => { listMemo.delete(k); throw e; });
 		listMemo.set(k, { ...m, pending });
 		return pending;
@@ -349,8 +373,8 @@ function createServiceServer(opts = {}) {
 			return true;
 		}
 		if (p === "/") {
-			const [critical, exploited, kev] = await Promise.all(["critical", "exploited", "kev"].map(k => cveList(k, 10)));
-			page(200, t("Search"), web.home({ t, locale, counts: await counts(), lists: { critical, exploited, kev }, site }));
+			const [critical, libraries, exploited, kev] = await Promise.all(["critical", "libraries", "exploited", "kev"].map(k => cveList(k, 10)));
+			page(200, t("Search"), web.home({ t, locale, counts: await counts(), lists: { critical, libraries, exploited, kev }, site }));
 			return true;
 		}
 		if (p === "/cves") {
@@ -405,10 +429,11 @@ function createServiceServer(opts = {}) {
 				const links = await assets.cvesOfAdvisories(advisories.map(a => a.key));
 				const info = new Map((await assets.cveRows([...new Set([...links.values()].flat())])).map(r => [r.cve, r]));
 				for (const a of advisories) a.cves = (links.get(a.key) || []).map(c => info.get(c) || { cve: c });
-				page(200, `${asset.data.name} ${version}`, web.versionPage({ t, locale, asset, version, advisories, withdrawn, versionAffected }));
+				page(200, `${asset.data.name} ${version}`, web.versionPage({ t, locale, asset, version, advisories, withdrawn, versionAffected,
+					panelVerdicts: panelVerdicts(asset, advisories, versionAffected) }));
 				return true;
 			}
-			page(200, asset.data.name, web.packagePage({ t, locale, asset, advisories, withdrawn, versionAffected }));
+			page(200, asset.data.name, web.packagePage({ t, locale, asset, advisories, withdrawn, versionAffected, verdicts: panelVerdicts(asset, advisories, versionAffected) }));
 			return true;
 		}
 		if (p.startsWith("/advisory/osv/")) {
@@ -574,7 +599,7 @@ function createServiceServer(opts = {}) {
 	server.fadStats = stats;
 	server.fadStore = store;
 	/** Compute what the home page needs before the first visitor asks (memoised afterwards). */
-	server.warm = () => assets ? Promise.all([counts(), ...["critical", "exploited", "kev"].map(k => cveList(k, 10))]) : Promise.resolve();
+	server.warm = () => assets ? Promise.all([counts(), ...["critical", "libraries", "exploited", "kev"].map(k => cveList(k, 10))]) : Promise.resolve();
 	server.fadEngine = engine;
 	return server;
 }
