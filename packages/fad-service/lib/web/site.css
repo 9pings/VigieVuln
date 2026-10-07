@@ -52,6 +52,10 @@ p { margin: 0 0 16px; }
 .cve-mini li:first-child { border-top: 0; }
 .cve-mini-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 650; }
 .cve-mini .muted { overflow-wrap: anywhere; }
+.cve-mini-what code { font-size: .8125rem; }
+/* Short tokens (CVE ids, dates, badges, headers) never break mid-word. */
+td.nw { white-space: nowrap; overflow-wrap: normal; }
+th { overflow-wrap: normal; }
 .list-tabs { font-size: .9375rem; }
 
 /* Package and version pages: the content, and the versions panel on the right. */

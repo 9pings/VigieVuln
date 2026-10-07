@@ -131,6 +131,8 @@ const FR = {
 	"Title": "Titre",
 	"Critical in libraries": "Critiques des libs",
 	"Library": "Bibliothèque",
+	"Library / product — vulnerable versions": "Bibliothèque / produit — versions vulnérables",
+	"fixed in": "corrigé en",
 	"Libraries recently hit by a critical vulnerability": "Bibliothèques récemment touchées par une vulnérabilité critique",
 	"One row per library, from its newest critical CVE (CVSS 9.0 or more, from the CNA or NVD) that an OSV / GitHub advisory ties to it: the affected versions, the weakness, the fix.": "Une ligne par bibliothèque, d’après sa CVE critique la plus récente (CVSS 9,0 ou plus, selon le CNA ou la NVD) qu’un avis OSV / GitHub lui rattache : les versions touchées, la faiblesse, le correctif.",
 	"{n} critical CVEs": "{n} CVE critiques",

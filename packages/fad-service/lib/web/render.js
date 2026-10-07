@@ -80,15 +80,51 @@ const pct = x => x == null ? "" : `${(x * 100).toFixed(x >= 0.1 ? 0 : 1)}\u00a0%
 const cveLink = (cve, locale) => `<a href="/cve/${encodeURIComponent(cve)}?lang=${locale}">${esc(cve)}</a>`;
 const kevMark = (t, kev) => kev ? `<span class="flag" title="${esc(t("Known exploited (CISA KEV) · added {date}", { date: kev.dateAdded || "?" }))}">KEV</span>` : "";
 
-/** Compact form for the home page: id, score, KEV, title. */
+/**
+ * The CNA's versions of one product (CVE 5 `affected[].versions`), short: "10.2.0 – < 10.2.9-h1",
+ * "≤ 4.1", "≥ 2.0"; when the CNA lists only unaffected versions: "fixed in 22.2R1, 22.7R2".
+ */
+function cnaVersionsText(t, versions) {
+	const parts = [], fixes = [];
+	for (const v of versions || []) {
+		const from = v.version && v.version !== "0" ? String(v.version) : null;
+		if (v.status === "affected") {
+			if (v.lessThan === "*") parts.push(from ? `≥ ${from}` : "*");
+			else if (v.lessThan) parts.push(from ? `${from} – < ${v.lessThan}` : `< ${v.lessThan}`);
+			else if (v.lessThanOrEqual) parts.push(from === String(v.lessThanOrEqual) ? from : from ? `${from} – ${v.lessThanOrEqual}` : `≤ ${v.lessThanOrEqual}`);
+			else if (from) parts.push(from);
+		} else if (v.status === "unaffected" && from && /^v?\d/i.test(from) && (!v.lessThan || v.lessThan === "*" || /\*$/.test(v.lessThan))) fixes.push(from);
+	}
+	const cap = list => list.length > 3 ? list.slice(0, 3).join(" ; ") + " ; …" : list.join(" ; ");
+	if (parts.length) return cap([...new Set(parts)]);
+	return fixes.length ? `${t("fixed in")} ${cap([...new Set(fixes)]).replace(/ ; /g, ", ")}` : "";
+}
+
+/** What is vulnerable: the packages advisories name (with their versions), else the CNA's products. */
+function affectedCell(t, locale, r, { max = 2 } = {}) {
+	if (r.packages?.length) {
+		const more = (r.packagesTotal || r.packages.length) - Math.min(max, r.packages.length);
+		return r.packages.slice(0, max).map(p => `${libraryLink(locale, p)} <code>${esc(affectedText(p.entries))}</code>`).join("<br>")
+			+ (more > 0 ? `<br><span class="muted">${t("+{n} more", { n: more })}</span>` : "");
+	}
+	const products = (r.products || []).filter(p => p.product && !/^n\/?a$/i.test(p.product));
+	if (!products.length) return `<span class="muted">—</span>`;
+	return products.slice(0, max).map(p => {
+		const name = [p.vendor, p.product].filter(x => x && !/^n\/?a$/i.test(x)).join(" ");
+		const v = cnaVersionsText(t, p.versions);
+		return `<b>${esc(name)}</b>${v ? ` <code>${esc(v)}</code>` : ""}`;
+	}).join("<br>") + (products.length > max ? `<br><span class="muted">${t("+{n} more", { n: products.length - max })}</span>` : "");
+}
+
+/** Compact form for the home page: id, score, KEV, what is vulnerable, title. */
 function cveMiniList(t, locale, rows) {
 	if (!rows.length) return `<p class="muted">${t("Nothing yet — the data is being imported.")}</p>`;
-	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${cveLink(r.cve, locale)} ${badge(severityOf(r.score), r.score)} ${kevMark(t, r.kev)}</span>${r.title ? `<span class="muted">${esc(r.title.length > 110 ? r.title.slice(0, 107) + "…" : r.title)}</span>` : ""}</li>`).join("")}</ol>`;
+	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${cveLink(r.cve, locale)} ${badge(severityOf(r.score), r.score)} ${kevMark(t, r.kev)}</span><span class="cve-mini-what">${affectedCell(t, locale, r, { max: 1 })}</span>${r.title ? `<span class="muted">${esc(r.title.length > 110 ? r.title.slice(0, 107) + "…" : r.title)}</span>` : ""}</li>`).join("")}</ol>`;
 }
 
 function cveTable(t, locale, rows) {
-	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">CVE</th><th scope="col">${t("Title")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Published")}</th><th scope="col">EPSS</th><th scope="col">${t("Exploitation")}</th></tr></thead><tbody>${
-		rows.map(r => `<tr><td>${cveLink(r.cve, locale)}</td><td>${esc(r.title || "")}</td><td>${badge(severityOf(r.score), r.score)}</td><td>${r.published ? date(r.published) : ""}</td><td>${pct(r.epss)}</td><td>${kevMark(t, r.kev)}${r.kev?.dateAdded ? ` <span class="muted">${date(r.kev.dateAdded)}</span>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">CVE</th><th scope="col">${t("Library / product — vulnerable versions")}</th><th scope="col">${t("Title")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Published")}</th><th scope="col">EPSS</th><th scope="col">${t("Exploitation")}</th></tr></thead><tbody>${
+		rows.map(r => `<tr><td class="nw">${cveLink(r.cve, locale)}</td><td>${affectedCell(t, locale, r)}</td><td${r.title && r.title.length > 140 ? ` title="${esc(r.title)}"` : ""}>${esc(r.title && r.title.length > 140 ? r.title.slice(0, 137) + "…" : r.title || "")}</td><td class="nw">${badge(severityOf(r.score), r.score)}</td><td class="nw">${r.published ? date(r.published) : ""}</td><td class="nw">${pct(r.epss)}</td><td class="nw">${kevMark(t, r.kev)}${r.kev?.dateAdded ? `<br><span class="muted">${date(r.kev.dateAdded)}</span>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 const pkgParts = key => { const m = /^pkg:([a-z]+)\/(.+)$/.exec(key); return m ? { eco: m[1], name: m[2] } : { eco: "", name: key }; };
@@ -111,7 +147,7 @@ function affectedText(entries) {
 			for (const ev of r.events || []) {
 				if (ev.introduced != null) from = String(ev.introduced) === "0" ? null : String(ev.introduced);
 				else if (ev.fixed != null) { parts.push(from ? `${from} – < ${ev.fixed}` : `< ${ev.fixed}`); from = undefined; }
-				else if (ev.last_affected != null) { parts.push(from ? `${from} – ${ev.last_affected}` : `≤ ${ev.last_affected}`); from = undefined; }
+				else if (ev.last_affected != null) { parts.push(from === String(ev.last_affected) ? from : from ? `${from} – ${ev.last_affected}` : `≤ ${ev.last_affected}`); from = undefined; }
 			}
 			if (from !== undefined) parts.push(from ? `≥ ${from}` : "*");
 		}
@@ -135,7 +171,7 @@ const otherCriticals = (t, r) => r.criticalCount > 1 ? ` <span class="muted">${t
 
 function librariesTable(t, locale, rows) {
 	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Library")}</th><th scope="col">${t("Affected versions")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Weakness")}</th><th scope="col">CVE</th><th scope="col">${t("Fixed in")}</th></tr></thead><tbody>${
-		rows.map(r => `<tr><td>${libraryLink(locale, r)}${otherCriticals(t, r)}</td><td><code>${esc(affectedText(r.entries))}</code></td><td>${badge(severityOf(r.score), r.score)}${r.kev ? " " + kevMark(t, r.kev) : ""}</td><td>${weaknessText(locale, r)}</td><td>${cveLink(r.cve, locale)}${r.published ? `<br><span class="muted">${date(r.published)}</span>` : ""}</td><td>${fixCell(t, r.entries)}</td></tr>`).join("")}</tbody></table></div>`;
+		rows.map(r => `<tr><td>${libraryLink(locale, r)}${otherCriticals(t, r)}</td><td><code>${esc(affectedText(r.entries))}</code></td><td class="nw">${badge(severityOf(r.score), r.score)}${r.kev ? " " + kevMark(t, r.kev) : ""}</td><td>${weaknessText(locale, r)}</td><td class="nw">${cveLink(r.cve, locale)}${r.published ? `<br><span class="muted">${date(r.published)}</span>` : ""}</td><td>${fixCell(t, r.entries)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 /** Home page: "name — versions — CRITICAL 9.8 : CWE-89 SQL Injection". */

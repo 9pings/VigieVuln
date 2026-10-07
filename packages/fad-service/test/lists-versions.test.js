@@ -210,3 +210,27 @@ test("pages: /cves?list=libraries, the versions panel on package and version pag
 		assert.ok(v.includes("No newer version is free of known advisories"));
 	} finally { await new Promise(ok => server.close(ok)); }
 });
+
+test("pages: CVE lists show what is vulnerable — the library and its versions, else the CNA's product and versions", opts, async () => {
+	const { createServiceServer } = require("../lib/server");
+	const s = await open(":memory:");
+	await seedLists(s.assets);
+	// CVE-2026-0006 (top EPSS): an advisory ties it to a library.
+	await s.assets.upsertMany([{ type: "advisory", key: "osv:GHSA-lib", title: "x", sources: [], data: { id: "GHSA-lib",
+		affected: [{ ecosystem: "npm", name: "evil-lib", ranges: [{ type: "SEMVER", events: [{ introduced: "2.0.0" }, { fixed: "2.4.1" }] }] }] } }]);
+	await s.assets.linkMany([{ advisory: "osv:GHSA-lib", cves: ["CVE-2026-0006"], packages: ["pkg:npm/evil-lib"] }]);
+	// CVE-2026-0001 (second): only the CNA's products — a range, equal bounds, and fixes only (with a non-version "All").
+	await s.assets.upsert({ ...cve("CVE-2026-0001", { score: 9.8, published: "2026-03-01T10:00:00Z" }), data: { id: "CVE-2026-0001", state: "PUBLISHED",
+		published: "2026-03-01T10:00:00Z", score: 9.8, affected: [
+			{ vendor: "Acme", product: "Gateway", versions: [{ version: "10.2.0", status: "affected", lessThan: "10.2.9-h1" }, { version: "9.1R18", status: "affected", lessThanOrEqual: "9.1R18" }] },
+			{ vendor: "Acme", product: "Cloud", versions: [{ version: "All", status: "unaffected" }, { version: "22.2R1", status: "unaffected" }] }] } });
+	const server = createServiceServer({ store: s.store, tokens: s.tokens, assets: s.assets });
+	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
+	try {
+		const html = await (await fetch(`http://127.0.0.1:${server.address().port}/cves?list=exploited&lang=en`)).text();
+		assert.ok(html.includes("Library / product — vulnerable versions"));
+		assert.match(html, /<b>evil-lib<\/b><\/a> <span class="muted">npm<\/span> <code>2\.0\.0 – &lt; 2\.4\.1<\/code>/);
+		assert.ok(html.includes("<b>Acme Gateway</b> <code>10.2.0 – &lt; 10.2.9-h1 ; 9.1R18</code>"), "equal bounds read as one version");
+		assert.ok(html.includes("<b>Acme Cloud</b> <code>fixed in 22.2R1</code>"), "\"All\" is not a version");
+	} finally { await new Promise(ok => server.close(ok)); }
+});

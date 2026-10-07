@@ -509,6 +509,32 @@ function bind(d) {
 			const info = new Map((await api.cveRows([...new Set(rows.map(r => r.cve))])).map(r => [r.cve, r]));
 			return rows.map(r => ({ ...info.get(r.cve), key: r.key, advisory: r.advisory, data: docs.get(r.advisory), criticalCount: counts.get(r.key)?.size || 1 }));
 		},
+		/** CVE ids → Map(cve → [{ key, advisory, data }]): the packages non-withdrawn advisories tie to each. */
+		async packagesOfCves(ids) {
+			const out = new Map(ids.map(c => [c, []]));
+			if (!ids.length) return out;
+			const marks = list => list.map(() => "?").join(", ");
+			const ac = await d.all(`SELECT advisory, cve FROM advisory_cve WHERE cve IN (${marks(ids)}) ORDER BY advisory`, ids);
+			const advisories = [...new Set(ac.map(r => r.advisory))];
+			if (!advisories.length) return out;
+			const pkgs = await d.all(`SELECT advisory, package FROM advisory_package WHERE advisory IN (${marks(advisories)})`, advisories);
+			const keys = [...new Set(pkgs.map(r => r.advisory))];
+			const docs = new Map();
+			for (let i = 0; i < keys.length; i += CHUNK) {
+				const part = keys.slice(i, i + CHUNK);
+				for (const r of await d.all(`SELECT key, data FROM assets WHERE type = 'advisory' AND published = 1 AND key IN (${marks(part)})`, part)) {
+					const data = JSON.parse(r.data);
+					if (!data.withdrawn) docs.set(r.key, data);
+				}
+			}
+			for (const r of ac) {
+				const list = out.get(r.cve), seen = new Set(list.map(x => x.key));
+				for (const p of pkgs) if (p.advisory === r.advisory && docs.has(r.advisory) && !seen.has(p.package)) {
+					list.push({ key: p.package, advisory: r.advisory, data: docs.get(r.advisory) }); seen.add(p.package);
+				}
+			}
+			return out;
+		},
 		async publishedPackages(keys) {
 			if (!keys.length) return [];
 			return (await d.all(`SELECT key FROM assets WHERE type = 'package' AND published = 1 AND key IN (${keys.map(() => "?").join(", ")})`, keys)).map(r => r.key);
@@ -532,9 +558,13 @@ function bind(d) {
 			return ids.map(cve => {
 				const r = R.get(cve) || {}, sg = S.get(cve) || {};
 				const scores = [r.cna_score, r.nvd_score].map(finiteScore).filter(x => x != null);
-				const own = T.get(cve)?.data ? JSON.parse(T.get(cve).data).cwes || [] : [];
+				const rec = T.get(cve)?.data ? JSON.parse(T.get(cve).data) : {};
+				const own = rec.cwes || [];
 				const cwes = [...new Set([...own, ...(nvdCwes.get(cve) || [])].map(String).filter(c => /^CWE-\d+$/.test(c)))];
-				return { cve, title: T.get(cve)?.title || null, cwes, published: r.published || null, score: scores.length ? Math.max(...scores) : null,
+				// The CNA's own products and versions (CVE 5 `affected`), for rows no advisory ties to a package.
+				const products = (rec.affected || []).slice(0, 5).map(a => ({ vendor: a.vendor || null, product: a.product || a.packageName || null,
+					versions: (a.versions || []).slice(0, 20) }));
+				return { cve, title: T.get(cve)?.title || null, cwes, products, published: r.published || null, score: scores.length ? Math.max(...scores) : null,
 					epss: finiteScore(sg.epss_score), epssPercentile: finiteScore(sg.epss_percentile), kev: sg.kev ? JSON.parse(sg.kev) : null };
 			});
 		},

@@ -233,6 +233,17 @@ function createServiceServer(opts = {}) {
 		while (panelMemo.size > 500) panelMemo.delete(panelMemo.keys().next().value);
 		return value;
 	}
+	/** CVE rows → + the packages advisories tie to each (their own affected entries, whether each has a page). */
+	async function withPackages(rows) {
+		const { packageOfOsv } = require("./registry/purl");
+		const byCve = await assets.packagesOfCves(rows.map(r => r.cve));
+		const withPage = new Set(await assets.publishedPackages([...new Set([...byCve.values()].flat().map(p => p.key))]));
+		return rows.map(r => {
+			const list = byCve.get(r.cve) || [];
+			return { ...r, packagesTotal: list.length, packages: list.slice(0, 3).map(p => ({ key: p.key, advisory: p.advisory, hasPage: withPage.has(p.key),
+				entries: (p.data.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === p.key) })) };
+		});
+	}
 	/** The libraries most recently hit by a critical CVE: the package's own affected entries, and whether it has a page. */
 	async function librariesList(limit) {
 		const { packageOfOsv } = require("./registry/purl");
@@ -249,7 +260,7 @@ function createServiceServer(opts = {}) {
 	const cveList = (kind, limit) => {
 		const k = `${kind}:${limit}`, m = listMemo.get(k);
 		if (m && (m.pending || Date.now() - m.at < LIST_TTL_MS)) return m.pending || Promise.resolve(m.value);
-		const pending = (kind === "libraries" ? librariesList(limit) : assets.listCves(kind, limit)).then(value => { listMemo.set(k, { at: Date.now(), value }); return value; },
+		const pending = (kind === "libraries" ? librariesList(limit) : assets.listCves(kind, limit).then(withPackages)).then(value => { listMemo.set(k, { at: Date.now(), value }); return value; },
 			e => { listMemo.delete(k); throw e; });
 		listMemo.set(k, { ...m, pending });
 		return pending;

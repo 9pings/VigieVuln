@@ -176,7 +176,9 @@ listed apart and never give a verdict.
 (100): the latest CVEs whose headline CVSS — the CNA's or NVD's (newest CVSS version, NVD
 Primary first) — is 9.0 or more; the **libraries** most recently hit by one — one row per library: its affected versions,
 severity, CWE (or the CVE title), fixed versions and how many critical CVEs it has; the highest EPSS probabilities; the
-latest CISA KEV additions. They
+latest CISA KEV additions. Each CVE row names what is vulnerable: the libraries an OSV/GHSA
+advisory ties to it with their affected versions, else the CNA's own products and versions
+from the CVE record ("fixed in …" when the CNA lists only fixed versions). They
 read the `cve_rank` table, kept in step by every CVE / NVD write (jobs and dump restores) and
 filled once from the existing data when an older database is opened (402 586 CVEs: 15 s).
 Computed at startup, then memoised 10 minutes.
