@@ -69,6 +69,18 @@ CREATE TABLE IF NOT EXISTS package_demand (
 	tag TEXT NOT NULL,
 	PRIMARY KEY (package, tag)
 );
+-- What the "latest critical" / "most likely exploited" lists sort on, without parsing a JSON
+-- per CVE: the CNA's headline score (from the CVE record) and NVD's, written by every path
+-- that writes a CVE or an NVD row (jobs, dump restore). Shown only for published CVEs.
+CREATE TABLE IF NOT EXISTS cve_rank (
+	cve TEXT PRIMARY KEY,
+	published TEXT,
+	cna_score {REAL},
+	nvd_score {REAL}
+);
+CREATE INDEX IF NOT EXISTS cve_rank_published ON cve_rank (published);
+CREATE INDEX IF NOT EXISTS cve_signals_epss ON cve_signals (epss_score);
+CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS job_runs (
 	job TEXT PRIMARY KEY,
 	lease_until {INT} NOT NULL DEFAULT 0,
@@ -90,6 +102,26 @@ const FTS = {
 const SIGNAL_COLUMNS = ["kev", "epss_score", "epss_percentile", "epss_date", "euvd_id", "euvd_exploited_since", "certfr"];
 const JSON_COLUMNS = new Set(["kev", "certfr"]);
 /** Columns added after the first release: [table, column, type], created on open so an old database upgrades in place. */
+/** "2024-03-01T10:15:09.143Z" → "2024-03-01T10:15:09": one sortable form for every source. */
+const isoSecond = v => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 19) : null);
+const finiteScore = v => (v != null && Number.isFinite(Number(v)) ? Number(v) : null);
+/** A CVE asset → [cve, published, cnaScore], or null when it must not be listed (unpublished, rejected). */
+function rankOfCve(a) {
+	if (a.type !== "cve") return undefined;
+	if (a.published === false || a.data?.state === "REJECTED") return null;
+	return [a.key, isoSecond(a.data?.published), finiteScore(a.data?.score)];
+}
+const CVSS_ORDER = ["4.0", "3.1", "3.0", "2.0"];
+/** NVD row data → its headline score: newest CVSS version present, NVD's Primary first, highest. */
+function nvdScore(data) {
+	const ms = (data?.metrics || []).filter(m => finiteScore(m.score) != null);
+	const v = CVSS_ORDER.find(x => ms.some(m => String(m.version) === x));
+	if (!v) return null;
+	const same = ms.filter(m => String(m.version) === v);
+	const primary = same.filter(m => m.type === "Primary");
+	return Math.max(...(primary.length ? primary : same).map(m => Number(m.score)));
+}
+
 const MIGRATIONS = [["assets", "aliases", "TEXT"], ["cve_nvd", "updated_at", "{INT}"]];
 
 /**
@@ -165,6 +197,22 @@ async function insertMany(d, table, cols, rows, tail = "", { cell = {}, returnin
 /** The asset API bound to one driver (the pool, or a transaction's connection). */
 function bind(d) {
 	const pg = d.dialect === "pg";
+	/** Keep cve_rank in step with CVE assets (CNA side) — a rejected/unpublished CVE leaves it. */
+	async function rankCves(items) {
+		const rows = [], gone = [];
+		for (const a of items) { const r = rankOfCve(a); if (r) rows.push(r); else if (r === null) gone.push(a.key); }
+		if (rows.length) await insertMany(d, "cve_rank", ["cve", "published", "cna_score"], rows,
+			"ON CONFLICT (cve) DO UPDATE SET published = COALESCE(excluded.published, cve_rank.published), cna_score = excluded.cna_score");
+		for (let i = 0; i < gone.length; i += CHUNK) {
+			const part = gone.slice(i, i + CHUNK);
+			await d.run(`DELETE FROM cve_rank WHERE cve IN (${part.map(() => "?").join(", ")})`, part);
+		}
+	}
+	/** …and with NVD rows (NVD side). NVD's publication date only fills a CVE that has none. */
+	async function rankNvd(rows) {
+		if (rows.length) await insertMany(d, "cve_rank", ["cve", "published", "nvd_score"], rows,
+			"ON CONFLICT (cve) DO UPDATE SET nvd_score = excluded.nvd_score, published = COALESCE(cve_rank.published, excluded.published)");
+	}
 	const signal = col => `INSERT INTO cve_signals (cve, ${col}, updated_at) VALUES (?, ?, ?)
 		ON CONFLICT (cve) DO UPDATE SET ${col} = excluded.${col}, updated_at = excluded.updated_at`;
 	const parseAsset = row => row && ({ type: row.type, key: row.key, title: row.title, summary: row.summary, data: JSON.parse(row.data),
@@ -172,6 +220,7 @@ function bind(d) {
 
 	const countsMemo = { at: 0, value: null, pending: null };
 	const api = {
+		rankCves, rankNvd,
 		driver: d,
 		dialect: d.dialect,
 		transaction: fn => d.transaction(tx => fn(bind(tx))),
@@ -186,6 +235,7 @@ function bind(d) {
 						sources = excluded.sources, published = excluded.published, updated_at = excluded.updated_at,
 						aliases = excluded.aliases, search = excluded.search
 					RETURNING id`, [...args, plain([key, al, title || "", (summary || "").slice(0, 2000)].join(" "))]);
+				if (type === "cve") await rankCves([{ type, key, data, published }]);
 				return Number(r.id);
 			}
 			const r = await d.get(`INSERT INTO assets (type, key, title, summary, data, sources, published, updated_at, aliases)
@@ -196,6 +246,7 @@ function bind(d) {
 			const id = Number(r.id);
 			await d.run("DELETE FROM assets_fts WHERE rowid = ?", [id]);
 			await d.run("INSERT INTO assets_fts (rowid, key, aliases, title, summary) VALUES (?, ?, ?, ?, ?)", [id, key, al, title || "", summary || ""]);
+			if (type === "cve") await rankCves([{ type, key, data, published }]);
 			return id;
 		},
 		/**
@@ -226,6 +277,10 @@ function bind(d) {
 					await insertMany(d, "assets_fts", ["rowid", "key", "aliases", "title", "summary"],
 						part.map(r => [Number(r.id), r.key, r.aliases || "", r.title || "", r.summary || ""]));
 				}
+			}
+			if (items.some(a => a.type === "cve")) {
+				const done = new Set(written.map(r => r.key));
+				await rankCves(items.filter(a => a.type === "cve" && done.has(a.key)));
 			}
 			return written.length;
 		},
@@ -299,10 +354,18 @@ function bind(d) {
 		/** Dumped NVD rows → written when at least as fresh. */
 		async importNvd(rows) {
 			if (!rows.length) return 0;
-			return insertMany(d, "cve_nvd", ["cve", "last_modified", "data", "updated_at"],
+			const n = await insertMany(d, "cve_nvd", ["cve", "last_modified", "data", "updated_at"],
 				rows.map(r => [r.cve, r.lastModified ?? null, JSON.stringify(r.data), r.updatedAt || 0]),
 				`ON CONFLICT (cve) DO UPDATE SET last_modified = excluded.last_modified, data = excluded.data, updated_at = excluded.updated_at
 				WHERE COALESCE(excluded.updated_at, 0) >= COALESCE(cve_nvd.updated_at, 0)`);
+			// Ranked from what the table now holds (a fresher row of ours may have won).
+			const kept = [];
+			for (let i = 0; i < rows.length; i += CHUNK) {
+				const part = rows.slice(i, i + CHUNK).map(r => r.cve);
+				kept.push(...await d.all(`SELECT cve, data FROM cve_nvd WHERE cve IN (${part.map(() => "?").join(", ")})`, part));
+			}
+			await rankNvd(kept.map(r => { const x = JSON.parse(r.data); return [r.cve, isoSecond(x.published), nvdScore(x)]; }));
+			return n;
 		},
 		/** Assets of a type whose key starts with `prefix`, one at a time → { key, data }. */
 		async *iteratePrefix(type, prefix) {
@@ -315,9 +378,13 @@ function bind(d) {
 		},
 		/** rows: [{ id, lastModified, ... }] — NVD's enrichment, kept apart from the CVE record. */
 		async setNvd(rows, updatedAt = Date.now()) {
-			await d.transaction(tx => insertMany(tx, "cve_nvd", ["cve", "last_modified", "data", "updated_at"],
-				rows.map(r => [r.id, r.lastModified || null, JSON.stringify(r), updatedAt]),
-				`ON CONFLICT (cve) DO UPDATE SET last_modified = excluded.last_modified, data = excluded.data, updated_at = excluded.updated_at`));
+			await d.transaction(async tx => {
+				await insertMany(tx, "cve_nvd", ["cve", "last_modified", "data", "updated_at"],
+					rows.map(r => [r.id, r.lastModified || null, JSON.stringify(r), updatedAt]),
+					`ON CONFLICT (cve) DO UPDATE SET last_modified = excluded.last_modified, data = excluded.data, updated_at = excluded.updated_at`);
+				await insertMany(tx, "cve_rank", ["cve", "published", "nvd_score"], rows.map(r => [r.id, isoSecond(r.published), nvdScore(r)]),
+					"ON CONFLICT (cve) DO UPDATE SET nvd_score = excluded.nvd_score, published = COALESCE(cve_rank.published, excluded.published)");
+			});
 		},
 		async nvd(cve) {
 			const row = await d.get("SELECT data FROM cve_nvd WHERE cve = ?", [cve]);
@@ -338,6 +405,63 @@ function bind(d) {
 			for (const p of packages) await d.run("INSERT INTO advisory_package (advisory, package) VALUES (?, ?) ON CONFLICT DO NOTHING", [advisoryKey, p]);
 		},
 		/** Published advisories affecting a package → [{ key, title, data }]. */
+		/**
+		 * The home-page lists, published CVEs only. kind:
+		 *   "critical"   newest first, CNA or NVD headline score >= 9.0 (future dates ignored)
+		 *   "exploited"  highest EPSS probability
+		 *   "kev"        latest additions to CISA KEV
+		 * → [{ cve, title, published, score, epss, epssPercentile, kev }]
+		 */
+		async listCves(kind, limit = 10) {
+			limit = Math.max(1, Math.min(200, Number(limit) || 10));
+			let ids;
+			if (kind === "critical") {
+				ids = (await d.all(`SELECT r.cve FROM cve_rank r JOIN assets a ON a.type = 'cve' AND a.key = r.cve AND a.published = 1
+					WHERE (r.cna_score >= 9 OR r.nvd_score >= 9) AND r.published <= ? ORDER BY r.published DESC, r.cve DESC LIMIT ?`,
+				[new Date().toISOString().slice(0, 19), limit])).map(r => r.cve);
+			} else if (kind === "exploited") {
+				ids = (await d.all(`SELECT s.cve FROM cve_signals s JOIN assets a ON a.type = 'cve' AND a.key = s.cve AND a.published = 1
+					WHERE s.epss_score IS NOT NULL ORDER BY s.epss_score DESC, s.cve DESC LIMIT ?`, [limit])).map(r => r.cve);
+			} else if (kind === "kev") {
+				// A few thousand rows at most: sorted here on the catalogue's own dateAdded.
+				const rows = (await d.all("SELECT cve, kev FROM cve_signals WHERE kev IS NOT NULL")).map(r => ({ cve: r.cve, added: String(JSON.parse(r.kev)?.dateAdded || "") }));
+				rows.sort((x, y) => y.added.localeCompare(x.added) || y.cve.localeCompare(x.cve));
+				const pub = new Set((await api.publishedCves(rows.slice(0, limit * 2).map(r => r.cve))));
+				ids = rows.filter(r => pub.has(r.cve)).slice(0, limit).map(r => r.cve);
+			} else throw new Error(`unknown list ${kind}`);
+			return api.cveRows(ids);
+		},
+		async publishedCves(ids) {
+			if (!ids.length) return [];
+			return (await d.all(`SELECT key FROM assets WHERE type = 'cve' AND published = 1 AND key IN (${ids.map(() => "?").join(", ")})`, ids)).map(r => r.key);
+		},
+		/** One summary row per CVE id, in the given order (title, published, headline score, EPSS, KEV). */
+		async cveRows(ids) {
+			if (!ids.length) return [];
+			const marks = ids.map(() => "?").join(", ");
+			const [titles, ranks, sigs] = await Promise.all([
+				d.all(`SELECT key, title FROM assets WHERE type = 'cve' AND key IN (${marks})`, ids),
+				d.all(`SELECT cve, published, cna_score, nvd_score FROM cve_rank WHERE cve IN (${marks})`, ids),
+				d.all(`SELECT cve, epss_score, epss_percentile, kev FROM cve_signals WHERE cve IN (${marks})`, ids)]);
+			const by = (rows, k) => new Map(rows.map(r => [r[k], r]));
+			const T = by(titles, "key"), R = by(ranks, "cve"), S = by(sigs, "cve");
+			return ids.map(cve => {
+				const r = R.get(cve) || {}, sg = S.get(cve) || {};
+				const scores = [r.cna_score, r.nvd_score].map(finiteScore).filter(x => x != null);
+				return { cve, title: T.get(cve)?.title || null, published: r.published || null, score: scores.length ? Math.max(...scores) : null,
+					epss: finiteScore(sg.epss_score), epssPercentile: finiteScore(sg.epss_percentile), kev: sg.kev ? JSON.parse(sg.kev) : null };
+			});
+		},
+		/** advisory keys → Map(advisory → [cve ids]) */
+		async cvesOfAdvisories(keys) {
+			const out = new Map(keys.map(k => [k, []]));
+			for (let i = 0; i < keys.length; i += CHUNK) {
+				const part = keys.slice(i, i + CHUNK);
+				for (const r of await d.all(`SELECT advisory, cve FROM advisory_cve WHERE advisory IN (${part.map(() => "?").join(", ")}) ORDER BY cve`, part))
+					out.get(r.advisory)?.push(r.cve);
+			}
+			return out;
+		},
 		async advisoriesForPackage(pkg) {
 			const rows = await d.all(`SELECT a.key, a.title, a.data FROM advisory_package l JOIN assets a ON a.type = 'advisory' AND a.key = l.advisory
 				WHERE l.package = ? AND a.published = 1 ORDER BY a.key LIMIT 300`, [pkg]);
@@ -418,11 +542,37 @@ function bind(d) {
 }
 
 /** Create the schema (idempotent) and return the asset API on `driver`. */
-async function createAssetStore(driver) {
+/**
+ * cve_rank arrived after the first imports: fill it once from what is stored. Idempotent
+ * (upserts) and marked done only at the end — an interrupted backfill simply runs again.
+ */
+async function backfillRank(driver, api, log = () => {}) {
+	const flag = "cve_rank_v1";
+	if (await driver.get("SELECT value FROM settings WHERE name = ?", [flag])) return;
+	const t0 = Date.now();
+	let batch = [], n = 0;
+	for await (const r of driver.iterate("SELECT key, data, published FROM assets WHERE type = 'cve'")) {
+		batch.push({ type: "cve", key: r.key, data: JSON.parse(r.data), published: !!Number(r.published) });
+		if (batch.length >= 2000) { await api.rankCves(batch); n += batch.length; batch = []; }
+	}
+	await api.rankCves(batch); n += batch.length; batch = [];
+	for await (const r of driver.iterate("SELECT cve, data FROM cve_nvd")) {
+		const x = JSON.parse(r.data);
+		batch.push([r.cve, isoSecond(x.published), nvdScore(x)]);
+		if (batch.length >= 2000) { await api.rankNvd(batch); batch = []; }
+	}
+	await api.rankNvd(batch);
+	await driver.run("INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT (name) DO UPDATE SET value = excluded.value", [flag, String(Date.now())]);
+	if (n) log(`cve_rank backfilled from ${n} CVE records in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+}
+
+async function createAssetStore(driver, { log } = {}) {
 	await driver.exec(driver.ddl(SCHEMA));
 	await driver.exec(FTS[driver.dialect]);
 	await migrate(driver);
-	return bind(driver);
+	const api = bind(driver);
+	await backfillRank(driver, api, log);
+	return api;
 }
 
-module.exports = { createAssetStore, ftsQuery, tsQuery, searchTerms, SIGNAL_COLUMNS };
+module.exports = { createAssetStore, ftsQuery, tsQuery, searchTerms, nvdScore, rankOfCve, SIGNAL_COLUMNS };

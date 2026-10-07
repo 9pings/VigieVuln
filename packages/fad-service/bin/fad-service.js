@@ -72,7 +72,7 @@ async function openAll(target) {
 		await driver.run("INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT DO NOTHING", [name, crypto.randomBytes(16).toString("hex")]);
 		return (await driver.get("SELECT value FROM settings WHERE name = ?", [name])).value;
 	};
-	const assets = await createAssetStore(driver);
+	const assets = await createAssetStore(driver, { log: m => console.error(`fad-service: ${m}`) });
 	return { driver, assets, store: await createSqlStore({ driver }), tokens: await createTokenStore(driver),
 		logSalt: await secret("log_salt"), demandSalt: await secret("demand_salt") };
 }
@@ -116,6 +116,7 @@ async function serveProcess(cfg, { logger, pushMetrics = null }) {
 	});
 	server.listen(cfg.listen.port, cfg.listen.host, () => {
 		logger.info("listening", { url: `http://${cfg.listen.host}:${server.address().port}`, pid: process.pid, version: VERSION, db: driver.dialect });
+		server.warm().catch(e => logger.warn("warm-up failed", { error: String(e.message || e) }));
 	});
 	if (pushMetrics) {
 		const t = setInterval(() => pushMetrics(counters.drain(server.fadStats)), 5000);

@@ -163,7 +163,18 @@ nothing is written to the token table, so a seed killed midway leaves no live ad
 Package pages (`/pkg/<npm|pypi|maven|gem|composer|nuget|golang>/<name>`) list the advisories
 naming the package and, per version, whether it is affected — **only where the ordering is
 exact** (Maven ComparableVersion, SemVer 2.0 for npm and Go, or the advisory's explicit version
-list); elsewhere the range is shown and the verdict is "?".
+list); elsewhere the range is shown and the verdict is "?". Each version links to its own page
+(`/pkg/<eco>/<name>?version=<v>`, only for a version the registry listed): the advisories that
+affect it with their CVEs, CVSS, KEV and EPSS, the "fixed" versions each advisory gives, and
+the **closest newer version no advisory affects**. Withdrawn advisories (OSV `withdrawn`) are
+listed apart and never give a verdict.
+
+**CVE lists** — on the home page (10 each) and at `/cves?list=critical|exploited|kev` (100):
+the latest CVEs whose headline CVSS — the CNA's or NVD's (newest CVSS version, NVD Primary
+first) — is 9.0 or more; the highest EPSS probabilities; the latest CISA KEV additions. They
+read the `cve_rank` table, kept in step by every CVE / NVD write (jobs and dump restores) and
+filled once from the existing data when an older database is opened (402 586 CVEs: 15 s).
+Computed at startup, then memoised 10 minutes.
 
 ## Dumps (seed another instance, a relay, an air-gapped site)
 

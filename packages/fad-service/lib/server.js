@@ -34,13 +34,21 @@ const { clientAnalytics } = require("./analytics");
 const { validateResource, validateQuery, ValidationError, Q } = fad("resource-cache/validate");
 const { answerLocally } = require("./local-answers");
 
+/** The query a page's own links (language switch, canonical) must keep — already validated. */
+function keptQuery(url, q) {
+	const kept = [["q", q], ["list", url.searchParams.get("list")], ["version", url.searchParams.get("version")]].filter(([, v]) => v);
+	return kept.length ? "?" + kept.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&") : "";
+}
+
 /** The query parameters each route accepts — anything else is a 400 (fad lib/resource-cache/validate.js). */
 function querySpec(p) {
 	if (p === "/search") return { q: Q.text(200), type: Q.oneOf(["cve", "advisory", "package"]), lang: Q.lang };
 	if (p === "/api/search") return { q: Q.text(200), type: Q.oneOf(["cve", "advisory", "package"]), limit: Q.int(1, 100), lang: Q.lang };
 	if (p === "/admin/analytics") return { days: Q.int(1, 366) };
 	if (p.startsWith("/static/")) return { v: Q.hex(10) };
-	if (["/", "/sources", "/legal", "/dumps"].includes(p) || /^\/(cve|advisory|pkg)\//.test(p)) return { lang: Q.lang };
+	if (p === "/cves") return { list: Q.oneOf(["critical", "exploited", "kev"]), lang: Q.lang };
+	if (p.startsWith("/pkg/")) return { version: Q.version, lang: Q.lang };
+	if (["/", "/sources", "/legal", "/dumps"].includes(p) || /^\/(cve|advisory)\//.test(p)) return { lang: Q.lang };
 	return {};
 }
 
@@ -152,7 +160,7 @@ function addressBucket(ip) {
 function routeFamily(pathname) {
 	if (ROUTES.has(pathname)) return pathname;
 	if (pathname === "/") return "/";
-	return /^\/(cve|advisory\/certfr|advisory\/osv|pkg|api\/search|api\/cve|search|sources|legal|static|dumps)\b/.exec(pathname)?.[0] || "/*";
+	return /^\/(cves|cve|advisory\/certfr|advisory\/osv|pkg|api\/search|api\/cve|search|sources|legal|static|dumps)\b/.exec(pathname)?.[0] || "/*";
 }
 
 const cspString = parts => Object.entries(parts).map(([k, v]) => `${k} ${[...new Set(v)].join(" ")}`).join("; ");
@@ -209,6 +217,18 @@ function createServiceServer(opts = {}) {
 	// Home-page / readiness counters: a GROUP BY over the whole table, memoised for a minute
 	// in the asset store (shared with the metrics scrape).
 	const counts = () => assets.counts({ maxAgeMs: 60000 });
+	// The CVE lists (home page, /cves): a few indexed queries, memoised and single-flight —
+	// they change with the hourly imports, not with each visit.
+	const LIST_TTL_MS = 10 * 60 * 1000;
+	const listMemo = new Map();
+	const cveList = (kind, limit) => {
+		const k = `${kind}:${limit}`, m = listMemo.get(k);
+		if (m && (m.pending || Date.now() - m.at < LIST_TTL_MS)) return m.pending || Promise.resolve(m.value);
+		const pending = assets.listCves(kind, limit).then(value => { listMemo.set(k, { at: Date.now(), value }); return value; },
+			e => { listMemo.delete(k); throw e; });
+		listMemo.set(k, { ...m, pending });
+		return pending;
+	};
 
 	async function authenticate(req) {
 		const auth = String(req.headers.authorization || "");
@@ -303,7 +323,7 @@ function createServiceServer(opts = {}) {
 		if (p.startsWith("/static/")) return routeStatic(req, res, p, url);
 		if (p.startsWith("/dumps")) return routeDumps(req, res, url, ctx.principal);
 		if (!assets) return false;
-		const isPage = ["/", "/search", "/sources", "/legal"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p)
+		const isPage = ["/", "/search", "/sources", "/legal", "/cves"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p)
 			|| /^\/pkg\/(npm|pypi|maven|gem|composer|nuget|golang)\/.+$/.test(p);
 		const isApi = p === "/api/search" || /^\/api\/cve\/[^/]+$/.test(p);
 		if (!isPage && !isApi) return false;
@@ -313,7 +333,7 @@ function createServiceServer(opts = {}) {
 		const q = String(url.searchParams.get("q") || "").slice(0, 200).trim();
 		const type = ["cve", "advisory", "package"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : null;
 		const page = (code, title, body) => sendPublic(req, res, code, "text/html; charset=utf-8",
-			web.layout({ t, locale, title, body, q, path: p + (q ? `?q=${encodeURIComponent(q)}` : ""), site }));
+			web.layout({ t, locale, title, body, q, path: p + keptQuery(url, q), site }));
 
 		if (p === "/api/search") {
 			ctx.search = true;
@@ -328,7 +348,16 @@ function createServiceServer(opts = {}) {
 				nvd: await assets.nvd(id), advisories: await assets.advisoriesForCve(id) }));
 			return true;
 		}
-		if (p === "/") { page(200, t("Search"), web.home({ t, counts: await counts(), site })); return true; }
+		if (p === "/") {
+			const [critical, exploited, kev] = await Promise.all(["critical", "exploited", "kev"].map(k => cveList(k, 10)));
+			page(200, t("Search"), web.home({ t, locale, counts: await counts(), lists: { critical, exploited, kev }, site }));
+			return true;
+		}
+		if (p === "/cves") {
+			const kind = url.searchParams.get("list") || "critical";
+			page(200, t(web.CVE_LISTS[kind].title), web.cveListPage({ t, locale, kind, rows: await cveList(kind, 100) }));
+			return true;
+		}
 		if (p === "/sources") { page(200, t("Data sources"), web.sourcesPage({ t, jobs: await jobStatus() })); return true; }
 		if (p === "/legal") { page(200, t("Legal notice"), web.legalPage({ t, site })); return true; }
 		if (p === "/search") {
@@ -365,9 +394,21 @@ function createServiceServer(opts = {}) {
 			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
 			ctx.asset = key;
 			const { versionAffected } = require("./registry/versions");
-			const advisories = (await assets.advisoriesForPackage(key)).map(a => ({ ...a,
+			const all = (await assets.advisoriesForPackage(key)).map(a => ({ ...a,
 				entries: (a.data.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === key) }));
-			page(200, asset.data.name, web.packagePage({ t, locale, asset, advisories, versionAffected }));
+			// A withdrawn advisory (OSV `withdrawn`) is listed apart and never gives a verdict.
+			const advisories = all.filter(a => !a.data.withdrawn), withdrawn = all.filter(a => a.data.withdrawn);
+			const version = url.searchParams.get("version");
+			if (version != null) {
+				// Only a version the registry listed: nothing a visitor types is echoed as a "version".
+				if (!(asset.data.versions || []).some(v => v.version === version)) { page(404, t("Not found"), web.notFound({ t })); return true; }
+				const links = await assets.cvesOfAdvisories(advisories.map(a => a.key));
+				const info = new Map((await assets.cveRows([...new Set([...links.values()].flat())])).map(r => [r.cve, r]));
+				for (const a of advisories) a.cves = (links.get(a.key) || []).map(c => info.get(c) || { cve: c });
+				page(200, `${asset.data.name} ${version}`, web.versionPage({ t, locale, asset, version, advisories, withdrawn, versionAffected }));
+				return true;
+			}
+			page(200, asset.data.name, web.packagePage({ t, locale, asset, advisories, withdrawn, versionAffected }));
 			return true;
 		}
 		if (p.startsWith("/advisory/osv/")) {
@@ -532,6 +573,8 @@ function createServiceServer(opts = {}) {
 	});
 	server.fadStats = stats;
 	server.fadStore = store;
+	/** Compute what the home page needs before the first visitor asks (memoised afterwards). */
+	server.warm = () => assets ? Promise.all([counts(), ...["critical", "exploited", "kev"].map(k => cveList(k, 10))]) : Promise.resolve();
 	server.fadEngine = engine;
 	return server;
 }

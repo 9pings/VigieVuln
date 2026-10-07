@@ -52,7 +52,7 @@ ${site.analyticsHead || ""}
 <a class="skip-link" href="#content">${t("Skip to content")}</a>
 <header class="site-header">
 <a class="brand" href="/?lang=${locale}">${brand.hasLogo ? `<img src="/static/logo${site.assetVersions?.logo ? "?v=" + site.assetVersions.logo : ""}" alt="" height="28"> ` : ""}${esc(name)}</a>
-<nav aria-label="${esc(t("Main navigation"))}"><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a><a href="${esc(path + sep + "lang=" + other)}" hreflang="${other}" lang="${other}" aria-label="${esc(t("Language"))}: ${esc(t(other === "fr" ? "French" : "English"))}">${other.toUpperCase()}</a></nav>
+<nav aria-label="${esc(t("Main navigation"))}"><a href="/cves?list=critical&amp;lang=${locale}">${t("Latest critical")}</a><a href="/cves?list=exploited&amp;lang=${locale}">${t("Most exploited")}</a><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a><a href="${esc(path + sep + "lang=" + other)}" hreflang="${other}" lang="${other}" aria-label="${esc(t("Language"))}: ${esc(t(other === "fr" ? "French" : "English"))}">${other.toUpperCase()}</a></nav>
 ${path !== "/" ? searchForm(t, locale, q) : ""}
 </header>
 <main id="content" tabindex="-1">
@@ -64,11 +64,47 @@ ${body}
 </html>`;
 }
 
-function home({ t, counts }) {
+/** The CVE lists of the home page and of /cves: what each one is, said on the page. */
+const CVE_LISTS = {
+	critical: { title: "Latest critical vulnerabilities",
+		intro: "Published CVEs whose headline CVSS score — from the CNA or from NVD — is 9.0 or more, newest first." },
+	exploited: { title: "Most likely to be exploited",
+		intro: "Highest EPSS probability (FIRST.org) of exploitation activity in the next 30 days, across every published CVE." },
+	kev: { title: "Recently added to CISA KEV",
+		intro: "Latest additions to the CISA Known Exploited Vulnerabilities catalogue: exploitation observed in the wild." },
+};
+const severityOf = score => score == null ? null : score >= 9 ? "CRITICAL" : score >= 7 ? "HIGH" : score >= 4 ? "MEDIUM" : score > 0 ? "LOW" : "NONE";
+const pct = x => x == null ? "" : `${(x * 100).toFixed(x >= 0.1 ? 0 : 1)} %`;
+const cveLink = (cve, locale) => `<a href="/cve/${encodeURIComponent(cve)}?lang=${locale}">${esc(cve)}</a>`;
+const kevMark = (t, kev) => kev ? `<span class="flag" title="${esc(t("Known exploited (CISA KEV) · added {date}", { date: kev.dateAdded || "?" }))}">KEV</span>` : "";
+
+/** Compact form for the home page: id, score, KEV, title. */
+function cveMiniList(t, locale, rows) {
+	if (!rows.length) return `<p class="muted">${t("Nothing yet — the data is being imported.")}</p>`;
+	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${cveLink(r.cve, locale)} ${badge(severityOf(r.score), r.score)} ${kevMark(t, r.kev)}</span>${r.title ? `<span class="muted">${esc(r.title.length > 110 ? r.title.slice(0, 107) + "…" : r.title)}</span>` : ""}</li>`).join("")}</ol>`;
+}
+
+function cveTable(t, locale, rows) {
+	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">CVE</th><th scope="col">${t("Title")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Published")}</th><th scope="col">EPSS</th><th scope="col">${t("Exploitation")}</th></tr></thead><tbody>${
+		rows.map(r => `<tr><td>${cveLink(r.cve, locale)}</td><td>${esc(r.title || "")}</td><td>${badge(severityOf(r.score), r.score)}</td><td>${r.published ? date(r.published) : ""}</td><td>${pct(r.epss)}</td><td>${kevMark(t, r.kev)}${r.kev?.dateAdded ? ` <span class="muted">${date(r.kev.dateAdded)}</span>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
+function cveListPage({ t, locale, kind, rows }) {
+	const L = CVE_LISTS[kind];
+	const tabs = Object.keys(CVE_LISTS).map(k => k === kind ? `<b>${t(CVE_LISTS[k].title)}</b>` : `<a href="/cves?list=${k}&amp;lang=${locale}">${t(CVE_LISTS[k].title)}</a>`).join(" · ");
+	return `<h1>${t(L.title)}</h1>
+<p class="lead">${t(L.intro)}</p>
+<p class="list-tabs">${tabs}</p>
+${rows.length ? cveTable(t, locale, rows) : `<div class="empty-state"><p>${t("Nothing yet — the data is being imported.")}</p></div>`}`;
+}
+
+function home({ t, locale = "en", counts, lists = null }) {
+	const block = kind => lists?.[kind] ? `<section><h2>${t(CVE_LISTS[kind].title)}</h2>${cveMiniList(t, locale, lists[kind])}<p><a href="/cves?list=${kind}&amp;lang=${locale}">${t("See the full list")}</a></p></section>` : "";
 	return `<div class="stats">
 <div><b>${esc((counts.cve || 0).toLocaleString("fr-FR"))}</b>${t("Published vulnerabilities")}</div>
 <div><b>${esc((counts.advisory || 0).toLocaleString("fr-FR"))}</b>${t("Advisories")}</div>
 </div>
+${lists ? `<div class="cve-lists">${block("critical")}${block("exploited")}${block("kev")}</div>` : ""}
 <section class="home-sources"><h2>${t("Public data, traceable sources")}</h2>
 <p>${t("CVE records and NVD scores, OSV/GHSA package advisories and CERT-FR publications, brought together in one place.")}</p>
 <p>${t("CISA KEV, ENISA and EPSS add exploitation context. Each record links to its sources and licences.")}</p></section>`;
@@ -196,7 +232,14 @@ const verdict = (t, v) => v === true ? `<span class="flag">${t("Affected")}</spa
  * advisories: [{ key, title, data, entries }] — entries = the record's `affected` items for
  * this package; versionAffected(type, version, entries) → true | false | null.
  */
-function packagePage({ t, locale, asset, advisories = [], versionAffected }) {
+/** Withdrawn advisories: kept visible (they are part of the record), never counted. */
+function withdrawnList(t, locale, withdrawn) {
+	if (!withdrawn.length) return "";
+	return `<h2>${t("Withdrawn advisories")} (${withdrawn.length})</h2><p class="muted">${t("Withdrawn by their publisher: they affect no version and are not counted above.")}</p><ul class="plain">${
+		withdrawn.map(a => `<li><a href="${esc(assetHref("advisory", a.key, locale))}">${esc(assetName(a.key))}</a> <span class="muted">${esc(a.title || "")}${a.data?.withdrawn ? ` · ${t("withdrawn")} ${date(a.data.withdrawn)}` : ""}</span></li>`).join("")}</ul>`;
+}
+
+function packagePage({ t, locale, asset, advisories = [], withdrawn = [], versionAffected }) {
 	const d = asset.data;
 	const type = d.type;
 	const shown = (d.versions || []).slice(0, 60);
@@ -225,10 +268,56 @@ ${shown.length ? `<h2>${t("Versions")}</h2><div class="table-wrap" tabindex="0" 
 		const vs = advisories.map(a => versionAffected(type, v.version, a.entries));
 		const hit = vs.filter(x => x === true).length;
 		const cell = hit ? `<span class="flag">${hit}</span>` : vs.some(x => x === null) ? `<span class="muted">?</span>` : "0";
-		return `<tr><td>${esc(v.version)}${v.deprecated ? ` <span class="badge">${t("deprecated")}</span>` : ""}${v.yanked ? ` <span class="badge">${t("yanked")}</span>` : ""}</td><td>${v.date ? date(v.date) : ""}</td><td>${cell}</td></tr>`;
+		return `<tr><td><a href="${esc(versionHref(asset.key, v.version, locale))}">${esc(v.version)}</a>${v.deprecated ? ` <span class="badge">${t("deprecated")}</span>` : ""}${v.yanked ? ` <span class="badge">${t("yanked")}</span>` : ""}</td><td>${v.date ? date(v.date) : ""}</td><td>${cell}</td></tr>`;
 	}).join("")}${(d.versions || []).length > shown.length ? `<tr><td colspan="3" class="muted">${t("+{n} more", { n: d.versions.length - shown.length })}</td></tr>` : ""}</tbody></table></div>
 <p class="muted">${t("“?” : the advisory gives no range that can be evaluated exactly for this ecosystem.")}</p>` : ""}
+${withdrawnList(t, locale, withdrawn)}
 ${d.dependencies?.length ? `<h2>${t("Dependencies of the latest version")}</h2><ul class="plain">${d.dependencies.slice(0, 100).map(x => `<li><code>${esc(x.name)}</code> ${esc(x.range || "")} <span class="muted">${esc(x.scope || "")}</span></li>`).join("")}</ul>` : ""}
+<h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`;
+}
+
+const versionHref = (key, version, locale) => `${pkgPath(key)}?version=${encodeURIComponent(version)}&lang=${locale}`;
+/** Every "fixed" event an advisory gives for this package (evidence: the advisory's own words). */
+const fixedIn = entries => [...new Set(entries.flatMap(e => (e.ranges || []).flatMap(r => (r.events || []).filter(x => x.fixed != null).map(x => String(x.fixed)))))];
+
+/**
+ * One version of a package: the advisories that affect it (exact verdicts only), those that
+ * cannot be evaluated exactly, and the closest newer version no advisory affects.
+ * advisories: [{ key, title, entries, cves: [{ cve, score, kev, epss }] }]
+ */
+function versionPage({ t, locale, asset, version, advisories = [], withdrawn = [], versionAffected }) {
+	const d = asset.data, type = d.type;
+	const list = d.versions || [];
+	const at = list.findIndex(v => v.version === version);
+	const info = list[at] || { version };
+	const verdicts = advisories.map(a => versionAffected(type, version, a.entries));
+	const hit = advisories.filter((a, i) => verdicts[i] === true);
+	const unknown = advisories.filter((a, i) => verdicts[i] === null);
+	// versions are newest first: the closest newer clean one is the nearest index below.
+	const clean = v => advisories.every(a => versionAffected(type, v, a.entries) === false);
+	let upgrade = null;
+	if (hit.length) for (let i = at - 1; i >= 0; i--) if (clean(list[i].version)) { upgrade = list[i].version; break; }
+	const worst = a => Math.max(-1, ...a.cves.map(c => c.score ?? -1));
+	hit.sort((x, y) => worst(y) - worst(x));
+	const kv = [[t("Package"), `<a href="${esc(pkgPath(asset.key))}?lang=${locale}">${esc(d.name)}</a> <span class="muted">${esc(ECOSYSTEM_LABEL[type] || type)}</span>`]];
+	if (info.date) kv.push([t("Published"), date(info.date)]);
+	if (info.deprecated) kv.push([t("Status"), `<span class="badge">${t("deprecated")}</span>`]);
+	if (info.yanked) kv.push([t("Status"), `<span class="badge">${t("yanked")}</span>`]);
+	kv.push([t("Vulnerability status"), hit.length ? `<span class="flag">${t("affected by {n} advisory(ies)", { n: hit.length })}</span>`
+		: unknown.length ? `<span class="muted">${t("{n} advisory(ies) without a verdict", { n: unknown.length })}</span>` : t("No known advisory affects it")]);
+	if (hit.length) kv.push([t("Closest safe upgrade"), upgrade ? `<a href="${esc(versionHref(asset.key, upgrade, locale))}">${esc(upgrade)}</a>`
+		: `<span class="muted">${t("No newer version is free of known advisories")}</span>`]);
+	if (d.latest && d.latest !== version) kv.push([t("Latest version"), `<a href="${esc(versionHref(asset.key, d.latest, locale))}">${esc(d.latest)}</a>`]);
+	const rows = items => `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Advisory")}</th><th scope="col">CVE</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Fixed in")}</th></tr></thead><tbody>${
+		items.map(a => `<tr><td><a href="${esc(assetHref("advisory", a.key, locale))}">${esc(assetName(a.key))}</a><br><span class="muted">${esc(a.title || "")}</span></td><td>${
+			a.cves.map(c => `${cveLink(c.cve, locale)}${c.kev ? " " + kevMark(t, c.kev) : ""}${c.epss != null ? ` <span class="muted">EPSS ${pct(c.epss)}</span>` : ""}`).join("<br>") || `<span class="muted">—</span>`}</td><td>${
+			badge(severityOf(worst(a) >= 0 ? worst(a) : null), worst(a) >= 0 ? worst(a) : null) || `<span class="muted">?</span>`}</td><td>${esc(fixedIn(a.entries).join(", ")) || `<span class="muted">${t("no fix published")}</span>`}</td></tr>`).join("")}</tbody></table></div>`;
+	return `<h1>${esc(d.name)} <span class="muted">${esc(version)}</span></h1>
+<section class="summary"><h2>${t("At a glance")}</h2><dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></section>
+<h2>${t("Advisories affecting this version")} (${hit.length})</h2>
+${hit.length ? rows(hit) : `<p>${t("No advisory in the mirrored databases affects this version.")}</p>`}
+${unknown.length ? `<h2>${t("Advisories without an exact verdict")} (${unknown.length})</h2><p class="muted">${t("These advisories name the package, but give no range that can be evaluated exactly for this ecosystem: check them by hand.")}</p>${rows(unknown)}` : ""}
+${withdrawnList(t, locale, withdrawn)}
 <h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`;
 }
 
@@ -286,4 +375,4 @@ function notFound({ t }) {
 	return `<h1>${t("Not found")}</h1><p>${t("This item is not in the service.")}</p>`;
 }
 
-module.exports = { layout, home, results, cvePage, advisoryPage, osvAdvisoryPage, packagePage, pkgPath, dumpsPage, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };
+module.exports = { layout, home, cveListPage, versionPage, versionHref, CVE_LISTS, results, cvePage, advisoryPage, osvAdvisoryPage, packagePage, pkgPath, dumpsPage, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };

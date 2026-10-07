@@ -176,8 +176,8 @@ test("seed: an admin seeding a package publishes it at once; package page with a
 		assert.match(page, /String left pad/);
 		assert.match(page, /GHSA-aaaa-bbbb-cccc/);
 		assert.match(page, /introduced 0, fixed 1\.2\.0/);
-		assert.match(page, /<td>1\.1\.0 <span class="badge">deprecated<\/span><\/td><td><time[^>]*>2015-01-01<\/time><\/td><td><span class="flag">1<\/span>/);
-		assert.match(page, /<td>1\.3\.0<\/td><td><time[^>]*>2018-04-01<\/time><\/td><td>0<\/td>/);
+		assert.match(page, /<td><a href="\/pkg\/npm\/left-pad\?version=1\.1\.0&amp;lang=en">1\.1\.0<\/a> <span class="badge">deprecated<\/span><\/td><td><time[^>]*>2015-01-01<\/time><\/td><td><span class="flag">1<\/span>/);
+		assert.match(page, /<td><a href="\/pkg\/npm\/left-pad\?version=1\.3\.0&amp;lang=en">1\.3\.0<\/a><\/td><td><time[^>]*>2018-04-01<\/time><\/td><td>0<\/td>/);
 		assert.match(page, /No known advisory affects it/, "the latest version is fixed");
 		assert.match(page, /Registry metadata only — no package file is stored/);
 		const cve = await (await s.get("/search?q=pkg%3Anpm%2Fleft-pad")).url;
