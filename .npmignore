@@ -25,3 +25,6 @@ rr2.json
 *.tgz
 .DS_Store
 Thumbs.db
+
+# The service package ships on its own (packages/fad-service)
+packages/

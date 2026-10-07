@@ -77,7 +77,7 @@
     "fad": "fad-checker.js"
   },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node --test test/*.test.js packages/fad-service/test/*.test.js",
     "build:linux": "bun build fad-checker.js --compile --target=bun-linux-x64 --outfile=dist/fad-checker",
     "build:win": "bun build fad-checker.js --compile --target=bun-windows-x64 --outfile=dist/fad-checker.exe",
     "build:macos": "bun build fad-checker.js --compile --target=bun-darwin-x64 --outfile=dist/fad-checker-macos",
