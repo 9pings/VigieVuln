@@ -1,0 +1,158 @@
+/**
+ * Published assets (docs/SPEC-fad-service.md §4, §6): what the search and the pages read.
+ *
+ *   assets      one row per CVE / advisory / package: title, summary, JSON data, sources,
+ *               `published` (0 = cached but not public — privacy rule §6)
+ *   assets_fts  FTS5 index over key + aliases + title + summary, rowid = assets.id
+ *   cve_signals per-CVE signals written by their own jobs (KEV, EPSS, EUVD, CERT-FR) so a
+ *               job never rewrites the CVE record of another
+ *   job_runs    one row per job: lease (so one worker runs it at a time), last result
+ *
+ * The read path never calls an upstream: everything here was written by a job.
+ *
+ * @author: N.BRAUN
+ * @email: pp9ping@gmail.com
+ */
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS assets (
+	id INTEGER PRIMARY KEY,
+	type TEXT NOT NULL,
+	key TEXT NOT NULL,
+	title TEXT,
+	summary TEXT,
+	data TEXT NOT NULL,
+	sources TEXT NOT NULL,
+	published INTEGER NOT NULL DEFAULT 1,
+	updated_at INTEGER NOT NULL,
+	UNIQUE (type, key)
+);
+CREATE VIRTUAL TABLE IF NOT EXISTS assets_fts USING fts5(key, aliases, title, summary, tokenize = 'unicode61 remove_diacritics 2');
+CREATE TABLE IF NOT EXISTS cve_signals (
+	cve TEXT PRIMARY KEY,
+	kev TEXT,
+	epss_score REAL,
+	epss_percentile REAL,
+	epss_date TEXT,
+	euvd_id TEXT,
+	euvd_exploited_since TEXT,
+	certfr TEXT,
+	updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS cve_signals_euvd ON cve_signals (euvd_id);
+CREATE TABLE IF NOT EXISTS job_runs (
+	job TEXT PRIMARY KEY,
+	lease_until INTEGER NOT NULL DEFAULT 0,
+	owner TEXT,
+	last_started INTEGER,
+	last_finished INTEGER,
+	last_status TEXT,
+	last_detail TEXT,
+	state TEXT
+);
+`;
+
+const SIGNAL_COLUMNS = ["kev", "epss_score", "epss_percentile", "epss_date", "euvd_id", "euvd_exploited_since", "certfr"];
+const JSON_COLUMNS = new Set(["kev", "certfr"]);
+
+/** Turn free text into a safe FTS5 query: quoted tokens, prefix match on the last one. */
+function ftsQuery(text) {
+	const tokens = String(text || "").normalize("NFKC").match(/[\p{L}\p{N}][\p{L}\p{N}._-]*/gu) || [];
+	if (!tokens.length) return null;
+	return tokens.slice(0, 8).map((t, i, all) => `"${t.replace(/"/g, "")}"${i === all.length - 1 ? "*" : ""}`).join(" ");
+}
+
+function createAssetStore(db) {
+	db.exec(SCHEMA);
+	const q = {
+		find: db.prepare("SELECT id FROM assets WHERE type = ? AND key = ?"),
+		insert: db.prepare("INSERT INTO assets (type, key, title, summary, data, sources, published, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
+		update: db.prepare("UPDATE assets SET title = ?, summary = ?, data = ?, sources = ?, published = ?, updated_at = ? WHERE id = ?"),
+		ftsDel: db.prepare("DELETE FROM assets_fts WHERE rowid = ?"),
+		ftsAdd: db.prepare("INSERT INTO assets_fts (rowid, key, aliases, title, summary) VALUES (?, ?, ?, ?, ?)"),
+		get: db.prepare("SELECT type, key, title, summary, data, sources, published, updated_at FROM assets WHERE type = ? AND key = ?"),
+		signals: db.prepare("SELECT * FROM cve_signals WHERE cve = ?"),
+		byAlias: db.prepare("SELECT cve FROM cve_signals WHERE euvd_id = ? LIMIT 1"),
+		search: db.prepare(`SELECT a.type, a.key, a.title, a.summary, a.updated_at
+			FROM assets_fts f JOIN assets a ON a.id = f.rowid
+			WHERE assets_fts MATCH ? AND a.published = 1 AND (? IS NULL OR a.type = ?)
+			ORDER BY rank LIMIT ?`),
+		count: db.prepare("SELECT type, COUNT(*) AS n FROM assets WHERE published = 1 GROUP BY type"),
+		byPrefix: db.prepare("SELECT key, data FROM assets WHERE type = ? AND key >= ? AND key < ?"),
+		epss: db.prepare(`INSERT INTO cve_signals (cve, epss_score, epss_percentile, epss_date, updated_at) VALUES (?, ?, ?, ?, ?)
+			ON CONFLICT(cve) DO UPDATE SET epss_score = excluded.epss_score, epss_percentile = excluded.epss_percentile,
+				epss_date = excluded.epss_date, updated_at = excluded.updated_at`),
+		euvd: db.prepare(`INSERT INTO cve_signals (cve, euvd_id, euvd_exploited_since, updated_at) VALUES (?, ?, ?, ?)
+			ON CONFLICT(cve) DO UPDATE SET euvd_id = excluded.euvd_id, euvd_exploited_since = excluded.euvd_exploited_since,
+				updated_at = excluded.updated_at`),
+	};
+	const signalUpsert = Object.fromEntries(SIGNAL_COLUMNS.map(col => [col, db.prepare(
+		`INSERT INTO cve_signals (cve, ${col}, updated_at) VALUES (?, ?, ?)
+		 ON CONFLICT(cve) DO UPDATE SET ${col} = excluded.${col}, updated_at = excluded.updated_at`)]));
+
+	const api = {
+		db,
+		/** Insert or replace one asset and its search entry. */
+		upsert({ type, key, title = null, summary = null, aliases = [], data = {}, sources = [], published = true }) {
+			const now = Date.now();
+			const row = q.find.get(type, key);
+			let id;
+			if (row) { id = row.id; q.update.run(title, summary, JSON.stringify(data), JSON.stringify(sources), published ? 1 : 0, now, id); q.ftsDel.run(id); }
+			else id = Number(q.insert.run(type, key, title, summary, JSON.stringify(data), JSON.stringify(sources), published ? 1 : 0, now).lastInsertRowid);
+			q.ftsAdd.run(id, key, aliases.join(" "), title || "", summary || "");
+			return id;
+		},
+		get(type, key, { includeUnpublished = false } = {}) {
+			const row = q.get.get(type, key);
+			if (!row || (!row.published && !includeUnpublished)) return null;
+			return { type: row.type, key: row.key, title: row.title, summary: row.summary, data: JSON.parse(row.data),
+				sources: JSON.parse(row.sources), published: !!row.published, updatedAt: row.updated_at };
+		},
+		/** Set one signal column for many CVEs in one transaction. rows: [[cve, value], …] */
+		setSignal(column, rows) {
+			const stmt = signalUpsert[column];
+			if (!stmt) throw new Error(`unknown signal ${column}`);
+			const now = Date.now();
+			api.transaction(() => {
+				for (const [cve, value] of rows) stmt.run(cve, JSON_COLUMNS.has(column) && value != null ? JSON.stringify(value) : value, now);
+			});
+		},
+		signals(cve) {
+			const row = q.signals.get(cve);
+			if (!row) return null;
+			const out = { ...row };
+			for (const c of JSON_COLUMNS) out[c] = row[c] ? JSON.parse(row[c]) : null;
+			return out;
+		},
+		/** rows: [[cve, score, percentile]] for one score date. */
+		setEpss(rows, date) {
+			const now = Date.now();
+			api.transaction(() => { for (const [cve, score, pct] of rows) q.epss.run(cve, score, pct, date, now); });
+		},
+		/** rows: [[cve, euvdId|null, exploitedSince|null]] */
+		setEuvd(rows) {
+			const now = Date.now();
+			api.transaction(() => { for (const [cve, id, since] of rows) q.euvd.run(cve, id, since, now); });
+		},
+		/** Every asset of a type whose key starts with `prefix` → [{ key, data }]. */
+		listByPrefix(type, prefix) {
+			return q.byPrefix.all(type, prefix, prefix + "\uffff").map(r => ({ key: r.key, data: JSON.parse(r.data) }));
+		},
+		cveForEuvd(id) { return q.byAlias.get(id)?.cve || null; },
+		search(text, { type = null, limit = 20 } = {}) {
+			const match = ftsQuery(text);
+			if (!match) return [];
+			try { return q.search.all(match, type, type, Math.min(Math.max(1, limit | 0), 100)); }
+			catch { return []; }
+		},
+		counts() { return Object.fromEntries(q.count.all().map(r => [r.type, Number(r.n)])); },
+		transaction(fn) {
+			db.exec("BEGIN IMMEDIATE");
+			try { const r = fn(); db.exec("COMMIT"); return r; }
+			catch (e) { db.exec("ROLLBACK"); throw e; }
+		},
+	};
+	return api;
+}
+
+module.exports = { createAssetStore, ftsQuery, SIGNAL_COLUMNS };

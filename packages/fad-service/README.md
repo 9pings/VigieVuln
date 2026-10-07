@@ -2,8 +2,10 @@
 
 The public data service for [fad-checker](../../README.md): the same pull-through
 resource cache as `fad-checker serve-cache`, behind per-client tokens, hosted in Europe.
-Design: `docs/SPEC-fad-service.md`. Status: milestone 2 — `/v1/resource`, `/health`,
-tokens, admin routes, `--workers`. Search, pages, ingestion, dumps and PostgreSQL follow.
+Design: `docs/SPEC-fad-service.md`. Status: milestone 3 — `/v1/resource`, tokens, admin
+routes, `--workers`, the vulnerability mirrors (cvelistV5, CISA KEV, EPSS, ENISA EUVD,
+CERT-FR; GCVE ids computed), full-text search and the public pages. NVD (fkie mirror),
+OSV, registries, dumps and PostgreSQL follow.
 
 Requires Node ≥ 22.13 (built-in `node:sqlite`). No dependency.
 
@@ -16,6 +18,10 @@ node bin/fad-service.js token add --role admin --db /srv/fad/service.db
 FAD_SERVICE_NVD_KEY=… node bin/fad-service.js serve --db /srv/fad/service.db \
   --host 0.0.0.0 --port 8322 --region fr --workers 4 --log
 
+# ingestion: runs every job that is due, then sleeps (jobs are leased — several workers are safe)
+node bin/fad-service.js worker --db /srv/fad/service.db
+node bin/fad-service.js worker --db /srv/fad/service.db --once --jobs kev,epss   # one pass
+
 # point fad at it
 fad-checker -s ./project --proxy-cache https://fad.example.fr --proxy-cache-token fad_…
 ```
@@ -26,6 +32,15 @@ fad-checker -s ./project --proxy-cache https://fad.example.fr --proxy-cache-toke
 | `POST /v1/resource` | client token | the fad `--proxy-cache` protocol |
 | `GET /admin/stats` | admin token | counters, store size |
 | `POST /admin/purge` | admin token | drop one resource `{ provider, type, params }` |
+| `GET /` · `/search?q=` | public | search (an exact CVE / GCVE / EUVD / CERT-FR id goes straight to its page) |
+| `GET /cve/:id` · `/advisory/certfr/:ref` | public | detail pages, FR/EN, with their sources and licences |
+| `GET /sources` · `/legal` | public | freshness of every mirror · attributions |
+| `GET /api/search?q=` · `/api/cve/:id` | public | the same data as JSON |
+
+Public pages are server-rendered with no script at all (CSP `default-src 'none'`), carry
+an ETag and `Cache-Control`, are rate-limited per IP, and never call an upstream: they
+read what the worker wrote. The cvelistV5 baseline (a 620 MB nested zip) is decompressed
+while it downloads; nothing is written to disk.
 
 Scaling: `--workers N` on one host; across hosts a load balancer in front (Caddy, nginx,
 HAProxy, the provider's LB) with `/health` as health check, on the PostgreSQL store

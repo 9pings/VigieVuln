@@ -5,7 +5,16 @@
   "description": "Public data service for fad-checker: the pull-through resource cache, search and web UI, hosted in Europe.",
   "license": "Apache-2.0",
   "repository": "https://github.com/9pings/fad-checker",
-  "bin": { "fad-service": "bin/fad-service.js" },
-  "scripts": { "test": "node --test test/*.test.js" },
-  "engines": { "node": ">=22.13" }
+  "bin": {
+    "fad-service": "bin/fad-service.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
+  }
 }

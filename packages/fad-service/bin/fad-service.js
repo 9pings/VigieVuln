@@ -6,6 +6,7 @@
  *                      [--workers N] [--rate <req/min per token>] [--log]
  *   fad-service token add --role client|admin [--label <text>] [--db <file>]
  *   fad-service token list|revoke <id> [--db <file>]
+ *   fad-service worker [--db <file>] [--once] [--jobs cvelist,kev,epss,euvd,certfr] [--every <min>]
  *
  * Upstream API keys come from the environment, never from argv (visible in `ps`):
  *   FAD_SERVICE_NVD_KEY, FAD_SERVICE_GITHUB_TOKEN, FAD_SERVICE_WORDFENCE_KEY.
@@ -41,7 +42,8 @@ const USAGE = `fad-service ${VERSION}
   fad-service serve [--db <file>] [--port 8322] [--host 127.0.0.1] [--region fr] [--workers N] [--rate 600] [--log]
   fad-service token add --role client|admin [--label <text>] [--db <file>]
   fad-service token list [--db <file>]
-  fad-service token revoke <id> [--db <file>]`;
+  fad-service token revoke <id> [--db <file>]
+  fad-service worker [--db <file>] [--once] [--jobs cvelist,kev,epss,euvd,certfr] [--every 10]`;
 
 function openAll(dbFile) {
 	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
@@ -52,14 +54,17 @@ function openAll(dbFile) {
 	// but it never leaves the database: the tag cannot be reversed to the token.
 	db.prepare("INSERT OR IGNORE INTO settings (name, value) VALUES ('log_salt', ?)").run(crypto.randomBytes(16).toString("hex"));
 	const logSalt = db.prepare("SELECT value FROM settings WHERE name = 'log_salt'").get().value;
-	return { db, store: createSqliteStore({ db }), tokens: createTokenStore(db), logSalt };
+	const { createAssetStore } = require("../lib/assets");
+	return { db, store: createSqliteStore({ db }), tokens: createTokenStore(db), assets: createAssetStore(db), logSalt };
 }
 
 function serveWorker(args) {
 	const { createServiceServer } = require("../lib/server");
-	const { store, tokens, logSalt } = openAll(args.db);
+	const { store, tokens, assets, logSalt } = openAll(args.db);
+	const { createJobRunner } = require("../lib/jobs");
+	const jobs = createJobRunner({ assets });
 	const server = createServiceServer({
-		store, tokens, logSalt, version: VERSION,
+		store, tokens, assets, jobStatus: jobs.status, logSalt, version: VERSION,
 		region: String(args.region || process.env.FAD_SERVICE_REGION || "unknown"),
 		ratePerMinute: args.rate !== undefined ? Number(args.rate) : 600,
 		log: args.log ? line => process.stdout.write(line + "\n") : null,
@@ -102,6 +107,24 @@ function serve(args) {
 	process.once("SIGINT", stop);
 }
 
+/**
+ * Ingestion: run the jobs that are due, then sleep. Several workers (or several hosts on
+ * one database) can run side by side — each job is leased, so it never runs twice at once.
+ */
+async function worker(args) {
+	const { createJobRunner, JOBS } = require("../lib/jobs");
+	const { assets } = openAll(path.resolve(String(args.db || process.env.FAD_SERVICE_DB || "fad-service.db")));
+	const names = args.jobs ? String(args.jobs).split(",").map(s => s.trim()).filter(Boolean) : Object.keys(JOBS);
+	for (const n of names) if (!JOBS[n]) throw new Error(`unknown job ${n} (known: ${Object.keys(JOBS).join(", ")})`);
+	const runner = createJobRunner({ assets, log: line => console.log(`${new Date().toISOString()} ${line}`) });
+	const everyMs = Math.max(1, Number(args.every || 10)) * 60 * 1000;
+	for (;;) {
+		await runner.runDue(names);
+		if (args.once) return;
+		await new Promise(ok => setTimeout(ok, everyMs));
+	}
+}
+
 function token(args) {
 	const { db, tokens } = openAll(path.resolve(String(args.db || process.env.FAD_SERVICE_DB || "fad-service.db")));
 	try {
@@ -125,6 +148,7 @@ function main(argv = process.argv.slice(2)) {
 	const cmd = args._[0];
 	if (cmd === "serve") return serve(args);
 	if (cmd === "token") return token(args);
+	if (cmd === "worker") return worker(args).catch(error => { console.error(`fad-service worker: ${error.message}`); process.exitCode = 1; });
 	console.error(USAGE);
 	process.exitCode = 2;
 }
