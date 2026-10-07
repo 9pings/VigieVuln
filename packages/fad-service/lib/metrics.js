@@ -12,6 +12,13 @@
  * @email: pp9ping@gmail.com
  */
 const http = require("node:http");
+const crypto = require("node:crypto");
+
+/** Constant-time comparison of two strings (hashed first, so lengths do not leak). */
+function sameSecret(a, b) {
+	const h = v => crypto.createHash("sha256").update(String(v ?? "")).digest();
+	return crypto.timingSafeEqual(h(a), h(b));
+}
 
 const ENGINE_KEYS = ["hits", "misses", "coalesced", "stale", "upstream", "errors"];
 
@@ -85,7 +92,7 @@ function render(agg, { jobs = [], assets = {}, startedAt = Date.now(), workers =
 function startMetricsServer({ host = "127.0.0.1", port = 9464, token = null, collect }) {
 	const server = http.createServer((req, res) => {
 		if (req.url !== "/metrics" || req.method !== "GET") { res.writeHead(404); return res.end(); }
-		if (token && req.headers.authorization !== `Bearer ${token}`) { res.writeHead(401, { "www-authenticate": "Bearer" }); return res.end(); }
+		if (token && !sameSecret(req.headers.authorization, `Bearer ${token}`)) { res.writeHead(401, { "www-authenticate": "Bearer" }); return res.end(); }
 		let body;
 		try { body = collect(); } catch (e) { res.writeHead(500); return res.end(String(e.message)); }
 		res.writeHead(200, { "content-type": "text/plain; version=0.0.4; charset=utf-8" });

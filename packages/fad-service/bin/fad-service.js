@@ -81,7 +81,7 @@ function serveProcess(cfg, { logger, pushMetrics = null }) {
 	const server = createServiceServer({
 		store, tokens, assets, jobStatus: jobs.status, logSalt, version: VERSION, region: String(cfg.region),
 		ratePerMinute: cfg.rateLimit.client, publicRatePerMinute: cfg.rateLimit.public, cacheSeconds: cfg.cacheSeconds,
-		trustProxy: !!cfg.trustProxy, brand: cfg.brand, analytics: cfg.analytics, serverAnalytics, counters,
+		trustProxy: !!cfg.trustProxy, maxInFlight: cfg.maxInFlight, maxConnections: cfg.maxConnections, brand: cfg.brand, analytics: cfg.analytics, serverAnalytics, counters,
 		logger: cfg.log.access ? logger : null, keys: secretsFromEnv(),
 	});
 	server.listen(cfg.listen.port, cfg.listen.host, () => {
@@ -180,7 +180,7 @@ async function worker(cfg, args) {
 	const names = list ? list.split(",").map(s => s.trim()).filter(Boolean) : Object.keys(JOBS);
 	for (const n of names) if (!JOBS[n]) throw new Error(`unknown job ${n} (known: ${Object.keys(JOBS).join(", ")})`);
 	const owner = `${os.hostname()}:${process.pid}`;
-	const runner = createJobRunner({ assets, owner, log: line => logger.info(line), jobOptions: { osvEcosystems: cfg.jobs.osvEcosystems } });
+	const runner = createJobRunner({ assets, owner, log: line => logger.info(line), jobOptions: { osvEcosystems: cfg.jobs.osvEcosystems, resourceCacheMaxBytes: cfg.jobs.resourceCacheBytes } });
 	const stop = () => {
 		logger.info("worker stopping, releasing leases", { owner });
 		try { db.prepare("UPDATE job_runs SET lease_until = 0, last_status = 'interrupted' WHERE owner = ? AND lease_until > 0").run(owner); } catch { /* db gone */ }

@@ -14,7 +14,8 @@ scale. Design and data model: `docs/SPEC-fad-service.md` at the repository root.
 All three share one SQLite file in SQLite mode (one host). Several hosts need the PostgreSQL
 store (spec §3, coming).
 
-Requirements: Node ≥ 22.13 (24 recommended), `xz` (xz-utils, for the NVD mirror), ~10 GB of
+Requirements: Node ≥ 22.13 (24 recommended; `node:sqlite` still prints an "experimental"
+warning on 24 — the image sets `NODE_NO_WARNINGS=1`), `xz` (xz-utils, for the NVD mirror), ~10 GB of
 disk for the database with every mirror, outbound HTTPS to the sources listed on `/sources`.
 
 ## Install — Docker
@@ -150,9 +151,30 @@ a load balancer (Caddy, nginx, HAProxy, the provider's) with `/health` as health
 PostgreSQL store, and one or more workers anywhere — jobs are leased in the database. Clients
 spread themselves by region through health-based instance selection.
 
+## Capacity and protection
+
+- **Workers = cores** on a public instance (`"workers": true` uses every core). SQLite reads are
+  synchronous: one slow request blocks its process, so concurrency comes from processes.
+- `maxInFlight` (default 256 per process): past it, requests get `503` + `Retry-After` instead
+  of queueing — the guard a per-IP limit cannot give against a distributed flood. `/health`
+  and `/ready` are exempt. `maxConnections` (2048) caps sockets per process.
+- Public rate limit per address (`rateLimit.public`, per minute), IPv6 counted per /64; the
+  table evicts its oldest entries, a flood of new addresses cannot reset the others.
+- The `/v1/resource` cache: bodies above 64 MB are streamed once and not kept (the 620 MB
+  cvelistV5 archive); the `maintenance` job drops entries stale for 30 days and keeps the
+  cache under `jobs.resourceCacheMaxBytes` (default 20G), least recently fetched first.
+- Static files are versioned by content (`?v=<hash>`) and cached for a year.
+
 ## Security checklist
 
-- TLS terminated by the reverse proxy; `trustProxy: true` only behind it.
+- TLS terminated by the reverse proxy; `trustProxy: true` only behind it, and with exactly
+  ONE proxy in front: the service reads the last `X-Forwarded-For` entry. The Docker image's
+  default command does not trust the header (a bare `docker run -p` is safe); the compose
+  file adds `--trust-proxy` because Caddy is in front.
+- The Caddyfile logs no search text (`q` removed), no credential header, and truncated
+  addresses (IPv4 /16, IPv6 /32) — the same rule as the service's own log.
+- Errors: anonymous callers get `{"error":"internal error","rid":…}`; the detail is in the log
+  under that request id. A malformed URL is a 400.
 - `/admin/*` and the metrics port not reachable from the internet (the Caddyfile blocks
   `/admin`; metrics listen on loopback / the private network).
 - One client token per client (`token add --label`), revoked when a client leaves.

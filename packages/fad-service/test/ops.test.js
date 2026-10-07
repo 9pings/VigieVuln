@@ -125,12 +125,13 @@ test("analytics (server): daily aggregates only — no IP, no search text, reada
 	} finally { await s.close(); }
 });
 
-test("analytics (plausible): one script tag, CSP opened to that origin only", opts, async () => {
+test("analytics (plausible, opt-in): one script tag, CSP opened to that origin only", opts, async () => {
 	const s = await site({ analytics: { provider: "plausible", scriptSrc: "https://stats.example.eu/js/script.js", domain: "vuln.example.fr" } });
 	try {
 		const r = await s.get("/");
 		const html = await r.text();
 		assert.match(html, /<script defer data-domain="vuln\.example\.fr" src="https:\/\/stats\.example\.eu\/js\/script\.js"><\/script>/);
+		assert.equal((html.match(/<script\b/g) || []).length, 1, "the configured provider's tag, nothing else");
 		assert.match(r.headers.get("content-security-policy"), /script-src https:\/\/stats\.example\.eu; .*connect-src https:\/\/stats\.example\.eu/);
 	} finally { await s.close(); }
 	const { clientAnalytics } = require("../lib/analytics");
@@ -147,8 +148,8 @@ test("branding: name, logo (sandboxed SVG), accent, footer, canonical, publisher
 	try {
 		const home = await (await s.get("/?lang=fr")).text();
 		assert.match(home, /<title>[^<]*Vulns &lt;FR&gt;<\/title>/);
-		assert.match(home, /<img src="\/static\/logo"/);
-		assert.match(home, /<link rel="stylesheet" href="\/static\/brand\.css">/);
+		assert.match(home, /<img src="\/static\/logo\?v=[0-9a-f]{10}"/);
+		assert.match(home, /<link rel="stylesheet" href="\/static\/brand\.css\?v=[0-9a-f]{10}">/);
 		assert.match(home, /<link rel="canonical" href="https:\/\/vuln\.example\.fr\/">/);
 		assert.match(home, /Service public/);
 		assert.equal(await (await s.get("/static/brand.css")).text(), ":root { --accent: #ff0000; }\n");
@@ -201,4 +202,55 @@ test("backup (VACUUM INTO) with rotation; maintenance job; config command hides 
 		assert.ok(!printed.includes("very-secret"));
 		assert.match(printed, /"token": "\(set\)"/);
 	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("audit fixes: rate-limit LRU (no global reset), IPv6 /64 buckets, URIError → 400, generic 502, static immutable, resource-cache eviction", opts, async () => {
+	const { createRateLimiter, addressBucket } = require("../lib/server");
+	const limit = createRateLimiter(1, { maxKeys: 3 });
+	assert.equal(limit("victim"), true);
+	assert.equal(limit("victim"), false);
+	for (let i = 0; i < 2; i++) limit("flood-" + i);   // fills the table without evicting "victim"…
+	assert.equal(limit("victim"), false, "a flood of new keys does not reset the others");
+	assert.equal(addressBucket("2001:db8:1:2:aaaa::1"), addressBucket("2001:db8:1:2:bbbb::9"), "same /64, same bucket");
+	assert.notEqual(addressBucket("2001:db8:1:2::1"), addressBucket("2001:db8:1:3::1"));
+
+	const s = await site();
+	try {
+		assert.equal((await s.get("/cve/CVE-2024-1%")).status, 400, "malformed escape → 400, not 502");
+		const home = await (await s.get("/")).text();
+		const css = /href="(\/static\/site\.css\?v=[0-9a-f]{10})"/.exec(home);
+		assert.ok(css, "the stylesheet URL is versioned");
+		assert.match((await s.get(css[1])).headers.get("cache-control"), /max-age=31536000, immutable/);
+		assert.equal((await s.get("/")).headers.get("cross-origin-opener-policy"), "same-origin");
+	} finally { await s.close(); }
+
+	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
+	const { evictResources } = require("../lib/jobs/maintenance");
+	const db = openDatabase(":memory:");
+	const store = createSqliteStore({ db });
+	const now = Date.now();
+	store.put("old", Buffer.alloc(10), { fetchedAt: now - 40 * 86400000, ttlMs: 1000, bytes: 10 });
+	for (let i = 0; i < 5; i++) store.put("k" + i, Buffer.alloc(100), { fetchedAt: now - (5 - i) * 1000, ttlMs: 86400000, bytes: 100 });
+	assert.deepEqual(evictResources(db, { maxBytes: 250, now }), { stale: 1, budget: 3 });
+	assert.deepEqual([...["k0", "k1", "k2", "k3", "k4"].map(k => !!store.get(k))], [false, false, false, true, true], "the least recently fetched go first");
+	assert.equal(store.maxEntryBytes, 64 * 1024 * 1024, "the SQLite store caps what it keeps");
+});
+
+test("overload guard: past maxInFlight, 503 + Retry-After; health probes still answered", opts, async () => {
+	let release;
+	const gate = new Promise(ok => { release = ok; });
+	const s = await site({ maxInFlight: 1, fetcher: async () => { await gate; return new Response("{}", { status: 200 }); } });
+	try {
+		const { createTokenStore } = require("../lib/tokens");
+		const client = createTokenStore(s.db).add({ role: "client" }).token;
+		const base = `http://127.0.0.1:${s.server.address().port}`;
+		const slow = fetch(`${base}/v1/resource`, { method: "POST", headers: { authorization: `Bearer ${client}` }, body: JSON.stringify({ provider: "nvd", type: "cve", params: { id: "CVE-2024-31210" } }) });
+		await new Promise(ok => setTimeout(ok, 50));
+		const shed = await s.get("/");
+		assert.equal(shed.status, 503);
+		assert.equal(shed.headers.get("retry-after"), "5");
+		assert.equal((await s.get("/health")).status, 200, "the load balancer can still probe");
+		release();
+		assert.equal((await slow).status, 200);
+	} finally { await s.close(); }
 });

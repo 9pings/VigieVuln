@@ -40,7 +40,9 @@ const SECURITY_HEADERS = {
 	"strict-transport-security": "max-age=31536000; includeSubDomains",
 	"cross-origin-resource-policy": "same-origin",
 	"permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+	"cross-origin-opener-policy": "same-origin",
 };
+const STATIC_MAX_AGE = 31536000;
 const MAX_REQUEST_BYTES = 2 * 1024 * 1024;
 const BASE_PAGE_CSP = { "default-src": ["'none'"], "style-src": ["'self'"], "img-src": ["'self'"], "form-action": ["'self'"],
 	"base-uri": ["'none'"], "frame-ancestors": ["'none'"] };
@@ -69,20 +71,35 @@ function readBody(req, maxBytes) {
 	});
 }
 
-/** Fixed one-minute window per key. Per process: with N workers the effective limit is ×N. */
-function createRateLimiter(perMinute) {
+/**
+ * Fixed one-minute window per key. Per process: with N workers the effective limit is ×N.
+ * The table is bounded by evicting the OLDEST keys (Map insertion order) — never by
+ * clearing it, which would let one client flooding new keys reset everyone's counters.
+ */
+function createRateLimiter(perMinute, { maxKeys = 50000 } = {}) {
 	const windows = new Map();
 	return key => {
 		if (!perMinute) return true;
-		const now = Date.now(), slot = Math.floor(now / 60000);
+		const slot = Math.floor(Date.now() / 60000);
 		let w = windows.get(key);
 		if (!w || w.slot !== slot) {
-			if (windows.size > 10000) windows.clear();
+			windows.delete(key);
+			while (windows.size >= maxKeys) windows.delete(windows.keys().next().value);
 			w = { slot, n: 0 };
 			windows.set(key, w);
 		}
 		return ++w.n <= perMinute;
 	};
+}
+
+/** Rate-limit bucket of an address: IPv6 by /64 (one subscriber), IPv4 as is. */
+function addressBucket(ip) {
+	const a = String(ip || "?").replace(/^::ffff:/i, "");
+	if (!a.includes(":")) return a;
+	const [left, right] = a.split("::");
+	const head = left ? left.split(":") : [];
+	const groups = right === undefined ? a.split(":") : [...head, ...Array(Math.max(0, 8 - head.length - right.split(":").filter(Boolean).length)).fill("0"), ...right.split(":").filter(Boolean)];
+	return groups.slice(0, 4).map(x => (x || "0").toLowerCase()).join(":") + "::/64";
 }
 
 /** The route family a request is logged and counted under — never the CVE or the query. */
@@ -114,6 +131,10 @@ function createServiceServer(opts = {}) {
 	const clientTag = principal => principal
 		? crypto.createHmac("sha256", logSalt).update(principal.hash).digest("hex").slice(0, 12) : "-";
 	let draining = false;
+	// Overload guard: past this many requests in flight in this process, shed load with a
+	// 503 instead of queueing (a per-IP limit alone cannot stop a distributed flood).
+	const maxInFlight = opts.maxInFlight || 256;
+	let inFlight = 0;
 
 	// Branding and third-party analytics are fixed at start-up: a page never reads config.
 	const client = clientAnalytics(analytics);
@@ -127,7 +148,17 @@ function createServiceServer(opts = {}) {
 		if (!type) throw new Error("brand.logo must be an .svg, .png, .webp or .jpg file");
 		logo = { type, body: fs.readFileSync(brand.logo) };
 	}
-	const site = { brand: { ...brand, hasLogo: !!logo }, analyticsHead: client.head };
+	// Static files are versioned by content, so they can be cached for a year.
+	const contentHash = buf => crypto.createHash("sha1").update(buf || "").digest("hex").slice(0, 10);
+	const assetVersions = { css: contentHash(SITE_CSS), brand: contentHash(brandCss), logo: logo ? contentHash(logo.body) : null };
+	const site = { brand: { ...brand, hasLogo: !!logo }, analyticsHead: client.head, assetVersions };
+
+	// Home-page counters: a GROUP BY over the whole table, cached for a minute.
+	let countsCache = { at: 0, value: null };
+	const counts = () => {
+		if (!countsCache.value || Date.now() - countsCache.at > 60000) countsCache = { at: Date.now(), value: assets.counts() };
+		return countsCache.value;
+	};
 
 	function authenticate(req) {
 		const auth = String(req.headers.authorization || "");
@@ -156,11 +187,13 @@ function createServiceServer(opts = {}) {
 		res.end(req.method === "HEAD" ? undefined : buf);
 	}
 
-	function routeStatic(req, res, p) {
-		if (p === "/static/site.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", SITE_CSS), true;
-		if (p === "/static/brand.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", brandCss), true;
+	function routeStatic(req, res, p, url) {
+		// Versioned URLs (?v=<hash>) are immutable; an unversioned request gets the default TTL.
+		const immutable = url.searchParams.has("v") ? { "cache-control": `public, max-age=${STATIC_MAX_AGE}, immutable` } : {};
+		if (p === "/static/site.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", SITE_CSS, immutable), true;
+		if (p === "/static/brand.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", brandCss, immutable), true;
 		// An SVG is a document: sandboxed so a logo can never run script on this origin.
-		if (p === "/static/logo" && logo) return sendPublic(req, res, 200, logo.type, logo.body, { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox" }), true;
+		if (p === "/static/logo" && logo) return sendPublic(req, res, 200, logo.type, logo.body, { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox", ...immutable }), true;
 		if (p === "/static/analytics.js" && client.initScript) return sendPublic(req, res, 200, "text/javascript; charset=utf-8", client.initScript), true;
 		return false;
 	}
@@ -169,12 +202,12 @@ function createServiceServer(opts = {}) {
 	function routePublic(req, res, url, ctx) {
 		const p = url.pathname;
 		if (req.method !== "GET" && req.method !== "HEAD") return false;
-		if (p.startsWith("/static/")) return routeStatic(req, res, p);
+		if (p.startsWith("/static/")) return routeStatic(req, res, p, url);
 		if (!assets) return false;
 		const isPage = ["/", "/search", "/sources", "/legal"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p);
 		const isApi = p === "/api/search" || /^\/api\/cve\/[^/]+$/.test(p);
 		if (!isPage && !isApi) return false;
-		if (!publicLimited("ip:" + clientIp(req))) { sendJson(res, 429, { error: "rate limit exceeded" }, { "retry-after": "60" }); return true; }
+		if (!publicLimited("ip:" + addressBucket(clientIp(req)))) { sendJson(res, 429, { error: "rate limit exceeded" }, { "retry-after": "60" }); return true; }
 		const locale = pickLocale(url.searchParams.get("lang"), req.headers["accept-language"]);
 		const t = makeT(locale);
 		const q = String(url.searchParams.get("q") || "").slice(0, 200).trim();
@@ -195,7 +228,7 @@ function createServiceServer(opts = {}) {
 				nvd: assets.nvd(id), advisories: assets.advisoriesForCve(id) }));
 			return true;
 		}
-		if (p === "/") { page(200, t("Search"), web.home({ t, counts: assets.counts(), site })); return true; }
+		if (p === "/") { page(200, t("Search"), web.home({ t, counts: counts(), site })); return true; }
 		if (p === "/sources") { page(200, t("Data sources"), web.sourcesPage({ t, jobs: jobStatus() })); return true; }
 		if (p === "/legal") { page(200, t("Legal notice"), web.legalPage({ t, site })); return true; }
 		if (p === "/search") {
@@ -250,7 +283,7 @@ function createServiceServer(opts = {}) {
 			return sendJson(res, draining ? 503 : 200, { ok: !draining, draining, service: "fad-service", version, region, store: store.kind, uptimeMs: Date.now() - stats.startedAt });
 		if (p === "/ready" && req.method === "GET") {
 			let ok = !draining, cves = 0;
-			try { cves = assets ? (assets.counts().cve || 0) : 0; store.size(); } catch { ok = false; }
+			try { cves = assets ? (counts().cve || 0) : 0; } catch { ok = false; }
 			if (assets && !cves) ok = false;
 			return sendJson(res, ok ? 200 : 503, { ready: ok, cves });
 		}
@@ -294,6 +327,15 @@ function createServiceServer(opts = {}) {
 		for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
 		res.setHeader("x-request-id", rid);
 		if (draining) res.setHeader("connection", "close");
+		const pathOnly = String(req.url || "").split("?")[0];
+		if (inFlight >= maxInFlight && pathOnly !== "/health" && pathOnly !== "/ready") {
+			res.writeHead(503, { "content-type": "application/json", "retry-after": "5" });
+			res.end(JSON.stringify({ error: "overloaded" }));
+			counters?.observe({ route: "overload", status: 503, ms: 0 });
+			return;
+		}
+		inFlight++;
+		res.once("close", () => { inFlight--; });
 		const principal = authenticate(req);
 		const ctx = { search: false, asset: null };
 		res.once("finish", () => {
@@ -309,9 +351,14 @@ function createServiceServer(opts = {}) {
 			else if (log && !probe) log(`${new Date(started).toISOString()} ${req.method} ${family} ${res.statusCode} ${ms}ms client=${clientTag(principal)} rid=${rid}`);
 		});
 		route(req, res, principal, ctx).catch(err => {
+			if (err instanceof URIError) {        // a malformed %-escape in the path
+				if (!res.headersSent) return sendJson(res, 400, { error: "malformed URL" });
+				return res.destroy();
+			}
 			stats.errors++;
 			logger?.error("request failed", { rid, error: String(err.message || err) });
-			if (!res.headersSent) sendJson(res, 502, { error: String(err.message || err) }, { "x-fad-proxy": "error" });
+			// The detail stays in the log; an anonymous caller learns nothing about the inside.
+			if (!res.headersSent) sendJson(res, 502, { error: principal ? String(err.message || err) : "internal error", rid }, { "x-fad-proxy": "error" });
 			else res.destroy();
 		});
 	});
@@ -319,6 +366,8 @@ function createServiceServer(opts = {}) {
 	server.requestTimeout = timeout;
 	server.headersTimeout = Math.min(30000, timeout);
 	server.keepAliveTimeout = 5000;
+	server.maxConnections = opts.maxConnections || 2048;
+	server.maxHeadersCount = 100;
 	server.setTimeout(timeout + 30000, socket => socket.destroy());
 	const close = server.close.bind(server);
 	server.close = callback => { engine.abortAll(); return close(callback); };
@@ -340,4 +389,4 @@ function createServiceServer(opts = {}) {
 	return server;
 }
 
-module.exports = { createServiceServer, createRateLimiter, routeFamily, SECURITY_HEADERS };
+module.exports = { createServiceServer, createRateLimiter, addressBucket, routeFamily, SECURITY_HEADERS };

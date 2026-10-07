@@ -21,6 +21,8 @@ const DEFAULTS = {
 	trustProxy: false,
 	rateLimit: { client: 600, public: 300 },
 	cacheSeconds: 300,
+	maxInFlight: 256,          // per process; above it requests get 503 + Retry-After (probes exempt)
+	maxConnections: 2048,
 	shutdownSeconds: 25,
 	log: { file: null, format: "text", level: "info", maxSize: "50M", keep: 10, access: true },
 	brand: {
@@ -42,7 +44,8 @@ const DEFAULTS = {
 		domain: null,              // plausible data-domain
 		siteId: null,              // matomo site id
 	},
-	jobs: { enabled: null, everyMinutes: 10, osvEcosystems: null },
+	// resourceCacheMaxBytes: budget of the /v1/resource pull-through cache (maintenance job).
+	jobs: { enabled: null, everyMinutes: 10, osvEcosystems: null, resourceCacheMaxBytes: "20G" },
 };
 
 const isObj = v => v && typeof v === "object" && !Array.isArray(v);
@@ -107,6 +110,7 @@ function loadConfig(args = {}, env = process.env) {
 	cfg = merge(cfg, clean(flags));
 	if (cfg.db !== ":memory:") cfg.db = path.resolve(String(cfg.db));
 	cfg.log.maxBytes = parseSize(cfg.log.maxSize);
+	cfg.jobs.resourceCacheBytes = parseSize(cfg.jobs.resourceCacheMaxBytes);
 	if (!["text", "json"].includes(cfg.log.format)) throw new Error(`log.format must be "text" or "json"`);
 	if (!["none", "server", "plausible", "matomo"].includes(cfg.analytics.provider)) throw new Error("analytics.provider must be none, server, plausible or matomo");
 	if (["plausible", "matomo"].includes(cfg.analytics.provider) && !/^https:\/\//.test(cfg.analytics.scriptSrc || ""))

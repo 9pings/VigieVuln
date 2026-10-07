@@ -25,4 +25,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:8322/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 ENTRYPOINT ["/usr/bin/tini", "--", "node", "/app/packages/fad-service/bin/fad-service.js"]
-CMD ["serve", "--host", "0.0.0.0", "--metrics-listen", "0.0.0.0:9464", "--trust-proxy", "--log"]
+# Safe defaults for a bare `docker run -p 8322:8322`: no X-Forwarded-For trust, metrics on
+# loopback. Behind a reverse proxy, add --trust-proxy (docker-compose.yml does).
+CMD ["serve", "--host", "0.0.0.0", "--metrics-listen", "127.0.0.1:9464", "--log"]

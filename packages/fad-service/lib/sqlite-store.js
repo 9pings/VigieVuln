@@ -33,7 +33,11 @@ function openDatabase(file) {
 	return db;
 }
 
-function createSqliteStore({ db, file = null, spoolDir = os.tmpdir() } = {}) {
+// Bodies live in rows: above this a body is streamed to the client once and not kept
+// (the engine honours store.maxEntryBytes) — e.g. the 620 MB cvelistV5 archive.
+const DEFAULT_MAX_ENTRY_BYTES = 64 * 1024 * 1024;
+
+function createSqliteStore({ db, file = null, spoolDir = os.tmpdir(), maxEntryBytes = DEFAULT_MAX_ENTRY_BYTES } = {}) {
 	db = db || openDatabase(file || ":memory:");
 	db.exec(`CREATE TABLE IF NOT EXISTS resources (
 		key TEXT PRIMARY KEY,
@@ -59,6 +63,7 @@ function createSqliteStore({ db, file = null, spoolDir = os.tmpdir() } = {}) {
 	const store = {
 		kind: "sqlite",
 		db,
+		maxEntryBytes,
 		get(key) {
 			const row = q.get.get(String(key));
 			if (!row) return null;

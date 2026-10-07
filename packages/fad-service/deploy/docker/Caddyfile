@@ -14,10 +14,22 @@
 		fail_duration 30s
 	}
 
+	# Same privacy rule as the service's own log: no search text, no credentials, no full
+	# address (IPv4 /16, IPv6 /32 kept — enough for abuse triage, not to identify a reader).
 	log {
 		output file /data/access.log {
 			roll_size 50MiB
 			roll_keep 10
+		}
+		format filter {
+			request>uri query {
+				delete q
+			}
+			request>headers>Authorization delete
+			request>headers>X-Fad-Proxy-Token delete
+			request>headers>Cookie delete
+			request>remote_ip ip_mask 16 32
+			request>client_ip ip_mask 16 32
 		}
 	}
 }

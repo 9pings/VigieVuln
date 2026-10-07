@@ -8,6 +8,24 @@
  */
 
 const FR = {
+	"French": "Français",
+	"English": "Anglais",
+	"Skip to content": "Aller au contenu",
+	"Main navigation": "Navigation principale",
+	"Service information": "Informations sur le service",
+	"Identifier, product or keyword": "Identifiant, produit ou mot-clé",
+	"Enter an identifier, product or keyword to begin.": "Saisissez un identifiant, un produit ou un mot-clé pour commencer.",
+	"Public data, traceable sources": "Des données publiques, des sources traçables",
+	"CVE records and NVD scores, OSV/GHSA package advisories and CERT-FR publications, brought together in one place.": "Les fiches CVE et scores NVD, les avis OSV/GHSA sur les paquets et les publications du CERT-FR, réunis en un seul endroit.",
+	"CISA KEV, ENISA and EPSS add exploitation context. Each record links to its sources and licences.": "CISA KEV, ENISA et EPSS apportent un éclairage sur l’exploitation. Chaque fiche renvoie à ses sources et licences.",
+	"Search results": "Résultats de recherche",
+	"Try a broader keyword or a complete identifier.": "Essayez un mot-clé plus général ou un identifiant complet.",
+	"Scrollable table": "Tableau à défilement horizontal",
+	"At a glance": "En bref",
+	"Not available": "Non disponible",
+	"Product": "Produit",
+	"Original publication": "Publication originale",
+
 	"Search": "Rechercher",
 	"Search CVEs, advisories, packages": "Rechercher une CVE, un avis, un paquet",
 	"CVE, EUVD, GCVE or CERT-FR id, product, keyword…": "Identifiant CVE, EUVD, GCVE ou CERT-FR, produit, mot-clé…",

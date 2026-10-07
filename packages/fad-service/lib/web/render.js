@@ -14,6 +14,14 @@ const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : null;
 const link = (url, text) => safeUrl(url) ? `<a href="${esc(url)}" rel="noopener noreferrer nofollow">${esc(text ?? url)}</a>` : esc(text ?? url ?? "");
 const day = v => (v ? String(v).slice(0, 10) : "");
 
+const date = v => /^\d{4}-\d{2}-\d{2}$/.test(day(v)) ? `<time datetime="${esc(day(v))}">${esc(day(v))}</time>` : esc(day(v));
+const searchForm = (t, locale, q = "") => `<form class="search" action="/search" method="get" role="search">
+<label for="query">${t("Search CVEs, advisories, packages")}</label>
+<div class="search-controls"><input id="query" type="search" name="q" value="${esc(q)}" placeholder="${esc(t("Identifier, product or keyword"))}" aria-describedby="search-help" maxlength="200">
+<input type="hidden" name="lang" value="${locale}"><button type="submit">${t("Search")}</button></div>
+<p id="search-help" class="muted">${t("CVE, EUVD, GCVE or CERT-FR id, product, keyword…")}</p>
+</form>`;
+
 const SEVERITIES = new Set(["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"]);
 const badge = (sev, score) => {
 	const s = SEVERITIES.has(String(sev || "").toUpperCase()) ? String(sev).toUpperCase() : "";
@@ -36,35 +44,34 @@ function layout({ t, locale, title, body, q = "", path = "/", site = {} }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)} · ${esc(name)}</title>
 ${canonical}
-<link rel="stylesheet" href="/static/site.css">
-${brand.accent ? `<link rel="stylesheet" href="/static/brand.css">` : ""}
+<link rel="stylesheet" href="/static/site.css${site.assetVersions?.css ? "?v=" + site.assetVersions.css : ""}">
+${brand.accent ? `<link rel="stylesheet" href="/static/brand.css${site.assetVersions?.brand ? "?v=" + site.assetVersions.brand : ""}">` : ""}
 ${site.analyticsHead || ""}
 </head>
 <body>
-<header>
-<a class="brand" href="/?lang=${locale}">${brand.hasLogo ? `<img src="/static/logo" alt="" height="28"> ` : ""}${esc(name)}</a>
-<nav><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a><a href="${esc(path + sep + "lang=" + other)}" hreflang="${other}">${other.toUpperCase()}</a></nav>
+<a class="skip-link" href="#content">${t("Skip to content")}</a>
+<header class="site-header">
+<a class="brand" href="/?lang=${locale}">${brand.hasLogo ? `<img src="/static/logo${site.assetVersions?.logo ? "?v=" + site.assetVersions.logo : ""}" alt="" height="28"> ` : ""}${esc(name)}</a>
+<nav aria-label="${esc(t("Main navigation"))}"><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a><a href="${esc(path + sep + "lang=" + other)}" hreflang="${other}" lang="${other}" aria-label="${esc(t("Language"))}: ${esc(t(other === "fr" ? "French" : "English"))}">${other.toUpperCase()}</a></nav>
+${path !== "/" ? searchForm(t, locale, q) : ""}
 </header>
-<main>
-<form class="search" action="/search" method="get" role="search">
-<input type="search" name="q" value="${esc(q)}" placeholder="${esc(t("CVE, EUVD, GCVE or CERT-FR id, product, keyword…"))}" aria-label="${esc(t("Search CVEs, advisories, packages"))}" maxlength="200">
-<input type="hidden" name="lang" value="${locale}">
-<button type="submit">${t("Search")}</button>
-</form>
+<main id="content" tabindex="-1">
+${path === "/" ? `<section class="hero"><h1>${t("Search CVEs, advisories, packages")}</h1><p class="lead">${site.brand?.tagline ? esc(site.brand.tagline) : t("Vulnerability data hosted in Europe, for fad-checker and for you.")}</p>${searchForm(t, locale)}</section>` : path === "/search" && !body ? `<h1>${t("Search")}</h1><p>${t("Enter an identifier, product or keyword to begin.")}</p>` : ""}
 ${body}
 </main>
-<footer>${brand.footer ? esc(brand.footer) + " · " : ""}${t("Data from the sources listed on each page, under their own licences.")} · <a href="/legal?lang=${locale}">${t("Legal notice")}</a>${contact ? ` · <a href="${esc(contact)}">${t("Contact")}</a>` : ""}</footer>
+<footer><p>${brand.footer ? esc(brand.footer) + " · " : ""}${t("Data from the sources listed on each page, under their own licences.")}</p><nav aria-label="${esc(t("Service information"))}"><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a>${contact ? `<a href="${esc(contact)}">${t("Contact")}</a>` : ""}</nav></footer>
 </body>
 </html>`;
 }
 
-function home({ t, counts, site = {} }) {
-	return `<h1>${t("Search CVEs, advisories, packages")}</h1>
-<p class="lead">${site.brand?.tagline ? esc(site.brand.tagline) : t("Vulnerability data hosted in Europe, for fad-checker and for you.")}</p>
-<div class="stats">
+function home({ t, counts }) {
+	return `<div class="stats">
 <div><b>${esc((counts.cve || 0).toLocaleString("fr-FR"))}</b>${t("Published vulnerabilities")}</div>
 <div><b>${esc((counts.advisory || 0).toLocaleString("fr-FR"))}</b>${t("Advisories")}</div>
-</div>`;
+</div>
+<section class="home-sources"><h2>${t("Public data, traceable sources")}</h2>
+<p>${t("CVE records and NVD scores, OSV/GHSA package advisories and CERT-FR publications, brought together in one place.")}</p>
+<p>${t("CISA KEV, ENISA and EPSS add exploitation context. Each record links to its sources and licences.")}</p></section>`;
 }
 
 const assetHref = (type, key, locale) => type === "cve" ? `/cve/${encodeURIComponent(key)}?lang=${locale}`
@@ -73,17 +80,18 @@ const assetHref = (type, key, locale) => type === "cve" ? `/cve/${encodeURICompo
 const assetName = key => key.replace(/^(certfr|osv):/, "");
 
 function results({ t, locale, q, rows }) {
-	if (!rows.length) return `<p>${t("No result for “{q}”.", { q: esc(q) })}</p>`;
-	return `<p class="muted">${t(rows.length === 1 ? "{n} result" : "{n} results", { n: rows.length })}</p>` + rows.map(r => {
+	const heading = `<h1>${t("Search results")}</h1>`;
+	if (!rows.length) return heading + `<div class="empty-state"><p>${t("No result for “{q}”.", { q: esc(q) })}</p><p>${t("Try a broader keyword or a complete identifier.")}</p></div>`;
+	return heading + `<p class="muted">${t(rows.length === 1 ? "{n} result" : "{n} results", { n: rows.length })}</p>` + rows.map(r => {
 		const href = assetHref(r.type, r.key, locale);
 		const name = r.type === "advisory" ? assetName(r.key) : r.key;
-		return `<div class="result">${href ? `<a href="${esc(href)}">${esc(name)}</a>` : esc(name)} <span class="muted">· ${esc(t(r.type))}</span>
-<div>${esc(r.title || "")}</div></div>`;
+		return `<article class="result"><p class="eyebrow">${esc(r.type === "advisory" ? (r.key.startsWith("certfr:") ? "CERT-FR" : "OSV / GHSA") + " · " + t("advisory") : t(r.type))}</p><h2>${href ? `<a href="${esc(href)}">${esc(name)}</a>` : esc(name)}</h2>
+<p>${esc(r.title || "")}</p></article>`;
 	}).join("\n");
 }
 
 function sourcesTable(t, sources) {
-	return `<div class="table-wrap"><table><thead><tr><th>${t("Source")}</th><th>${t("Licence")}</th></tr></thead><tbody>${
+	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Source")}</th><th scope="col">${t("Licence")}</th></tr></thead><tbody>${
 		sources.map(s => `<tr><td>${link(s.url, s.name)}</td><td>${esc(s.licence || "")}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
@@ -98,15 +106,16 @@ function cvePage({ t, locale, asset, signals, euvdUrl, gcve, gcveUrl, certfrUrl,
 	const flags = [];
 	if (sig.kev) flags.push(`<span class="flag">${t("Known exploited (CISA KEV) · added {date}", { date: esc(sig.kev.dateAdded || "?") })}</span>`);
 	if (sig.euvd_exploited_since != null) flags.push(`<span class="flag">${sig.euvd_exploited_since ? t("Exploited per ENISA since {date}", { date: esc(sig.euvd_exploited_since) }) : t("Exploited per ENISA")}</span>`);
-	const kv = [];
+	const kv = [[t("Severity"), badge(d.severity, d.score) || t("Not available")]];
+	if (flags.length) kv.push([t("Exploitation"), flags.join("<br>")]);
+	if (sig.epss_score != null) kv.push(["EPSS", esc(t("EPSS {score} · percentile {pct} ({date})", {
+		score: (sig.epss_score * 100).toFixed(2) + " %", pct: sig.epss_percentile == null ? "?" : Math.round(sig.epss_percentile * 100), date: sig.epss_date || "?" }))]);
 	if (d.state) kv.push([t("State"), esc(d.state)]);
-	if (d.published) kv.push([t("Published"), esc(day(d.published))]);
-	if (d.updated) kv.push([t("Updated"), esc(day(d.updated))]);
+	if (d.published) kv.push([t("Published"), date(d.published)]);
+	if (d.updated) kv.push([t("Updated"), date(d.updated)]);
 	if (d.assigner) kv.push([t("Assigner"), esc(d.assigner)]);
 	if (nvd?.vulnStatus) kv.push([t("NVD status"), esc(nvd.vulnStatus)]);
-	if (sig.epss_score != null) kv.push(["EPSS", esc(t("EPSS {score} · percentile {pct} ({date})", {
-		score: (sig.epss_score * 100).toFixed(2) + " %", pct: Math.round(sig.epss_percentile * 100), date: sig.epss_date || "?" }))]);
-	if (flags.length) kv.push([t("Exploitation"), flags.join("<br>")]);
+
 
 	const eu = [];
 	if (sig.euvd_id) eu.push(`<li>ENISA EUVD · ${link(euvdUrl(sig.euvd_id), sig.euvd_id)}</li>`);
@@ -122,19 +131,19 @@ function cvePage({ t, locale, asset, signals, euvdUrl, gcve, gcveUrl, certfrUrl,
 
 	const refs = Array.isArray(d.references) ? d.references : [];
 	return `<h1>${esc(d.id)}</h1>
-<p>${badge(d.severity, d.score)} ${esc(d.title && d.title !== d.description?.slice(0, 140) ? d.title : "")}</p>
-${kv.length ? `<dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>` : ""}
+<p class="record-title">${esc(d.title && d.title !== d.description?.slice(0, 140) ? d.title : "")}</p>
+${kv.length ? `<section class="summary"><h2>${t("At a glance")}</h2><dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></section>` : ""}
 ${d.description ? `<h2>${t("Description")}</h2><p class="desc">${esc(d.description)}</p>` : ""}
-${cvss.length ? `<h2>${t("Scores")}</h2><div class="table-wrap"><table><thead><tr><th>${t("Version")}</th><th>${t("Score")}</th><th>${t("Vector")}</th><th>${t("Scored by")}</th></tr></thead><tbody>${
+${cvss.length ? `<h2>${t("Scores")}</h2><div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Version")}</th><th scope="col">${t("Score")}</th><th scope="col">${t("Vector")}</th><th scope="col">${t("Scored by")}</th></tr></thead><tbody>${
 	cvss.map(c => `<tr><td>CVSS ${esc(c.version)}</td><td>${badge(c.severity, c.score)}</td><td>${esc(c.vector || "")}</td><td>${esc(c.source || "")}</td></tr>`).join("")}</tbody></table></div>` : ""}
+${cwes.length ? `<h2>${t("Weaknesses (CWE)")}</h2><ul class="plain">${cwes.map(c => `<li>${link(`https://cwe.mitre.org/data/definitions/${c.slice(4)}.html`, c)}</li>`).join("")}</ul>` : ""}
 ${advisories.length ? `<h2>${t("Advisories")}</h2><ul class="plain">${advisories.map(a => `<li><a href="${esc(assetHref("advisory", a.key, locale))}">${esc(assetName(a.key))}</a> — ${esc(a.title || "")}</li>`).join("")}</ul>` : ""}
+${eu.length ? `<h2>${t("European references")}</h2><ul class="plain">${eu.join("")}</ul>` : ""}
+${certfr.length ? `<h2>${t("CERT-FR advisories")}</h2><ul class="plain">${certfr.slice(0, 30).map(a => `<li><a href="/advisory/certfr/${encodeURIComponent(a.ref)}?lang=${locale}">${esc(a.ref)}</a> — ${esc(a.title || "")} · ${link(certfrUrl(a.kind, a.ref), "cert.ssi.gouv.fr")}</li>`).join("")}${certfr.length > 30 ? `<li class="muted">${t("+{n} more", { n: certfr.length - 30 })}</li>` : ""}</ul>` : ""}
 ${cpes.length ? `<h2>${t("Affected configurations (NVD CPE)")}</h2><ul class="plain">${cpes.slice(0, 40).map(m => `<li><code>${esc(m.criteria)}</code>${[
 	m.versionStartIncluding ? " ≥ " + esc(m.versionStartIncluding) : "", m.versionStartExcluding ? " > " + esc(m.versionStartExcluding) : "",
 	m.versionEndExcluding ? " < " + esc(m.versionEndExcluding) : "", m.versionEndIncluding ? " ≤ " + esc(m.versionEndIncluding) : ""].join("")}</li>`).join("")}${cpes.length > 40 ? `<li class="muted">${t("+{n} more", { n: cpes.length - 40 })}</li>` : ""}</ul>` : ""}
-${cwes.length ? `<h2>${t("Weaknesses (CWE)")}</h2><ul class="plain">${cwes.map(c => `<li>${link(`https://cwe.mitre.org/data/definitions/${c.slice(4)}.html`, c)}</li>`).join("")}</ul>` : ""}
-${eu.length ? `<h2>${t("European references")}</h2><ul class="plain">${eu.join("")}</ul>` : ""}
-${certfr.length ? `<h2>${t("CERT-FR advisories")}</h2><ul class="plain">${certfr.slice(0, 30).map(a => `<li><a href="/advisory/certfr/${encodeURIComponent(a.ref)}?lang=${locale}">${esc(a.ref)}</a> — ${esc(a.title || "")} · ${link(certfrUrl(a.kind, a.ref), "cert.ssi.gouv.fr")}</li>`).join("")}${certfr.length > 30 ? `<li class="muted">${t("+{n} more", { n: certfr.length - 30 })}</li>` : ""}</ul>` : ""}
-${d.affected?.length ? `<h2>${t("Affected products")}</h2><div class="table-wrap"><table><tbody>${d.affected.slice(0, 20).map(a => `<tr><td>${esc([a.vendor, a.product].filter(x => x && x !== "n/a").join(" · ") || a.packageName || "")}</td><td>${
+${d.affected?.length ? `<h2>${t("Affected products")}</h2><div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Product")}</th><th scope="col">${t("Versions")}</th></tr></thead><tbody>${d.affected.slice(0, 20).map(a => `<tr><td>${esc([a.vendor, a.product].filter(x => x && x !== "n/a").join(" · ") || a.packageName || "")}</td><td>${
 	esc((a.versions || []).slice(0, 6).map(v => [v.status, v.version, v.lessThan ? "< " + v.lessThan : "", v.lessThanOrEqual ? "≤ " + v.lessThanOrEqual : ""].filter(Boolean).join(" ")).join(" ; "))}</td></tr>`).join("")}</tbody></table></div>` : ""}
 ${refs.length ? `<h2>${t("References")}</h2><ul class="plain">${refs.slice(0, 50).map(r => `<li>${link(r.url)}</li>`).join("")}${refs.length > 50 ? `<li class="muted">${t("+{n} more", { n: refs.length - 50 })}</li>` : ""}</ul>` : ""}
 <h2>${t("Sources")}</h2>${sourcesTable(t, sources)}`;
@@ -143,10 +152,10 @@ ${refs.length ? `<h2>${t("References")}</h2><ul class="plain">${refs.slice(0, 50
 function advisoryPage({ t, locale, asset }) {
 	const d = asset.data;
 	return `<h1>${esc(d.ref)}</h1>
-<p>${esc(d.title || "")}</p>
-<dl class="kv"><dt>${t("Source")}</dt><dd>CERT-FR · ${esc(d.kind === "alerte" ? t("Alert") : t("Advisory"))}</dd>
-<dt>${t("Last update")}</dt><dd>${esc(day(d.rev))}</dd>
-<dt>URL</dt><dd>${link(d.url)}</dd></dl>
+<p class="record-title">${esc(d.title || "")}</p>
+<section class="summary"><h2>${t("At a glance")}</h2><dl class="kv"><dt>${t("Source")}</dt><dd>CERT-FR · ${esc(d.kind === "alerte" ? t("Alert") : t("Advisory"))}</dd>
+<dt>${t("Last update")}</dt><dd>${date(d.rev)}</dd>
+<dt>${t("Original publication")}</dt><dd>${link(d.url)}</dd></dl></section>
 ${d.cves?.length ? `<h2>${t("CVEs cited")} (${d.cves.length})</h2><ul class="plain">${d.cves.slice(0, 500).map(c => `<li><a href="/cve/${encodeURIComponent(c)}?lang=${locale}">${esc(c)}</a></li>`).join("")}</ul>` : ""}
 <h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`;
 }
@@ -159,25 +168,25 @@ function osvAdvisoryPage({ t, locale, asset }) {
 	const cves = (d.aliases || []).filter(a => /^CVE-\d{4}-\d{4,}$/.test(a));
 	const others = (d.aliases || []).filter(a => !cves.includes(a));
 	return `<h1>${esc(d.id)}</h1>
-<p>${esc(d.summary || "")}</p>
-${d.withdrawn ? `<p class="flag">${t("Withdrawn")} · ${esc(day(d.withdrawn))}</p>` : ""}
-<dl class="kv">
-${d.published ? `<dt>${t("Published")}</dt><dd>${esc(day(d.published))}</dd>` : ""}
-${d.modified ? `<dt>${t("Updated")}</dt><dd>${esc(day(d.modified))}</dd>` : ""}
+<p class="record-title">${esc(d.summary || "")}</p>
+${d.withdrawn ? `<p class="flag">${t("Withdrawn")} · ${date(d.withdrawn)}</p>` : ""}
+<section class="summary"><h2>${t("At a glance")}</h2><dl class="kv">
+${d.published ? `<dt>${t("Published")}</dt><dd>${date(d.published)}</dd>` : ""}
+${d.modified ? `<dt>${t("Updated")}</dt><dd>${date(d.modified)}</dd>` : ""}
 ${cves.length ? `<dt>CVE</dt><dd>${cves.map(c => `<a href="/cve/${encodeURIComponent(c)}?lang=${locale}">${esc(c)}</a>`).join(", ")}</dd>` : ""}
 ${others.length ? `<dt>${t("Aliases")}</dt><dd>${esc(others.join(", "))}</dd>` : ""}
 ${(d.severity || []).map(s => `<dt>${esc(s.type || "")}</dt><dd>${esc(s.score || "")}</dd>`).join("")}
-</dl>
-${d.affected?.length ? `<h2>${t("Affected packages")}</h2><div class="table-wrap"><table><thead><tr><th>${t("Package")}</th><th>${t("Versions")}</th></tr></thead><tbody>${
-	d.affected.slice(0, 50).map(a => `<tr><td>${esc(a.ecosystem || "")} · <b>${esc(a.name || "")}</b></td><td>${esc((a.ranges || []).map(rangeText).filter(Boolean).join(" ; ") || (a.versions || []).slice(0, 20).join(", "))}</td></tr>`).join("")}</tbody></table></div>` : ""}
+</dl></section>
 ${d.details ? `<h2>${t("Description")}</h2><p class="desc">${esc(d.details)}</p>` : ""}
+${d.affected?.length ? `<h2>${t("Affected packages")}</h2><div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Package")}</th><th scope="col">${t("Versions")}</th></tr></thead><tbody>${
+	d.affected.slice(0, 50).map(a => `<tr><td>${esc(a.ecosystem || "")} · <b>${esc(a.name || "")}</b></td><td>${esc((a.ranges || []).map(rangeText).filter(Boolean).join(" ; ") || (a.versions || []).slice(0, 20).join(", "))}</td></tr>`).join("")}</tbody></table></div>` : ""}
 ${d.references?.length ? `<h2>${t("References")}</h2><ul class="plain">${d.references.slice(0, 50).map(r => `<li>${link(r.url)}${r.type ? ` <span class="muted">${esc(r.type)}</span>` : ""}</li>`).join("")}</ul>` : ""}
 <h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`;
 }
 
 function sourcesPage({ t, jobs }) {
 	return `<h1>${t("Data sources")}</h1>
-<div class="table-wrap"><table><thead><tr><th>${t("Source")}</th><th>${t("Last update")}</th><th>${t("Status")}</th></tr></thead><tbody>${
+<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Source")}</th><th scope="col">${t("Last update")}</th><th scope="col">${t("Status")}</th></tr></thead><tbody>${
 	jobs.map(j => `<tr><td>${esc(j.label)}</td><td>${j.lastFinished ? esc(new Date(j.lastFinished).toISOString().replace("T", " ").slice(0, 16)) + " UTC" : t("never")}</td><td>${esc(j.status === "never" ? t("never") : j.status)} <span class="muted">${esc(j.detail)}</span></td></tr>`).join("")}</tbody></table></div>`;
 }
 
@@ -195,7 +204,7 @@ ${party(t, "Publisher", brand.publisher)}
 ${party(t, "Host", brand.host)}
 <h2>${t("Software and data")}</h2>
 <p>${esc(brand.name || DEFAULT_NAME)} — ${link("https://github.com/9pings/fad-checker", "fad-service")} (Apache-2.0). ${t("Data from the sources listed on each page, under their own licences.")}</p>
-<div class="table-wrap"><table><thead><tr><th>${t("Source")}</th><th>${t("Licence")}</th></tr></thead><tbody>
+<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Source")}</th><th scope="col">${t("Licence")}</th></tr></thead><tbody>
 <tr><td>${link("https://www.cve.org/", "CVE List (CVEProject cvelistV5)")}</td><td>CVE Program Terms of Use — Copyright © 1999–${new Date().getUTCFullYear()}, The MITRE Corporation. CVE and the CVE logo are registered trademarks of The MITRE Corporation. ${link("https://www.cve.org/Legal/TermsOfUse", "Terms of use")}</td></tr>
 <tr><td>${link("https://www.cisa.gov/known-exploited-vulnerabilities-catalog", "CISA KEV")}</td><td>CC0 1.0. No endorsement by CISA is implied.</td></tr>
 <tr><td>${link("https://www.first.org/epss/", "EPSS (FIRST.org)")}</td><td>FIRST — attribution requested.</td></tr>
