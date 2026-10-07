@@ -46,6 +46,11 @@ const DEFAULTS = {
 	},
 	// resourceCacheMaxBytes: budget of the /v1/resource pull-through cache (maintenance job).
 	jobs: { enabled: null, everyMinutes: 10, osvEcosystems: null, resourceCacheMaxBytes: "20G" },
+	// Publication rule (spec §6): a registry package gets a public page once this many
+	// distinct clients asked for it (or when it is seeded).
+	registry: { publishThreshold: 5 },
+	// Upstream routing: Maven Central requests go to these official mirrors first.
+	upstream: { mavenMirrors: ["https://maven-central-eu.storage-download.googleapis.com/maven2/"] },
 };
 
 const isObj = v => v && typeof v === "object" && !Array.isArray(v);

@@ -28,6 +28,7 @@ function memoryStore() {
 				account() {},
 				sink() { return new Writable({ write(c, e, done) { chunks.push(c); done(); } }); },
 				bytes() { body = Buffer.concat(chunks); return body.length; },
+				read() { return Buffer.concat(chunks); },
 				async commit(key, meta) { await tick(); rows.set(key, { ...meta, body }); },
 				detach(meta) { return { ...meta, body }; },
 				abort() {},

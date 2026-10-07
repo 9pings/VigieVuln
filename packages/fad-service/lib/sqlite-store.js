@@ -87,6 +87,7 @@ function createSqliteStore({ db, file = null, spoolDir = os.tmpdir(), maxEntryBy
 				account() {},
 				sink() { return fs.createWriteStream(tmp); },
 				bytes() { return fs.statSync(tmp).size; },
+				read() { return fs.readFileSync(tmp); },
 				commit(key, meta) { try { store.put(key, fs.readFileSync(tmp), meta); } finally { drop(); } },
 				detach(meta) {
 					const timer = setTimeout(drop, TRANSIENT_KEEP_MS);

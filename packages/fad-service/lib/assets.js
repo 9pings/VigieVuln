@@ -51,6 +51,21 @@ CREATE TABLE IF NOT EXISTS advisory_cve (
 	PRIMARY KEY (advisory, cve)
 );
 CREATE INDEX IF NOT EXISTS advisory_cve_by_cve ON advisory_cve (cve);
+-- Which packages an advisory affects (OSV affected[].package → purl without version).
+CREATE TABLE IF NOT EXISTS advisory_package (
+	advisory TEXT NOT NULL,
+	package TEXT NOT NULL,
+	PRIMARY KEY (advisory, package)
+);
+CREATE INDEX IF NOT EXISTS advisory_package_by_package ON advisory_package (package);
+-- Publication rule (spec §6): a registry package becomes public once K distinct clients
+-- asked for it, or when it is seeded. Rows hold a TRUNCATED keyed hash of the client — no
+-- token, no name — and are deleted the moment the package is published.
+CREATE TABLE IF NOT EXISTS package_demand (
+	package TEXT NOT NULL,
+	tag TEXT NOT NULL,
+	PRIMARY KEY (package, tag)
+);
 CREATE TABLE IF NOT EXISTS job_runs (
 	job TEXT PRIMARY KEY,
 	lease_until INTEGER NOT NULL DEFAULT 0,
@@ -102,6 +117,16 @@ function createAssetStore(db) {
 		linkAdd: db.prepare("INSERT OR IGNORE INTO advisory_cve (advisory, cve) VALUES (?, ?)"),
 		forCve: db.prepare(`SELECT a.key, a.title FROM advisory_cve l JOIN assets a ON a.type = 'advisory' AND a.key = l.advisory
 			WHERE l.cve = ? AND a.published = 1 ORDER BY a.key LIMIT 200`),
+		pkgLinkDel: db.prepare("DELETE FROM advisory_package WHERE advisory = ?"),
+		pkgLinkAdd: db.prepare("INSERT OR IGNORE INTO advisory_package (advisory, package) VALUES (?, ?)"),
+		forPackage: db.prepare(`SELECT a.key, a.title, a.data FROM advisory_package l JOIN assets a ON a.type = 'advisory' AND a.key = l.advisory
+			WHERE l.package = ? AND a.published = 1 ORDER BY a.key LIMIT 300`),
+		pkgLinkCount: db.prepare("SELECT COUNT(*) AS n FROM advisory_package"),
+		demandAdd: db.prepare("INSERT OR IGNORE INTO package_demand (package, tag) VALUES (?, ?)"),
+		demandCount: db.prepare("SELECT COUNT(*) AS n, MAX(tag = 'seed') AS seeded FROM package_demand WHERE package = ?"),
+		demandDel: db.prepare("DELETE FROM package_demand WHERE package = ?"),
+		publish: db.prepare("UPDATE assets SET published = 1 WHERE type = ? AND key = ? AND published = 0"),
+		isPublished: db.prepare("SELECT published FROM assets WHERE type = ? AND key = ?"),
 		byPrefix: db.prepare("SELECT key, data FROM assets WHERE type = ? AND key >= ? AND key < ?"),
 		epss: db.prepare(`INSERT INTO cve_signals (cve, epss_score, epss_percentile, epss_date, updated_at) VALUES (?, ?, ?, ?, ?)
 			ON CONFLICT(cve) DO UPDATE SET epss_score = excluded.epss_score, epss_percentile = excluded.epss_percentile,
@@ -158,6 +183,10 @@ function createAssetStore(db) {
 			const now = Date.now();
 			api.transaction(() => { for (const [cve, id, since] of rows) q.euvd.run(cve, id, since, now); });
 		},
+		/** Same as listByPrefix, one row at a time (hundreds of thousands of advisories). */
+		*iteratePrefix(type, prefix) {
+			for (const r of q.byPrefix.iterate(type, prefix, prefix + "\uffff")) yield { key: r.key, data: JSON.parse(r.data) };
+		},
 		/** Every asset of a type whose key starts with `prefix` → [{ key, data }]. */
 		listByPrefix(type, prefix) {
 			return q.byPrefix.all(type, prefix, prefix + "\uffff").map(r => ({ key: r.key, data: JSON.parse(r.data) }));
@@ -176,6 +205,31 @@ function createAssetStore(db) {
 			for (const cve of cves) q.linkAdd.run(advisoryKey, cve);
 		},
 		advisoriesForCve(cve) { return q.forCve.all(cve); },
+		/** The packages an advisory affects (call inside a transaction for bulk imports). */
+		linkAdvisoryPackages(advisoryKey, packages) {
+			q.pkgLinkDel.run(advisoryKey);
+			for (const p of packages) q.pkgLinkAdd.run(advisoryKey, p);
+		},
+		/** Published advisories affecting a package → [{ key, title, data }]. */
+		advisoriesForPackage(pkg) { return q.forPackage.all(pkg).map(r => ({ key: r.key, title: r.title, data: JSON.parse(r.data) })); },
+		advisoryPackageLinks() { return Number(q.pkgLinkCount.get().n); },
+		/**
+		 * Record that one client (a truncated keyed tag) or the seed ("seed") asked for a
+		 * package. → { distinct, seeded } so the caller can apply the publication rule.
+		 */
+		demand(pkg, tag) {
+			q.demandAdd.run(pkg, tag);
+			const r = q.demandCount.get(pkg);
+			return { distinct: Number(r.n), seeded: !!r.seeded };
+		},
+		demandOf(pkg) { const r = q.demandCount.get(pkg); return { distinct: Number(r.n), seeded: !!r.seeded }; },
+		/** Publish an asset and forget who asked for it. */
+		publish(type, key) {
+			const changed = q.publish.run(type, key).changes > 0;
+			q.demandDel.run(key);
+			return changed;
+		},
+		isPublished(type, key) { return !!q.isPublished.get(type, key)?.published; },
 		cveForEuvd(id) { return q.byAlias.get(id)?.cve || null; },
 		search(text, { type = null, limit = 20 } = {}) {
 			const match = ftsQuery(text);

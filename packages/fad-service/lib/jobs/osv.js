@@ -10,6 +10,7 @@
  */
 const { Readable } = require("node:stream");
 const { forEachJsonInZip } = require("../zip-stream");
+const { packageOfOsv } = require("../registry/purl");
 
 const BASE = "https://osv-vulnerabilities.storage.googleapis.com";
 const ECOSYSTEMS = ["Maven", "npm", "PyPI", "Packagist", "NuGet", "Go", "RubyGems"];
@@ -39,6 +40,7 @@ function osvAsset(v) {
 	}));
 	const cves = [...new Set([v.id, ...(v.aliases || [])].filter(x => /^CVE-\d{4}-\d{4,}$/.test(x)))];
 	const packages = [...new Set(affected.map(a => a.name).filter(Boolean))];
+	const packageKeys = [...new Set(affected.map(a => packageOfOsv({ ecosystem: a.ecosystem, name: a.name })).filter(Boolean))];
 	const url = `https://osv.dev/vulnerability/${encodeURIComponent(v.id)}`;
 	const title = String(v.summary || "").trim() || String(v.details || "").split("\n").find(l => l.trim())?.replace(/^#+\s*/, "").slice(0, 160) || v.id;
 	return {
@@ -53,6 +55,7 @@ function osvAsset(v) {
 			sources: [{ name: "OSV.dev", licence: osvLicence(v.id), url }],
 		},
 		cves,
+		packages: packageKeys,
 	};
 }
 
@@ -63,6 +66,7 @@ function store(assets, records) {
 			if (!out) continue;
 			assets.upsert(out.asset);
 			assets.linkAdvisory(out.asset.key, out.cves);
+			assets.linkAdvisoryPackages(out.asset.key, out.packages);
 		}
 	});
 }
@@ -108,9 +112,23 @@ async function importChanged(eco, ids, { fetcher, assets }) {
 	return records.length;
 }
 
+/** Advisories imported before package links existed get them from their stored record. */
+function relinkPackages(assets) {
+	let n = 0, batch = [];
+	const flush = () => { assets.transaction(() => { for (const [k, p] of batch) assets.linkAdvisoryPackages(k, p); }); batch = []; };
+	for (const { key, data } of assets.iteratePrefix("advisory", "osv:")) {
+		const pk = [...new Set((data.affected || []).map(a => packageOfOsv({ ecosystem: a.ecosystem, name: a.name })).filter(Boolean))];
+		if (pk.length) { batch.push([key, pk]); n++; }
+		if (batch.length >= BATCH) flush();
+	}
+	if (batch.length) flush();
+	return n;
+}
+
 async function run({ assets, fetcher, state, setState, log, ecosystems = ECOSYSTEMS }) {
 	const marks = { ...(state.since || {}) };
 	const parts = [];
+	if (!assets.advisoryPackageLinks() && Object.keys(marks).length) parts.push(`relinked ${relinkPackages(assets)} advisories to packages`);
 	for (const eco of ecosystems) {
 		const started = new Date().toISOString();
 		let n, how;
@@ -131,4 +149,4 @@ async function run({ assets, fetcher, state, setState, log, ecosystems = ECOSYST
 	return parts.join(" · ");
 }
 
-module.exports = { run, osvAsset, osvLicence, modifiedSince, ECOSYSTEMS };
+module.exports = { run, osvAsset, osvLicence, modifiedSince, relinkPackages, ECOSYSTEMS };

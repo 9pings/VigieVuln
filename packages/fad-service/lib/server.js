@@ -49,6 +49,7 @@ const BASE_PAGE_CSP = { "default-src": ["'none'"], "style-src": ["'self'"], "img
 const SITE_CSS = fs.readFileSync(path.join(__dirname, "web", "site.css"));
 const ID_PATTERNS = [
 	[/^CVE-\d{4}-\d{4,}$/i, id => `/cve/${id.toUpperCase()}`],
+	[/^pkg:(npm|pypi|maven|gem|composer|nuget|golang)\/[^@\s]+$/i, id => web.pkgPath(id.replace(/^pkg:[a-z]+/i, m => m.toLowerCase()))],
 	[/^GCVE-0-(\d{4})-(\d{4,})$/i, (id, m) => `/cve/CVE-${m[1]}-${m[2]}`],
 	[/^CERT(?:FR|A)-\d{4}-(?:AVI|ALE)-\d{1,5}$/i, id => `/advisory/certfr/${id.toUpperCase()}`],
 	[/^(?:GHSA(?:-[23456789cfghjmpqrvwx]{4}){3}|PYSEC-\d{4}-\d+|GO-\d{4}-\d+|MAL-\d{4}-\d+|RUSTSEC-\d{4}-\d+)$/i,
@@ -106,7 +107,7 @@ function addressBucket(ip) {
 function routeFamily(pathname) {
 	if (ROUTES.has(pathname)) return pathname;
 	if (pathname === "/") return "/";
-	return /^\/(cve|advisory\/certfr|advisory\/osv|api\/search|api\/cve|search|sources|legal|static)\b/.exec(pathname)?.[0] || "/*";
+	return /^\/(cve|advisory\/certfr|advisory\/osv|pkg|api\/search|api\/cve|search|sources|legal|static)\b/.exec(pathname)?.[0] || "/*";
 }
 
 const cspString = parts => Object.entries(parts).map(([k, v]) => `${k} ${[...new Set(v)].join(" ")}`).join("; ");
@@ -120,11 +121,11 @@ const cspString = parts => Object.entries(parts).map(([k, v]) => `${k} ${[...new
 function createServiceServer(opts = {}) {
 	const { store, tokens, region = "unknown", version = "0", keys = {}, log = null, logger = null, ratePerMinute = 600,
 		assets = null, jobStatus = () => [], publicRatePerMinute = 300, cacheSeconds = 300, trustProxy = false,
-		brand = {}, analytics = null, serverAnalytics = null, counters = null } = opts;
+		brand = {}, analytics = null, serverAnalytics = null, counters = null, registry = null } = opts;
 	if (!store || !tokens) throw new Error("fad-service needs a store and a token store");
 	const { createResourceEngine, upstreamHeadersFor, sendJson } = fad("resource-cache/engine");
 	const stats = { startedAt: Date.now(), requests: 0, hits: 0, misses: 0, coalesced: 0, stale: 0, upstream: 0, errors: 0 };
-	const engine = createResourceEngine({ ...opts, store, stats, keys });
+	const engine = createResourceEngine({ ...opts, store, stats, keys, transform: registry ? registry.transform : null });
 	const limited = createRateLimiter(ratePerMinute);
 	const publicLimited = createRateLimiter(publicRatePerMinute);
 	const logSalt = opts.logSalt || crypto.randomBytes(16).toString("hex");
@@ -204,14 +205,15 @@ function createServiceServer(opts = {}) {
 		if (req.method !== "GET" && req.method !== "HEAD") return false;
 		if (p.startsWith("/static/")) return routeStatic(req, res, p, url);
 		if (!assets) return false;
-		const isPage = ["/", "/search", "/sources", "/legal"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p);
+		const isPage = ["/", "/search", "/sources", "/legal"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p)
+			|| /^\/pkg\/(npm|pypi|maven|gem|composer|nuget|golang)\/.+$/.test(p);
 		const isApi = p === "/api/search" || /^\/api\/cve\/[^/]+$/.test(p);
 		if (!isPage && !isApi) return false;
 		if (!publicLimited("ip:" + addressBucket(clientIp(req)))) { sendJson(res, 429, { error: "rate limit exceeded" }, { "retry-after": "60" }); return true; }
 		const locale = pickLocale(url.searchParams.get("lang"), req.headers["accept-language"]);
 		const t = makeT(locale);
 		const q = String(url.searchParams.get("q") || "").slice(0, 200).trim();
-		const type = ["cve", "advisory"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : null;
+		const type = ["cve", "advisory", "package"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : null;
 		const page = (code, title, body) => sendPublic(req, res, code, "text/html; charset=utf-8",
 			web.layout({ t, locale, title, body, q, path: p + (q ? `?q=${encodeURIComponent(q)}` : ""), site }));
 
@@ -257,6 +259,19 @@ function createServiceServer(opts = {}) {
 				euvdUrl: e => `https://euvd.enisa.europa.eu/vulnerability/${encodeURIComponent(e)}` }));
 			return true;
 		}
+		if (p.startsWith("/pkg/")) {
+			const m = /^\/pkg\/([a-z]+)\/(.+)$/.exec(p);
+			const { packageKey, packageOfOsv } = require("./registry/purl");
+			const key = m ? packageKey(m[1], m[2].split("/").map(decodeURIComponent).join("/")) : null;
+			const asset = key ? assets.get("package", key) : null;
+			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
+			ctx.asset = key;
+			const { versionAffected } = require("./registry/versions");
+			const advisories = assets.advisoriesForPackage(key).map(a => ({ ...a,
+				entries: (a.data.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === key) }));
+			page(200, asset.data.name, web.packagePage({ t, locale, asset, advisories, versionAffected }));
+			return true;
+		}
 		if (p.startsWith("/advisory/osv/")) {
 			const id = decodeURIComponent(p.slice(14));
 			const asset = assets.get("advisory", "osv:" + id);
@@ -296,7 +311,12 @@ function createServiceServer(opts = {}) {
 			let payload;
 			try { payload = JSON.parse((await readBody(req, MAX_REQUEST_BYTES)).toString("utf8")); }
 			catch (error) { return sendJson(res, error.status || 400, { error: error.status ? error.message : "invalid resource request" }); }
-			return engine.handleResource(payload, res);
+			await engine.handleResource(payload, res);
+			if (registry && res.statusCode === 200) {
+				const seed = principal.role === "admin" && req.headers["x-fad-seed"] === "1";
+				try { registry.recordDemand(payload, principal, { seed }); } catch { /* never fail an answered request */ }
+			}
+			return;
 		}
 		if (principal.role !== "admin") return sendJson(res, 403, { error: "admin role required" });
 		if (p === "/admin/stats" && req.method === "GET")

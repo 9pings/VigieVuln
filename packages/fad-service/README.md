@@ -4,10 +4,10 @@ The public data service for [fad-checker](../../README.md): the same pull-throug
 resource cache as `fad-checker serve-cache`, behind per-client tokens, hosted in Europe.
 Design: `docs/SPEC-fad-service.md` (repository root). **Production: [docs/OPERATIONS.md](docs/OPERATIONS.md)**
 (Docker, systemd, configuration, branding, logs, metrics, analytics, backups).
-Status: milestone 3 — `/v1/resource`, tokens, admin routes, `--workers`, the vulnerability
+Status: milestone 4 — `/v1/resource`, tokens, admin routes, `--workers`, the vulnerability
 mirrors (cvelistV5, NVD via fkie, OSV, CISA KEV, EPSS, ENISA EUVD, CERT-FR; GCVE ids
-computed), full-text search and the public pages. Registries (package metadata), dumps and
-PostgreSQL follow.
+computed), package metadata (projections, Maven EU mirror, K-client publication rule, seed),
+full-text search and the public pages. Dumps and PostgreSQL follow.
 
 Requires Node ≥ 22.13 (built-in `node:sqlite`), `xz` for the NVD mirror. One dependency (`fflate`).
 
@@ -35,7 +35,7 @@ fad-checker -s ./project --proxy-cache https://fad.example.fr --proxy-cache-toke
 | `GET /admin/stats` | admin token | counters, store size |
 | `POST /admin/purge` | admin token | drop one resource `{ provider, type, params }` |
 | `GET /` · `/search?q=` | public | search (an exact CVE / GCVE / EUVD / CERT-FR id goes straight to its page) |
-| `GET /cve/:id` · `/advisory/certfr/:ref` | public | detail pages, FR/EN, with their sources and licences |
+| `GET /cve/:id` · `/advisory/(certfr|osv)/:id` · `/pkg/<eco>/<name>` | public | detail pages, FR/EN, with their sources and licences |
 | `GET /sources` · `/legal` | public | freshness of every mirror · attributions |
 | `GET /api/search?q=` · `/api/cve/:id` | public | the same data as JSON |
 

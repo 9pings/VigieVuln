@@ -74,7 +74,9 @@ function home({ t, counts }) {
 <p>${t("CISA KEV, ENISA and EPSS add exploitation context. Each record links to its sources and licences.")}</p></section>`;
 }
 
-const assetHref = (type, key, locale) => type === "cve" ? `/cve/${encodeURIComponent(key)}?lang=${locale}`
+const pkgPath = key => { const m = /^pkg:([a-z]+)\/(.+)$/.exec(key); return m ? `/pkg/${m[1]}/${m[2].split("/").map(encodeURIComponent).join("/")}` : null; };
+const assetHref = (type, key, locale) => type === "package" ? `${pkgPath(key)}?lang=${locale}`
+	: type === "cve" ? `/cve/${encodeURIComponent(key)}?lang=${locale}`
 	: type === "advisory" && key.startsWith("certfr:") ? `/advisory/certfr/${encodeURIComponent(key.slice(7))}?lang=${locale}`
 	: type === "advisory" && key.startsWith("osv:") ? `/advisory/osv/${encodeURIComponent(key.slice(4))}?lang=${locale}` : null;
 const assetName = key => key.replace(/^(certfr|osv):/, "");
@@ -85,7 +87,10 @@ function results({ t, locale, q, rows }) {
 	return heading + `<p class="muted">${t(rows.length === 1 ? "{n} result" : "{n} results", { n: rows.length })}</p>` + rows.map(r => {
 		const href = assetHref(r.type, r.key, locale);
 		const name = r.type === "advisory" ? assetName(r.key) : r.key;
-		return `<article class="result"><p class="eyebrow">${esc(r.type === "advisory" ? (r.key.startsWith("certfr:") ? "CERT-FR" : "OSV / GHSA") + " · " + t("advisory") : t(r.type))}</p><h2>${href ? `<a href="${esc(href)}">${esc(name)}</a>` : esc(name)}</h2>
+		const eyebrow = r.type === "advisory" ? (r.key.startsWith("certfr:") ? "CERT-FR" : "OSV / GHSA") + " · " + t("advisory")
+			: r.type === "package" ? `${t("package")} · ${r.key.slice(4, r.key.indexOf("/"))}` : t(r.type);
+		const label = r.type === "package" ? (r.title || r.key) : name;
+		return `<article class="result"><p class="eyebrow">${esc(eyebrow)}</p><h2>${href ? `<a href="${esc(href)}">${esc(label)}</a>` : esc(label)}</h2>
 <p>${esc(r.title || "")}</p></article>`;
 	}).join("\n");
 }
@@ -184,6 +189,49 @@ ${d.references?.length ? `<h2>${t("References")}</h2><ul class="plain">${d.refer
 <h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`;
 }
 
+const ECOSYSTEM_LABEL = { npm: "npm", pypi: "PyPI", maven: "Maven", gem: "RubyGems", composer: "Packagist", nuget: "NuGet", golang: "Go" };
+const verdict = (t, v) => v === true ? `<span class="flag">${t("Affected")}</span>` : v === false ? t("Not affected") : `<span class="muted">${t("Undetermined")}</span>`;
+
+/**
+ * advisories: [{ key, title, data, entries }] — entries = the record's `affected` items for
+ * this package; versionAffected(type, version, entries) → true | false | null.
+ */
+function packagePage({ t, locale, asset, advisories = [], versionAffected }) {
+	const d = asset.data;
+	const type = d.type;
+	const shown = (d.versions || []).slice(0, 60);
+	const latestVerdicts = advisories.map(a => versionAffected(type, d.latest, a.entries));
+	const kv = [[t("Ecosystem"), esc(ECOSYSTEM_LABEL[type] || type)]];
+	if (d.latest) kv.push([t("Latest version"), `${esc(d.latest)}${d.latestDate ? ` · ${date(d.latestDate)}` : ""}`]);
+	if (d.license) kv.push([t("Licence"), esc(d.license)]);
+	if (d.deprecated) kv.push([t("Status"), `<span class="flag">${esc(d.deprecated)}</span>`]);
+	if (advisories.length) {
+		const hit = latestVerdicts.filter(v => v === true).length, unknown = latestVerdicts.filter(v => v === null).length;
+		kv.push([t("Vulnerability status"), hit ? `<span class="flag">${t("affected by {n} advisory(ies)", { n: hit })}</span>`
+			: unknown ? `<span class="muted">${t("{n} advisory(ies) without a verdict", { n: unknown })}</span>` : t("No known advisory affects it")]);
+	}
+	if (d.homepage) kv.push([t("Homepage"), link(d.homepage)]);
+	if (d.repository) kv.push([t("Repository"), link(d.repository)]);
+	const rangeOf = entries => esc(entries.flatMap(e => (e.ranges || []).map(rangeText)).filter(Boolean).join(" ; ") || entries.flatMap(e => (e.versions || []).slice(0, 10)).join(", "));
+	return `<h1>${esc(d.name)}</h1>
+${d.description ? `<p class="record-title">${esc(d.description)}</p>` : ""}
+<section class="summary"><h2>${t("At a glance")}</h2><dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></section>
+<h2>${t("Advisories")} (${advisories.length})</h2>
+${advisories.length ? `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Advisory")}</th><th scope="col">${t("Affected versions")}</th><th scope="col">${t("Latest version")}</th></tr></thead><tbody>${
+	advisories.map((a, i) => `<tr><td><a href="${esc(assetHref("advisory", a.key, locale))}">${esc(assetName(a.key))}</a><br><span class="muted">${esc(a.title || "")}</span></td><td>${rangeOf(a.entries)}</td><td>${verdict(t, latestVerdicts[i])}</td></tr>`).join("")}</tbody></table></div>`
+	: `<p>${t("No advisory in the mirrored databases names this package.")}</p>`}
+${shown.length ? `<h2>${t("Versions")}</h2><div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Version")}</th><th scope="col">${t("Published")}</th><th scope="col">${t("Advisories")}</th></tr></thead><tbody>${
+	shown.map(v => {
+		const vs = advisories.map(a => versionAffected(type, v.version, a.entries));
+		const hit = vs.filter(x => x === true).length;
+		const cell = hit ? `<span class="flag">${hit}</span>` : vs.some(x => x === null) ? `<span class="muted">?</span>` : "0";
+		return `<tr><td>${esc(v.version)}${v.deprecated ? ` <span class="badge">${t("deprecated")}</span>` : ""}${v.yanked ? ` <span class="badge">${t("yanked")}</span>` : ""}</td><td>${v.date ? date(v.date) : ""}</td><td>${cell}</td></tr>`;
+	}).join("")}${(d.versions || []).length > shown.length ? `<tr><td colspan="3" class="muted">${t("+{n} more", { n: d.versions.length - shown.length })}</td></tr>` : ""}</tbody></table></div>
+<p class="muted">${t("“?” : the advisory gives no range that can be evaluated exactly for this ecosystem.")}</p>` : ""}
+${d.dependencies?.length ? `<h2>${t("Dependencies of the latest version")}</h2><ul class="plain">${d.dependencies.slice(0, 100).map(x => `<li><code>${esc(x.name)}</code> ${esc(x.range || "")} <span class="muted">${esc(x.scope || "")}</span></li>`).join("")}</ul>` : ""}
+<h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`;
+}
+
 function sourcesPage({ t, jobs }) {
 	return `<h1>${t("Data sources")}</h1>
 <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Source")}</th><th scope="col">${t("Last update")}</th><th scope="col">${t("Status")}</th></tr></thead><tbody>${
@@ -220,4 +268,4 @@ function notFound({ t }) {
 	return `<h1>${t("Not found")}</h1><p>${t("This item is not in the service.")}</p>`;
 }
 
-module.exports = { layout, home, results, cvePage, advisoryPage, osvAdvisoryPage, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };
+module.exports = { layout, home, results, cvePage, advisoryPage, osvAdvisoryPage, packagePage, pkgPath, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };

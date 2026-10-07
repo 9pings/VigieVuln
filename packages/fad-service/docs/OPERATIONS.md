@@ -123,12 +123,40 @@ director and the host must be identified (LCEN art. 6). The logo is served from
 | `osv` | 1 h | OSV.dev all.zip, then modified records only | ~1 min |
 | `kev`, `epss`, `euvd` | 24 h | CISA KEV, FIRST EPSS, ENISA EUVD | seconds |
 | `certfr` | 1 h | CERT-FR advisories (incremental) | ~1 min |
-| `maintenance` | 24 h | FTS optimize, planner stats, WAL truncate | seconds |
+| `maintenance` | 24 h | FTS optimize, planner stats, WAL truncate, resource-cache budget | seconds |
 
 `fad-service worker --once --jobs kev,epss` runs a pass by hand. A failed job keeps its last
 good data (an empty feed never wipes a table) and is retried at the next pass. On SIGTERM
 the worker releases its leases so another one can take over. Measured on a full cold import:
 ~5.5 min for every source, < 500 MB of memory; the database is ~4 GB.
+
+## Package metadata (registries)
+
+When a fad client asks for package metadata through `/v1/resource`, the answer is kept as a
+**projection**: the registry's JSON shape, only the fields fad reads plus what a package page
+shows (npm: versions, dist-tags, times, licences, deprecations, dependencies — no readme, no
+tarball URL). fad finds exactly the same things in it as in the raw answer (tested against
+fad's own extractors). Maven keeps `maven-metadata.xml` and POMs; no binary is ever stored.
+
+Maven Central requests go to the official EU mirror (`upstream.mavenMirrors`, Google's
+`maven-central-eu` bucket listed by Maven itself) and fall back to Central.
+
+**Publication rule.** A package gets a public page and enters the search only when
+`registry.publishThreshold` distinct clients (default 5) asked for it, or when an admin seeds
+it. Until then it is served to clients but invisible. Who asked is a truncated keyed hash of
+the token, deleted the moment the package is published. A name the registry answers 404 for
+(a private package) is never written anywhere.
+
+```bash
+fad-service seed --ecosystem npm --popular             # fad's curated list
+fad-service seed --ecosystem maven --list maven.txt    # one g:a per line (POM of the latest too)
+fad-service seed --ecosystem pypi --list top-pypi.txt --concurrency 4
+```
+
+Package pages (`/pkg/<npm|pypi|maven|gem|composer|nuget|golang>/<name>`) list the advisories
+naming the package and, per version, whether it is affected — **only where the ordering is
+exact** (Maven ComparableVersion, SemVer 2.0 for npm and Go, or the advisory's explicit version
+list); elsewhere the range is shown and the verdict is "?".
 
 ## Backups and restore
 

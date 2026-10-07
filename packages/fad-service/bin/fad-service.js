@@ -8,6 +8,7 @@
  *   fad-service token   add --role client|admin [--label t] | list | revoke <id>
  *   fad-service backup  [--config f.json] [--db f] (--out file.db | --dir d [--keep 7])
  *   fad-service config  [--config f.json]          print the effective configuration
+ *   fad-service seed    --ecosystem npm|pypi|maven|gem|composer|nuget|golang (--list f | --popular)
  *
  * Configuration: see lib/config.js (defaults ← JSON file ← flags). Upstream API keys come
  * from the environment only: FAD_SERVICE_NVD_KEY, FAD_SERVICE_GITHUB_TOKEN,
@@ -43,10 +44,11 @@ function parseArgs(argv) {
 const USAGE = `fad-service ${VERSION}
   fad-service serve  [--config f.json] [--db f] [--port 8322] [--host 127.0.0.1] [--region fr] [--workers N]
                      [--rate 600] [--log] [--log-file f] [--log-format text|json] [--trust-proxy]
-  fad-service worker [--config f.json] [--db f] [--once] [--jobs cvelist,kev,epss,euvd,certfr,nvd,osv,maintenance]
+  fad-service worker [--config f.json] [--db f] [--once] [--force] [--jobs cvelist,kev,epss,euvd,certfr,nvd,osv,maintenance]
   fad-service token  add --role client|admin [--label <text>] | list | revoke <id>   [--db f]
   fad-service backup [--config f.json] [--db f] (--out <file.db> | --dir <dir> [--keep 7])
-  fad-service config [--config f.json]`;
+  fad-service config [--config f.json]
+  fad-service seed   [--config f.json] --ecosystem npm|pypi|maven|gem|composer|nuget|golang (--list <file> | --popular) [--concurrency 4]`;
 
 function openAll(dbFile) {
 	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
@@ -56,9 +58,12 @@ function openAll(dbFile) {
 	db.exec("CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL)");
 	// The log salt is stable across restarts and workers, so one client keeps one tag,
 	// but it never leaves the database: the tag cannot be reversed to the token.
-	db.prepare("INSERT OR IGNORE INTO settings (name, value) VALUES ('log_salt', ?)").run(crypto.randomBytes(16).toString("hex"));
-	const logSalt = db.prepare("SELECT value FROM settings WHERE name = 'log_salt'").get().value;
-	return { db, store: createSqliteStore({ db }), tokens: createTokenStore(db), assets: createAssetStore(db), logSalt };
+	const secret = name => {
+		db.prepare("INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)").run(name, crypto.randomBytes(16).toString("hex"));
+		return db.prepare("SELECT value FROM settings WHERE name = ?").get(name).value;
+	};
+	return { db, store: createSqliteStore({ db }), tokens: createTokenStore(db), assets: createAssetStore(db),
+		logSalt: secret("log_salt"), demandSalt: secret("demand_salt") };
 }
 
 function makeLogger(cfg, { inWorker = false } = {}) {
@@ -73,7 +78,10 @@ function serveProcess(cfg, { logger, pushMetrics = null }) {
 	const { createServerAnalytics } = require("../lib/analytics");
 	const { createCounters } = require("../lib/metrics");
 	const { secretsFromEnv } = require("../lib/config");
-	const { db, store, tokens, assets, logSalt } = openAll(cfg.db);
+	const { db, store, tokens, assets, logSalt, demandSalt } = openAll(cfg.db);
+	const { createRegistryLayer } = require("../lib/registry");
+	const { createUpstreamFetcher } = require("../lib/upstream");
+	const registry = createRegistryLayer({ assets, threshold: cfg.registry.publishThreshold, salt: demandSalt });
 	const { createJobRunner } = require("../lib/jobs");
 	const jobs = createJobRunner({ assets });
 	const counters = createCounters();
@@ -82,7 +90,8 @@ function serveProcess(cfg, { logger, pushMetrics = null }) {
 		store, tokens, assets, jobStatus: jobs.status, logSalt, version: VERSION, region: String(cfg.region),
 		ratePerMinute: cfg.rateLimit.client, publicRatePerMinute: cfg.rateLimit.public, cacheSeconds: cfg.cacheSeconds,
 		trustProxy: !!cfg.trustProxy, maxInFlight: cfg.maxInFlight, maxConnections: cfg.maxConnections, brand: cfg.brand, analytics: cfg.analytics, serverAnalytics, counters,
-		logger: cfg.log.access ? logger : null, keys: secretsFromEnv(),
+		logger: cfg.log.access ? logger : null, keys: secretsFromEnv(), registry,
+		fetcher: createUpstreamFetcher(globalThis.fetch, { mavenMirrors: cfg.upstream.mavenMirrors }),
 	});
 	server.listen(cfg.listen.port, cfg.listen.host, () => {
 		logger.info("listening", { url: `http://${cfg.listen.host}:${server.address().port}`, pid: process.pid, version: VERSION, db: cfg.db });
@@ -191,7 +200,8 @@ async function worker(cfg, args) {
 	process.once("SIGINT", stop);
 	const everyMs = Math.max(1, Number(cfg.jobs.everyMinutes || 10)) * 60 * 1000;
 	for (;;) {
-		await runner.runDue(names);
+		if (args.force) for (const n of names) await runner.runJob(n);   // run now, due or not
+		else await runner.runDue(names);
 		if (args.once) { db.close(); return; }
 		await new Promise(ok => setTimeout(ok, everyMs));
 	}
@@ -221,6 +231,36 @@ function backup(cfg, args) {
 	}
 }
 
+/**
+ * Seed a list of packages through an in-process server (same path as a client request),
+ * with a temporary admin token revoked at the end.
+ */
+async function seedCommand(cfg, args) {
+	const { seed, readSpecs } = require("../lib/registry/seed");
+	const { createServiceServer } = require("../lib/server");
+	const { createRegistryLayer } = require("../lib/registry");
+	const { createUpstreamFetcher } = require("../lib/upstream");
+	const type = String(args.ecosystem || "");
+	const specs = readSpecs(type, { list: args.list === true ? null : args.list, popular: !!args.popular });
+	const { db, store, tokens, assets, demandSalt } = openAll(cfg.db);
+	const registry = createRegistryLayer({ assets, threshold: cfg.registry.publishThreshold, salt: demandSalt });
+	const server = createServiceServer({ store, tokens, assets, registry, ratePerMinute: 0, publicRatePerMinute: 0,
+		fetcher: createUpstreamFetcher(globalThis.fetch, { mavenMirrors: cfg.upstream.mavenMirrors }) });
+	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
+	const temp = tokens.add({ role: "admin", label: "seed (temporary)" });
+	try {
+		const t0 = Date.now();
+		const r = await seed({ baseUrl: `http://127.0.0.1:${server.address().port}`, token: temp.token, type, specs, assets,
+			concurrency: Number(args.concurrency || 4), log: line => console.log(line) });
+		console.log(`seeded ${type}: ${r.ok} ok, ${r.missing} not found, ${r.failed} failed (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
+		if (r.failed) process.exitCode = 1;
+	} finally {
+		tokens.revoke(temp.id);
+		await new Promise(ok => server.close(ok));
+		db.close();
+	}
+}
+
 function token(cfg, args) {
 	const { db, tokens } = openAll(cfg.db);
 	try {
@@ -242,7 +282,7 @@ function main(argv = process.argv.slice(2)) {
 	const args = parseArgs(argv);
 	if (args.version || args.v) { console.log(VERSION); return; }
 	const cmd = args._[0];
-	if (!["serve", "worker", "token", "backup", "config"].includes(cmd)) { console.error(USAGE); process.exitCode = 2; return; }
+	if (!["serve", "worker", "token", "backup", "config", "seed"].includes(cmd)) { console.error(USAGE); process.exitCode = 2; return; }
 	const { loadConfig } = require("../lib/config");
 	const cfg = loadConfig(args);
 	if (cmd === "config") { console.log(JSON.stringify({ ...cfg, metrics: { ...cfg.metrics, token: cfg.metrics.token ? "(set)" : null } }, null, 2)); return; }
@@ -250,6 +290,7 @@ function main(argv = process.argv.slice(2)) {
 	if (cmd === "worker") return worker(cfg, args).catch(fail);
 	if (cmd === "token") return token(cfg, args);
 	if (cmd === "backup") return backup(cfg, args);
+	if (cmd === "seed") return seedCommand(cfg, args).catch(fail);
 }
 
 function fail(error) { console.error(`fad-service: ${error.message}`); process.exitCode = 1; }
