@@ -457,43 +457,57 @@ function bind(d) {
 		 *   packages: [{ key, advisory, entries }] }] — entries = the advisory's `affected` items
 		 *   for that package (ranges, versions) so the caller can show what is fixed where.
 		 */
-		async listLibraries(limit = 10, { packagesPerCve = 5 } = {}) {
+		/**
+		 * The libraries most recently hit by a critical vulnerability: one row per package, from
+		 * its newest critical CVE (CNA or NVD headline >= 9.0) that a non-withdrawn OSV/GHSA
+		 * advisory ties to it. → [{ key, cve, advisory, data (the advisory), criticalCount, …cveRow }]
+		 * criticalCount = distinct critical CVEs of that package across non-withdrawn advisories.
+		 */
+		async listLibraries(limit = 10) {
 			limit = Math.max(1, Math.min(200, Number(limit) || 10));
-			const out = [];
 			const marks = list => list.map(() => "?").join(", ");
-			// Critical CVEs newest first, a page at a time, until `limit` of them name a package.
-			// Each step is an index lookup (the planner otherwise scans every CVE asset).
-			for await (const ids of criticalPages()) {
-				const ac = await d.all(`SELECT advisory, cve FROM advisory_cve WHERE cve IN (${marks(ids)})`, ids);
-				const advisories = [...new Set(ac.map(r => r.advisory))];
-				const pkgs = advisories.length ? await d.all(`SELECT advisory, package FROM advisory_package WHERE advisory IN (${marks(advisories)})`, advisories) : [];
-				const withPkg = [...new Set(pkgs.map(r => r.advisory))];
-				const docs = new Map();
-				for (let i = 0; i < withPkg.length; i += CHUNK) {
-					const part = withPkg.slice(i, i + CHUNK);
+			const docs = new Map();                       // advisory key → data | null (withdrawn / unpublished)
+			const loadAdvisories = async keys => {
+				const want = keys.filter(k => !docs.has(k));
+				for (let i = 0; i < want.length; i += CHUNK) {
+					const part = want.slice(i, i + CHUNK);
+					for (const k of part) docs.set(k, null);
 					for (const r of await d.all(`SELECT key, data FROM assets WHERE type = 'advisory' AND published = 1 AND key IN (${marks(part)})`, part)) {
 						const data = JSON.parse(r.data);
 						if (!data.withdrawn) docs.set(r.key, data);
 					}
 				}
+			};
+			const picked = new Map();                     // package → { key, cve, advisory }
+			// Critical CVEs newest first, a page at a time; each step an index lookup.
+			for await (const ids of criticalPages()) {
+				const ac = await d.all(`SELECT advisory, cve FROM advisory_cve WHERE cve IN (${marks(ids)})`, ids);
+				const advisories = [...new Set(ac.map(r => r.advisory))];
+				if (!advisories.length) continue;
+				const pkgs = await d.all(`SELECT advisory, package FROM advisory_package WHERE advisory IN (${marks(advisories)})`, advisories);
+				await loadAdvisories([...new Set(pkgs.map(r => r.advisory))]);
 				const pkgsOf = new Map();
-				for (const r of pkgs) if (docs.has(r.advisory)) (pkgsOf.get(r.advisory) || pkgsOf.set(r.advisory, []).get(r.advisory)).push(r.package);
-				const byCve = new Map();
-				for (const r of ac) {
-					for (const pkg of pkgsOf.get(r.advisory) || []) {
-						const list = byCve.get(r.cve) || byCve.set(r.cve, new Map()).get(r.cve);
-						if (!list.has(pkg)) list.set(pkg, { key: pkg, advisory: r.advisory, data: docs.get(r.advisory) });
-					}
+				for (const r of pkgs) if (docs.get(r.advisory)) (pkgsOf.get(r.advisory) || pkgsOf.set(r.advisory, []).get(r.advisory)).push(r.package);
+				const order = new Map(ids.map((c, i) => [c, i]));
+				ac.sort((x, y) => order.get(x.cve) - order.get(y.cve) || x.advisory.localeCompare(y.advisory));
+				for (const r of ac) for (const pkg of pkgsOf.get(r.advisory) || []) {
+					if (picked.size >= limit) break;
+					if (!picked.has(pkg)) picked.set(pkg, { key: pkg, cve: r.cve, advisory: r.advisory });
 				}
-				for (const id of ids) {
-					if (out.length >= limit) break;
-					const pk = byCve.get(id);
-					if (pk) out.push({ cve: id, packages: [...pk.values()] });
-				}
-				if (out.length >= limit) break;
+				if (picked.size >= limit) break;
 			}
-			const rows = await api.cveRows(out.map(o => o.cve));
-			return rows.map((r, i) => ({ ...r, packagesTotal: out[i].packages.length, packages: out[i].packages.slice(0, packagesPerCve) }));
+			const rows = [...picked.values()];
+			if (!rows.length) return [];
+			// How many distinct critical CVEs each picked library has (withdrawn advisories excluded).
+			const keys = rows.map(r => r.key);
+			const links = await d.all(`SELECT ap.package, ap.advisory, ac.cve FROM advisory_package ap
+				JOIN advisory_cve ac ON ac.advisory = ap.advisory JOIN cve_rank r ON r.cve = ac.cve
+				WHERE ap.package IN (${marks(keys)}) AND (r.cna_score >= 9 OR r.nvd_score >= 9)`, keys);
+			await loadAdvisories([...new Set(links.map(l => l.advisory))]);
+			const counts = new Map();
+			for (const l of links) if (docs.get(l.advisory)) (counts.get(l.package) || counts.set(l.package, new Set()).get(l.package)).add(l.cve);
+			const info = new Map((await api.cveRows([...new Set(rows.map(r => r.cve))])).map(r => [r.cve, r]));
+			return rows.map(r => ({ ...info.get(r.cve), key: r.key, advisory: r.advisory, data: docs.get(r.advisory), criticalCount: counts.get(r.key)?.size || 1 }));
 		},
 		async publishedPackages(keys) {
 			if (!keys.length) return [];
@@ -508,15 +522,19 @@ function bind(d) {
 			if (!ids.length) return [];
 			const marks = ids.map(() => "?").join(", ");
 			const [titles, ranks, sigs] = await Promise.all([
-				d.all(`SELECT key, title FROM assets WHERE type = 'cve' AND key IN (${marks})`, ids),
+				d.all(`SELECT key, title, data FROM assets WHERE type = 'cve' AND key IN (${marks})`, ids),
 				d.all(`SELECT cve, published, cna_score, nvd_score FROM cve_rank WHERE cve IN (${marks})`, ids),
 				d.all(`SELECT cve, epss_score, epss_percentile, kev FROM cve_signals WHERE cve IN (${marks})`, ids)]);
 			const by = (rows, k) => new Map(rows.map(r => [r[k], r]));
 			const T = by(titles, "key"), R = by(ranks, "cve"), S = by(sigs, "cve");
+			// CWEs: the CVE record's (CNA, ADP), then NVD's.
+			const nvdCwes = new Map((await d.all(`SELECT cve, data FROM cve_nvd WHERE cve IN (${marks})`, ids)).map(r => [r.cve, JSON.parse(r.data).cwes || []]));
 			return ids.map(cve => {
 				const r = R.get(cve) || {}, sg = S.get(cve) || {};
 				const scores = [r.cna_score, r.nvd_score].map(finiteScore).filter(x => x != null);
-				return { cve, title: T.get(cve)?.title || null, published: r.published || null, score: scores.length ? Math.max(...scores) : null,
+				const own = T.get(cve)?.data ? JSON.parse(T.get(cve).data).cwes || [] : [];
+				const cwes = [...new Set([...own, ...(nvdCwes.get(cve) || [])].map(String).filter(c => /^CWE-\d+$/.test(c)))];
+				return { cve, title: T.get(cve)?.title || null, cwes, published: r.published || null, score: scores.length ? Math.max(...scores) : null,
 					epss: finiteScore(sg.epss_score), epssPercentile: finiteScore(sg.epss_percentile), kev: sg.kev ? JSON.parse(sg.kev) : null };
 			});
 		},

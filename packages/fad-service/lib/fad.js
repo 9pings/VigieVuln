@@ -12,4 +12,13 @@ function fad(rel) {
 	}
 }
 
-module.exports = { fad };
+/** The same for fad-checker's data/ files (CWE names…). */
+function fadData(file) {
+	try { return require(`fad-checker/data/${file}`); }
+	catch (error) {
+		if (error.code !== "MODULE_NOT_FOUND" || !String(error.message).includes("fad-checker")) throw error;
+		return require(path.join(__dirname, "..", "..", "..", "data", file));
+	}
+}
+
+module.exports = { fad, fadData };

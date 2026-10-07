@@ -68,8 +68,8 @@ ${body}
 const CVE_LISTS = {
 	critical: { title: "Latest critical vulnerabilities",
 		intro: "Published CVEs whose headline CVSS score — from the CNA or from NVD — is 9.0 or more, newest first." },
-	libraries: { title: "Latest critical vulnerabilities in libraries",
-		intro: "Critical CVEs (CVSS 9.0 or more, from the CNA or NVD) that an OSV / GitHub advisory ties to a package, newest first — with the versions that fix them." },
+	libraries: { title: "Libraries recently hit by a critical vulnerability",
+		intro: "One row per library, from its newest critical CVE (CVSS 9.0 or more, from the CNA or NVD) that an OSV / GitHub advisory ties to it: the affected versions, the weakness, the fix." },
 	exploited: { title: "Most likely to be exploited",
 		intro: "Highest EPSS probability (FIRST.org) of exploitation activity in the next 30 days, across every published CVE." },
 	kev: { title: "Recently added to CISA KEV",
@@ -92,24 +92,56 @@ function cveTable(t, locale, rows) {
 }
 
 const pkgParts = key => { const m = /^pkg:([a-z]+)\/(.+)$/.exec(key); return m ? { eco: m[1], name: m[2] } : { eco: "", name: key }; };
-/** One library of a "libraries" row: its page when it has one, else the advisory that names it. */
-function libraryLink(locale, p) {
-	const { eco, name } = pkgParts(p.key);
-	const href = p.hasPage ? `${pkgPath(p.key)}?lang=${locale}` : assetHref("advisory", p.advisory, locale);
-	return `<a href="${esc(href)}">${esc(name)}</a> <span class="muted">${esc(ECOSYSTEM_LABEL[eco] || eco)}</span>`;
+/** A library: its page when it has one, else the advisory that names it. */
+function libraryLink(locale, r) {
+	const { eco, name } = pkgParts(r.key);
+	const href = r.hasPage ? `${pkgPath(r.key)}?lang=${locale}` : assetHref("advisory", r.advisory, locale);
+	return `<a href="${esc(href)}"><b>${esc(name)}</b></a> <span class="muted">${esc(ECOSYSTEM_LABEL[eco] || eco)}</span>`;
 }
-const moreLibraries = (t, r) => r.packagesTotal > r.packages.length ? ` <span class="muted">${t("+{n} more", { n: r.packagesTotal - r.packages.length })}</span>` : "";
+
+/**
+ * The affected versions of one package, short: "< 3.88.0", "2.0 – < 2.15.0", "≤ 3.0.0-beta3",
+ * "≥ 1.2" (no fix), or the advisory's explicit list. The advisory's own bounds, nothing inferred.
+ */
+function affectedText(entries) {
+	const parts = [];
+	for (const e of entries) {
+		for (const r of e.ranges || []) {
+			let from = null;
+			for (const ev of r.events || []) {
+				if (ev.introduced != null) from = String(ev.introduced) === "0" ? null : String(ev.introduced);
+				else if (ev.fixed != null) { parts.push(from ? `${from} – < ${ev.fixed}` : `< ${ev.fixed}`); from = undefined; }
+				else if (ev.last_affected != null) { parts.push(from ? `${from} – ${ev.last_affected}` : `≤ ${ev.last_affected}`); from = undefined; }
+			}
+			if (from !== undefined) parts.push(from ? `≥ ${from}` : "*");
+		}
+		if (!(e.ranges || []).length && (e.versions || []).length) parts.push(e.versions.slice(0, 3).join(", ") + (e.versions.length > 3 ? ", …" : ""));
+	}
+	const all = [...new Set(parts)];
+	return all.length > 3 ? all.slice(0, 3).join(" ; ") + " ; …" : all.join(" ; ");
+}
+
+const CWE_NAMES = (() => { try { const { fadData } = require("../fad"); return { en: fadData("cwe-names.json"), fr: fadData("cwe-names-fr.json") }; } catch { return { en: {}, fr: {} }; } })();
+const cweTitle = (id, locale) => (CWE_NAMES[locale] || {})[id] || CWE_NAMES.en[id] || "";
+/** "CWE-89 SQL Injection" (+n), or the CVE's title when it carries no CWE. */
+function weaknessText(locale, r, max = 110) {
+	if (r.cwes?.length) {
+		const c = r.cwes[0], name = cweTitle(c, locale);
+		return `<abbr title="${esc(CWE_NAMES.en[c] || c)}">${esc(c)}</abbr>${name ? " " + esc(name) : ""}${r.cwes.length > 1 ? ` <span class="muted">+${r.cwes.length - 1}</span>` : ""}`;
+	}
+	return r.title ? `<span class="muted">${esc(r.title.length > max ? r.title.slice(0, max - 3) + "…" : r.title)}</span>` : "";
+}
+const otherCriticals = (t, r) => r.criticalCount > 1 ? ` <span class="muted">${t("{n} critical CVEs", { n: r.criticalCount })}</span>` : "";
 
 function librariesTable(t, locale, rows) {
-	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">CVE</th><th scope="col">${t("Library")}</th><th scope="col">${t("Fixed in")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Published")}</th><th scope="col">${t("Exploitation")}</th></tr></thead><tbody>${
-		rows.map(r => `<tr><td>${cveLink(r.cve, locale)}${r.title ? `<br><span class="muted">${esc(r.title.length > 120 ? r.title.slice(0, 117) + "…" : r.title)}</span>` : ""}</td><td>${
-			r.packages.map(p => libraryLink(locale, p)).join("<br>")}${moreLibraries(t, r)}</td><td>${
-			r.packages.map(p => fixCell(t, p.entries)).join("<br>")}</td><td>${badge(severityOf(r.score), r.score)}</td><td>${r.published ? date(r.published) : ""}</td><td>${kevMark(t, r.kev)}${r.epss != null ? ` <span class="muted">EPSS\u00a0${pct(r.epss)}</span>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Library")}</th><th scope="col">${t("Affected versions")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Weakness")}</th><th scope="col">CVE</th><th scope="col">${t("Fixed in")}</th></tr></thead><tbody>${
+		rows.map(r => `<tr><td>${libraryLink(locale, r)}${otherCriticals(t, r)}</td><td><code>${esc(affectedText(r.entries))}</code></td><td>${badge(severityOf(r.score), r.score)}${r.kev ? " " + kevMark(t, r.kev) : ""}</td><td>${weaknessText(locale, r)}</td><td>${cveLink(r.cve, locale)}${r.published ? `<br><span class="muted">${date(r.published)}</span>` : ""}</td><td>${fixCell(t, r.entries)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
+/** Home page: "name — versions — CRITICAL 9.8 : CWE-89 SQL Injection". */
 function libraryMiniList(t, locale, rows) {
 	if (!rows.length) return `<p class="muted">${t("Nothing yet — the data is being imported.")}</p>`;
-	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${cveLink(r.cve, locale)} ${badge(severityOf(r.score), r.score)} ${kevMark(t, r.kev)}</span><span>${r.packages.slice(0, 2).map(p => libraryLink(locale, p)).join(", ")}${r.packagesTotal > 2 ? ` <span class="muted">${t("+{n} more", { n: r.packagesTotal - 2 })}</span>` : ""}</span></li>`).join("")}</ol>`;
+	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${libraryLink(locale, r)} <code>${esc(affectedText(r.entries))}</code></span><span>${badge(severityOf(r.score), r.score)} ${weaknessText(locale, r, 80)}</span><span class="muted">${cveLink(r.cve, locale)}${otherCriticals(t, r)}</span></li>`).join("")}</ol>`;
 }
 
 function cveListPage({ t, locale, kind, rows }) {

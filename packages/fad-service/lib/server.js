@@ -233,14 +233,15 @@ function createServiceServer(opts = {}) {
 		while (panelMemo.size > 500) panelMemo.delete(panelMemo.keys().next().value);
 		return value;
 	}
-	/** Critical CVEs that name a library: the packages' own affected entries, and whether each has a page. */
+	/** The libraries most recently hit by a critical CVE: the package's own affected entries, and whether it has a page. */
 	async function librariesList(limit) {
 		const { packageOfOsv } = require("./registry/purl");
 		const rows = await assets.listLibraries(limit);
-		const withPage = new Set(await assets.publishedPackages([...new Set(rows.flatMap(r => r.packages.map(p => p.key)))]));
-		return rows.map(r => ({ ...r, packages: r.packages.map(p => ({ key: p.key, advisory: p.advisory, hasPage: withPage.has(p.key),
-			entries: (p.data.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === p.key) })) }));
+		const withPage = new Set(await assets.publishedPackages(rows.map(r => r.key)));
+		return rows.map(({ data, ...r }) => ({ ...r, hasPage: withPage.has(r.key),
+			entries: (data?.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === r.key) }));
 	}
+
 	// The CVE lists (home page, /cves): a few indexed queries, memoised and single-flight —
 	// they change with the hourly imports, not with each visit.
 	const LIST_TTL_MS = 10 * 60 * 1000;

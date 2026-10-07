@@ -147,7 +147,7 @@ test("pages: a version page lists what affects it, the closest safe upgrade, nev
 	} finally { await s.close(); }
 });
 
-test("lists: latest critical vulnerabilities in libraries — CVE → advisory → package, withdrawn excluded", opts, async () => {
+test("lists: libraries recently hit by a critical CVE — one row per library, newest first, withdrawn excluded", opts, async () => {
 	const { assets } = await open(":memory:");
 	await seedLists(assets);
 	const adv = (id, cves, pkgs, extra = {}) => ({ type: "advisory", key: `osv:${id}`, title: id, sources: [],
@@ -156,17 +156,21 @@ test("lists: latest critical vulnerabilities in libraries — CVE → advisory �
 		adv("GHSA-1", ["CVE-2026-0002"], ["lib-a", "lib-b"]),
 		adv("GHSA-2", ["CVE-2026-0007"], ["lib-c"], { withdrawn: "2026-01-01" }),   // withdrawn: CVE-0007 has no library
 		adv("GHSA-3", ["CVE-2026-0006"], ["lib-d"]),                                 // CVE-0006 is not critical (5.0)
+		adv("GHSA-4", ["CVE-2026-0001"], ["lib-a"]),                                 // lib-a's second, older critical CVE
 	];
 	await assets.upsertMany(advs.map(({ cves, pkgs, ...a }) => a));
 	await assets.linkMany(advs.map(a => ({ advisory: a.key, cves: a.cves, packages: a.pkgs.map(n => `pkg:npm/${n}`) })));
+	await assets.upsert({ ...cve("CVE-2026-0002", { score: 7.5, published: "2026-03-05T10:00:00Z" }),
+		data: { id: "CVE-2026-0002", state: "PUBLISHED", published: "2026-03-05T10:00:00Z", score: 7.5, cwes: ["CWE-89"] } });
 	const rows = await assets.listLibraries(10);
-	assert.deepEqual(rows.map(r => r.cve), ["CVE-2026-0002"]);
-	assert.deepEqual(rows[0].packages.map(p => p.key), ["pkg:npm/lib-a", "pkg:npm/lib-b"]);
-	assert.equal(rows[0].packages[0].advisory, "osv:GHSA-1");
+	assert.deepEqual(rows.map(r => [r.key, r.cve]), [["pkg:npm/lib-a", "CVE-2026-0002"], ["pkg:npm/lib-b", "CVE-2026-0002"]],
+		"one row per library, from its newest critical CVE; lib-c (withdrawn) and lib-d (not critical) absent");
+	assert.equal(rows[0].advisory, "osv:GHSA-1");
 	assert.equal(rows[0].score, 9.1);
-	const one = await assets.listLibraries(10, { packagesPerCve: 1 });
-	assert.equal(one[0].packages.length, 1);
-	assert.equal(one[0].packagesTotal, 2);
+	assert.deepEqual(rows[0].cwes, ["CWE-89"]);
+	assert.equal(rows[0].criticalCount, 2, "lib-a: CVE-0002 and CVE-0001");
+	assert.equal(rows[1].criticalCount, 1);
+	assert.deepEqual((await assets.listLibraries(1)).map(r => r.key), ["pkg:npm/lib-a"]);
 });
 
 test("pages: /cves?list=libraries, the versions panel on package and version pages, a branch without a fix is said so", opts, async () => {
@@ -186,11 +190,13 @@ test("pages: /cves?list=libraries, the versions panel on package and version pag
 	const get = async p => (await fetch(base + p)).text();
 	try {
 		const libs = await get("/cves?list=libraries&lang=en");
-		assert.ok(libs.includes("Latest critical vulnerabilities in libraries"));
+		assert.ok(libs.includes("Libraries recently hit by a critical vulnerability"));
+		assert.ok(libs.includes("<code>1.0.0 – &lt; 1.2.0 ; 2.0.0 – 2.1.0</code>"), "the affected versions, short");
 		assert.ok(libs.includes('href="/pkg/npm/demo?lang=en"'), "a library with a public page links to it");
 		assert.ok(libs.includes("1.2.0") && libs.includes("≤ 2.1.0, no fix"), "each branch: its fix, or no fix");
 		const home = await get("/?lang=en");
-		assert.ok(home.includes("Latest critical vulnerabilities in libraries"));
+		assert.ok(home.includes("Libraries recently hit by a critical vulnerability"));
+		assert.match(home, /<b>demo<\/b><\/a> <span class="muted">npm<\/span> <code>1\.0\.0 – &lt; 1\.2\.0 ; 2\.0\.0 – 2\.1\.0<\/code>/, "name — versions");
 
 		const pkg = await get("/pkg/npm/demo?lang=en");
 		assert.match(pkg, /<div class="pkg-layout"><div class="pkg-main"><h1>demo<\/h1>/);

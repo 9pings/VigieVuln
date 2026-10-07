@@ -174,8 +174,8 @@ listed apart and never give a verdict.
 
 **CVE lists** — on the home page (10 each) and at `/cves?list=critical|libraries|exploited|kev`
 (100): the latest CVEs whose headline CVSS — the CNA's or NVD's (newest CVSS version, NVD
-Primary first) — is 9.0 or more; the same restricted to those an OSV/GHSA advisory ties to a
-**library** (with the package and its fixed versions); the highest EPSS probabilities; the
+Primary first) — is 9.0 or more; the **libraries** most recently hit by one — one row per library: its affected versions,
+severity, CWE (or the CVE title), fixed versions and how many critical CVEs it has; the highest EPSS probabilities; the
 latest CISA KEV additions. They
 read the `cve_rank` table, kept in step by every CVE / NVD write (jobs and dump restores) and
 filled once from the existing data when an older database is opened (402 586 CVEs: 15 s).
