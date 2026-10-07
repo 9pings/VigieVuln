@@ -41,7 +41,7 @@ test("pg: stores, search (tsvector), links, signals, demand, tokens, resource ca
 		const t = await s.tokens.add({ role: "client" });
 		assert.equal((await s.tokens.verify(t.token)).role, "client");
 		await s.store.put("k", Buffer.from("body"), { fetchedAt: 1, ttlMs: 2, contentType: "text/plain", bytes: 4 });
-		assert.equal((await s.store.get("k")).body.toString(), "body");
+		assert.equal((await s.store.readBody(await s.store.get("k"))).toString(), "body");
 		assert.equal(await s.store.size(), 1);
 		assert.deepEqual(await s.assets.counts(), { cve: 1, advisory: 1, package: 1 });
 	} finally { await s.driver.close(); }

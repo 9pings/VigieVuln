@@ -15,28 +15,41 @@
  */
 
 const FLUSH_MS = 60 * 1000;
+const MAX_PENDING = 10000;
 
-async function createServerAnalytics(driver) {
+/**
+ * Counters are kept in memory and written every minute. A flood of distinct pages cannot
+ * grow them without bound: at maxPending keys they are written early, and while a write is
+ * still running a new key is counted under "(overflow)" — the total stays right, only the
+ * per-page split of that burst is lost.
+ */
+async function createServerAnalytics(driver, { maxPending = MAX_PENDING } = {}) {
 	await driver.exec(driver.ddl(`CREATE TABLE IF NOT EXISTS analytics_daily (
 		day TEXT NOT NULL, metric TEXT NOT NULL, key TEXT NOT NULL, count {INT} NOT NULL,
 		PRIMARY KEY (day, metric, key))`));
 	const pending = new Map();
 	const today = () => new Date().toISOString().slice(0, 10);
+	let writing = 0;
 	const bump = (metric, key) => {
-		const k = `${today()}|${metric}|${key}`;
+		let k = `${today()}|${metric}|${key}`;
+		if (!pending.has(k) && pending.size >= maxPending) {
+			if (!writing) flush();
+			else k = `${today()}|${metric}|(overflow)`;
+		}
 		pending.set(k, (pending.get(k) || 0) + 1);
 	};
 	let flushing = Promise.resolve();
 	const flush = () => {
 		if (!pending.size) return flushing;
 		const rows = [...pending]; pending.clear();
+		writing++;
 		flushing = flushing.then(() => driver.transaction(async tx => {
 			for (const [k, n] of rows) {
 				const [day, metric, key] = k.split("|");
 				await tx.run(`INSERT INTO analytics_daily (day, metric, key, count) VALUES (?, ?, ?, ?)
 					ON CONFLICT (day, metric, key) DO UPDATE SET count = analytics_daily.count + excluded.count`, [day, metric, key, n]);
 			}
-		})).catch(() => {});
+		})).catch(() => {}).finally(() => { writing--; });
 		return flushing;
 	};
 	const timer = setInterval(flush, FLUSH_MS);
@@ -50,6 +63,7 @@ async function createServerAnalytics(driver) {
 			if (asset && status === 200) bump("asset", asset);
 		},
 		flush,
+		pendingSize: () => pending.size,
 		/** → { days: { day: { view: {family: n}, search: n } }, topAssets: [[key, n]] } over the last `days`. */
 		async report(days = 30) {
 			await flush();

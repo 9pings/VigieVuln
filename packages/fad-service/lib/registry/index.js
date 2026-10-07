@@ -42,12 +42,28 @@ function packageAsset(pkg, published) {
 }
 
 /**
- * opts: { assets, threshold (K, default 5), salt (stable secret for the demand tags) }
+ * opts: { assets, threshold (K, default 5), salt (stable secret for the demand tags),
+ *         memoEntries (default 50000) }
  */
-function createRegistryLayer({ assets, threshold = 5, salt }) {
+function createRegistryLayer({ assets, threshold = 5, salt, memoEntries = 50000 }) {
 	if (!salt) throw new Error("registry layer needs a salt for demand tags");
 	const tagOf = principal => crypto.createHmac("sha256", salt).update(principal.hash).digest("hex").slice(0, 8);
 	const publishable = async key => { const d = await assets.demandOf(key); return d.seeded || d.distinct >= threshold; };
+
+	// recordDemand runs after EVERY answered package request: what it already wrote is
+	// remembered here so a repeat costs no SQL. Bounded LRUs, in memory only, and filled
+	// only for packages a public registry knows (the asset check comes first) — the same
+	// names a public page shows, never a private one. Idempotent writes make a forgotten
+	// entry harmless: it is just written again.
+	const lru = () => {
+		const m = new Map();
+		return {
+			has(k) { if (!m.has(k)) return false; m.delete(k); m.set(k, 1); return true; },
+			add(k) { m.delete(k); m.set(k, 1); while (m.size > memoEntries) m.delete(m.keys().next().value); },
+			get size() { return m.size; },
+		};
+	};
+	const recorded = lru(), publishedKeys = lru();
 
 	async function upsertPackage(pkg) {
 		if (pkg.type === "maven") {
@@ -88,14 +104,18 @@ function createRegistryLayer({ assets, threshold = 5, salt }) {
 	 */
 	async function recordDemand(payload, principal, { seed = false } = {}) {
 		const key = packageOfRequest(payload);
-		if (!key || !principal || !(await assets.get("package", key, { includeUnpublished: true }))) return null;
-		if (await assets.isPublished("package", key)) return key;
-		const d = await assets.demand(key, seed ? "seed" : tagOf(principal));
-		if (d.seeded || d.distinct >= threshold) await assets.publish("package", key);
+		if (!key || !principal) return null;
+		const tag = seed ? "seed" : tagOf(principal);
+		if (publishedKeys.has(key) || recorded.has(`${key}\0${tag}`)) return key;
+		if (!(await assets.get("package", key, { includeUnpublished: true }))) return null;
+		if (await assets.isPublished("package", key)) { publishedKeys.add(key); return key; }
+		const d = await assets.demand(key, tag);
+		if (d.seeded || d.distinct >= threshold) { await assets.publish("package", key); publishedKeys.add(key); }
+		else recorded.add(`${key}\0${tag}`);
 		return key;
 	}
 
-	return { transform, recordDemand, upsertPackage };
+	return { transform, recordDemand, upsertPackage, memo: () => ({ recorded: recorded.size, published: publishedKeys.size }) };
 }
 
 module.exports = { createRegistryLayer, packageAsset, REGISTRY };

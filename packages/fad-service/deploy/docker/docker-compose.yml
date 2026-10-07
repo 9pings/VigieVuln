@@ -29,12 +29,19 @@ services:
     command: ["serve", "--config", "/etc/fad-service/config.json", "--host", "0.0.0.0",
               "--metrics-listen", "0.0.0.0:9464", "--trust-proxy", "--log"]
     expose: ["8322", "9464"]
+    # Metrics leave loopback here, so the service refuses to start without a token.
+    environment:
+      FAD_SERVICE_METRICS_TOKEN: ${FAD_SERVICE_METRICS_TOKEN:?set FAD_SERVICE_METRICS_TOKEN in .env (openssl rand -hex 32)}
+    # Bodies served at once are capped at 256 MB in the store, registry projections run 2 at
+    # a time: 1.5 GB leaves headroom. Tune with FAD_WEB_MEM.
+    mem_limit: ${FAD_WEB_MEM:-1536m}
     stop_grace_period: 30s
 
   worker:
     <<: *service
     command: ["worker", "--config", "/etc/fad-service/config.json"]
     healthcheck: { disable: true }
+    mem_limit: ${FAD_WORKER_MEM:-2g}    # imports stream, but OSV / NVD batches are large
     stop_grace_period: 15s
 
   caddy:
@@ -47,12 +54,14 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on: [web]
+    mem_limit: 256m
 
   # Nightly online backup into the same volume (kept 7 days). Copy /data/backups off-host.
   backup:
     <<: *service
     entrypoint: ["/bin/sh", "-c", "while true; do node /app/packages/fad-service/bin/fad-service.js backup --config /etc/fad-service/config.json --dir /data/backups --keep 7; sleep 86400; done"]
     healthcheck: { disable: true }
+    mem_limit: 512m
 
 volumes:
   data:

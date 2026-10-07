@@ -322,10 +322,10 @@ test("server: 40 concurrent readers survive an offline upstream; a cold miss fai
 		assert.deepEqual(fs.readFileSync(p.server.fadStore.get(require("../lib/providers").providerKey("npm", "package", { name: "express" })).bodyPath), saved);
 		assert.equal(p.server.fadStore.size(), 1, "no outage may delete the cached entry");
 
-		const cold = URL_NPM + "/uncached";
+		const cold = URL_NPM + "-uncached";
 		assert.equal((await get(p.url + "/" + cold)).status, 502);
 		const health = createSourceHealth();
-		const client = guardedFetch({ health, fetch: () => callResource(p.url, "npm", "package", { name: "express/uncached" }), sleep: async () => {} });
+		const client = guardedFetch({ health, fetch: () => callResource(p.url, "npm", "package", { name: "express-uncached" }), sleep: async () => {} });
 		const res = await client(cold);
 		assert.equal(res.status, 502);
 		assert.equal(health.degraded().length, 1, "the client records a required source outage");

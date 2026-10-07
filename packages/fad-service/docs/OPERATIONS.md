@@ -66,7 +66,7 @@ Put Caddy or nginx in front (`deploy/docker/Caddyfile` works as is with `reverse
 | `FAD_SERVICE_GITHUB_TOKEN` | GitHub API (cvelistV5 and fkie release lookups) — avoids the 60 req/h anonymous limit |
 | `FAD_SERVICE_NVD_KEY` | NVD API for `/v1/resource` clients (the mirror job needs none) |
 | `FAD_SERVICE_WORDFENCE_KEY` | Wordfence lane for `/v1/resource` clients |
-| `FAD_SERVICE_METRICS_TOKEN` | Bearer token required on `/metrics` |
+| `FAD_SERVICE_METRICS_TOKEN` | Bearer token required on `/metrics` — **mandatory** when `metrics.listen` is not loopback (the service refuses to start without it; the compose file listens on the docker network, so set it in `.env`) |
 
 ## Branding
 
@@ -102,7 +102,9 @@ director and the host must be identified (LCEN art. 6). The logo is served from
 - `/ready` — readiness: the database answers and CVE data is loaded (503 on a fresh install
   until the first `cvelist` run).
 - `/metrics` — Prometheus, on its own listener (`metrics.listen`, default `127.0.0.1:9464`),
-  never on the public port; summed over all workers of the host. Key series:
+  never on the public port; summed over all workers of the host. Off loopback a token is
+  required. The asset counters are memoised for 60 s, shared with `/` and `/ready`: a scrape
+  never scans the table. Key series:
   `fad_http_requests_total{route,status}`, `fad_resource_cache_total{result}`,
   `fad_job_last_success_timestamp_seconds{job}`, `fad_job_last_failed{job}`, `fad_assets{type}`.
   Alert when `time() - fad_job_last_success_timestamp_seconds{job="cvelist"} > 7200`, or
@@ -154,6 +156,10 @@ fad-service seed --ecosystem maven --list maven.txt    # one g:a per line (POM o
 fad-service seed --ecosystem pypi --list top-pypi.txt --concurrency 4
 ```
 
+`seed` authenticates to its in-process server with an admin token held in memory only:
+nothing is written to the token table, so a seed killed midway leaves no live admin token
+(it also revokes any `seed (temporary)` token an earlier version left behind).
+
 Package pages (`/pkg/<npm|pypi|maven|gem|composer|nuget|golang>/<name>`) list the advisories
 naming the package and, per version, whether it is affected — **only where the ordering is
 exact** (Maven ComparableVersion, SemVer 2.0 for npm and Go, or the advisory's explicit version
@@ -191,7 +197,8 @@ also be served by the reverse proxy straight from `<dumps.dir>/public`.
 
 `fad-service backup --dir /var/lib/fad-service/backups --keep 7` (the systemd timer and the
 compose `backup` service do it nightly) writes a consistent copy while the service runs.
-Copy the directory off-host. To restore: stop web and worker, replace the database file with
+Backups are created `0600` (they hold token hashes, the log/demand salts and the resource
+cache). Copy the directory off-host. To restore: stop web and worker, replace the database file with
 a backup, remove the `-wal`/`-shm` files next to it, start again. Mirrors can always be
 rebuilt from the sources; tokens and analytics cannot — that is what the backup protects.
 
@@ -241,7 +248,8 @@ A public instance must not let its clients get it banned by NVD, OSV, GitHub or 
 
 ## Input validation
 
-Every input is typed against a whitelist (`lib/validate.js`) and refused with a `400` (or
+Every input is typed against a whitelist (fad-checker's `lib/resource-cache/validate.js`,
+which `fad-checker serve-cache` applies too) and refused with a `400` (or
 `415`) before any lookup: the `/v1/resource` and `/admin/purge` documents (one schema per
 provider/type — exactly what fad-checker sends; unknown fields, headers or types refused), the
 query string of every route (unknown or repeated parameters refused), path parameters
@@ -258,10 +266,23 @@ matching from 3 characters — `%`, `*`, quotes and operators never reach the da
   and `/ready` are exempt. `maxConnections` (2048) caps sockets per process.
 - Public rate limit per address (`rateLimit.public`, per minute), IPv6 counted per /64; the
   table evicts its oldest entries, a flood of new addresses cannot reset the others.
+- Memory is bounded on the hot path: a cached body is loaded only while it is streamed, and
+  bodies being served share a 256 MB budget per process (readers past it wait); spool files
+  of answers being fetched share a 2 GB quota (past it the fetch is refused, retry later);
+  registry projections (which parse the whole answer) run two at a time; demand bookkeeping
+  skips the database for a (package, client) already recorded and for published packages;
+  analytics counters flush early past 10 000 keys. The compose file sets `mem_limit`
+  (`FAD_WEB_MEM`, default 1536m; `FAD_WORKER_MEM`, default 2g).
+- Registry projections bound every string, list and map they keep (licence, versions,
+  dependency names, URLs…): a hostile registry answer cannot inflate a row, the search index
+  or a page.
 - The `/v1/resource` cache: bodies above 64 MB are streamed once and not kept (the 620 MB
   cvelistV5 archive); the `maintenance` job drops entries stale for 30 days and keeps the
   cache under `jobs.resourceCacheMaxBytes` (default 20G), least recently fetched first.
-- Static files are versioned by content (`?v=<hash>`) and cached for a year.
+- Static files are versioned by content (`?v=<hash>`) and cached for a year; their ETag is
+  computed once at startup. `/static/*` and `/dumps*` are served before the public rate limit
+  on purpose (a few KB from RAM; downloads that last minutes) — the reverse proxy can limit
+  them if needed.
 
 ## Security checklist
 
@@ -269,12 +290,13 @@ matching from 3 characters — `%`, `*`, quotes and operators never reach the da
   ONE proxy in front: the service reads the last `X-Forwarded-For` entry. The Docker image's
   default command does not trust the header (a bare `docker run -p` is safe); the compose
   file adds `--trust-proxy` because Caddy is in front.
-- The Caddyfile logs no search text (`q` removed), no credential header, and truncated
-  addresses (IPv4 /16, IPv6 /32) — the same rule as the service's own log.
+- The Caddyfile logs no search text (`q=-`), no record a reader opened (detail paths logged
+  as `/cve/:id`, `/pkg/:id`, `/advisory/osv/:id`…, `Referer` dropped), no credential header,
+  and truncated addresses (IPv4 /16, IPv6 /32) — the same rule as the service's own log.
 - Errors: anonymous callers get `{"error":"internal error","rid":…}`; the detail is in the log
   under that request id. A malformed URL is a 400.
 - `/admin/*` and the metrics port not reachable from the internet (the Caddyfile blocks
-  `/admin`; metrics listen on loopback / the private network).
+  `/admin`; metrics listen on loopback, or on the private network with a token).
 - One client token per client (`token add --label`), revoked when a client leaves.
 - Secrets in `/etc/fad-service/env` (0600) or the compose `.env`, never in the config file.
 - Back up off-host; test a restore.

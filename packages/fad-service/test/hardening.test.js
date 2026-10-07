@@ -25,7 +25,7 @@ async function site(extra = {}) {
 }
 
 test("validate: every (provider, type) fad sends passes; anything else is refused", () => {
-	const { validateResource } = require("../lib/validate");
+	const { validateResource } = require(path.join(FAD, "resource-cache", "validate.js"));
 	const ok = [
 		{ provider: "nvd", type: "cve", params: { id: "CVE-2021-44228" } },
 		{ provider: "osv", type: "packages", params: { queries: [{ ecosystem: "Maven", name: "org.apache.logging.log4j:log4j-core", version: "2.14.1" }] } },

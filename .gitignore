@@ -30,3 +30,6 @@ docs/PLAN-*.md
 docs/REVIEW-*.md
 docs/SPEC-*.md
 docs/HANDOFF-*.md
+
+# fad-service docker secrets (copy of deploy/docker/.env.example)
+packages/fad-service/deploy/docker/.env

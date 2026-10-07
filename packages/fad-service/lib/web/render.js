@@ -253,7 +253,7 @@ fad-checker serve-cache --seed fad-private-….manifest.json --trust-key signing
 function sourcesPage({ t, jobs }) {
 	return `<h1>${t("Data sources")}</h1>
 <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Source")}</th><th scope="col">${t("Last update")}</th><th scope="col">${t("Status")}</th></tr></thead><tbody>${
-	jobs.map(j => `<tr><td>${esc(j.label)}</td><td>${j.lastFinished ? esc(new Date(j.lastFinished).toISOString().replace("T", " ").slice(0, 16)) + " UTC" : t("never")}</td><td>${esc(j.status === "never" ? t("never") : j.status)} <span class="muted">${esc(j.detail)}</span></td></tr>`).join("")}</tbody></table></div>`;
+	jobs.map(j => `<tr><td>${esc(j.label)}</td><td>${j.lastFinished ? esc(new Date(j.lastFinished).toISOString().replace("T", " ").slice(0, 16)) + " UTC" : t("never")}</td><td>${esc(j.status === "never" ? t("never") : j.status)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 /** The attributions every source requires. Kept in English and French alike: legal text. */

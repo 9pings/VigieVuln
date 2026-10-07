@@ -170,6 +170,7 @@ function bind(d) {
 	const parseAsset = row => row && ({ type: row.type, key: row.key, title: row.title, summary: row.summary, data: JSON.parse(row.data),
 		sources: JSON.parse(row.sources), published: !!Number(row.published), updatedAt: Number(row.updated_at) });
 
+	const countsMemo = { at: 0, value: null, pending: null };
 	const api = {
 		driver: d,
 		dialect: d.dialect,
@@ -394,8 +395,23 @@ function bind(d) {
 					ORDER BY rank LIMIT ?`, [match, type, type, n]);
 			} catch { return []; }
 		},
-		async counts() {
-			return Object.fromEntries((await d.all("SELECT type, COUNT(*) AS n FROM assets WHERE published = 1 GROUP BY type")).map(r => [r.type, Number(r.n)]));
+		/**
+		 * Published assets per type. A full GROUP BY — callers on a hot or periodic path (home
+		 * page, /ready, the metrics scrape) pass maxAgeMs and share one memoised, single-flight
+		 * value instead of each scanning the table.
+		 */
+		counts({ maxAgeMs = 0 } = {}) {
+			if (maxAgeMs && countsMemo.value && Date.now() - countsMemo.at <= maxAgeMs) return Promise.resolve(countsMemo.value);
+			if (maxAgeMs && countsMemo.pending) return countsMemo.pending;
+			const run = d.all("SELECT type, COUNT(*) AS n FROM assets WHERE published = 1 GROUP BY type")
+				.then(rows => {
+					const value = Object.fromEntries(rows.map(r => [r.type, Number(r.n)]));
+					countsMemo.value = value; countsMemo.at = Date.now();
+					return value;
+				})
+				.finally(() => { if (countsMemo.pending === run) countsMemo.pending = null; });
+			countsMemo.pending = run;
+			return run;
 		},
 	};
 	return api;

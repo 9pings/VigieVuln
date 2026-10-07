@@ -31,10 +31,10 @@ const { fad } = require("./fad");
 const web = require("./web/render");
 const { pickLocale, makeT } = require("./web/i18n");
 const { clientAnalytics } = require("./analytics");
-const { validateResource, validateQuery, ValidationError, Q } = require("./validate");
+const { validateResource, validateQuery, ValidationError, Q } = fad("resource-cache/validate");
 const { answerLocally } = require("./local-answers");
 
-/** The query parameters each route accepts — anything else is a 400 (lib/validate.js). */
+/** The query parameters each route accepts — anything else is a 400 (fad lib/resource-cache/validate.js). */
 function querySpec(p) {
 	if (p === "/search") return { q: Q.text(200), type: Q.oneOf(["cve", "advisory", "package"]), lang: Q.lang };
 	if (p === "/api/search") return { q: Q.text(200), type: Q.oneOf(["cve", "advisory", "package"]), limit: Q.int(1, 100), lang: Q.lang };
@@ -85,11 +85,21 @@ function sendFile(req, res, file, type, extra = {}) {
 		if (start > end || start >= st.size) { res.writeHead(416, { "content-range": `bytes */${st.size}` }); return res.end(); }
 		res.writeHead(206, { ...headers, "content-range": `bytes ${start}-${end}/${st.size}`, "content-length": end - start + 1 });
 		if (req.method === "HEAD") return res.end();
-		return fs.createReadStream(file, { start, end }).pipe(res);
+		return streamTo(fs.createReadStream(file, { start, end }), res);
 	}
 	res.writeHead(200, { ...headers, "content-length": st.size });
 	if (req.method === "HEAD") return res.end();
-	fs.createReadStream(file).pipe(res);
+	streamTo(fs.createReadStream(file), res);
+}
+
+/**
+ * pipe() does not forward a SOURCE error: an unhandled one kills the process. A file pruned
+ * between stat and open, or an I/O error mid-download, must only end that one response.
+ */
+function streamTo(stream, res) {
+	stream.on("error", () => res.destroy());
+	res.once("close", () => stream.destroy());
+	stream.pipe(res);
 }
 const LOGO_TYPES = { ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
 
@@ -196,12 +206,9 @@ function createServiceServer(opts = {}) {
 		catch { signingPub = null; }
 	}
 
-	// Home-page counters: a GROUP BY over the whole table, cached for a minute.
-	let countsCache = { at: 0, value: null };
-	const counts = async () => {
-		if (!countsCache.value || Date.now() - countsCache.at > 60000) countsCache = { at: Date.now(), value: await assets.counts() };
-		return countsCache.value;
-	};
+	// Home-page / readiness counters: a GROUP BY over the whole table, memoised for a minute
+	// in the asset store (shared with the metrics scrape).
+	const counts = () => assets.counts({ maxAgeMs: 60000 });
 
 	async function authenticate(req) {
 		const auth = String(req.headers.authorization || "");
@@ -219,9 +226,13 @@ function createServiceServer(opts = {}) {
 	}
 
 	/** A cacheable public answer: ETag + Cache-Control, 304 on a matching If-None-Match. */
+	const etagOf = buf => `"${crypto.createHash("sha1").update(buf).digest("base64url")}"`;
+	/** A body fixed for the life of the process: buffer and ETag computed once. */
+	const fixed = body => { const buf = Buffer.isBuffer(body) ? body : Buffer.from(String(body)); return { buf, etag: etagOf(buf) }; };
 	function sendPublic(req, res, code, type, body, extra = {}) {
-		const buf = Buffer.isBuffer(body) ? body : Buffer.from(String(body));
-		const etag = `"${crypto.createHash("sha1").update(buf).digest("base64url")}"`;
+		const pre = body && typeof body === "object" && !Buffer.isBuffer(body) ? body : null;
+		const buf = pre ? pre.buf : Buffer.isBuffer(body) ? body : Buffer.from(String(body));
+		const etag = pre ? pre.etag : etagOf(buf);
 		const headers = { "content-type": type, etag, vary: "Accept-Language",
 			"cache-control": code === 200 ? `public, max-age=${cacheSeconds}, stale-while-revalidate=3600` : "no-store", ...extra };
 		if (type.startsWith("text/html")) headers["content-security-policy"] = PAGE_CSP;
@@ -230,14 +241,18 @@ function createServiceServer(opts = {}) {
 		res.end(req.method === "HEAD" ? undefined : buf);
 	}
 
+	// Static bodies never change while the process runs (/static/* is served before the public
+	// rate limit on purpose: it is a few KB from RAM, and pages are unusable without it).
+	const STATIC = { css: fixed(SITE_CSS), brand: fixed(brandCss), logo: logo ? fixed(logo.body) : null,
+		analytics: client.initScript ? fixed(client.initScript) : null };
 	function routeStatic(req, res, p, url) {
 		// Versioned URLs (?v=<hash>) are immutable; an unversioned request gets the default TTL.
 		const immutable = url.searchParams.has("v") ? { "cache-control": `public, max-age=${STATIC_MAX_AGE}, immutable` } : {};
-		if (p === "/static/site.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", SITE_CSS, immutable), true;
-		if (p === "/static/brand.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", brandCss, immutable), true;
+		if (p === "/static/site.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", STATIC.css, immutable), true;
+		if (p === "/static/brand.css") return sendPublic(req, res, 200, "text/css; charset=utf-8", STATIC.brand, immutable), true;
 		// An SVG is a document: sandboxed so a logo can never run script on this origin.
-		if (p === "/static/logo" && logo) return sendPublic(req, res, 200, logo.type, logo.body, { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox", ...immutable }), true;
-		if (p === "/static/analytics.js" && client.initScript) return sendPublic(req, res, 200, "text/javascript; charset=utf-8", client.initScript), true;
+		if (p === "/static/logo" && logo) return sendPublic(req, res, 200, logo.type, STATIC.logo, { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox", ...immutable }), true;
+		if (p === "/static/analytics.js" && client.initScript) return sendPublic(req, res, 200, "text/javascript; charset=utf-8", STATIC.analytics), true;
 		return false;
 	}
 
@@ -374,7 +389,7 @@ function createServiceServer(opts = {}) {
 		return false;
 	}
 
-	/** Read, parse and strictly validate a JSON request body (lib/validate.js). */
+	/** Read, parse and strictly validate a JSON request body (fad lib/resource-cache/validate.js). */
 	async function resourceBody(req) {
 		if (!/^application\/json(;\s*charset=utf-8)?$/i.test(String(req.headers["content-type"] || "")))
 			throw Object.assign(new ValidationError("content-type must be application/json"), { status: 415 });
@@ -385,7 +400,7 @@ function createServiceServer(opts = {}) {
 	}
 
 	async function route(req, res, principal, ctx) {
-		const url = new URL(req.url, "http://service.invalid");
+		const url = ctx.url || new URL(req.url, "http://service.invalid");   // a malformed URL throws here, inside the error handler
 		const p = url.pathname;
 		// Admin routes: who you are before what you sent — an anonymous caller learns nothing.
 		if (p.startsWith("/admin/") && !principal) return sendJson(res, 401, { error: "unauthorized" }, { "www-authenticate": "Bearer" });
@@ -417,7 +432,9 @@ function createServiceServer(opts = {}) {
 		}
 		if (principal.role !== "admin") return sendJson(res, 403, { error: "admin role required" });
 		if (p === "/admin/stats" && req.method === "GET")
-			return sendJson(res, 200, { ...stats, entries: await store.size(), bodyBytes: (await store.bodyBytes?.()) ?? null, activeUpstream: engine.activeUpstream() });
+			// Job details (upstream URLs, error messages) are for the operator, never on /sources.
+			return sendJson(res, 200, { ...stats, entries: await store.size(), bodyBytes: (await store.bodyBytes?.()) ?? null,
+				activeUpstream: engine.activeUpstream(), negativeEntries: engine.negativeEntries?.(), jobs: await jobStatus() });
 		if (p === "/admin/analytics" && req.method === "GET") {
 			if (!serverAnalytics) return sendJson(res, 404, { error: "server analytics disabled (analytics.provider)" });
 			return sendJson(res, 200, await serverAnalytics.report(Math.min(366, Number(url.searchParams.get("days")) || 30)));
@@ -456,9 +473,12 @@ function createServiceServer(opts = {}) {
 		}
 		if (!download) { inFlight++; res.once("close", () => { inFlight--; }); }
 		let principal = null;                    // set once the token is checked (async)
-		const ctx = { search: false, asset: null, principal: null };
+		// The URL is parsed once per request: by the router and the access log alike.
+		let url = null;
+		try { url = new URL(req.url, "http://service.invalid"); } catch { /* route() rethrows it in its error path */ }
+		const ctx = { search: false, asset: null, principal: null, url };
 		res.once("finish", () => {
-			const family = routeFamily(new URL(req.url, "http://service.invalid").pathname);
+			const family = routeFamily(url ? url.pathname : pathOnly);
 			const ms = Date.now() - started;
 			counters?.observe({ route: family, status: res.statusCode, ms });
 			if (serverAnalytics && !family.startsWith("/admin") && !["/health", "/ready", "/v1/resource", "/static", "/*"].includes(family))
@@ -516,4 +536,4 @@ function createServiceServer(opts = {}) {
 	return server;
 }
 
-module.exports = { createServiceServer, createRateLimiter, addressBucket, routeFamily, SECURITY_HEADERS };
+module.exports = { createServiceServer, createRateLimiter, addressBucket, routeFamily, streamTo, SECURITY_HEADERS };

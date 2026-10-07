@@ -144,3 +144,33 @@ test("engine: a 404 is remembered (in memory, hashed) — not asked again until 
 		assert.equal(calls, 2, "asked again once the 6 h (here 200 ms) are over");
 	} finally { await s.close(); }
 });
+
+test("engine: transforms run at most transformConcurrency at a time; the projection is served from its buffer", async () => {
+	configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
+	const store = memoryStore();
+	let gets = 0;
+	const get = store.get;
+	store.get = key => { gets++; return get(key); };
+	let running = 0, peak = 0, reads = 0;
+	const engine = createResourceEngine({ store, transformConcurrency: 2,
+		fetcher: async url => new Response(JSON.stringify({ name: url.split("/").pop(), big: "x".repeat(1000) }), { headers: { "content-type": "application/json" } }),
+		transform: async (resource, buffer) => {
+			reads++;
+			running++; peak = Math.max(peak, running);
+			await new Promise(ok => setTimeout(ok, 30));
+			running--;
+			return Buffer.from(JSON.stringify({ name: JSON.parse(buffer).name, projected: true }));
+		} });
+	const s = await serve(engine);
+	try {
+		const names = Array.from({ length: 8 }, (_, i) => `pkg-${i}`);
+		const bodies = await Promise.all(names.map(name => s.ask({ provider: "npm", type: "package", params: { name } }).then(r => r.json())));
+		assert.deepEqual(bodies.map(b => b.name), names);
+		assert.ok(bodies.every(b => b.projected === true));
+		assert.equal(reads, 8);
+		assert.equal(peak, 2, "never more than two whole answers parsed at once");
+		// Two lookups per miss (the request's, the single-flight's stale check) — and no third:
+		// the projection is served from its buffer, not read back from the store.
+		assert.equal(gets, 16);
+	} finally { await s.close(); }
+});

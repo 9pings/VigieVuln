@@ -51,4 +51,17 @@ async function createTokenStore(driver) {
 	};
 }
 
-module.exports = { createTokenStore, hashToken, ROLES };
+/**
+ * A token that exists only in this process, never in the database: `tokens` wrapped so it
+ * also accepts it. The seed command authenticates to its in-process server this way — a
+ * killed seed leaves no live admin token behind.
+ */
+function withEphemeralToken(tokens, { role = "admin", label = "ephemeral" } = {}) {
+	if (!ROLES.includes(role)) throw new Error(`role must be one of: ${ROLES.join(", ")}`);
+	const token = PREFIX + crypto.randomBytes(32).toString("base64url");
+	const principal = { id: 0, role, label, hash: hashToken(token) };
+	const same = t => typeof t === "string" && t.length === token.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(token));
+	return { token, tokens: { ...tokens, async verify(t) { return same(t) ? principal : tokens.verify(t); } } };
+}
+
+module.exports = { createTokenStore, withEphemeralToken, hashToken, ROLES };

@@ -88,8 +88,16 @@ function render(agg, { jobs = [], assets = {}, startedAt = Date.now(), workers =
 	return L.join("\n") + "\n";
 }
 
-/** The metrics listener. `collect()` → the exposition text. */
+const isLoopback = host => /^(127\.\d+\.\d+\.\d+|::1|localhost)$/i.test(String(host).replace(/^\[|\]$/g, ""));
+
+/**
+ * The metrics listener. `collect()` → the exposition text. Off loopback a token is
+ * mandatory: route families, job states and counters are internal reconnaissance for
+ * anything else on the same network (another container, another tenant).
+ */
 function startMetricsServer({ host = "127.0.0.1", port = 9464, token = null, collect }) {
+	if (!token && !isLoopback(host))
+		throw new Error(`metrics listen on ${host}:${port} is not loopback: set FAD_SERVICE_METRICS_TOKEN, listen on 127.0.0.1, or --no-metrics`);
 	const server = http.createServer(async (req, res) => {
 		if (req.url !== "/metrics" || req.method !== "GET") { res.writeHead(404); return res.end(); }
 		if (token && !sameSecret(req.headers.authorization, `Bearer ${token}`)) { res.writeHead(401, { "www-authenticate": "Bearer" }); return res.end(); }
@@ -104,4 +112,4 @@ function startMetricsServer({ host = "127.0.0.1", port = 9464, token = null, col
 	});
 }
 
-module.exports = { createCounters, createAggregate, render, startMetricsServer };
+module.exports = { createCounters, createAggregate, render, startMetricsServer, isLoopback };

@@ -141,9 +141,13 @@ async function serveProcess(cfg, { logger, pushMetrics = null }) {
 async function serve(cfg) {
 	const workers = cfg.workers === true ? os.availableParallelism() : Number(cfg.workers || 1);
 	if (!Number.isInteger(workers) || workers < 1) throw new Error("workers must be a positive integer");
-	const { createAggregate, render, startMetricsServer } = require("../lib/metrics");
+	const { createAggregate, render, startMetricsServer, isLoopback } = require("../lib/metrics");
 	const metricsOn = cfg.metrics.enabled !== false;
 	const [mHost, mPort] = String(cfg.metrics.listen || "127.0.0.1:9464").split(/:(?=\d+$)/);
+	// Checked before anything listens: startMetricsServer refuses too, but by then the public
+	// port would already be serving and the refusal would only reach a log.
+	if (metricsOn && !cfg.metrics.token && !isLoopback(mHost))
+		throw new Error(`metrics listen on ${mHost}:${mPort} is not loopback: set FAD_SERVICE_METRICS_TOKEN, listen on 127.0.0.1, or --no-metrics`);
 
 	if (workers === 1) {
 		const logger = makeLogger(cfg);
@@ -151,7 +155,7 @@ async function serve(cfg) {
 		const agg = createAggregate();
 		const { assets, jobs } = await serveProcess(cfg, { logger, pushMetrics: delta => agg.add(delta) });
 		if (metricsOn) await startMetricsServer({ host: mHost, port: Number(mPort), token: cfg.metrics.token,
-			collect: async () => render(agg, { jobs: await jobs.status(), assets: await assets.counts(), workers: 1 }) });
+			collect: async () => render(agg, { jobs: await jobs.status(), assets: await assets.counts({ maxAgeMs: 60000 }), workers: 1 }) });
 		return;
 	}
 	if (!cluster.isPrimary) {
@@ -167,7 +171,7 @@ async function serve(cfg) {
 	const jobs = createJobRunner({ assets });
 	const agg = createAggregate();
 	if (metricsOn) await startMetricsServer({ host: mHost, port: Number(mPort), token: cfg.metrics.token,
-		collect: async () => render(agg, { jobs: await jobs.status(), assets: await assets.counts(), workers }) });
+		collect: async () => render(agg, { jobs: await jobs.status(), assets: await assets.counts({ maxAgeMs: 60000 }), workers }) });
 	let stopping = false;
 	const fork = () => {
 		const w = cluster.fork();
@@ -247,9 +251,14 @@ function backup(cfg, args) {
 	}
 	if (!out) throw new Error("backup needs --out <file.db> or --dir <dir>");
 	if (fs.existsSync(out)) throw new Error(`${out} exists`);
+	// The copy holds token hashes, the log/demand salts and the whole resource cache: it is
+	// created 0600 BEFORE anything is written into it (VACUUM INTO accepts an empty file).
+	fs.closeSync(fs.openSync(String(out), "wx", 0o600));
 	const db = new DatabaseSync(cfg.db);
 	const t0 = Date.now();
-	try { db.prepare("VACUUM INTO ?").run(path.resolve(String(out))); } finally { db.close(); }
+	try { db.prepare("VACUUM INTO ?").run(path.resolve(String(out))); }
+	catch (error) { fs.rmSync(String(out), { force: true }); throw error; }
+	finally { db.close(); }
 	console.log(`backup ${out} (${(fs.statSync(out).size / 1048576).toFixed(1)} MB, ${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 	if (args.dir) {
 		const keep = Math.max(1, Number(args.keep || 7));
@@ -260,7 +269,8 @@ function backup(cfg, args) {
 
 /**
  * Seed a list of packages through an in-process server (same path as a client request),
- * with a temporary admin token revoked at the end.
+ * authenticated by an in-memory admin token: nothing is written to the token table, so a
+ * seed killed midway leaves no live admin token behind.
  */
 async function seedCommand(cfg, args) {
 	const { seed, readSpecs } = require("../lib/registry/seed");
@@ -271,10 +281,14 @@ async function seedCommand(cfg, args) {
 	const specs = readSpecs(type, { list: args.list === true ? null : args.list, popular: !!args.popular });
 	const { driver, store, tokens, assets, demandSalt } = await openAll(cfg.db);
 	const registry = createRegistryLayer({ assets, threshold: cfg.registry.publishThreshold, salt: demandSalt });
-	const server = createServiceServer({ store, tokens, assets, registry, ratePerMinute: 0, publicRatePerMinute: 0,
+	// Earlier versions stored a temporary admin token, left active if the seed was killed.
+	for (const t of await tokens.list())
+		if (t.label === "seed (temporary)" && !t.revokedAt) { await tokens.revoke(t.id); console.log(`revoked leftover seed token #${t.id}`); }
+	const { withEphemeralToken } = require("../lib/tokens");
+	const temp = withEphemeralToken(tokens, { role: "admin", label: "seed" });
+	const server = createServiceServer({ store, tokens: temp.tokens, assets, registry, ratePerMinute: 0, publicRatePerMinute: 0,
 		fetcher: createUpstreamFetcher(globalThis.fetch, { mavenMirrors: cfg.upstream.mavenMirrors }) });
 	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
-	const temp = await tokens.add({ role: "admin", label: "seed (temporary)" });
 	try {
 		const t0 = Date.now();
 		const r = await seed({ baseUrl: `http://127.0.0.1:${server.address().port}`, token: temp.token, type, specs, assets,
@@ -282,7 +296,6 @@ async function seedCommand(cfg, args) {
 		console.log(`seeded ${type}: ${r.ok} ok, ${r.missing} not found, ${r.failed} failed (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 		if (r.failed) process.exitCode = 1;
 	} finally {
-		await tokens.revoke(temp.id);
 		await new Promise(ok => server.close(ok));
 		await closeAll(driver);
 	}

@@ -12,7 +12,9 @@
  *         dependencies[] }, or null.
  *
  * Description, licence and deprecation texts are the registry's own words: evidence, kept
- * as written, escaped when shown.
+ * as written, escaped when shown — but BOUNDED: every string, list and map kept here comes
+ * from a registry the service does not control (a 30 MB `license` must not become a 30 MB
+ * asset row, search alias or page). Caps sit well above any legitimate value.
  *
  * @author: N.BRAUN
  * @email: pp9ping@gmail.com
@@ -21,27 +23,47 @@ const { packageKey, packageOfRequest } = require("./purl");
 const { fad } = require("../fad");
 
 const MAX_VERSIONS = 10000;
+const MAX_DEPS = 1000;          // per dependency map in a served projection
+const NAME_MAX = 214;           // npm's own limit; above every other registry's
+const VERSION_MAX = 256;
+const DATE_MAX = 40;
 const str = (v, n = 500) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : null);
+const clip = (v, n) => (v == null ? null : String(v).slice(0, n));
 const url = v => { const s = typeof v === "string" ? v : v?.url; return /^https?:\/\//i.test(s || "") ? String(s).replace(/^git\+/, "").slice(0, 500) : null; };
-const licenceOf = l => typeof l === "string" ? l : Array.isArray(l) ? l.map(x => typeof x === "string" ? x : x?.type).filter(Boolean).join(" OR ") : (l?.type || null);
-const deps = (obj, scope) => Object.entries(obj && typeof obj === "object" ? obj : {}).slice(0, 300).map(([name, range]) => ({ name, range: String(range).slice(0, 100), scope }));
+const licenceOf = l => clip(typeof l === "string" ? l : Array.isArray(l) ? l.slice(0, 20).map(x => typeof x === "string" ? x : x?.type).filter(Boolean).join(" OR ") : (l?.type || null), 300) || null;
+/** A free-form upstream value kept in its shape (license objects, repository, project_urls), clamped. */
+function bounded(v, { text = 500, items = 20, depth = 3 } = {}) {
+	if (typeof v === "string") return v.slice(0, text);
+	if (v === null || typeof v !== "object") return typeof v === "number" || typeof v === "boolean" ? v : null;
+	if (depth <= 0) return null;
+	const next = { text, items, depth: depth - 1 };
+	if (Array.isArray(v)) return v.slice(0, items).map(x => bounded(x, next));
+	return Object.fromEntries(Object.entries(v).slice(0, items).map(([k, x]) => [k.slice(0, 100), bounded(x, next)]));
+}
+/** A { name: range } map in the upstream shape: bounded count, name and range. */
+const depMap = obj => Object.fromEntries(Object.entries(obj && typeof obj === "object" && !Array.isArray(obj) ? obj : {})
+	.filter(([name]) => name.length <= NAME_MAX).slice(0, MAX_DEPS).map(([name, range]) => [name, clip(range, VERSION_MAX)]));
+const deps = (obj, scope) => Object.entries(depMap(obj)).slice(0, 300).map(([name, range]) => ({ name, range: clip(range, 100), scope }));
+const okVersion = v => typeof v === "string" && v.length > 0 && v.length <= VERSION_MAX;
 
 function npm(name, j) {
-	const latest = j["dist-tags"]?.latest || null;
+	const latest = okVersion(j["dist-tags"]?.latest) ? j["dist-tags"].latest : null;
 	const versions = {};
-	for (const [v, m] of Object.entries(j.versions || {}).slice(-MAX_VERSIONS)) {
+	for (const [v, m] of Object.entries(j.versions || {}).filter(([v]) => okVersion(v)).slice(-MAX_VERSIONS)) {
 		versions[v] = { version: v,
 			...(m?.deprecated ? { deprecated: String(m.deprecated).slice(0, 1000) } : {}),
-			...(m?.license !== undefined ? { license: m.license } : {}), ...(m?.licenses !== undefined ? { licenses: m.licenses } : {}),
-			...(m?.dependencies ? { dependencies: m.dependencies } : {}), ...(m?.peerDependencies ? { peerDependencies: m.peerDependencies } : {}),
-			...(m?.optionalDependencies ? { optionalDependencies: m.optionalDependencies } : {}) };
+			...(m?.license !== undefined ? { license: bounded(m.license, { text: 300 }) } : {}), ...(m?.licenses !== undefined ? { licenses: bounded(m.licenses, { text: 300 }) } : {}),
+			...(m?.dependencies ? { dependencies: depMap(m.dependencies) } : {}), ...(m?.peerDependencies ? { peerDependencies: depMap(m.peerDependencies) } : {}),
+			...(m?.optionalDependencies ? { optionalDependencies: depMap(m.optionalDependencies) } : {}) };
 	}
 	const time = {};
-	for (const [k, v] of Object.entries(j.time || {})) if (k === "created" || k === "modified" || versions[k]) time[k] = v;
-	const body = { name: j.name || name, "dist-tags": j["dist-tags"] || {}, time, versions,
-		...(j.license !== undefined ? { license: j.license } : {}), ...(j.licenses !== undefined ? { licenses: j.licenses } : {}),
-		...(j.description ? { description: str(j.description, 2000) } : {}), ...(j.homepage ? { homepage: j.homepage } : {}),
-		...(j.repository ? { repository: j.repository } : {}), _fadProjection: 1 };
+	for (const [k, v] of Object.entries(j.time || {})) if (k === "created" || k === "modified" || versions[k]) time[k] = clip(v, DATE_MAX);
+	const distTags = Object.fromEntries(Object.entries(j["dist-tags"] && typeof j["dist-tags"] === "object" ? j["dist-tags"] : {})
+		.slice(0, 50).filter(([, v]) => okVersion(v)).map(([k, v]) => [k.slice(0, 100), v]));
+	const body = { name: clip(j.name || name, NAME_MAX), "dist-tags": distTags, time, versions,
+		...(j.license !== undefined ? { license: bounded(j.license, { text: 300 }) } : {}), ...(j.licenses !== undefined ? { licenses: bounded(j.licenses, { text: 300 }) } : {}),
+		...(j.description ? { description: str(j.description, 2000) } : {}), ...(j.homepage ? { homepage: clip(j.homepage, 500) } : {}),
+		...(j.repository ? { repository: bounded(j.repository) } : {}), _fadProjection: 1 };
 	const lv = versions[latest] || {};
 	return {
 		body,
@@ -56,35 +78,38 @@ function npm(name, j) {
 function pypi(name, j) {
 	const info = j.info || {};
 	const releases = {};
-	for (const [v, files] of Object.entries(j.releases || {}).slice(-MAX_VERSIONS)) {
+	for (const [v, files] of Object.entries(j.releases || {}).filter(([v]) => okVersion(v)).slice(-MAX_VERSIONS)) {
 		const list = Array.isArray(files) ? files : [];
 		// One entry per release keeps fad's rule intact: yanked only when EVERY file is.
-		releases[v] = list.length ? [{ yanked: list.every(f => f?.yanked), yanked_reason: list.find(f => f?.yanked_reason)?.yanked_reason || null,
-			upload_time_iso_8601: list.map(f => f?.upload_time_iso_8601).filter(Boolean).sort()[0] || null }] : [];
+		releases[v] = list.length ? [{ yanked: list.every(f => f?.yanked), yanked_reason: clip(list.find(f => f?.yanked_reason)?.yanked_reason, 1000),
+			upload_time_iso_8601: clip(list.map(f => f?.upload_time_iso_8601).filter(Boolean).sort()[0], DATE_MAX) }] : [];
 	}
-	const body = { info: { name: info.name || name, version: info.version || null, summary: str(info.summary, 1000), license: str(info.license, 300),
-		classifiers: Array.isArray(info.classifiers) ? info.classifiers.slice(0, 100) : [], home_page: info.home_page || null,
-		project_urls: info.project_urls || null, requires_dist: Array.isArray(info.requires_dist) ? info.requires_dist.slice(0, 300) : null },
+	const body = { info: { name: clip(info.name || name, NAME_MAX), version: okVersion(info.version) ? info.version : null, summary: str(info.summary, 1000), license: str(info.license, 300),
+		classifiers: Array.isArray(info.classifiers) ? info.classifiers.slice(0, 100).map(c => clip(c, 200)) : [], home_page: clip(info.home_page, 500),
+		project_urls: info.project_urls && typeof info.project_urls === "object" ? bounded(info.project_urls, { items: 30, depth: 1 }) : null,
+		requires_dist: Array.isArray(info.requires_dist) ? info.requires_dist.slice(0, 300).map(r => clip(r, 300)) : null },
 		releases, _fadProjection: 1 };
 	const date = v => releases[v]?.[0]?.upload_time_iso_8601 || null;
-	const urls = info.project_urls || {};
+	const urls = body.info.project_urls || {};
 	return {
 		body,
-		pkg: { type: "pypi", name: body.info.name, latest: info.version || null, latestDate: date(info.version), description: str(info.summary, 1000),
+		pkg: { type: "pypi", name: body.info.name, latest: body.info.version, latestDate: date(info.version), description: str(info.summary, 1000),
 			license: str(info.license, 300) || (body.info.classifiers.find(c => c.startsWith("License ::"))?.split(" :: ").pop() || null),
 			homepage: url(info.home_page) || url(urls.Homepage), repository: url(urls.Source) || url(urls.Repository),
 			deprecated: body.info.classifiers.includes("Development Status :: 7 - Inactive") ? "Inactive" : null,
 			versions: Object.keys(releases).reverse().map(v => ({ version: v, date: date(v), ...(releases[v][0]?.yanked ? { yanked: true } : {}) })),
-			dependencies: (body.info.requires_dist || []).map(r => ({ name: String(r).split(/[\s;<>=!~[(]/)[0], range: String(r).slice(0, 120), scope: /extra\s*==/.test(r) ? "extra" : "runtime" })) },
+			dependencies: (body.info.requires_dist || []).map(r => ({ name: clip(String(r).split(/[\s;<>=!~[(]/)[0], NAME_MAX), range: String(r).slice(0, 120), scope: /extra\s*==/.test(r) ? "extra" : "runtime" })) },
 	};
 }
 
 function gem(name, j) {
-	return { body: null, pkg: { type: "gem", name: j.name || name, latest: j.version || null, latestDate: j.version_created_at || null,
-		description: str(j.info, 2000), license: Array.isArray(j.licenses) ? j.licenses.join(" OR ") : null,
+	const latest = okVersion(j.version) ? j.version : null, date = clip(j.version_created_at, DATE_MAX);
+	return { body: null, pkg: { type: "gem", name: clip(j.name || name, NAME_MAX), latest, latestDate: date,
+		description: str(j.info, 2000), license: Array.isArray(j.licenses) ? licenceOf(j.licenses) : null,
 		homepage: url(j.homepage_uri), repository: url(j.source_code_uri), deprecated: j.yanked ? "yanked" : null,
-		versions: j.version ? [{ version: j.version, date: j.version_created_at || null }] : [],
-		dependencies: (j.dependencies?.runtime || []).slice(0, 300).map(d => ({ name: d.name, range: d.requirements, scope: "runtime" })) } };
+		versions: latest ? [{ version: latest, date }] : [],
+		dependencies: (Array.isArray(j.dependencies?.runtime) ? j.dependencies.runtime : []).slice(0, 300)
+			.map(d => ({ name: clip(d?.name, NAME_MAX), range: clip(d?.requirements, 100), scope: "runtime" })) } };
 }
 
 function composer(name, j) {
@@ -92,27 +117,29 @@ function composer(name, j) {
 	const entries = Array.isArray(list) ? list : Object.values(list);
 	const stable = entries.filter(e => e?.version && !/dev|alpha|beta|rc/i.test(e.version));
 	const latest = stable[0] || entries[0] || {};
-	return { body: null, pkg: { type: "composer", name, latest: latest.version || null, latestDate: latest.time || null,
+	return { body: null, pkg: { type: "composer", name, latest: okVersion(latest.version) ? latest.version : null, latestDate: clip(latest.time, DATE_MAX),
 		description: str(latest.description || j.package?.description, 2000), license: licenceOf(latest.license),
-		homepage: url(latest.homepage), repository: url(latest.source?.url), deprecated: j.package?.abandoned ? `abandoned${typeof j.package.abandoned === "string" ? " → " + j.package.abandoned : ""}` : null,
-		versions: entries.slice(0, MAX_VERSIONS).map(e => ({ version: e.version, date: e.time || null })),
+		homepage: url(latest.homepage), repository: url(latest.source?.url), deprecated: j.package?.abandoned ? `abandoned${typeof j.package.abandoned === "string" ? " → " + clip(j.package.abandoned, NAME_MAX) : ""}` : null,
+		versions: entries.filter(e => okVersion(e?.version)).slice(0, MAX_VERSIONS).map(e => ({ version: e.version, date: clip(e.time, DATE_MAX) })),
 		dependencies: deps(latest.require, "runtime") } };
 }
 
 function nuget(name, j) {
-	const items = (j.items || []).flatMap(page => page.items || []).map(i => i.catalogEntry || {}).filter(e => e.version);
+	const items = (j.items || []).flatMap(page => page.items || []).map(i => i.catalogEntry || {}).filter(e => okVersion(e.version)).slice(-MAX_VERSIONS);
 	const listed = items.filter(e => e.listed !== false);
 	const latest = [...listed].reverse().find(e => !/-/.test(e.version)) || listed[listed.length - 1] || {};
-	return { body: null, pkg: { type: "nuget", name: latest.id || name, latest: latest.version || null, latestDate: latest.published || null,
-		description: str(latest.description, 2000), license: latest.licenseExpression || null, homepage: url(latest.projectUrl), repository: null,
-		deprecated: latest.deprecation ? (latest.deprecation.message || (latest.deprecation.reasons || []).join(", ") || "deprecated") : null,
-		versions: [...items].reverse().slice(0, MAX_VERSIONS).map(e => ({ version: e.version, date: e.published || null, ...(e.deprecation ? { deprecated: true } : {}) })),
-		dependencies: (latest.dependencyGroups || []).flatMap(g => (g.dependencies || []).map(d => ({ name: d.id, range: d.range, scope: g.targetFramework || "runtime" }))).slice(0, 300) } };
+	return { body: null, pkg: { type: "nuget", name: clip(latest.id || name, NAME_MAX), latest: latest.version || null, latestDate: clip(latest.published, DATE_MAX),
+		description: str(latest.description, 2000), license: clip(latest.licenseExpression, 300), homepage: url(latest.projectUrl), repository: null,
+		deprecated: latest.deprecation ? clip(latest.deprecation.message || (Array.isArray(latest.deprecation.reasons) ? latest.deprecation.reasons.slice(0, 10).join(", ") : "") || "deprecated", 1000) : null,
+		versions: [...items].reverse().map(e => ({ version: e.version, date: clip(e.published, DATE_MAX), ...(e.deprecation ? { deprecated: true } : {}) })),
+		dependencies: (Array.isArray(latest.dependencyGroups) ? latest.dependencyGroups : []).slice(0, 50).flatMap(g => (Array.isArray(g?.dependencies) ? g.dependencies : []).slice(0, 300)
+			.map(d => ({ name: clip(d?.id, NAME_MAX), range: clip(d?.range, 100), scope: clip(g.targetFramework || "runtime", 100) }))).slice(0, 300) } };
 }
 
 function golang(name, j) {
-	return { body: null, pkg: { type: "golang", name, latest: j.Version || null, latestDate: j.Time || null, description: null, license: null,
-		homepage: null, repository: null, deprecated: null, versions: j.Version ? [{ version: j.Version, date: j.Time || null }] : [], dependencies: [] } };
+	const latest = okVersion(j.Version) ? j.Version : null, date = clip(j.Time, DATE_MAX);
+	return { body: null, pkg: { type: "golang", name, latest, latestDate: date, description: null, license: null,
+		homepage: null, repository: null, deprecated: null, versions: latest ? [{ version: latest, date }] : [], dependencies: [] } };
 }
 
 /**
@@ -121,8 +148,8 @@ function golang(name, j) {
  */
 function mavenMetadata(text) {
 	const { compareMavenVersions, latestStableVersion } = fad("maven-version");
-	const all = [...new Set([...String(text).matchAll(/<version>\s*([^<\s]+)\s*<\/version>/g)].map(m => m[1]))];
-	const tag = t => (new RegExp(`<${t}>\\s*([^<\\s]+)\\s*</${t}>`).exec(text) || [])[1] || null;
+	const all = [...new Set([...String(text).matchAll(/<version>\s*([^<\s]+)\s*<\/version>/g)].map(m => m[1]))].filter(okVersion).slice(-MAX_VERSIONS);
+	const tag = t => clip((new RegExp(`<${t}>\\s*([^<\\s]+)\\s*</${t}>`).exec(text) || [])[1], VERSION_MAX);
 	return { versions: [...all].sort(compareMavenVersions), latest: latestStableVersion(all), release: tag("release"), lastUpdated: tag("lastUpdated") };
 }
 function pomSummary(text) {
@@ -132,10 +159,10 @@ function pomSummary(text) {
 	const licences = [...(/<licenses>([\s\S]*?)<\/licenses>/.exec(s)?.[1] || "").matchAll(/<name>\s*([^<]+?)\s*<\/name>/g)].map(m => m[1]);
 	const depsBlock = (/<dependencies>([\s\S]*?)<\/dependencies>/.exec(noParent.replace(/<dependencyManagement>[\s\S]*?<\/dependencyManagement>/, "")) || [])[1] || "";
 	const dependencies = [...depsBlock.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)].slice(0, 300).map(([, d]) => {
-		const f = t => (new RegExp(`<${t}>\\s*([^<]+?)\\s*</${t}>`).exec(d) || [])[1] || null;
+		const f = t => clip((new RegExp(`<${t}>\\s*([^<]+?)\\s*</${t}>`).exec(d) || [])[1], 300);
 		return { name: `${f("groupId")}:${f("artifactId")}`, range: f("version"), scope: f("scope") || "compile", optional: f("optional") === "true" };
 	});
-	return { description: str(top("description"), 2000), name: str(top("name"), 300), url: url(top("url")), licence: licences.join(" OR ") || null,
+	return { description: str(top("description"), 2000), name: str(top("name"), 300), url: url(top("url")), licence: licenceOf(licences),
 		scm: url((/<scm>[\s\S]*?<url>\s*([^<]+?)\s*<\/url>/.exec(s) || [])[1]), dependencies };
 }
 

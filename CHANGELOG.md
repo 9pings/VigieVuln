@@ -103,6 +103,15 @@ manager's documented semantics, and locked by a test.
 ### Changed
 - Relicensed from MIT to Apache-2.0 (`LICENSE`, `package.json`).
 
+### Security
+- **`serve-cache` types every `/v1/resource` document before any lookup** (the whitelist
+  fad-service applies, now `lib/resource-cache/validate.js`): an unknown provider/type, an
+  unknown field or header, a malformed identifier is a `400` and never reaches an upstream —
+  a `serve-cache` exposed on a network no longer forwards whatever a caller sends. OSV
+  queries are accepted in fad's flat form and in OSV's own `{ package, version }` form.
+  The Maven, NuGet and Go providers now encode every path segment of the upstream URL (a
+  `?`, `#` or `%2e%2e` in a client value can no longer reshape the upstream path or query).
+
 ## [2.7.0] - 2026-09-24
 
 ### Fixed
