@@ -377,6 +377,8 @@ async function token(cfg, args) {
 function main(argv = process.argv.slice(2)) {
 	const args = parseArgs(argv);
 	if (args.version || args.v) { console.log(VERSION); return; }
+	// Help before anything else: `serve --help` must never start a server or create a database.
+	if (args.help || args._.includes("-h") || args._[0] === "help") { console.log(USAGE); return; }
 	const cmd = args._[0];
 	if (cmd === "keygen") return keygen(args);
 	if (cmd === "verify") return verifyCommand(args).catch(fail);

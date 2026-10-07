@@ -240,3 +240,12 @@ test("N14 analytics: pending counters are bounded; a burst past the cap loses on
 		assert.equal(Number(pages), 200, "every page read counted, some under (overflow)");
 	} finally { await a.close(); }
 });
+
+test("--help / -h / help print the usage and exit — `serve --help` never starts a server or creates a database", () => {
+	const dir = tmp();
+	for (const args of [["serve", "--help"], ["serve", "-h"], ["help"], ["worker", "--help"]]) {
+		const out = execFileSync(process.execPath, [path.join(__dirname, "..", "bin", "fad-service.js"), ...args], { cwd: dir, encoding: "utf8", timeout: 10000, stdio: ["ignore", "pipe", "pipe"] });
+		assert.match(out, /fad-service serve/, args.join(" "));
+	}
+	assert.deepEqual(fs.readdirSync(dir), [], "no database file created");
+});
