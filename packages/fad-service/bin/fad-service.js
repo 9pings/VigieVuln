@@ -46,7 +46,7 @@ function parseArgs(argv) {
 }
 
 const USAGE = `fad-service ${VERSION}
-  fad-service serve  [--config f.json] [--db f] [--port 8322] [--host 127.0.0.1] [--region fr] [--workers N]
+  fad-service serve  [--config f.json] [--db f.db|postgres://…] [--port 8322] [--host 127.0.0.1] [--region fr] [--workers N]
                      [--rate 600] [--log] [--log-file f] [--log-format text|json] [--trust-proxy]
   fad-service worker [--config f.json] [--db f] [--once] [--force] [--jobs cvelist,kev,epss,euvd,certfr,nvd,osv,maintenance]
   fad-service token  add --role client|admin [--label <text>] | list | revoke <id>   [--db f]
@@ -58,20 +58,29 @@ const USAGE = `fad-service ${VERSION}
   fad-service verify <x.manifest.json> --trust-key <pub.pem>
   fad-service seed   [--config f.json] --ecosystem npm|pypi|maven|gem|composer|nuget|golang (--list <file> | --popular) [--concurrency 4]`;
 
-function openAll(dbFile) {
-	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
+/** Open the database (SQLite file or postgres:// URL) and every store on it. */
+async function openAll(target) {
+	const { openDb } = require("../lib/db");
+	const { createSqlStore } = require("../lib/sql-store");
 	const { createTokenStore } = require("../lib/tokens");
 	const { createAssetStore } = require("../lib/assets");
-	const db = openDatabase(dbFile);
-	db.exec("CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL)");
-	// The log salt is stable across restarts and workers, so one client keeps one tag,
-	// but it never leaves the database: the tag cannot be reversed to the token.
-	const secret = name => {
-		db.prepare("INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)").run(name, crypto.randomBytes(16).toString("hex"));
-		return db.prepare("SELECT value FROM settings WHERE name = ?").get(name).value;
+	const driver = openDb(target);
+	await driver.exec("CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL)");
+	// The log salt is stable across restarts, workers and instances, so one client keeps one
+	// tag, but it never leaves the database: the tag cannot be reversed to the token.
+	const secret = async name => {
+		await driver.run("INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT DO NOTHING", [name, crypto.randomBytes(16).toString("hex")]);
+		return (await driver.get("SELECT value FROM settings WHERE name = ?", [name])).value;
 	};
-	return { db, store: createSqliteStore({ db }), tokens: createTokenStore(db), assets: createAssetStore(db),
-		logSalt: secret("log_salt"), demandSalt: secret("demand_salt") };
+	const assets = await createAssetStore(driver);
+	return { driver, assets, store: await createSqlStore({ driver }), tokens: await createTokenStore(driver),
+		logSalt: await secret("log_salt"), demandSalt: await secret("demand_salt") };
+}
+
+/** Close cleanly: SQLite checkpoints its WAL first. */
+async function closeAll(driver) {
+	try { if (driver.dialect === "sqlite") await driver.exec("PRAGMA wal_checkpoint(PASSIVE)"); } catch { /* busy */ }
+	try { await driver.close(); } catch { /* already closed */ }
 }
 
 function makeLogger(cfg, { inWorker = false } = {}) {
@@ -81,28 +90,32 @@ function makeLogger(cfg, { inWorker = false } = {}) {
 }
 
 /** One HTTP process: the server, its counters, graceful stop. */
-function serveProcess(cfg, { logger, pushMetrics = null }) {
+async function serveProcess(cfg, { logger, pushMetrics = null }) {
 	const { createServiceServer } = require("../lib/server");
 	const { createServerAnalytics } = require("../lib/analytics");
 	const { createCounters } = require("../lib/metrics");
 	const { secretsFromEnv } = require("../lib/config");
-	const { db, store, tokens, assets, logSalt, demandSalt } = openAll(cfg.db);
+	const { driver, store, tokens, assets, logSalt, demandSalt } = await openAll(cfg.db);
 	const { createRegistryLayer } = require("../lib/registry");
 	const { createUpstreamFetcher } = require("../lib/upstream");
 	const registry = createRegistryLayer({ assets, threshold: cfg.registry.publishThreshold, salt: demandSalt });
+	const { createUpstreamPolicy } = require("../lib/upstream-policy");
+	const keys = secretsFromEnv();
+	const policy = createUpstreamPolicy({ budgets: cfg.upstream.budgets, clientPerHour: cfg.upstream.clientPerHour,
+		nvdKey: !!keys.nvd, githubToken: !!keys.github });
 	const { createJobRunner } = require("../lib/jobs");
 	const jobs = createJobRunner({ assets });
 	const counters = createCounters();
-	const serverAnalytics = cfg.analytics.provider === "server" ? createServerAnalytics(db) : null;
+	const serverAnalytics = cfg.analytics.provider === "server" ? await createServerAnalytics(driver) : null;
 	const server = createServiceServer({
 		store, tokens, assets, jobStatus: jobs.status, logSalt, version: VERSION, region: String(cfg.region),
 		ratePerMinute: cfg.rateLimit.client, publicRatePerMinute: cfg.rateLimit.public, cacheSeconds: cfg.cacheSeconds,
 		trustProxy: !!cfg.trustProxy, maxInFlight: cfg.maxInFlight, maxConnections: cfg.maxConnections, brand: cfg.brand, analytics: cfg.analytics, serverAnalytics, counters,
-		logger: cfg.log.access ? logger : null, keys: secretsFromEnv(), registry, dumps: cfg.dumps,
+		logger: cfg.log.access ? logger : null, keys, registry, dumps: cfg.dumps, admit: policy.admit,
 		fetcher: createUpstreamFetcher(globalThis.fetch, { mavenMirrors: cfg.upstream.mavenMirrors }),
 	});
 	server.listen(cfg.listen.port, cfg.listen.host, () => {
-		logger.info("listening", { url: `http://${cfg.listen.host}:${server.address().port}`, pid: process.pid, version: VERSION, db: cfg.db });
+		logger.info("listening", { url: `http://${cfg.listen.host}:${server.address().port}`, pid: process.pid, version: VERSION, db: driver.dialect });
 	});
 	if (pushMetrics) {
 		const t = setInterval(() => pushMetrics(counters.drain(server.fadStats)), 5000);
@@ -115,8 +128,8 @@ function serveProcess(cfg, { logger, pushMetrics = null }) {
 		logger.info("draining", { pid: process.pid });
 		await server.fadDrain(cfg.shutdownSeconds * 1000);
 		if (pushMetrics) pushMetrics(counters.drain(server.fadStats));
-		serverAnalytics?.close();
-		try { db.exec("PRAGMA wal_checkpoint(PASSIVE)"); db.close(); } catch { /* already closed */ }
+		await serverAnalytics?.close();
+		await closeAll(driver);
 		logger.info("stopped", { pid: process.pid });
 		process.exit(0);
 	};
@@ -136,25 +149,25 @@ async function serve(cfg) {
 		const logger = makeLogger(cfg);
 		process.on("SIGHUP", () => logger.reopen());
 		const agg = createAggregate();
-		const { assets, jobs } = serveProcess(cfg, { logger, pushMetrics: delta => agg.add(delta) });
+		const { assets, jobs } = await serveProcess(cfg, { logger, pushMetrics: delta => agg.add(delta) });
 		if (metricsOn) await startMetricsServer({ host: mHost, port: Number(mPort), token: cfg.metrics.token,
-			collect: () => render(agg, { jobs: jobs.status(), assets: assets.counts(), workers: 1 }) });
+			collect: async () => render(agg, { jobs: await jobs.status(), assets: await assets.counts(), workers: 1 }) });
 		return;
 	}
 	if (!cluster.isPrimary) {
 		const logger = makeLogger(cfg, { inWorker: true });
-		serveProcess(cfg, { logger, pushMetrics: delta => process.send?.({ fadMetrics: delta }) });
+		await serveProcess(cfg, { logger, pushMetrics: delta => process.send?.({ fadMetrics: delta }) });
 		return;
 	}
 	// Primary: owns the log file, the metrics listener and the worker lifecycle.
 	const logger = makeLogger(cfg);
 	process.on("SIGHUP", () => logger.reopen());
-	const { db, assets } = openAll(cfg.db);          // schema created once, before forking
+	const { driver, assets } = await openAll(cfg.db);          // schema created once, before forking
 	const { createJobRunner } = require("../lib/jobs");
 	const jobs = createJobRunner({ assets });
 	const agg = createAggregate();
 	if (metricsOn) await startMetricsServer({ host: mHost, port: Number(mPort), token: cfg.metrics.token,
-		collect: () => render(agg, { jobs: jobs.status(), assets: assets.counts(), workers }) });
+		collect: async () => render(agg, { jobs: await jobs.status(), assets: await assets.counts(), workers }) });
 	let stopping = false;
 	const fork = () => {
 		const w = cluster.fork();
@@ -174,7 +187,7 @@ async function serve(cfg) {
 		stopping = true;
 		logger.info("stopping workers", { workers });
 		for (const w of Object.values(cluster.workers)) w.process.kill("SIGTERM");
-		const done = () => { if (!Object.keys(cluster.workers).length) { db.close(); logger.close(); process.exit(0); } };
+		const done = async () => { if (!Object.keys(cluster.workers).length) { await closeAll(driver); logger.close(); process.exit(0); } };
 		cluster.on("exit", done);
 		setTimeout(() => process.exit(0), (cfg.shutdownSeconds + 5) * 1000).unref();
 		done();
@@ -192,7 +205,7 @@ async function worker(cfg, args) {
 	const { createJobRunner, JOBS } = require("../lib/jobs");
 	const logger = makeLogger(cfg);
 	process.on("SIGHUP", () => logger.reopen());
-	const { db, assets } = openAll(cfg.db);
+	const { driver, assets } = await openAll(cfg.db);
 	const list = args.jobs ? String(args.jobs) : (cfg.jobs.enabled ? cfg.jobs.enabled.join(",") : null);
 	const names = list ? list.split(",").map(s => s.trim()).filter(Boolean)
 		: Object.keys(JOBS).filter(n => !JOBS[n].optIn || (n === "dump" && cfg.dumps.daily));
@@ -202,10 +215,10 @@ async function worker(cfg, args) {
 	runner = createJobRunner({ assets, owner, log: line => logger.info(line), jobOptions: { osvEcosystems: cfg.jobs.osvEcosystems,
 		resourceCacheMaxBytes: cfg.jobs.resourceCacheBytes, dumps: cfg.dumps, baseUrl: cfg.brand.baseUrl, version: VERSION,
 		instance: { name: cfg.brand.name, baseUrl: cfg.brand.baseUrl }, sources: () => runner.status() } });
-	const stop = () => {
+	const stop = async () => {
 		logger.info("worker stopping, releasing leases", { owner });
-		try { db.prepare("UPDATE job_runs SET lease_until = 0, last_status = 'interrupted' WHERE owner = ? AND lease_until > 0").run(owner); } catch { /* db gone */ }
-		try { db.close(); } catch { /* already */ }
+		try { await driver.run("UPDATE job_runs SET lease_until = 0, last_status = 'interrupted' WHERE owner = ? AND lease_until > 0", [owner]); } catch { /* db gone */ }
+		await closeAll(driver);
 		process.exit(0);
 	};
 	process.once("SIGTERM", stop);
@@ -214,7 +227,7 @@ async function worker(cfg, args) {
 	for (;;) {
 		if (args.force) for (const n of names) await runner.runJob(n);   // run now, due or not
 		else await runner.runDue(names);
-		if (args.once) { db.close(); return; }
+		if (args.once) { await closeAll(driver); return; }
 		await new Promise(ok => setTimeout(ok, everyMs));
 	}
 }
@@ -224,7 +237,9 @@ async function worker(cfg, args) {
  * runs. With --dir, files are named by UTC timestamp and only the newest --keep are kept.
  */
 function backup(cfg, args) {
-	const { openDatabase } = require("../lib/sqlite-store");
+	const { isPg } = require("../lib/db");
+	if (isPg(cfg.db)) throw new Error("backup copies a SQLite file — on PostgreSQL use pg_dump (or your provider's snapshots)");
+	const { DatabaseSync } = require("node:sqlite");
 	let out = args.out;
 	if (!out && args.dir) {
 		fs.mkdirSync(String(args.dir), { recursive: true });
@@ -232,7 +247,7 @@ function backup(cfg, args) {
 	}
 	if (!out) throw new Error("backup needs --out <file.db> or --dir <dir>");
 	if (fs.existsSync(out)) throw new Error(`${out} exists`);
-	const db = openDatabase(cfg.db);
+	const db = new DatabaseSync(cfg.db);
 	const t0 = Date.now();
 	try { db.prepare("VACUUM INTO ?").run(path.resolve(String(out))); } finally { db.close(); }
 	console.log(`backup ${out} (${(fs.statSync(out).size / 1048576).toFixed(1)} MB, ${((Date.now() - t0) / 1000).toFixed(1)} s)`);
@@ -254,12 +269,12 @@ async function seedCommand(cfg, args) {
 	const { createUpstreamFetcher } = require("../lib/upstream");
 	const type = String(args.ecosystem || "");
 	const specs = readSpecs(type, { list: args.list === true ? null : args.list, popular: !!args.popular });
-	const { db, store, tokens, assets, demandSalt } = openAll(cfg.db);
+	const { driver, store, tokens, assets, demandSalt } = await openAll(cfg.db);
 	const registry = createRegistryLayer({ assets, threshold: cfg.registry.publishThreshold, salt: demandSalt });
 	const server = createServiceServer({ store, tokens, assets, registry, ratePerMinute: 0, publicRatePerMinute: 0,
 		fetcher: createUpstreamFetcher(globalThis.fetch, { mavenMirrors: cfg.upstream.mavenMirrors }) });
 	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
-	const temp = tokens.add({ role: "admin", label: "seed (temporary)" });
+	const temp = await tokens.add({ role: "admin", label: "seed (temporary)" });
 	try {
 		const t0 = Date.now();
 		const r = await seed({ baseUrl: `http://127.0.0.1:${server.address().port}`, token: temp.token, type, specs, assets,
@@ -267,9 +282,9 @@ async function seedCommand(cfg, args) {
 		console.log(`seeded ${type}: ${r.ok} ok, ${r.missing} not found, ${r.failed} failed (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 		if (r.failed) process.exitCode = 1;
 	} finally {
-		tokens.revoke(temp.id);
+		await tokens.revoke(temp.id);
 		await new Promise(ok => server.close(ok));
-		db.close();
+		await closeAll(driver);
 	}
 }
 
@@ -290,34 +305,34 @@ function keygen(args) {
 async function dumpCommand(cfg, args) {
 	const { buildDump, pruneDumps } = require("../lib/dumps/build");
 	const kind = String(args.kind || "public");
-	const { db, assets } = openAll(cfg.db);
+	const { driver, assets } = await openAll(cfg.db);
 	const { createJobRunner } = require("../lib/jobs");
 	try {
 		const dir = args.out && args.out !== true ? path.resolve(String(args.out)) : path.join(cfg.dumps.dir, kind === "full" ? "full" : kind);
 		const since = args.since ? Date.parse(String(args.since)) : null;
 		if (args.since && !Number.isFinite(since)) throw new Error("--since must be an ISO date");
 		const t0 = Date.now();
-		const m = await buildDump({ db, assets, dir, kind, since, includePackages: !!args["include-packages"] || cfg.dumps.publicIncludesPackages,
+		const m = await buildDump({ driver, dir, kind, since, includePackages: !!args["include-packages"] || cfg.dumps.publicIncludesPackages,
 			signingKeyPem: cfg.dumps.signingKeyFile ? fs.readFileSync(cfg.dumps.signingKeyFile, "utf8") : null,
 			baseUrl: cfg.brand.baseUrl, trackers: cfg.dumps.trackers, instance: { name: cfg.brand.name, baseUrl: cfg.brand.baseUrl },
-			version: VERSION, sources: createJobRunner({ assets }).status() });
+			version: VERSION, sources: await createJobRunner({ assets }).status() });
 		console.log(`${m.id}: ${(m.payload.bytes / 1048576).toFixed(1)} MB in ${((Date.now() - t0) / 1000).toFixed(1)} s — ${JSON.stringify(m.counts)}${cfg.dumps.signingKeyFile ? ", signed" : ", NOT signed (no dumps.signingKeyFile)"}${m.torrent ? `\n${m.torrent.magnet}` : ""}`);
 		if (!args.out || args.out === true) for (const id of pruneDumps(dir, cfg.dumps.keep)) console.log(`removed ${id}`);
-	} finally { db.close(); }
+	} finally { await closeAll(driver); }
 }
 
 async function restoreCommand(cfg, args) {
 	const { restoreDump } = require("../lib/dumps/restore");
 	const manifestPath = args._[1];
 	if (!manifestPath) throw new Error("restore <x.manifest.json>");
-	const { db, assets, store } = openAll(cfg.db);
+	const { driver, assets, store } = await openAll(cfg.db);
 	try {
 		const publicKeyPem = args["trust-key"] && args["trust-key"] !== true ? fs.readFileSync(String(args["trust-key"]), "utf8") : null;
 		if (!publicKeyPem) console.warn("warning: no --trust-key — integrity checked (sha256), origin NOT verified");
 		const t0 = Date.now();
 		const { manifest, counts } = await restoreDump({ assets, store, manifestPath: path.resolve(manifestPath), publicKeyPem });
 		console.log(`restored ${manifest.id} in ${((Date.now() - t0) / 1000).toFixed(1)} s — ${JSON.stringify(counts)}`);
-	} finally { db.close(); }
+	} finally { await closeAll(driver); }
 }
 
 async function verifyCommand(args) {
@@ -329,21 +344,21 @@ async function verifyCommand(args) {
 	console.log(`OK ${manifest.id} — signed by ${keyFingerprint(pem)}, payload sha256 ${manifest.payload.sha256}`);
 }
 
-function token(cfg, args) {
-	const { db, tokens } = openAll(cfg.db);
+async function token(cfg, args) {
+	const { driver, tokens } = await openAll(cfg.db);
 	try {
 		const [, action, id] = args._;
 		if (action === "add") {
-			const created = tokens.add({ role: args.role || "client", label: args.label === true ? "" : args.label });
+			const created = await tokens.add({ role: args.role || "client", label: args.label === true ? "" : args.label });
 			console.log(`token #${created.id} (${args.role || "client"}) — shown once, store it now:\n${created.token}`);
 		} else if (action === "list") {
-			for (const t of tokens.list())
+			for (const t of await tokens.list())
 				console.log(`#${t.id}\t${t.role}\t${t.revokedAt ? "revoked" : "active"}\t${new Date(t.createdAt).toISOString()}\t${t.label || ""}`);
 		} else if (action === "revoke") {
 			if (!id) throw new Error("token revoke <id>");
-			console.log(tokens.revoke(id) ? `token #${id} revoked` : `no active token #${id}`);
+			console.log((await tokens.revoke(id)) ? `token #${id} revoked` : `no active token #${id}`);
 		} else throw new Error(USAGE);
-	} finally { db.close(); }
+	} finally { await closeAll(driver); }
 }
 
 function main(argv = process.argv.slice(2)) {
@@ -355,10 +370,14 @@ function main(argv = process.argv.slice(2)) {
 	if (!["serve", "worker", "token", "backup", "config", "seed", "dump", "restore"].includes(cmd)) { console.error(USAGE); process.exitCode = 2; return; }
 	const { loadConfig } = require("../lib/config");
 	const cfg = loadConfig(args);
-	if (cmd === "config") { console.log(JSON.stringify({ ...cfg, metrics: { ...cfg.metrics, token: cfg.metrics.token ? "(set)" : null } }, null, 2)); return; }
+	if (cmd === "config") {
+		const masked = String(cfg.db).replace(/^(postgres(?:ql)?:\/\/[^:/@]+:)[^@]*@/i, "$1***@");
+		console.log(JSON.stringify({ ...cfg, db: masked, metrics: { ...cfg.metrics, token: cfg.metrics.token ? "(set)" : null } }, null, 2));
+		return;
+	}
 	if (cmd === "serve") return serve(cfg).catch(fail);
 	if (cmd === "worker") return worker(cfg, args).catch(fail);
-	if (cmd === "token") return token(cfg, args);
+	if (cmd === "token") return token(cfg, args).catch(fail);
 	if (cmd === "backup") return backup(cfg, args);
 	if (cmd === "seed") return seedCommand(cfg, args).catch(fail);
 	if (cmd === "dump") return dumpCommand(cfg, args).catch(fail);

@@ -88,21 +88,17 @@ test("metrics: counters aggregate across processes; Prometheus text; token on it
 });
 
 async function site(extra = {}) {
-	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
-	const { createTokenStore } = require("../lib/tokens");
-	const { createAssetStore } = require("../lib/assets");
 	const { createServiceServer } = require("../lib/server");
 	const { createServerAnalytics } = require("../lib/analytics");
-	const db = openDatabase(":memory:");
-	const assets = createAssetStore(db);
-	assets.upsert({ type: "cve", key: "CVE-2021-44228", title: "Log4Shell", summary: "log4j", data: { id: "CVE-2021-44228", description: "x" },
-		sources: [{ name: "CVE List", licence: "ToU", url: "https://www.cve.org/" }] });
-	const serverAnalytics = extra.analytics?.provider === "plausible" ? null : createServerAnalytics(db);
-	const server = createServiceServer({ store: createSqliteStore({ db }), tokens: createTokenStore(db), assets, serverAnalytics, ...extra });
-	const admin = server.fadStore && createTokenStore(db).add({ role: "admin" }).token;
+	const { db, assets, store, tokens } = await require("./helpers/db").open(":memory:");
+	(await assets.upsert({ type: "cve", key: "CVE-2021-44228", title: "Log4Shell", summary: "log4j", data: { id: "CVE-2021-44228", description: "x" },
+		sources: [{ name: "CVE List", licence: "ToU", url: "https://www.cve.org/" }] }));
+	const serverAnalytics = extra.analytics?.provider === "plausible" ? null : await createServerAnalytics(db);
+	const server = createServiceServer({ store, tokens, assets, serverAnalytics, ...extra });
+	const admin = (await tokens.add({ role: "admin" })).token;
 	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 	const base = `http://127.0.0.1:${server.address().port}`;
-	return { server, db, serverAnalytics, admin, get: (p, h = {}) => fetch(base + p, { headers: h }), close: () => new Promise(ok => server.close(ok)) };
+	return { server, db, tokens, serverAnalytics, admin, get: (p, h = {}) => fetch(base + p, { headers: h }), close: () => new Promise(ok => server.close(ok)) };
 }
 
 test("analytics (server): daily aggregates only — no IP, no search text, readable by an admin", opts, async () => {
@@ -112,8 +108,8 @@ test("analytics (server): daily aggregates only — no IP, no search text, reada
 		await (await s.get("/cve/CVE-2021-44228")).text();
 		await (await s.get("/search?q=secret%20internal%20project")).text();
 		await (await s.get("/health")).text();
-		s.serverAnalytics.flush();
-		const rows = s.db.prepare("SELECT * FROM analytics_daily").all();
+		await s.serverAnalytics.flush();
+		const rows = await s.db.all("SELECT * FROM analytics_daily");
 		const dump = JSON.stringify(rows);
 		assert.ok(!dump.includes("secret") && !dump.includes("127.0.0.1"), "no query text, no address");
 		const report = await (await s.get("/admin/analytics", { authorization: `Bearer ${s.admin}` })).json();
@@ -190,14 +186,13 @@ test("backup (VACUUM INTO) with rotation; maintenance job; config command hides 
 		}
 		const kept = fs.readdirSync(path.join(dir, "bk"));
 		assert.equal(kept.length, 2);
-		const { openDatabase } = require("../lib/sqlite-store");
-		const copy = openDatabase(path.join(dir, "bk", kept[0]));
-		assert.equal(copy.prepare("SELECT COUNT(*) AS n FROM tokens").get().n, 1, "the copy is a working database");
-		copy.close();
-		const { createAssetStore } = require("../lib/assets");
-		const live = openDatabase(db);
-		assert.match(await require("../lib/jobs/maintenance").run({ assets: createAssetStore(live) }), /fts optimized/);
-		live.close();
+		const { openDb } = require("../lib/db");
+		const copy = openDb(path.join(dir, "bk", kept[0]));
+		assert.equal((await copy.get("SELECT COUNT(*) AS n FROM tokens")).n, 1, "the copy is a working database");
+		await copy.close();
+		const live = await require("./helpers/db").open(db);
+		assert.match(await require("../lib/jobs/maintenance").run({ assets: live.assets }), /fts optimized/);
+		await live.driver.close();
 		const printed = execFileSync(process.execPath, [BIN, "config", "--db", db], { encoding: "utf8", env: { ...process.env, FAD_SERVICE_METRICS_TOKEN: "very-secret" } });
 		assert.ok(!printed.includes("very-secret"));
 		assert.match(printed, /"token": "\(set\)"/);
@@ -224,15 +219,15 @@ test("audit fixes: rate-limit LRU (no global reset), IPv6 /64 buckets, URIError 
 		assert.equal((await s.get("/")).headers.get("cross-origin-opener-policy"), "same-origin");
 	} finally { await s.close(); }
 
-	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
 	const { evictResources } = require("../lib/jobs/maintenance");
-	const db = openDatabase(":memory:");
-	const store = createSqliteStore({ db });
+	const { db, store } = await require("./helpers/db").open(":memory:");
 	const now = Date.now();
-	store.put("old", Buffer.alloc(10), { fetchedAt: now - 40 * 86400000, ttlMs: 1000, bytes: 10 });
-	for (let i = 0; i < 5; i++) store.put("k" + i, Buffer.alloc(100), { fetchedAt: now - (5 - i) * 1000, ttlMs: 86400000, bytes: 100 });
-	assert.deepEqual(evictResources(db, { maxBytes: 250, now }), { stale: 1, budget: 3 });
-	assert.deepEqual([...["k0", "k1", "k2", "k3", "k4"].map(k => !!store.get(k))], [false, false, false, true, true], "the least recently fetched go first");
+	(await store.put("old", Buffer.alloc(10), { fetchedAt: now - 40 * 86400000, ttlMs: 1000, bytes: 10 }));
+	for (let i = 0; i < 5; i++) (await store.put("k" + i, Buffer.alloc(100), { fetchedAt: now - (5 - i) * 1000, ttlMs: 86400000, bytes: 100 }));
+	assert.deepEqual(await evictResources(db, { maxBytes: 250, now }), { stale: 1, budget: 3 });
+	const present = [];
+	for (const k of ["k0", "k1", "k2", "k3", "k4"]) present.push(!!(await store.get(k)));
+	assert.deepEqual(present, [false, false, false, true, true], "the least recently fetched go first");
 	assert.equal(store.maxEntryBytes, 64 * 1024 * 1024, "the SQLite store caps what it keeps");
 });
 
@@ -241,10 +236,9 @@ test("overload guard: past maxInFlight, 503 + Retry-After; health probes still a
 	const gate = new Promise(ok => { release = ok; });
 	const s = await site({ maxInFlight: 1, fetcher: async () => { await gate; return new Response("{}", { status: 200 }); } });
 	try {
-		const { createTokenStore } = require("../lib/tokens");
-		const client = createTokenStore(s.db).add({ role: "client" }).token;
+		const client = (await s.tokens.add({ role: "client" })).token;
 		const base = `http://127.0.0.1:${s.server.address().port}`;
-		const slow = fetch(`${base}/v1/resource`, { method: "POST", headers: { authorization: `Bearer ${client}` }, body: JSON.stringify({ provider: "nvd", type: "cve", params: { id: "CVE-2024-31210" } }) });
+		const slow = fetch(`${base}/v1/resource`, { method: "POST", headers: { authorization: `Bearer ${client}`, "content-type": "application/json" }, body: JSON.stringify({ provider: "nvd", type: "cve", params: { id: "CVE-2024-31210" } }) });
 		await new Promise(ok => setTimeout(ok, 50));
 		const shed = await s.get("/");
 		assert.equal(shed.status, 503);

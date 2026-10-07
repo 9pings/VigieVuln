@@ -123,3 +123,24 @@ test("engine: an invalid request is a 400, and a store is mandatory", async () =
 		assert.equal((await s.ask({ provider: "nvd", type: "cve", params: { id: "../etc/passwd" } })).status, 400);
 	} finally { await s.close(); }
 });
+
+test("engine: a 404 is remembered (in memory, hashed) — not asked again until it expires", async () => {
+	let calls = 0;
+	const store = memoryStore();
+	const engine = createResourceEngine({ store, negativeTtlMs: 200, fetcher: async () => { calls++; return new Response('{"error":"Not found"}', { status: 404 }); } });
+	const s = await serve(engine);
+	try {
+		const ask = () => s.ask({ provider: "npm", type: "package", params: { name: "@acme/private-thing" } });
+		const first = await ask();
+		assert.equal(first.status, 404);
+		const again = await ask();
+		assert.equal(again.status, 404);
+		assert.equal(again.headers.get("x-fad-proxy"), "negative");
+		assert.equal(calls, 1, "asked upstream once");
+		assert.equal(store.size(), 0, "nothing written to the store");
+		assert.equal(engine.negativeEntries(), 1);
+		await new Promise(ok => setTimeout(ok, 250));
+		await (await ask()).text();
+		assert.equal(calls, 2, "asked again once the 6 h (here 200 ms) are over");
+	} finally { await s.close(); }
+});

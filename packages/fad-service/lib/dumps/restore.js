@@ -16,30 +16,20 @@ const BATCH = 1000;
 async function restoreDump({ assets, store, manifestPath, publicKeyPem = null }) {
 	const { openDump, readLines } = fad("dump-format");
 	const { manifest, payloadPath } = await openDump(manifestPath, { publicKeyPem });
-	const db = assets.db;
 	const counts = { asset: 0, assetKept: 0, signal: 0, nvd: 0, links: 0, resource: 0, resourceKept: 0 };
-	const sigCols = ["kev", "epss_score", "epss_percentile", "epss_date", "euvd_id", "euvd_exploited_since", "certfr"];
-	const putSignal = db.prepare(`INSERT INTO cve_signals (cve, ${sigCols.join(", ")}, updated_at) VALUES (?, ${sigCols.map(() => "?").join(", ")}, ?)
-		ON CONFLICT(cve) DO UPDATE SET ${sigCols.map(c => `${c} = excluded.${c}`).join(", ")}, updated_at = excluded.updated_at
-		WHERE excluded.updated_at > cve_signals.updated_at`);
-	const putNvd = db.prepare(`INSERT INTO cve_nvd (cve, last_modified, data, updated_at) VALUES (?, ?, ?, ?)
-		ON CONFLICT(cve) DO UPDATE SET last_modified = excluded.last_modified, data = excluded.data, updated_at = excluded.updated_at
-		WHERE COALESCE(excluded.updated_at, 0) >= COALESCE(cve_nvd.updated_at, 0)`);
 	let batch = [];
-	const flush = () => {
+	const flush = async () => {
 		if (!batch.length) return;
 		const rows = batch; batch = [];
-		assets.transaction(() => {
-			for (const l of rows) {
-				if (l.t === "asset") { if (assets.importAsset(l)) counts.asset++; else counts.assetKept++; }
-				else if (l.t === "signal") { putSignal.run(l.cve, ...sigCols.map(c => l[c] ?? null), l.updated_at); counts.signal++; }
-				else if (l.t === "nvd") { putNvd.run(l.cve, l.lastModified, JSON.stringify(l.data), l.updatedAt || 0); counts.nvd++; }
-				else if (l.t === "links") {
-					assets.linkAdvisory(l.advisory, l.cves || []);
-					if ((l.packages || []).length) assets.linkAdvisoryPackages(l.advisory, l.packages);
-					counts.links++;
-				}
-			}
+		const of = type => rows.filter(l => l.t === type);
+		await assets.transaction(async t => {
+			const assetRows = of("asset").map(l => ({ ...l, aliases: l.aliases ? String(l.aliases).split(" ").filter(Boolean) : [], published: !!l.published }));
+			const written = await t.upsertMany(assetRows, { onlyNewer: true });
+			counts.asset += written; counts.assetKept += assetRows.length - written;
+			counts.signal += of("signal").length; await t.importSignals(of("signal"));
+			counts.nvd += of("nvd").length; await t.importNvd(of("nvd"));
+			const links = of("links").map(l => ({ advisory: l.advisory, cves: l.cves || [], packages: (l.packages || []).length ? l.packages : null }));
+			counts.links += links.length; await t.linkMany(links);
 		});
 	};
 	for await (const line of readLines(payloadPath)) {
@@ -53,9 +43,9 @@ async function restoreDump({ assets, store, manifestPath, publicKeyPem = null })
 			continue;
 		}
 		batch.push(line);
-		if (batch.length >= BATCH) flush();
+		if (batch.length >= BATCH) await flush();
 	}
-	flush();
+	await flush();
 	return { manifest, counts };
 }
 

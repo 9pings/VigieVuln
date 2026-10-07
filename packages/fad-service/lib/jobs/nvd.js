@@ -60,14 +60,12 @@ async function importYear({ asset, fetcher, assets }) {
 	const res = await fetcher(asset.browser_download_url, { headers: { "user-agent": "fad-service" }, redirect: "follow" });
 	if (!res.ok || !res.body) throw new Error(`${asset.name} HTTP ${res.status}`);
 	let pending = [];
-	const flush = () => { if (pending.length) { assets.setNvd(pending); pending = []; } };
+	const flush = async () => { if (pending.length) { const rows = pending; pending = []; await assets.setNvd(rows); } };
 	const n = await forEachArrayItem(xzDecompress(Readable.fromWeb(res.body)), "cve_items", item => {
 		const row = nvdRow(item);
-		if (!row) return;
-		pending.push(row);
-		if (pending.length >= BATCH) flush();
-	});
-	flush();
+		if (row) pending.push(row);
+	}, { afterChunk: () => pending.length >= BATCH ? flush() : null });
+	await flush();
 	return n;
 }
 
@@ -90,10 +88,10 @@ async function run({ assets, fetcher, state, setState, log }) {
 		if (sha && seen[year] === sha) continue;
 		const n = await importYear({ asset, fetcher, assets });
 		items += n; years++;
-		if (sha) { seen[year] = sha; setState({ ...state, sha: seen, release: rel.tag_name }); }
+		if (sha) { seen[year] = sha; await setState({ ...state, sha: seen, release: rel.tag_name }); }
 		if (log) log(`nvd ${year}: ${n} records`);
 	}
-	setState({ ...state, sha: seen, release: rel.tag_name });
+	await setState({ ...state, sha: seen, release: rel.tag_name });
 	return years ? `${years} year file(s) re-imported, ${items} records (${rel.tag_name})` : `up to date (${rel.tag_name})`;
 }
 

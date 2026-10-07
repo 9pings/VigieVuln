@@ -25,12 +25,7 @@ function zipOf(files, nested = false) {
 	return nested ? zipSync({ "inner.zip": [inner, { level: 0 }] }) : inner;
 }
 
-function open() {
-	const { openDatabase } = require("../lib/sqlite-store");
-	const { createAssetStore } = require("../lib/assets");
-	const db = openDatabase(":memory:");
-	return { db, assets: createAssetStore(db) };
-}
+const open = () => require("./helpers/db").open(":memory:");
 
 const bin = (buf, type = "application/zip") => new Response(buf, { status: 200, headers: { "content-type": type } });
 const json = body => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
@@ -49,7 +44,7 @@ function cvelistUpstream({ tag, day, baseline, delta }) {
 	return { fetcher, calls };
 }
 
-test("cve record: Log4Shell parsed as published — CVSS with its scorer, CWE, references, affected", opts, () => {
+test("cve record: Log4Shell parsed as published — CVSS with its scorer, CWE, references, affected", opts, async () => {
 	const { parseCveRecord, headlineCvss } = require("../lib/cve-record");
 	const r = parseCveRecord(LOG4SHELL);
 	assert.equal(r.id, "CVE-2021-44228");
@@ -63,7 +58,7 @@ test("cve record: Log4Shell parsed as published — CVSS with its scorer, CWE, r
 
 test("cvelist job: baseline (nested zip) then delta; same release = no-op; new release = delta only", opts, async () => {
 	const { createJobRunner } = require("../lib/jobs");
-	const { assets } = open();
+	const { assets } = await open();
 	const baseline = zipOf({ "cves/2021/44xxx/CVE-2021-44228.json": LOG4SHELL, "cves/2024/1xxx/CVE-2024-1000.json": record("CVE-2024-1000", "old text") }, true);
 	const delta = zipOf({ "deltaCves/CVE-2024-1000.json": record("CVE-2024-1000", "Cross-site scripting in Widget Pro") });
 	let up = cvelistUpstream({ tag: "cve_2026-10-07_0800Z", day: "2026-10-07", baseline, delta });
@@ -71,8 +66,8 @@ test("cvelist job: baseline (nested zip) then delta; same release = no-op; new r
 	const first = await runner.runJob("cvelist");
 	assert.equal(first.status, "ok", first.detail);
 	assert.match(first.detail, /baseline 2026-10-07: 2 CVEs · delta cve_2026-10-07_0800Z: 1 CVEs/);
-	assert.equal(assets.get("cve", "CVE-2024-1000").data.description, "Cross-site scripting in Widget Pro", "the delta wins over the baseline");
-	assert.equal(assets.get("cve", "CVE-2021-44228").data.score, 10);
+	assert.equal((await assets.get("cve", "CVE-2024-1000")).data.description, "Cross-site scripting in Widget Pro", "the delta wins over the baseline");
+	assert.equal((await assets.get("cve", "CVE-2021-44228")).data.score, 10);
 
 	assert.match((await runner.runJob("cvelist")).detail, /up to date/);
 	assert.equal(up.calls.length, 4, "one release lookup, nothing downloaded");
@@ -86,7 +81,7 @@ test("cvelist job: baseline (nested zip) then delta; same release = no-op; new r
 
 test("jobs are leased: a job already running elsewhere is not started twice", opts, async () => {
 	const { createJobRunner } = require("../lib/jobs");
-	const { assets } = open();
+	const { assets } = await open();
 	let release;
 	const slow = new Promise(ok => { release = ok; });
 	const fetcher = async () => { await slow; return json({ vulnerabilities: [{ cveID: "CVE-2021-44228", dateAdded: "2021-12-10" }] }); };
@@ -101,7 +96,7 @@ test("jobs are leased: a job already running elsewhere is not started twice", op
 
 test("signal jobs: KEV, EPSS (gzip CSV), EUVD write their own columns", opts, async () => {
 	const { createJobRunner } = require("../lib/jobs");
-	const { assets } = open();
+	const { assets } = await open();
 	const csv = "#model_version:v2025.03.14,score_date:2026-10-06T00:00:00+0000\ncve,epss,percentile\nCVE-2021-44228,0.94358,0.99962\nnot-a-cve,1,1\n";
 	const fetcher = async url => {
 		if (url.includes("known_exploited")) return json({ vulnerabilities: [{ cveID: "CVE-2021-44228", dateAdded: "2021-12-10", dueDate: "2021-12-24", knownRansomwareCampaignUse: "Known" }] });
@@ -112,22 +107,22 @@ test("signal jobs: KEV, EPSS (gzip CSV), EUVD write their own columns", opts, as
 	};
 	const runner = createJobRunner({ assets, fetcher });
 	for (const job of ["kev", "epss", "euvd"]) assert.equal((await runner.runJob(job)).status, "ok", job);
-	const s = assets.signals("CVE-2021-44228");
+	const s = (await assets.signals("CVE-2021-44228"));
 	assert.equal(s.kev.dateAdded, "2021-12-10");
 	assert.equal(s.epss_score, 0.94358);
 	assert.equal(s.epss_date, "2026-10-06");
 	assert.equal(s.euvd_id, "EUVD-2021-34768");
 	assert.equal(s.euvd_exploited_since, "2021-12-10");
-	assert.equal(assets.cveForEuvd("EUVD-2021-34768"), "CVE-2021-44228");
+	assert.equal((await assets.cveForEuvd("EUVD-2021-34768")), "CVE-2021-44228");
 	// An empty feed never wipes what is there.
 	const empty = createJobRunner({ assets, fetcher: async () => json({ vulnerabilities: [] }) });
 	assert.equal((await empty.runJob("kev")).status, "error");
-	assert.equal(assets.signals("CVE-2021-44228").kev.dateAdded, "2021-12-10");
+	assert.equal((await assets.signals("CVE-2021-44228")).kev.dateAdded, "2021-12-10");
 });
 
 test("certfr job: advisories become pages, CVEs get their citations, a revision drops a CVE", opts, async () => {
 	const { createJobRunner } = require("../lib/jobs");
-	const { assets } = open();
+	const { assets } = await open();
 	let rev = "2021-12-14T00:00:00", cves = [{ name: "CVE-2021-44228" }, { name: "CVE-2021-45046" }];
 	const fetcher = async url => {
 		if (/\/avis\/json\/$/.test(url)) return json([{ reference: "CERTFR-2021-AVI-951", last_revision_date: rev, title: "Vulnérabilité dans Apache Log4j" }]);
@@ -137,48 +132,46 @@ test("certfr job: advisories become pages, CVEs get their citations, a revision 
 	};
 	const runner = createJobRunner({ assets, fetcher });
 	assert.match((await runner.runJob("certfr")).detail, /1 advisories updated · 2 CVEs cited/);
-	const adv = assets.get("advisory", "certfr:CERTFR-2021-AVI-951");
+	const adv = (await assets.get("advisory", "certfr:CERTFR-2021-AVI-951"));
 	assert.deepEqual(adv.data.cves, ["CVE-2021-44228", "CVE-2021-45046"]);
-	assert.equal(assets.signals("CVE-2021-45046").certfr[0].ref, "CERTFR-2021-AVI-951");
+	assert.equal((await assets.signals("CVE-2021-45046")).certfr[0].ref, "CERTFR-2021-AVI-951");
 	rev = "2022-01-01T00:00:00"; cves = [{ name: "CVE-2021-44228" }];
 	await runner.runJob("certfr");
-	assert.equal(assets.signals("CVE-2021-45046").certfr, null, "a CVE the revision dropped loses the citation");
+	assert.equal((await assets.signals("CVE-2021-45046")).certfr, null, "a CVE the revision dropped loses the citation");
 	assert.match((await runner.runJob("certfr")).detail, /no change/);
 });
 
-test("search: keywords, id prefix, aliases; unpublished assets never surface", opts, () => {
-	const { assets } = open();
+test("search: keywords, id prefix, aliases; unpublished assets never surface", opts, async () => {
+	const { assets } = await open();
 	const { cveAsset } = require("../lib/jobs/cvelist");
 	const { parseCveRecord } = require("../lib/cve-record");
-	assets.upsert(cveAsset(parseCveRecord(LOG4SHELL)));
-	assets.upsert(cveAsset(parseCveRecord(record("CVE-2024-1000", "Cross-site scripting in Widget Pro"))));
-	assets.upsert({ type: "package", key: "pkg:npm/internal-thing", title: "internal-thing", published: false });
-	assert.equal(assets.search("log4j")[0].key, "CVE-2021-44228");
-	assert.equal(assets.search("widget scrip")[0].key, "CVE-2024-1000", "prefix on the last word");
-	assert.equal(assets.search("GCVE-0-2021-44228")[0].key, "CVE-2021-44228", "GCVE alias is indexed");
-	assert.deepEqual(assets.search("internal-thing"), [], "unpublished = invisible");
+	(await assets.upsert(cveAsset(parseCveRecord(LOG4SHELL))));
+	(await assets.upsert(cveAsset(parseCveRecord(record("CVE-2024-1000", "Cross-site scripting in Widget Pro")))));
+	(await assets.upsert({ type: "package", key: "pkg:npm/internal-thing", title: "internal-thing", published: false }));
+	assert.equal((await assets.search("log4j"))[0].key, "CVE-2021-44228");
+	assert.equal((await assets.search("widget scrip"))[0].key, "CVE-2024-1000", "prefix on the last word");
+	assert.equal((await assets.search("GCVE-0-2021-44228"))[0].key, "CVE-2021-44228", "GCVE alias is indexed");
+	assert.deepEqual((await assets.search("internal-thing")), [], "unpublished = invisible");
 	// Hostile input is only ever quoted FTS tokens: no SQL, no FTS operator survives.
-	assert.deepEqual(assets.search('"); DROP TABLE assets; --'), []);
-	assert.deepEqual(assets.search("NEAR(log4j) OR *"), assets.search("NEAR log4j OR"));
-	assert.equal(assets.get("cve", "CVE-2021-44228").key, "CVE-2021-44228", "the table is still there");
-	assert.deepEqual(assets.search(""), []);
+	assert.deepEqual((await assets.search('"); DROP TABLE assets; --')), []);
+	assert.deepEqual((await assets.search("NEAR(log4j) OR *")), (await assets.search("NEAR log4j OR")));
+	assert.equal((await assets.get("cve", "CVE-2021-44228")).key, "CVE-2021-44228", "the table is still there");
+	assert.deepEqual((await assets.search("")), []);
 });
 
 async function site() {
-	const { createSqliteStore } = require("../lib/sqlite-store");
-	const { createTokenStore } = require("../lib/tokens");
 	const { createServiceServer } = require("../lib/server");
 	const { cveAsset } = require("../lib/jobs/cvelist");
 	const { advisoryAsset } = require("../lib/jobs/certfr");
 	const { parseCveRecord } = require("../lib/cve-record");
-	const { db, assets } = open();
-	assets.upsert(cveAsset(parseCveRecord(LOG4SHELL)));
-	assets.upsert(cveAsset(parseCveRecord(record("CVE-2024-6666", "Bad <script>alert(1)</script> in Widget"))));
-	assets.upsert(advisoryAsset("CERTFR-2021-AVI-951", { kind: "avis", rev: "2021-12-14", title: "Vulnérabilité dans Apache Log4j", cves: ["CVE-2021-44228"] }));
-	assets.setSignal("kev", [["CVE-2021-44228", { dateAdded: "2021-12-10" }]]);
-	assets.setEuvd([["CVE-2021-44228", "EUVD-2021-34768", "2021-12-10"]]);
-	assets.setSignal("certfr", [["CVE-2021-44228", [{ ref: "CERTFR-2021-AVI-951", kind: "avis", title: "Vulnérabilité dans Apache Log4j" }]]]);
-	const server = createServiceServer({ store: createSqliteStore({ db }), tokens: createTokenStore(db), assets, region: "fr" });
+	const { assets, store, tokens } = await open();
+	(await assets.upsert(cveAsset(parseCveRecord(LOG4SHELL))));
+	(await assets.upsert(cveAsset(parseCveRecord(record("CVE-2024-6666", "Bad <script>alert(1)</script> in Widget")))));
+	(await assets.upsert(advisoryAsset("CERTFR-2021-AVI-951", { kind: "avis", rev: "2021-12-14", title: "Vulnérabilité dans Apache Log4j", cves: ["CVE-2021-44228"] })));
+	(await assets.setSignal("kev", [["CVE-2021-44228", { dateAdded: "2021-12-10" }]]));
+	(await assets.setEuvd([["CVE-2021-44228", "EUVD-2021-34768", "2021-12-10"]]));
+	(await assets.setSignal("certfr", [["CVE-2021-44228", [{ ref: "CERTFR-2021-AVI-951", kind: "avis", title: "Vulnérabilité dans Apache Log4j" }]]]));
+	const server = createServiceServer({ store, tokens, assets, region: "fr" });
 	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 	const base = `http://127.0.0.1:${server.address().port}`;
 	return { get: (p, h = {}) => fetch(base + p, { headers: h, redirect: "manual" }), close: () => new Promise(ok => server.close(ok)) };

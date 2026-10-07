@@ -15,7 +15,7 @@ const { StringDecoder } = require("node:string_decoder");
  * @param source async-iterable of Buffer/Uint8Array chunks
  * @param key    the name of the array property to stream ("cve_items")
  */
-async function forEachArrayItem(source, key, onItem) {
+async function forEachArrayItem(source, key, onItem, { afterChunk = null } = {}) {
 	const decoder = new StringDecoder("utf8");
 	const marker = `"${key}"`;
 	let phase = "seek";            // seek → open → items → done
@@ -66,6 +66,7 @@ async function forEachArrayItem(source, key, onItem) {
 
 	for await (const chunk of source) {
 		feed(decoder.write(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+		if (afterChunk) await afterChunk();
 		if (phase === "done") break;
 	}
 	feed(decoder.end());

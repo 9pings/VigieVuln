@@ -50,7 +50,11 @@ const DEFAULTS = {
 	// distinct clients asked for it (or when it is seeded).
 	registry: { publishThreshold: 5 },
 	// Upstream routing: Maven Central requests go to these official mirrors first.
-	upstream: { mavenMirrors: ["https://maven-central-eu.storage-download.googleapis.com/maven2/"] },
+	// Never get the service banned by a public source because of what clients send
+	// (lib/upstream-policy.js): per-source budgets (per process, below each source's limit;
+	// override any of them, e.g. { "nvd": "40/30s" }) and how many upstream requests one
+	// client token may cause per hour. Cache hits and mirror answers are free.
+	upstream: { mavenMirrors: ["https://maven-central-eu.storage-download.googleapis.com/maven2/"], budgets: {}, clientPerHour: 1200 },
 	// Dumps (spec §8): where builds go, the Ed25519 key that signs them (`fad-service
 	// keygen`), how many to keep, optional trackers for the torrents, and a daily public
 	// build by the worker. Public builds leave registry projections out unless asked.
@@ -94,13 +98,16 @@ function loadConfig(args = {}, env = process.env) {
 	if (file) {
 		const raw = JSON.parse(fs.readFileSync(file, "utf8"));
 		rejectSecrets(raw);
+		// A PostgreSQL URL with a password is a secret: environment only (FAD_SERVICE_DB).
+		if (/^postgres(ql)?:\/\/[^/@]*:[^/@]*@/i.test(String(raw.db || "")))
+			throw new Error('"db" carries a password — put the PostgreSQL URL in FAD_SERVICE_DB (environment), not in the config file');
 		cfg = merge(cfg, raw);
 		// Relative paths in the file are relative to the file, not to the cwd.
 		const dir = path.dirname(path.resolve(file));
 		for (const p of [["db"], ["log", "file"], ["brand", "logo"], ["dumps", "dir"], ["dumps", "signingKeyFile"]]) {
 			const holder = p.length === 1 ? cfg : cfg[p[0]];
 			const k = p[p.length - 1];
-			if (typeof holder[k] === "string" && holder[k] !== ":memory:" && !path.isAbsolute(holder[k])) holder[k] = path.join(dir, holder[k]);
+			if (typeof holder[k] === "string" && holder[k] !== ":memory:" && !/^postgres(ql)?:\/\//i.test(holder[k]) && !path.isAbsolute(holder[k])) holder[k] = path.join(dir, holder[k]);
 		}
 	}
 	// Metrics token from the environment wins over the file.
@@ -117,8 +124,9 @@ function loadConfig(args = {}, env = process.env) {
 	};
 	const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => [k, isObj(v) ? clean(v) : v]));
 	cfg = merge(cfg, clean(flags));
-	if (cfg.db !== ":memory:") cfg.db = path.resolve(String(cfg.db));
-	cfg.dumps.dir = path.resolve(cfg.dumps.dir || path.join(cfg.db === ":memory:" ? process.cwd() : path.dirname(cfg.db), "dumps"));
+	const pgUrl = /^postgres(ql)?:\/\//i.test(String(cfg.db));
+	if (cfg.db !== ":memory:" && !pgUrl) cfg.db = path.resolve(String(cfg.db));
+	cfg.dumps.dir = path.resolve(cfg.dumps.dir || path.join(cfg.db === ":memory:" || pgUrl ? process.cwd() : path.dirname(cfg.db), "dumps"));
 	cfg.log.maxBytes = parseSize(cfg.log.maxSize);
 	cfg.jobs.resourceCacheBytes = parseSize(cfg.jobs.resourceCacheMaxBytes);
 	if (!["text", "json"].includes(cfg.log.format)) throw new Error(`log.format must be "text" or "json"`);

@@ -17,7 +17,7 @@ async function kev({ assets, fetcher }) {
 	const { byId } = fad("kev").indexKevCatalog(await r.json());
 	const rows = Object.entries(byId);
 	if (!rows.length) throw new Error("empty KEV catalogue — refusing to clear it");
-	assets.setSignal("kev", rows);
+	await assets.setSignal("kev", rows);
 	return `${rows.length} known-exploited CVEs`;
 }
 
@@ -42,7 +42,7 @@ async function epss({ assets, fetcher }) {
 	const text = zlib.gunzipSync(Buffer.from(await r.arrayBuffer())).toString("utf8");
 	const { date, rows } = parseEpssCsv(text);
 	if (!rows.length) throw new Error("empty EPSS file — refusing to clear it");
-	assets.setEpss(rows, date);
+	await assets.setEpss(rows, date);
 	return `${rows.length} scores (${date || "undated"})`;
 }
 
@@ -50,7 +50,7 @@ async function euvd({ assets, fetcher }) {
 	const { byCve, exploited } = await fad("euvd").fetchSnapshot({ fetcher });
 	const cves = new Set([...Object.keys(byCve), ...Object.keys(exploited)]);
 	if (!cves.size) throw new Error("empty EUVD snapshot — refusing to clear it");
-	assets.setEuvd([...cves].map(cve => [cve, byCve[cve] || null,
+	await assets.setEuvd([...cves].map(cve => [cve, byCve[cve] || null,
 		Object.prototype.hasOwnProperty.call(exploited, cve) ? exploited[cve] : null]));
 	return `${Object.keys(byCve).length} EUVD ids · ${Object.keys(exploited).length} exploited`;
 }

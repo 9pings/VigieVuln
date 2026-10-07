@@ -26,42 +26,38 @@ function nvdFetcher(counter) {
 }
 
 async function startService(extra = {}) {
-	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
-	const { createTokenStore } = require("../lib/tokens");
+	const { open } = require("./helpers/db");
 	const { createServiceServer } = require("../lib/server");
-	const db = openDatabase(extra.file || ":memory:");
-	const store = createSqliteStore({ db }), tokens = createTokenStore(db);
-	const client = tokens.add({ role: "client", label: "ci" }).token;
-	const admin = tokens.add({ role: "admin" }).token;
+	const { driver: db, store, tokens } = await open(extra.file || ":memory:");
+	const client = (await tokens.add({ role: "client", label: "ci" })).token;
+	const admin = (await tokens.add({ role: "admin" })).token;
 	const lines = [];
 	const server = createServiceServer({ store, tokens, region: "fr", version: "9.9.9", log: l => lines.push(l), ...extra });
 	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 	const base = `http://127.0.0.1:${server.address().port}`;
 	const call = (p, { token, body, method } = {}) => fetch(base + p, {
 		method: method || (body ? "POST" : "GET"),
-		headers: token ? { authorization: `Bearer ${token}` } : {},
+		headers: { ...(token ? { authorization: `Bearer ${token}` } : {}), ...(body ? { "content-type": "application/json" } : {}) },
 		...(body ? { body: JSON.stringify(body) } : {}),
 	});
 	return { server, store, tokens, client, admin, lines, call, db,
-		close: () => new Promise(ok => server.close(() => { db.close(); ok(); })) };
+		close: () => new Promise(ok => server.close(() => { db.close().then(ok, ok); })) };
 }
 
-test("tokens: shown once, stored hashed, verifiable, revocable", opts, () => {
-	const { openDatabase } = require("../lib/sqlite-store");
-	const { createTokenStore } = require("../lib/tokens");
-	const db = openDatabase(":memory:");
-	const tokens = createTokenStore(db);
-	const { id, token } = tokens.add({ role: "admin", label: "ops" });
+test("tokens: shown once, stored hashed, verifiable, revocable", opts, async () => {
+	const { open } = require("./helpers/db");
+	const { db, tokens } = await open(":memory:");
+	const { id, token } = await tokens.add({ role: "admin", label: "ops" });
 	assert.match(token, /^fad_[A-Za-z0-9_-]{43}$/);
-	const dump = JSON.stringify(db.prepare("SELECT * FROM tokens").all());
+	const dump = JSON.stringify(await db.all("SELECT * FROM tokens"));
 	assert.ok(!dump.includes(token.slice(4)), "the plaintext token is never stored");
-	assert.equal(tokens.verify(token).role, "admin");
-	assert.equal(tokens.verify("fad_wrong"), null);
-	assert.equal(tokens.verify(token + "x"), null);
-	assert.throws(() => tokens.add({ role: "root" }), /role/);
-	assert.ok(tokens.revoke(id));
-	assert.equal(tokens.verify(token), null);
-	db.close();
+	assert.equal((await tokens.verify(token)).role, "admin");
+	assert.equal(await tokens.verify("fad_wrong"), null);
+	assert.equal(await tokens.verify(token + "x"), null);
+	await assert.rejects(tokens.add({ role: "root" }), /role/);
+	assert.ok(await tokens.revoke(id));
+	assert.equal(await tokens.verify(token), null);
+	await db.close();
 });
 
 test("sqlite store: the resource engine works on it — miss, one upstream fetch, hit, survives reopen", opts, async () => {
@@ -94,7 +90,7 @@ test("server: /health is public; /v1/resource needs a token; /admin needs the ad
 		assert.equal((await s.call("/nope", { token: s.admin })).status, 404);
 		// The fad CLI's existing header keeps working.
 		const legacy = await fetch(`http://127.0.0.1:${s.server.address().port}/v1/resource`,
-			{ method: "POST", headers: { "x-fad-proxy-token": s.client }, body: JSON.stringify(NVD) });
+			{ method: "POST", headers: { "x-fad-proxy-token": s.client, "content-type": "application/json" }, body: JSON.stringify(NVD) });
 		assert.equal(legacy.status, 200);
 	} finally { await s.close(); }
 });
@@ -104,10 +100,10 @@ test("server: admin purge drops exactly one resource", opts, async () => {
 	const s = await startService({ fetcher: nvdFetcher(counter) });
 	try {
 		await (await s.call("/v1/resource", { token: s.client, body: NVD })).text();
-		assert.equal(s.store.size(), 1);
+		assert.equal(await s.store.size(), 1);
 		assert.equal((await s.call("/admin/purge", { token: s.client, body: NVD })).status, 403);
 		assert.deepEqual(await (await s.call("/admin/purge", { token: s.admin, body: NVD })).json(), { purged: true });
-		assert.equal(s.store.size(), 0);
+		assert.equal(await s.store.size(), 0);
 		assert.equal((await s.call("/admin/purge", { token: s.admin, body: { provider: "nvd", type: "cve", params: { id: "x" } } })).status, 400);
 	} finally { await s.close(); }
 });

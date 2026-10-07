@@ -59,15 +59,11 @@ function osvAsset(v) {
 	};
 }
 
-function store(assets, records) {
-	assets.transaction(() => {
-		for (const v of records) {
-			const out = osvAsset(v);
-			if (!out) continue;
-			assets.upsert(out.asset);
-			assets.linkAdvisory(out.asset.key, out.cves);
-			assets.linkAdvisoryPackages(out.asset.key, out.packages);
-		}
+async function store(assets, records) {
+	const outs = records.map(osvAsset).filter(Boolean);
+	await assets.transaction(async t => {
+		await t.upsertMany(outs.map(o => o.asset));
+		await t.linkMany(outs.map(o => ({ advisory: o.asset.key, cves: o.cves, packages: o.packages })));
 	});
 }
 
@@ -75,11 +71,10 @@ async function importAll(eco, { fetcher, assets }) {
 	const res = await fetcher(`${BASE}/${encodeURIComponent(eco)}/all.zip`, { headers: UA });
 	if (!res.ok || !res.body) throw new Error(`OSV ${eco} all.zip HTTP ${res.status}`);
 	let pending = [], n = 0;
-	await forEachJsonInZip(Readable.fromWeb(res.body), (name, v) => {
-		pending.push(v); n++;
-		if (pending.length >= BATCH) { store(assets, pending); pending = []; }
-	});
-	store(assets, pending);
+	const flush = async () => { const rows = pending; pending = []; if (rows.length) await store(assets, rows); };
+	await forEachJsonInZip(Readable.fromWeb(res.body), (name, v) => { pending.push(v); n++; },
+		{ afterChunk: () => pending.length >= BATCH ? flush() : null });
+	await flush();
 	return n;
 }
 
@@ -108,27 +103,31 @@ async function importChanged(eco, ids, { fetcher, assets }) {
 		}
 	};
 	await Promise.all(Array.from({ length: 8 }, worker));
-	for (let i = 0; i < records.length; i += BATCH) store(assets, records.slice(i, i + BATCH));
+	for (let i = 0; i < records.length; i += BATCH) await store(assets, records.slice(i, i + BATCH));
 	return records.length;
 }
 
 /** Advisories imported before package links existed get them from their stored record. */
-function relinkPackages(assets) {
+async function relinkPackages(assets) {
 	let n = 0, batch = [];
-	const flush = () => { assets.transaction(() => { for (const [k, p] of batch) assets.linkAdvisoryPackages(k, p); }); batch = []; };
-	for (const { key, data } of assets.iteratePrefix("advisory", "osv:")) {
+	const all = [];
+	// Read everything first: on PostgreSQL the cursor and the writes need separate connections.
+	for await (const { key, data } of assets.iteratePrefix("advisory", "osv:")) {
 		const pk = [...new Set((data.affected || []).map(a => packageOfOsv({ ecosystem: a.ecosystem, name: a.name })).filter(Boolean))];
-		if (pk.length) { batch.push([key, pk]); n++; }
-		if (batch.length >= BATCH) flush();
+		if (pk.length) all.push([key, pk]);
 	}
-	if (batch.length) flush();
+	for (const row of all) {
+		batch.push(row); n++;
+		if (batch.length >= BATCH) { const b = batch; batch = []; await assets.transaction(async t => { for (const [k, p] of b) await t.linkAdvisoryPackages(k, p); }); }
+	}
+	if (batch.length) await assets.transaction(async t => { for (const [k, p] of batch) await t.linkAdvisoryPackages(k, p); });
 	return n;
 }
 
 async function run({ assets, fetcher, state, setState, log, ecosystems = ECOSYSTEMS }) {
 	const marks = { ...(state.since || {}) };
 	const parts = [];
-	if (!assets.advisoryPackageLinks() && Object.keys(marks).length) parts.push(`relinked ${relinkPackages(assets)} advisories to packages`);
+	if (!(await assets.advisoryPackageLinks()) && Object.keys(marks).length) parts.push(`relinked ${await relinkPackages(assets)} advisories to packages`);
 	for (const eco of ecosystems) {
 		const started = new Date().toISOString();
 		let n, how;
@@ -142,7 +141,7 @@ async function run({ assets, fetcher, state, setState, log, ecosystems = ECOSYST
 		if (ids) { n = await importChanged(eco, ids, { fetcher, assets }); how = "changed"; }
 		else { n = await importAll(eco, { fetcher, assets }); how = "all"; }
 		marks[eco] = started;
-		setState({ ...state, since: marks });
+		await setState({ ...state, since: marks });
 		parts.push(`${eco} ${n} ${how}`);
 		if (log) log(`osv ${eco}: ${n} records (${how})`);
 	}

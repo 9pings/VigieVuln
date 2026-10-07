@@ -42,7 +42,7 @@ function resourceShareable(key, isPublishedPackage) {
  * → manifest (also written to <dir>/<id>.manifest.json)
  */
 async function buildDump(opts) {
-	const { db, dir, kind = "public", since = null, includePackages = false, signingKeyPem = null,
+	const { driver: db, dir, kind = "public", since = null, includePackages = false, signingKeyPem = null,
 		baseUrl = null, trackers = [], instance = {}, version = "0", sources = [] } = opts;
 	if (!KINDS.includes(kind)) throw new Error(`dump kind must be one of ${KINDS.join(", ")}`);
 	const { FORMAT, sha256File, signManifest, encodeLine } = fad("dump-format");
@@ -60,36 +60,43 @@ async function buildDump(opts) {
 	const publishedOnly = kind !== "full";
 	const typeOk = t => kind === "full" || t === "cve" || t === "advisory" || (t === "package" && (kind === "private" || includePackages));
 
-	// Assets, and the CVE/package links of each advisory written.
-	const assetRows = db.prepare(`SELECT type, key, title, summary, aliases, data, sources, published, updated_at FROM assets
-		WHERE updated_at > ? ${publishedOnly ? "AND published = 1" : ""}`);
-	const cveLinks = db.prepare("SELECT cve FROM advisory_cve WHERE advisory = ?");
-	const pkgLinks = db.prepare("SELECT package FROM advisory_package WHERE advisory = ?");
-	for (const r of assetRows.iterate(sinceMs)) {
+	// Links are loaded up front (two small columns): on PostgreSQL the asset cursor holds a
+	// connection, so per-row lookups would need a second one anyway.
+	const linksOf = async (table, col) => {
+		const m = new Map();
+		for await (const r of db.iterate(`SELECT advisory, ${col} AS v FROM ${table}`)) {
+			if (!m.has(r.advisory)) m.set(r.advisory, []);
+			m.get(r.advisory).push(r.v);
+		}
+		return m;
+	};
+	const cveLinks = await linksOf("advisory_cve", "cve");
+	const pkgLinks = kind === "public" && !includePackages ? new Map() : await linksOf("advisory_package", "package");
+	for await (const r of db.iterate(`SELECT type, key, title, summary, aliases, data, sources, published, updated_at FROM assets
+		WHERE updated_at > ? ${publishedOnly ? "AND published = 1" : ""}`, [sinceMs])) {
 		if (!typeOk(r.type)) continue;
 		await write({ t: "asset", type: r.type, key: r.key, title: r.title, summary: r.summary, aliases: r.aliases,
-			data: JSON.parse(r.data), sources: JSON.parse(r.sources), published: r.published, updatedAt: r.updated_at });
+			data: JSON.parse(r.data), sources: JSON.parse(r.sources), published: Number(r.published), updatedAt: Number(r.updated_at) });
 		counts.asset++;
 		if (r.type === "advisory") {
-			await write({ t: "links", advisory: r.key, cves: cveLinks.all(r.key).map(x => x.cve),
-				packages: kind === "public" && !includePackages ? [] : pkgLinks.all(r.key).map(x => x.package) });
+			await write({ t: "links", advisory: r.key, cves: cveLinks.get(r.key) || [], packages: pkgLinks.get(r.key) || [] });
 			counts.links++;
 		}
 	}
-	for (const r of db.prepare("SELECT * FROM cve_signals WHERE updated_at > ?").iterate(sinceMs)) {
+	for await (const r of db.iterate("SELECT * FROM cve_signals WHERE updated_at > ?", [sinceMs])) {
 		await write({ t: "signal", ...r });
 		counts.signal++;
 	}
-	for (const r of db.prepare("SELECT cve, last_modified, data, updated_at FROM cve_nvd WHERE COALESCE(updated_at, 0) > ? OR ? = 0").iterate(sinceMs, sinceMs)) {
-		await write({ t: "nvd", cve: r.cve, lastModified: r.last_modified, updatedAt: r.updated_at || 0, data: JSON.parse(r.data) });
+	for await (const r of db.iterate("SELECT cve, last_modified, data, updated_at FROM cve_nvd WHERE COALESCE(updated_at, 0) > ? OR ? = 0", [sinceMs, sinceMs])) {
+		await write({ t: "nvd", cve: r.cve, lastModified: r.last_modified, updatedAt: Number(r.updated_at || 0), data: JSON.parse(r.data) });
 		counts.nvd++;
 	}
 	if (kind !== "public") {
-		const published = db.prepare("SELECT 1 FROM assets WHERE type = 'package' AND key = ? AND published = 1");
-		const isPub = key => !!published.get(key);
-		for (const r of db.prepare("SELECT key, fetched_at, ttl_ms, content_type, response_headers, bytes, body FROM resources WHERE fetched_at > ?").iterate(sinceMs)) {
+		const publishedPkgs = new Set((await db.all("SELECT key FROM assets WHERE type = 'package' AND published = 1")).map(r => r.key));
+		const isPub = key => publishedPkgs.has(key);
+		for await (const r of db.iterate("SELECT key, fetched_at, ttl_ms, content_type, response_headers, bytes, body FROM resources WHERE fetched_at > ?", [sinceMs])) {
 			if (kind === "private" && !resourceShareable(r.key, isPub)) continue;
-			await write({ t: "resource", key: r.key, meta: { fetchedAt: r.fetched_at, ttlMs: r.ttl_ms, contentType: r.content_type,
+			await write({ t: "resource", key: r.key, meta: { fetchedAt: Number(r.fetched_at), ttlMs: Number(r.ttl_ms), contentType: r.content_type,
 				responseHeaders: r.response_headers ? JSON.parse(r.response_headers) : {} }, body: Buffer.from(r.body).toString("base64") });
 			counts.resource++;
 		}

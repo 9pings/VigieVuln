@@ -12,9 +12,9 @@ const { buildDump, pruneDumps } = require("../dumps/build");
 async function run({ assets, options = {} }) {
 	const d = options.dumps || {};
 	const dir = path.join(d.dir, "public");
-	const m = await buildDump({ db: assets.db, assets, dir, kind: "public", includePackages: !!d.publicIncludesPackages,
+	const m = await buildDump({ driver: assets.driver, dir, kind: "public", includePackages: !!d.publicIncludesPackages,
 		signingKeyPem: d.signingKeyFile ? fs.readFileSync(d.signingKeyFile, "utf8") : null, baseUrl: options.baseUrl || null,
-		trackers: d.trackers || [], instance: options.instance || {}, version: options.version || "0", sources: options.sources ? options.sources() : [] });
+		trackers: d.trackers || [], instance: options.instance || {}, version: options.version || "0", sources: options.sources ? await options.sources() : [] });
 	const pruned = pruneDumps(dir, d.keep || 7);
 	return `${m.id}: ${(m.payload.bytes / 1048576).toFixed(1)} MB, ${m.counts.asset} assets${pruned.length ? `, ${pruned.length} old build(s) removed` : ""}`;
 }

@@ -21,12 +21,7 @@ const NVD_LOG4SHELL = (() => {
 const json = body => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
 const bin = buf => new Response(buf, { status: 200 });
 
-function open() {
-	const { openDatabase } = require("../lib/sqlite-store");
-	const { createAssetStore } = require("../lib/assets");
-	const db = openDatabase(":memory:");
-	return { db, assets: createAssetStore(db) };
-}
+const open = () => require("./helpers/db").open(":memory:");
 
 test("json-stream: items of a huge array, chunked anywhere, strings with braces and escapes", opts, async () => {
 	const { forEachArrayItem } = require("../lib/json-stream");
@@ -42,7 +37,7 @@ test("json-stream: items of a huge array, chunked anywhere, strings with braces 
 
 test("nvd job: a year is re-imported only when its sha256 changes; every CVSS metric kept with its source", optsXz, async () => {
 	const { createJobRunner } = require("../lib/jobs");
-	const { assets } = open();
+	const { assets } = await open();
 	const doc = JSON.stringify({ timestamp: "x", cve_count: 1, feed_name: "CVE-2021", cve_items: [{ ...NVD_LOG4SHELL, vulnStatus: "Analyzed" }] });
 	const feed = execFileSync("xz", ["-c"], { input: doc });
 	let sha = "aaa";
@@ -60,7 +55,7 @@ test("nvd job: a year is re-imported only when its sha256 changes; every CVSS me
 	const first = await runner.runJob("nvd");
 	assert.equal(first.status, "ok", first.detail);
 	assert.match(first.detail, /1 year file\(s\) re-imported, 1 records/);
-	const n = assets.nvd("CVE-2021-44228");
+	const n = (await assets.nvd("CVE-2021-44228"));
 	assert.equal(n.vulnStatus, "Analyzed");
 	assert.ok(n.metrics.some(m => m.score === 10));
 	assert.ok(n.configurations.length >= 1);
@@ -80,7 +75,7 @@ test("osv job: all.zip first, then only modified records; advisories link their 
 	const { createJobRunner } = require("../lib/jobs");
 	const { osvAsset, modifiedSince } = require("../lib/jobs/osv");
 	const { zipSync, strToU8 } = require("fflate");
-	const { assets } = open();
+	const { assets } = await open();
 	const all = zipSync({ "GHSA-jfh8-c2jp-5v3q.json": strToU8(JSON.stringify(GHSA)), "MAL-2024-1.json": strToU8(JSON.stringify({ id: "MAL-2024-1", summary: "Malicious code in evil-pkg", affected: [{ package: { ecosystem: "Maven", name: "evil:pkg" } }] })) });
 	let csv = "";
 	const calls = [];
@@ -94,14 +89,14 @@ test("osv job: all.zip first, then only modified records; advisories link their 
 	const runOsv = st => require("../lib/jobs/osv").run({ assets, fetcher, state: st.state, setState: v => { st.state = v; }, ecosystems: ["Maven"] });
 	const st = { state: {} };
 	assert.match(await runOsv(st), /Maven 2 all/);
-	assert.equal(assets.get("advisory", "osv:GHSA-jfh8-c2jp-5v3q").sources[0].licence, "CC-BY 4.0 — GitHub Advisory Database");
-	assert.equal(assets.get("advisory", "osv:MAL-2024-1").sources[0].licence, "Apache-2.0 — OpenSSF Malicious Packages");
-	assert.deepEqual(assets.advisoriesForCve("CVE-2021-44228").map(a => a.key), ["osv:GHSA-jfh8-c2jp-5v3q"]);
-	assert.equal(assets.search("evil")[0].key, "osv:MAL-2024-1", "package names are searchable");
+	assert.equal((await assets.get("advisory", "osv:GHSA-jfh8-c2jp-5v3q")).sources[0].licence, "CC-BY 4.0 — GitHub Advisory Database");
+	assert.equal((await assets.get("advisory", "osv:MAL-2024-1")).sources[0].licence, "Apache-2.0 — OpenSSF Malicious Packages");
+	assert.deepEqual((await assets.advisoriesForCve("CVE-2021-44228")).map(a => a.key), ["osv:GHSA-jfh8-c2jp-5v3q"]);
+	assert.equal((await assets.search("evil"))[0].key, "osv:MAL-2024-1", "package names are searchable");
 
 	csv = `2999-01-01T00:00:00Z,GHSA-jfh8-c2jp-5v3q\n2000-01-01T00:00:00Z,OLD-1\n`;
 	assert.match(await runOsv(st), /Maven 1 changed/);
-	assert.equal(assets.get("advisory", "osv:GHSA-jfh8-c2jp-5v3q").title, "Remote code injection in Log4j (updated)");
+	assert.equal((await assets.get("advisory", "osv:GHSA-jfh8-c2jp-5v3q")).title, "Remote code injection in Log4j (updated)");
 	assert.equal(calls.filter(u => u.endsWith("all.zip")).length, 1, "the zip is not downloaded again");
 
 	assert.equal(modifiedSince("b,2\na,1", "0", 1), null, "too many changes → full re-import");
@@ -109,20 +104,18 @@ test("osv job: all.zip first, then only modified records; advisories link their 
 });
 
 test("pages: OSV advisory page, CVE page with NVD scores + CPE + linked advisories, id redirects", opts, async () => {
-	const { createSqliteStore } = require("../lib/sqlite-store");
-	const { createTokenStore } = require("../lib/tokens");
 	const { createServiceServer } = require("../lib/server");
 	const { cveAsset } = require("../lib/jobs/cvelist");
 	const { parseCveRecord } = require("../lib/cve-record");
 	const { osvAsset } = require("../lib/jobs/osv");
 	const { nvdRow } = require("../lib/jobs/nvd");
-	const { db, assets } = open();
+	const { assets, store, tokens } = await open();
 	const rec = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "..", "test", "fixtures", "cve-samples", "cve-2021-44228-real.json"), "utf8"));
-	assets.upsert(cveAsset(parseCveRecord(rec)));
+	(await assets.upsert(cveAsset(parseCveRecord(rec))));
 	const o = osvAsset(GHSA);
-	assets.transaction(() => { assets.upsert(o.asset); assets.linkAdvisory(o.asset.key, o.cves); });
-	assets.setNvd([nvdRow({ ...NVD_LOG4SHELL, vulnStatus: "Analyzed" })]);
-	const server = createServiceServer({ store: createSqliteStore({ db }), tokens: createTokenStore(db), assets });
+	(await assets.transaction(async () => { (await assets.upsert(o.asset)); (await assets.linkAdvisory(o.asset.key, o.cves)); }));
+	(await assets.setNvd([nvdRow({ ...NVD_LOG4SHELL, vulnStatus: "Analyzed" })]));
+	const server = createServiceServer({ store, tokens, assets });
 	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 	const base = `http://127.0.0.1:${server.address().port}`;
 	try {

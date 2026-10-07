@@ -115,19 +115,15 @@ test("maven mirrors: the EU mirror first, Central when the mirror lacks the file
 	assert.deepEqual(calls, ["https://registry.npmjs.org/lodash"], "other registries untouched");
 });
 
-async function service({ threshold = 2, upstream }) {
-	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
-	const { createTokenStore } = require("../lib/tokens");
-	const { createAssetStore } = require("../lib/assets");
+async function service({ threshold = 2, upstream, target = ":memory:" }) {
 	const { createServiceServer } = require("../lib/server");
 	const { createRegistryLayer } = require("../lib/registry");
-	const db = openDatabase(":memory:");
-	const assets = createAssetStore(db), tokens = createTokenStore(db);
+	const { db, assets, tokens, store } = await require("./helpers/db").open(target);
 	const registry = createRegistryLayer({ assets, threshold, salt: "s" });
-	const server = createServiceServer({ store: createSqliteStore({ db }), tokens, assets, registry, fetcher: upstream });
+	const server = createServiceServer({ store, tokens, assets, registry, fetcher: upstream });
 	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 	const base = `http://127.0.0.1:${server.address().port}`;
-	const ask = (token, payload, extra = {}) => fetch(`${base}/v1/resource`, { method: "POST", headers: { authorization: `Bearer ${token}`, ...extra }, body: JSON.stringify(payload) });
+	const ask = (token, payload, extra = {}) => fetch(`${base}/v1/resource`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json", ...extra }, body: JSON.stringify(payload) });
 	return { db, assets, tokens, base, ask, get: p => fetch(base + p), close: () => new Promise(ok => server.close(ok)) };
 }
 
@@ -141,26 +137,26 @@ test("publication: cached ≠ published — public after K distinct clients; a p
 	const calls = [];
 	const s = await service({ threshold: 2, upstream: npmUpstream(calls) });
 	try {
-		const a = s.tokens.add({ role: "client" }).token, b = s.tokens.add({ role: "client" }).token;
+		const a = (await s.tokens.add({ role: "client" })).token, b = (await s.tokens.add({ role: "client" })).token;
 		const LP = { provider: "npm", type: "package", params: { name: "left-pad" } };
 		const first = await s.ask(a, LP);
 		const body = await first.json();
 		assert.equal(body["dist-tags"].latest, "1.3.0");
 		assert.equal(body._fadProjection, 1, "the client gets the projection");
 		assert.equal((await s.get("/pkg/npm/left-pad")).status, 404, "one client: cached, not public");
-		assert.deepEqual(s.assets.search("left-pad"), []);
+		assert.deepEqual((await s.assets.search("left-pad")), []);
 		await (await s.ask(a, LP)).text();
 		assert.equal((await s.get("/pkg/npm/left-pad")).status, 404, "the same client twice is still one client");
 		await (await s.ask(b, LP)).text();
 		assert.equal((await s.get("/pkg/npm/left-pad")).status, 200, "two distinct clients: public");
-		assert.equal(s.assets.search("left-pad")[0].key, "pkg:npm/left-pad");
-		assert.equal(s.db.prepare("SELECT COUNT(*) AS n FROM package_demand").get().n, 0, "who asked is forgotten once published");
+		assert.equal((await s.assets.search("left-pad"))[0].key, "pkg:npm/left-pad");
+		assert.equal((await s.db.get("SELECT COUNT(*) AS n FROM package_demand")).n, 0, "who asked is forgotten once published");
 		assert.equal(calls.length, 1, "one upstream fetch for all of it");
 
 		const PRIVATE = { provider: "npm", type: "package", params: { name: "@acme/internal-billing" } };
 		assert.equal((await s.ask(a, PRIVATE)).status, 404);
 		await (await s.ask(b, PRIVATE)).text();
-		const dump = JSON.stringify(s.db.prepare("SELECT * FROM assets").all()) + JSON.stringify(s.db.prepare("SELECT * FROM package_demand").all());
+		const dump = JSON.stringify(await s.db.all("SELECT * FROM assets")) + JSON.stringify(await s.db.all("SELECT * FROM package_demand"));
 		assert.ok(!dump.includes("internal-billing"), "a name the registry does not know is never written");
 	} finally { await s.close(); }
 });
@@ -172,8 +168,8 @@ test("seed: an admin seeding a package publishes it at once; package page with a
 	try {
 		const vuln = osvAsset({ id: "GHSA-aaaa-bbbb-cccc", summary: "Prototype pollution in left-pad", aliases: ["CVE-2099-0001"],
 			affected: [{ package: { ecosystem: "npm", name: "left-pad" }, ranges: [{ type: "SEMVER", events: [{ introduced: "0" }, { fixed: "1.2.0" }] }] }] });
-		s.assets.transaction(() => { s.assets.upsert(vuln.asset); s.assets.linkAdvisory(vuln.asset.key, vuln.cves); s.assets.linkAdvisoryPackages(vuln.asset.key, vuln.packages); });
-		const admin = s.tokens.add({ role: "admin" }).token;
+		(await s.assets.transaction(async () => { (await s.assets.upsert(vuln.asset)); (await s.assets.linkAdvisory(vuln.asset.key, vuln.cves)); (await s.assets.linkAdvisoryPackages(vuln.asset.key, vuln.packages)); }));
+		const admin = (await s.tokens.add({ role: "admin" })).token;
 		const r = await seed({ baseUrl: s.base, token: admin, type: "npm", specs: ["left-pad", "@acme/does-not-exist"], assets: s.assets, delayMs: 0 });
 		assert.deepEqual(r, { ok: 1, missing: 1, failed: 0, total: 2 });
 		const page = await (await s.get("/pkg/npm/left-pad?lang=en")).text();

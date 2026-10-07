@@ -16,26 +16,28 @@
 
 const FLUSH_MS = 60 * 1000;
 
-function createServerAnalytics(db) {
-	db.exec(`CREATE TABLE IF NOT EXISTS analytics_daily (
-		day TEXT NOT NULL, metric TEXT NOT NULL, key TEXT NOT NULL, count INTEGER NOT NULL,
-		PRIMARY KEY (day, metric, key))`);
-	const add = db.prepare(`INSERT INTO analytics_daily (day, metric, key, count) VALUES (?, ?, ?, ?)
-		ON CONFLICT(day, metric, key) DO UPDATE SET count = count + excluded.count`);
+async function createServerAnalytics(driver) {
+	await driver.exec(driver.ddl(`CREATE TABLE IF NOT EXISTS analytics_daily (
+		day TEXT NOT NULL, metric TEXT NOT NULL, key TEXT NOT NULL, count {INT} NOT NULL,
+		PRIMARY KEY (day, metric, key))`));
 	const pending = new Map();
 	const today = () => new Date().toISOString().slice(0, 10);
 	const bump = (metric, key) => {
 		const k = `${today()}|${metric}|${key}`;
 		pending.set(k, (pending.get(k) || 0) + 1);
 	};
+	let flushing = Promise.resolve();
 	const flush = () => {
-		if (!pending.size) return;
+		if (!pending.size) return flushing;
 		const rows = [...pending]; pending.clear();
-		try {
-			db.exec("BEGIN IMMEDIATE");
-			for (const [k, n] of rows) { const [day, metric, key] = k.split("|"); add.run(day, metric, key, n); }
-			db.exec("COMMIT");
-		} catch { try { db.exec("ROLLBACK"); } catch { /* not in a transaction */ } }
+		flushing = flushing.then(() => driver.transaction(async tx => {
+			for (const [k, n] of rows) {
+				const [day, metric, key] = k.split("|");
+				await tx.run(`INSERT INTO analytics_daily (day, metric, key, count) VALUES (?, ?, ?, ?)
+					ON CONFLICT (day, metric, key) DO UPDATE SET count = analytics_daily.count + excluded.count`, [day, metric, key, n]);
+			}
+		})).catch(() => {});
+		return flushing;
 	};
 	const timer = setInterval(flush, FLUSH_MS);
 	timer.unref?.();
@@ -49,22 +51,23 @@ function createServerAnalytics(db) {
 		},
 		flush,
 		/** → { days: { day: { view: {family: n}, search: n } }, topAssets: [[key, n]] } over the last `days`. */
-		report(days = 30) {
-			flush();
+		async report(days = 30) {
+			await flush();
 			const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
-			const rows = db.prepare("SELECT day, metric, key, count FROM analytics_daily WHERE day >= ? ORDER BY day").all(since);
+			const rows = await driver.all("SELECT day, metric, key, count FROM analytics_daily WHERE day >= ? ORDER BY day", [since]);
 			const out = { days: {}, topAssets: [] };
 			const assets = new Map();
 			for (const r of rows) {
+				const c = Number(r.count);
 				const d = (out.days[r.day] ||= { view: {}, search: 0 });
-				if (r.metric === "view") d.view[r.key] = r.count;
-				else if (r.metric === "search") d.search += r.count;
-				else if (r.metric === "asset") assets.set(r.key, (assets.get(r.key) || 0) + r.count);
+				if (r.metric === "view") d.view[r.key] = c;
+				else if (r.metric === "search") d.search += c;
+				else if (r.metric === "asset") assets.set(r.key, (assets.get(r.key) || 0) + c);
 			}
 			out.topAssets = [...assets].sort((a, b) => b[1] - a[1]).slice(0, 50);
 			return out;
 		},
-		close() { clearInterval(timer); flush(); },
+		async close() { clearInterval(timer); await flush(); },
 	};
 }
 

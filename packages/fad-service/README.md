@@ -4,13 +4,15 @@ The public data service for [fad-checker](../../README.md): the same pull-throug
 resource cache as `fad-checker serve-cache`, behind per-client tokens, hosted in Europe.
 Design: `docs/SPEC-fad-service.md` (repository root). **Production: [docs/OPERATIONS.md](docs/OPERATIONS.md)**
 (Docker, systemd, configuration, branding, logs, metrics, analytics, backups).
-Status: milestone 4 — `/v1/resource`, tokens, admin routes, `--workers`, the vulnerability
+Status: milestone 6 — `/v1/resource`, tokens, admin routes, `--workers`, the vulnerability
 mirrors (cvelistV5, NVD via fkie, OSV, CISA KEV, EPSS, ENISA EUVD, CERT-FR; GCVE ids
 computed), package metadata (projections, Maven EU mirror, K-client publication rule, seed),
 full-text search, the public pages, and signed dumps (public/private/full, deltas, torrent,
-restore, `fad-checker serve-cache --seed`). PostgreSQL follows.
+restore, `fad-checker serve-cache --seed`), SQLite or PostgreSQL (`--db postgres://…`), upstream
+protection (mirror answers, budgets, negative cache) and strict input validation.
 
-Requires Node ≥ 22.13 (built-in `node:sqlite`), `xz` for the NVD mirror. One dependency (`fflate`).
+Requires Node ≥ 22.13 (built-in `node:sqlite`), `xz` for the NVD mirror. Dependencies: `fflate`, and
+`pg` for the PostgreSQL mode.
 
 ```bash
 # one token per client, shown once

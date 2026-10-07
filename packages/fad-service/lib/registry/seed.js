@@ -59,7 +59,7 @@ async function seed({ baseUrl, token, type, specs, concurrency = 4, delayMs = 10
 					// Maven: the metadata named the latest version — fetch its POM too.
 					if (payload.provider === "maven" && payload.params.path.endsWith("maven-metadata.xml")) {
 						const { packageOfRequest } = require("./purl");
-						const pkg = assets.get("package", packageOfRequest(payload), { includeUnpublished: true });
+						const pkg = await assets.get("package", packageOfRequest(payload), { includeUnpublished: true });
 						const v = pkg?.data?.latest;
 						if (v) {
 							const base = payload.params.path.replace(/maven-metadata\.xml$/, "");

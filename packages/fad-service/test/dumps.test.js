@@ -16,25 +16,22 @@ const BIN = path.join(__dirname, "..", "bin", "fad-service.js");
 const FAD = path.join(__dirname, "..", "..", "..", "lib");
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "fad-dump-"));
 
-function fixtureDb(file = ":memory:") {
-	const { openDatabase, createSqliteStore } = require("../lib/sqlite-store");
-	const { createAssetStore } = require("../lib/assets");
-	const db = openDatabase(file);
-	const assets = createAssetStore(db), store = createSqliteStore({ db });
-	assets.upsert({ type: "cve", key: "CVE-2021-44228", title: "Log4Shell", summary: "log4j jndi", aliases: ["GCVE-0-2021-44228"],
-		data: { id: "CVE-2021-44228" }, sources: [{ name: "CVE List", licence: "ToU", url: "https://www.cve.org/" }] });
-	assets.upsert({ type: "advisory", key: "osv:GHSA-jfh8-c2jp-5v3q", title: "RCE in log4j", data: { id: "GHSA-jfh8-c2jp-5v3q", affected: [] }, sources: [] });
-	assets.transaction(() => { assets.linkAdvisory("osv:GHSA-jfh8-c2jp-5v3q", ["CVE-2021-44228"]); assets.linkAdvisoryPackages("osv:GHSA-jfh8-c2jp-5v3q", ["pkg:maven/org.apache.logging.log4j/log4j-core"]); });
-	assets.setSignal("kev", [["CVE-2021-44228", { dateAdded: "2021-12-10" }]]);
-	assets.setNvd([{ id: "CVE-2021-44228", vulnStatus: "Analyzed", metrics: [] }]);
-	assets.upsert({ type: "package", key: "pkg:npm/left-pad", title: "left-pad", data: { name: "left-pad", type: "npm" }, sources: [], published: true });
-	assets.upsert({ type: "package", key: "pkg:npm/@acme/secret-stack", title: "@acme/secret-stack", data: { name: "@acme/secret-stack" }, sources: [], published: false });
-	const put = (key, body) => store.put(key, Buffer.from(body), { fetchedAt: Date.now(), ttlMs: 86400000, contentType: "application/json", bytes: Buffer.byteLength(body) });
-	put(JSON.stringify(["npm", "package", { name: "left-pad" }, ""]), '{"name":"left-pad"}');
-	put(JSON.stringify(["npm", "package", { name: "@acme/secret-stack" }, ""]), '{"name":"@acme/secret-stack"}');
-	put(JSON.stringify(["nvd", "cve", { id: "CVE-2021-44228" }, ""]), '{"vulnerabilities":[]}');
-	put(JSON.stringify(["nvd", "cve", { id: "CVE-2021-44228" }, "client-credential-hash"]), '{"keyed":true}');
-	return { db, assets, store };
+async function fixtureDb(file = ":memory:") {
+	const { db, assets, store, tokens } = await require("./helpers/db").open(file);
+	(await assets.upsert({ type: "cve", key: "CVE-2021-44228", title: "Log4Shell", summary: "log4j jndi", aliases: ["GCVE-0-2021-44228"],
+		data: { id: "CVE-2021-44228" }, sources: [{ name: "CVE List", licence: "ToU", url: "https://www.cve.org/" }] }));
+	(await assets.upsert({ type: "advisory", key: "osv:GHSA-jfh8-c2jp-5v3q", title: "RCE in log4j", data: { id: "GHSA-jfh8-c2jp-5v3q", affected: [] }, sources: [] }));
+	(await assets.transaction(async () => { (await assets.linkAdvisory("osv:GHSA-jfh8-c2jp-5v3q", ["CVE-2021-44228"])); (await assets.linkAdvisoryPackages("osv:GHSA-jfh8-c2jp-5v3q", ["pkg:maven/org.apache.logging.log4j/log4j-core"])); }));
+	(await assets.setSignal("kev", [["CVE-2021-44228", { dateAdded: "2021-12-10" }]]));
+	(await assets.setNvd([{ id: "CVE-2021-44228", vulnStatus: "Analyzed", metrics: [] }]));
+	(await assets.upsert({ type: "package", key: "pkg:npm/left-pad", title: "left-pad", data: { name: "left-pad", type: "npm" }, sources: [], published: true }));
+	(await assets.upsert({ type: "package", key: "pkg:npm/@acme/secret-stack", title: "@acme/secret-stack", data: { name: "@acme/secret-stack" }, sources: [], published: false }));
+	const put = async (key, body) => (await store.put(key, Buffer.from(body), { fetchedAt: Date.now(), ttlMs: 86400000, contentType: "application/json", bytes: Buffer.byteLength(body) }));
+	await put(JSON.stringify(["npm", "package", { name: "left-pad" }, ""]), '{"name":"left-pad"}');
+	await put(JSON.stringify(["npm", "package", { name: "@acme/secret-stack" }, ""]), '{"name":"@acme/secret-stack"}');
+	await put(JSON.stringify(["nvd", "cve", { id: "CVE-2021-44228" }, ""]), '{"vulnerabilities":[]}');
+	await put(JSON.stringify(["nvd", "cve", { id: "CVE-2021-44228" }, "client-credential-hash"]), '{"keyed":true}');
+	return { db, assets, store, tokens };
 }
 
 async function linesOf(payload) {
@@ -51,10 +48,10 @@ function keys(dir) {
 
 test("dump kinds: public = published vulnerability data only; private adds what a relay needs; full = everything", opts, async () => {
 	const { buildDump } = require("../lib/dumps/build");
-	const { db, assets } = fixtureDb();
+	const { db, assets } = await fixtureDb();
 	const dir = tmp();
 	try {
-		const build = kind => buildDump({ db, assets, dir: path.join(dir, kind), kind });
+		const build = kind => buildDump({ driver: db, dir: path.join(dir, kind), kind });
 		const pub = await build("public"), priv = await build("private"), full = await build("full");
 		const L = async m => linesOf(path.join(dir, m.kind, m.payload.file));
 		const p = await L(pub), q = await L(priv), f = await L(full);
@@ -77,11 +74,11 @@ test("dump kinds: public = published vulnerability data only; private adds what 
 test("signature and integrity: verified, tampering detected, wrong key refused", opts, async () => {
 	const { buildDump } = require("../lib/dumps/build");
 	const { openDump } = require(path.join(FAD, "dump-format.js"));
-	const { db, assets } = fixtureDb();
+	const { db, assets } = await fixtureDb();
 	const dir = tmp(), kd = tmp();
 	try {
 		const { priv, pubFile } = keys(kd);
-		const m = await buildDump({ db, assets, dir, kind: "public", signingKeyPem: priv });
+		const m = await buildDump({ driver: db, dir, kind: "public", signingKeyPem: priv });
 		const manifest = path.join(dir, `${m.id}.manifest.json`);
 		const pem = fs.readFileSync(pubFile, "utf8");
 		assert.equal((await openDump(manifest, { publicKeyPem: pem })).manifest.id, m.id);
@@ -101,30 +98,29 @@ test("signature and integrity: verified, tampering detected, wrong key refused",
 test("restore: search and links work on the copy; replaying is a no-op; a delta applies on top", opts, async () => {
 	const { buildDump } = require("../lib/dumps/build");
 	const { restoreDump } = require("../lib/dumps/restore");
-	const src = fixtureDb();
+	const src = await fixtureDb();
 	const dir = tmp();
 	try {
-		const m = await buildDump({ db: src.db, assets: src.assets, dir, kind: "full" });
-		const empty = (() => { const { openDatabase, createSqliteStore } = require("../lib/sqlite-store"); const { createAssetStore } = require("../lib/assets");
-			const db = openDatabase(":memory:"); return { db, assets: createAssetStore(db), store: createSqliteStore({ db }) }; })();
+		const m = await buildDump({ driver: src.db, dir, kind: "full" });
+		const empty = await require("./helpers/db").open(":memory:");
 		const r1 = await restoreDump({ assets: empty.assets, store: empty.store, manifestPath: path.join(dir, `${m.id}.manifest.json`) });
 		assert.equal(r1.counts.asset, 4);
-		assert.equal(empty.assets.search("GCVE-0-2021-44228")[0].key, "CVE-2021-44228", "aliases survive a dump");
-		assert.deepEqual(empty.assets.advisoriesForCve("CVE-2021-44228").map(a => a.key), ["osv:GHSA-jfh8-c2jp-5v3q"]);
-		assert.equal(empty.assets.signals("CVE-2021-44228").kev.dateAdded, "2021-12-10");
-		assert.equal(empty.assets.nvd("CVE-2021-44228").vulnStatus, "Analyzed");
-		assert.equal(empty.store.size(), 4);
+		assert.equal((await empty.assets.search("GCVE-0-2021-44228"))[0].key, "CVE-2021-44228", "aliases survive a dump");
+		assert.deepEqual((await empty.assets.advisoriesForCve("CVE-2021-44228")).map(a => a.key), ["osv:GHSA-jfh8-c2jp-5v3q"]);
+		assert.equal((await empty.assets.signals("CVE-2021-44228")).kev.dateAdded, "2021-12-10");
+		assert.equal((await empty.assets.nvd("CVE-2021-44228")).vulnStatus, "Analyzed");
+		assert.equal((await empty.store.size()), 4);
 		const r2 = await restoreDump({ assets: empty.assets, store: empty.store, manifestPath: path.join(dir, `${m.id}.manifest.json`) });
 		assert.equal(r2.counts.asset, 0); assert.equal(r2.counts.assetKept, 4); assert.equal(r2.counts.resource, 0);
 
 		const since = Date.now();
 		await new Promise(ok => setTimeout(ok, 5));
-		src.assets.upsert({ type: "cve", key: "CVE-2021-44228", title: "Log4Shell (updated)", summary: "log4j", data: { id: "CVE-2021-44228", v: 2 }, sources: [] });
-		const d = await buildDump({ db: src.db, assets: src.assets, dir, kind: "full", since });
+		(await src.assets.upsert({ type: "cve", key: "CVE-2021-44228", title: "Log4Shell (updated)", summary: "log4j", data: { id: "CVE-2021-44228", v: 2 }, sources: [] }));
+		const d = await buildDump({ driver: src.db, dir, kind: "full", since });
 		assert.equal(d.delta, true);
 		assert.equal(d.counts.asset, 1, "only what changed");
 		await restoreDump({ assets: empty.assets, store: empty.store, manifestPath: path.join(dir, `${d.id}.manifest.json`) });
-		assert.equal(empty.assets.get("cve", "CVE-2021-44228").title, "Log4Shell (updated)");
+		assert.equal((await empty.assets.get("cve", "CVE-2021-44228")).title, "Log4Shell (updated)");
 	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -132,10 +128,10 @@ test("relay: fad-checker serve-cache --seed fills its store from a private build
 	const { buildDump } = require("../lib/dumps/build");
 	const { createCacheStore, startProxyCacheServer } = require(path.join(FAD, "proxy-cache.js"));
 	const { openDump, seedResourceStore } = require(path.join(FAD, "dump-format.js"));
-	const { db, assets } = fixtureDb();
+	const { db, assets } = await fixtureDb();
 	const dir = tmp(), storeDir = tmp();
 	try {
-		const m = await buildDump({ db, assets, dir, kind: "private" });
+		const m = await buildDump({ driver: db, dir, kind: "private" });
 		const { payloadPath } = await openDump(path.join(dir, `${m.id}.manifest.json`));
 		assert.deepEqual(await seedResourceStore(createCacheStore(storeDir), payloadPath), { imported: 2, kept: 0 });
 		const running = await startProxyCacheServer({ port: 0, store: createCacheStore(storeDir), fetcher: () => { throw new Error("must not fetch"); } });
@@ -166,10 +162,10 @@ function bdecode(buf, i = 0) {
 test("torrent: web seed on the HTTPS file, pieces match the payload, magnet carries the info-hash", opts, async () => {
 	const { buildDump } = require("../lib/dumps/build");
 	const { bencode } = require("../lib/dumps/torrent");
-	const { db, assets } = fixtureDb();
+	const { db, assets } = await fixtureDb();
 	const dir = tmp();
 	try {
-		const m = await buildDump({ db, assets, dir, kind: "public", baseUrl: "https://vuln.example.fr", trackers: ["udp://tracker.example:1337"] });
+		const m = await buildDump({ driver: db, dir, kind: "public", baseUrl: "https://vuln.example.fr", trackers: ["udp://tracker.example:1337"] });
 		const [t] = bdecode(fs.readFileSync(path.join(dir, m.torrent.file)));
 		const payload = fs.readFileSync(path.join(dir, m.payload.file));
 		assert.equal(t.info.length, payload.length);
@@ -185,15 +181,13 @@ test("torrent: web seed on the HTTPS file, pieces match the payload, magnet carr
 test("HTTP: /dumps lists public builds, files support Range, private builds need a token, no path escapes", opts, async () => {
 	const { buildDump } = require("../lib/dumps/build");
 	const { createServiceServer } = require("../lib/server");
-	const { createTokenStore } = require("../lib/tokens");
-	const { db, assets, store } = fixtureDb();
+	const { db, assets, store, tokens } = await fixtureDb();
 	const dumpsDir = tmp(), kd = tmp();
 	try {
 		const { priv } = keys(kd);
-		const pub = await buildDump({ db, assets, dir: path.join(dumpsDir, "public"), kind: "public", signingKeyPem: priv });
-		const prv = await buildDump({ db, assets, dir: path.join(dumpsDir, "private"), kind: "private", signingKeyPem: priv });
-		const tokens = createTokenStore(db);
-		const client = tokens.add({ role: "client" }).token;
+		const pub = await buildDump({ driver: db, dir: path.join(dumpsDir, "public"), kind: "public", signingKeyPem: priv });
+		const prv = await buildDump({ driver: db, dir: path.join(dumpsDir, "private"), kind: "private", signingKeyPem: priv });
+		const client = (await tokens.add({ role: "client" })).token;
 		const server = createServiceServer({ store, tokens, assets, dumps: { dir: dumpsDir, signingKeyFile: path.join(kd, "dump-signing.key") } });
 		await new Promise(ok => server.listen(0, "127.0.0.1", ok));
 		const base = `http://127.0.0.1:${server.address().port}`;
@@ -219,11 +213,11 @@ test("HTTP: /dumps lists public builds, files support Range, private builds need
 
 test("CLI: fad-checker serve-cache --seed … --trust-key … --seed-only", opts, async () => {
 	const { buildDump } = require("../lib/dumps/build");
-	const { db, assets } = fixtureDb();
+	const { db, assets } = await fixtureDb();
 	const dir = tmp(), kd = tmp(), storeDir = tmp();
 	try {
 		const { priv, pubFile } = keys(kd);
-		const m = await buildDump({ db, assets, dir, kind: "private", signingKeyPem: priv });
+		const m = await buildDump({ driver: db, dir, kind: "private", signingKeyPem: priv });
 		const out = execFileSync(process.execPath, [path.join(FAD, "..", "fad-checker.js"), "serve-cache", "--cache-dir", storeDir,
 			"--seed", path.join(dir, `${m.id}.manifest.json`), "--trust-key", pubFile, "--seed-only"], { encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } });
 		assert.match(out, /signature ok/);
@@ -238,11 +232,11 @@ test("CLI: fad-checker serve-cache --seed … --trust-key … --seed-only", opts
 test("payload lines survive U+2028 / U+2029 inside data (readline would split them)", opts, async () => {
 	const { buildDump } = require("../lib/dumps/build");
 	const { openDump, readLines } = require(path.join(FAD, "dump-format.js"));
-	const { db, assets } = fixtureDb();
-	assets.upsert({ type: "cve", key: "CVE-2024-2028", title: "line separator", summary: "para graph", data: { id: "CVE-2024-2028", description: "a b" }, sources: [] });
+	const { db, assets } = await fixtureDb();
+	(await assets.upsert({ type: "cve", key: "CVE-2024-2028", title: "line separator", summary: "para graph", data: { id: "CVE-2024-2028", description: "a b" }, sources: [] }));
 	const dir = tmp();
 	try {
-		const m = await buildDump({ db, assets, dir, kind: "public" });
+		const m = await buildDump({ driver: db, dir, kind: "public" });
 		const { payloadPath } = await openDump(path.join(dir, `${m.id}.manifest.json`));
 		const got = [];
 		for await (const l of readLines(payloadPath)) if (l.key === "CVE-2024-2028") got.push(l);

@@ -46,13 +46,18 @@ function zipReader({ onJson, onError, depth = 0 }) {
 	return { push: (chunk, final) => unzip.push(chunk, final) };
 }
 
-/** Feed an async-iterable of Uint8Array chunks (a fetch body, a file stream). */
-async function forEachJsonInZip(source, onJson) {
+/**
+ * Feed an async-iterable of Uint8Array chunks (a fetch body, a file stream). `afterChunk`
+ * is awaited after each chunk: the place for an async consumer to drain what onJson
+ * collected (the database writes then pace the download).
+ */
+async function forEachJsonInZip(source, onJson, { afterChunk = null } = {}) {
 	let failure = null;
 	const reader = zipReader({ onJson, onError: e => { failure ||= e; } });
 	for await (const chunk of source) {
 		reader.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk), false);
 		if (failure) throw failure;
+		if (afterChunk) await afterChunk();
 	}
 	reader.push(new Uint8Array(0), true);
 	if (failure) throw failure;

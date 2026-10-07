@@ -47,36 +47,36 @@ function packageAsset(pkg, published) {
 function createRegistryLayer({ assets, threshold = 5, salt }) {
 	if (!salt) throw new Error("registry layer needs a salt for demand tags");
 	const tagOf = principal => crypto.createHmac("sha256", salt).update(principal.hash).digest("hex").slice(0, 8);
-	const publishable = key => { const d = assets.demandOf(key); return d.seeded || d.distinct >= threshold; };
+	const publishable = async key => { const d = await assets.demandOf(key); return d.seeded || d.distinct >= threshold; };
 
-	function upsertPackage(pkg) {
+	async function upsertPackage(pkg) {
 		if (pkg.type === "maven") {
 			// The metadata gives the versions; keep what a POM already told us.
-			const prev = assets.get("package", pkg.key, { includeUnpublished: true });
+			const prev = await assets.get("package", pkg.key, { includeUnpublished: true });
 			if (prev) pkg = { ...prev.data, ...pkg, name: prev.data.name || pkg.name };
 		}
-		const published = assets.isPublished("package", pkg.key) || publishable(pkg.key);
-		assets.upsert(packageAsset(pkg, published));
-		if (published) assets.publish("package", pkg.key);
+		const published = (await assets.isPublished("package", pkg.key)) || (await publishable(pkg.key));
+		await assets.upsert(packageAsset(pkg, published));
+		if (published) await assets.publish("package", pkg.key);
 	}
 
-	function upsertPom(pom) {
-		assets.upsert({ type: "pom", key: `${pom.key}@${pom.version}`, title: pom.name || null, summary: null, data: pom, sources: [], published: false });
-		const prev = assets.get("package", pom.key, { includeUnpublished: true });
+	async function upsertPom(pom) {
+		await assets.upsert({ type: "pom", key: `${pom.key}@${pom.version}`, title: pom.name || null, summary: null, data: pom, sources: [], published: false });
+		const prev = await assets.get("package", pom.key, { includeUnpublished: true });
 		if (prev && (!prev.data.latest || prev.data.latest === pom.version)) {
-			upsertPackage({ ...prev.data, key: pom.key, type: "maven", description: pom.description || prev.data.description,
+			await upsertPackage({ ...prev.data, key: pom.key, type: "maven", description: pom.description || prev.data.description,
 				license: pom.licence || prev.data.license, homepage: pom.url || prev.data.homepage, repository: pom.scm || prev.data.repository,
 				dependencies: pom.dependencies });
 		}
 	}
 
 	/** Engine hook: a fresh upstream answer for `resource`. */
-	function transform(resource, buffer) {
+	async function transform(resource, buffer) {
 		if (!packageOfRequest(resource)) return null;
 		const out = project(resource, buffer);
 		try {
-			if (out.pkg) upsertPackage(out.pkg);
-			if (out.pom) upsertPom(out.pom);
+			if (out.pkg) await upsertPackage(out.pkg);
+			if (out.pom) await upsertPom(out.pom);
 		} catch { /* a page is a by-product: never fail the client's request for it */ }
 		return out.body;
 	}
@@ -86,12 +86,12 @@ function createRegistryLayer({ assets, threshold = 5, salt }) {
 	 * Called AFTER the answer, and only for a package a public registry knows: a private
 	 * name (404 upstream) never reaches this table.
 	 */
-	function recordDemand(payload, principal, { seed = false } = {}) {
+	async function recordDemand(payload, principal, { seed = false } = {}) {
 		const key = packageOfRequest(payload);
-		if (!key || !principal || !assets.get("package", key, { includeUnpublished: true })) return null;
-		if (assets.isPublished("package", key)) return key;
-		const d = assets.demand(key, seed ? "seed" : tagOf(principal));
-		if (d.seeded || d.distinct >= threshold) assets.publish("package", key);
+		if (!key || !principal || !(await assets.get("package", key, { includeUnpublished: true }))) return null;
+		if (await assets.isPublished("package", key)) return key;
+		const d = await assets.demand(key, seed ? "seed" : tagOf(principal));
+		if (d.seeded || d.distinct >= threshold) await assets.publish("package", key);
 		return key;
 	}
 

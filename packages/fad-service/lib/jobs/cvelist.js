@@ -50,10 +50,10 @@ async function importZip({ url, fetcher, assets, log, label }) {
 	const res = await fetcher(url, { headers: { "user-agent": "fad-service" }, redirect: "follow" });
 	if (!res.ok || !res.body) throw new Error(`${label} HTTP ${res.status}`);
 	let pending = [], seen = 0, kept = 0;
-	const flush = () => {
+	const flush = async () => {
 		if (!pending.length) return;
 		const rows = pending; pending = [];
-		assets.transaction(() => { for (const r of rows) assets.upsert(cveAsset(r)); });
+		await assets.transaction(t => t.upsertMany(rows.map(cveAsset)));
 	};
 	await forEachJsonInZip(Readable.fromWeb(res.body), (name, json) => {
 		seen++;
@@ -61,10 +61,9 @@ async function importZip({ url, fetcher, assets, log, label }) {
 		if (!rec) return;
 		kept++;
 		pending.push(rec);
-		if (pending.length >= BATCH) flush();
 		if (log && seen % 50000 === 0) log(`cvelist ${label}: ${seen} records`);
-	});
-	flush();
+	}, { afterChunk: () => pending.length >= BATCH ? flush() : null });
+	await flush();
 	return kept;
 }
 
@@ -80,13 +79,13 @@ async function run({ assets, fetcher, log, state, setState }) {
 	if (state.day !== day) {
 		const n = await importZip({ url: baseline.browser_download_url, fetcher, assets, log, label: "baseline" });
 		parts.push(`baseline ${day}: ${n} CVEs`);
-		setState({ ...state, day, tag: null });
+		await setState({ ...state, day, tag: null });
 	}
 	if (delta) {
 		const n = await importZip({ url: delta.browser_download_url, fetcher, assets, log, label: "delta" });
 		parts.push(`delta ${tag}: ${n} CVEs`);
 	}
-	setState({ day, tag });
+	await setState({ day, tag });
 	return parts.join(" · ");
 }
 

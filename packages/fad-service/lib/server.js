@@ -31,6 +31,18 @@ const { fad } = require("./fad");
 const web = require("./web/render");
 const { pickLocale, makeT } = require("./web/i18n");
 const { clientAnalytics } = require("./analytics");
+const { validateResource, validateQuery, ValidationError, Q } = require("./validate");
+const { answerLocally } = require("./local-answers");
+
+/** The query parameters each route accepts — anything else is a 400 (lib/validate.js). */
+function querySpec(p) {
+	if (p === "/search") return { q: Q.text(200), type: Q.oneOf(["cve", "advisory", "package"]), lang: Q.lang };
+	if (p === "/api/search") return { q: Q.text(200), type: Q.oneOf(["cve", "advisory", "package"]), limit: Q.int(1, 100), lang: Q.lang };
+	if (p === "/admin/analytics") return { days: Q.int(1, 366) };
+	if (p.startsWith("/static/")) return { v: Q.hex(10) };
+	if (["/", "/sources", "/legal", "/dumps"].includes(p) || /^\/(cve|advisory|pkg)\//.test(p)) return { lang: Q.lang };
+	return {};
+}
 
 const SECURITY_HEADERS = {
 	"x-content-type-options": "nosniff",
@@ -144,11 +156,12 @@ const cspString = parts => Object.entries(parts).map(([k, v]) => `${k} ${[...new
 function createServiceServer(opts = {}) {
 	const { store, tokens, region = "unknown", version = "0", keys = {}, log = null, logger = null, ratePerMinute = 600,
 		assets = null, jobStatus = () => [], publicRatePerMinute = 300, cacheSeconds = 300, trustProxy = false,
-		brand = {}, analytics = null, serverAnalytics = null, counters = null, registry = null, dumps = null } = opts;
+		brand = {}, analytics = null, serverAnalytics = null, counters = null, registry = null, dumps = null, admit = null,
+		localAnswers = true } = opts;
 	if (!store || !tokens) throw new Error("fad-service needs a store and a token store");
 	const { createResourceEngine, upstreamHeadersFor, sendJson } = fad("resource-cache/engine");
 	const stats = { startedAt: Date.now(), requests: 0, hits: 0, misses: 0, coalesced: 0, stale: 0, upstream: 0, errors: 0 };
-	const engine = createResourceEngine({ ...opts, store, stats, keys, transform: registry ? registry.transform : null });
+	const engine = createResourceEngine({ ...opts, store, stats, keys, admit, transform: registry ? registry.transform : null });
 	const limited = createRateLimiter(ratePerMinute);
 	const publicLimited = createRateLimiter(publicRatePerMinute);
 	const logSalt = opts.logSalt || crypto.randomBytes(16).toString("hex");
@@ -185,12 +198,12 @@ function createServiceServer(opts = {}) {
 
 	// Home-page counters: a GROUP BY over the whole table, cached for a minute.
 	let countsCache = { at: 0, value: null };
-	const counts = () => {
-		if (!countsCache.value || Date.now() - countsCache.at > 60000) countsCache = { at: Date.now(), value: assets.counts() };
+	const counts = async () => {
+		if (!countsCache.value || Date.now() - countsCache.at > 60000) countsCache = { at: Date.now(), value: await assets.counts() };
 		return countsCache.value;
 	};
 
-	function authenticate(req) {
+	async function authenticate(req) {
 		const auth = String(req.headers.authorization || "");
 		const raw = auth.startsWith("Bearer ") ? auth.slice(7).trim() : req.headers["x-fad-proxy-token"];
 		return raw ? tokens.verify(String(raw)) : null;
@@ -269,7 +282,7 @@ function createServiceServer(opts = {}) {
 	}
 
 	/** Public pages and JSON. → true when the request was answered. */
-	function routePublic(req, res, url, ctx) {
+	async function routePublic(req, res, url, ctx) {
 		const p = url.pathname;
 		if (req.method !== "GET" && req.method !== "HEAD") return false;
 		if (p.startsWith("/static/")) return routeStatic(req, res, p, url);
@@ -289,19 +302,19 @@ function createServiceServer(opts = {}) {
 
 		if (p === "/api/search") {
 			ctx.search = true;
-			sendPublic(req, res, 200, "application/json", JSON.stringify({ query: q, results: q ? assets.search(q, { type, limit: Number(url.searchParams.get("limit")) || 20 }) : [] }));
+			sendPublic(req, res, 200, "application/json", JSON.stringify({ query: q, results: q ? await assets.search(q, { type, limit: Number(url.searchParams.get("limit")) || 20 }) : [] }));
 			return true;
 		}
 		if (p.startsWith("/api/cve/")) {
 			const id = decodeURIComponent(p.slice(9)).toUpperCase();
-			const asset = assets.get("cve", id);
+			const asset = await assets.get("cve", id);
 			if (!asset) sendPublic(req, res, 404, "application/json", JSON.stringify({ error: "not found" }));
-			else sendPublic(req, res, 200, "application/json", JSON.stringify({ ...asset, signals: assets.signals(id),
-				nvd: assets.nvd(id), advisories: assets.advisoriesForCve(id) }));
+			else sendPublic(req, res, 200, "application/json", JSON.stringify({ ...asset, signals: await assets.signals(id),
+				nvd: await assets.nvd(id), advisories: await assets.advisoriesForCve(id) }));
 			return true;
 		}
-		if (p === "/") { page(200, t("Search"), web.home({ t, counts: counts(), site })); return true; }
-		if (p === "/sources") { page(200, t("Data sources"), web.sourcesPage({ t, jobs: jobStatus() })); return true; }
+		if (p === "/") { page(200, t("Search"), web.home({ t, counts: await counts(), site })); return true; }
+		if (p === "/sources") { page(200, t("Data sources"), web.sourcesPage({ t, jobs: await jobStatus() })); return true; }
 		if (p === "/legal") { page(200, t("Legal notice"), web.legalPage({ t, site })); return true; }
 		if (p === "/search") {
 			ctx.search = !!q;
@@ -311,21 +324,21 @@ function createServiceServer(opts = {}) {
 				if (m) { res.writeHead(302, { location: `${target(q, m)}?lang=${locale}`, "cache-control": "no-store" }); res.end(); return true; }
 			}
 			if (/^EUVD-\d{4}-\d+$/i.test(q)) {
-				const cve = assets.cveForEuvd(q.toUpperCase());
+				const cve = await assets.cveForEuvd(q.toUpperCase());
 				if (cve) { res.writeHead(302, { location: `/cve/${cve}?lang=${locale}`, "cache-control": "no-store" }); res.end(); return true; }
 			}
-			page(200, `${t("Search")} · ${q}`, q ? web.results({ t, locale, q, rows: assets.search(q, { type, limit: 50 }) }) : "");
+			page(200, `${t("Search")} · ${q}`, q ? web.results({ t, locale, q, rows: await assets.search(q, { type, limit: 50 }) }) : "");
 			return true;
 		}
 		if (p.startsWith("/cve/")) {
 			const id = decodeURIComponent(p.slice(5)).toUpperCase();
-			const asset = /^CVE-\d{4}-\d{4,}$/.test(id) ? assets.get("cve", id) : null;
+			const asset = /^CVE-\d{4}-\d{4,}$/.test(id) ? await assets.get("cve", id) : null;
 			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
 			ctx.asset = `cve:${id}`;
 			const { gcveId, gcveUrl } = fad("gcve");
 			const { certfrUrl } = fad("certfr");
-			page(200, id, web.cvePage({ t, locale, asset, signals: assets.signals(id), gcve: gcveId(id), gcveUrl, certfrUrl,
-				nvd: assets.nvd(id), advisories: assets.advisoriesForCve(id),
+			page(200, id, web.cvePage({ t, locale, asset, signals: await assets.signals(id), gcve: gcveId(id), gcveUrl, certfrUrl,
+				nvd: await assets.nvd(id), advisories: await assets.advisoriesForCve(id),
 				euvdUrl: e => `https://euvd.enisa.europa.eu/vulnerability/${encodeURIComponent(e)}` }));
 			return true;
 		}
@@ -333,18 +346,18 @@ function createServiceServer(opts = {}) {
 			const m = /^\/pkg\/([a-z]+)\/(.+)$/.exec(p);
 			const { packageKey, packageOfOsv } = require("./registry/purl");
 			const key = m ? packageKey(m[1], m[2].split("/").map(decodeURIComponent).join("/")) : null;
-			const asset = key ? assets.get("package", key) : null;
+			const asset = key ? await assets.get("package", key) : null;
 			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
 			ctx.asset = key;
 			const { versionAffected } = require("./registry/versions");
-			const advisories = assets.advisoriesForPackage(key).map(a => ({ ...a,
+			const advisories = (await assets.advisoriesForPackage(key)).map(a => ({ ...a,
 				entries: (a.data.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === key) }));
 			page(200, asset.data.name, web.packagePage({ t, locale, asset, advisories, versionAffected }));
 			return true;
 		}
 		if (p.startsWith("/advisory/osv/")) {
 			const id = decodeURIComponent(p.slice(14));
-			const asset = assets.get("advisory", "osv:" + id);
+			const asset = await assets.get("advisory", "osv:" + id);
 			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
 			ctx.asset = `osv:${id}`;
 			page(200, id, web.osvAdvisoryPage({ t, locale, asset }));
@@ -352,7 +365,7 @@ function createServiceServer(opts = {}) {
 		}
 		if (p.startsWith("/advisory/certfr/")) {
 			const ref = decodeURIComponent(p.slice(17)).toUpperCase();
-			const asset = assets.get("advisory", "certfr:" + ref);
+			const asset = await assets.get("advisory", "certfr:" + ref);
 			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
 			ctx.asset = `certfr:${ref}`;
 			page(200, ref, web.advisoryPage({ t, locale, asset }));
@@ -361,44 +374,58 @@ function createServiceServer(opts = {}) {
 		return false;
 	}
 
+	/** Read, parse and strictly validate a JSON request body (lib/validate.js). */
+	async function resourceBody(req) {
+		if (!/^application\/json(;\s*charset=utf-8)?$/i.test(String(req.headers["content-type"] || "")))
+			throw Object.assign(new ValidationError("content-type must be application/json"), { status: 415 });
+		let raw;
+		try { raw = JSON.parse((await readBody(req, MAX_REQUEST_BYTES)).toString("utf8")); }
+		catch (error) { throw error.status ? error : new ValidationError("invalid JSON"); }
+		return validateResource(raw);
+	}
+
 	async function route(req, res, principal, ctx) {
 		const url = new URL(req.url, "http://service.invalid");
 		const p = url.pathname;
+		// Admin routes: who you are before what you sent — an anonymous caller learns nothing.
+		if (p.startsWith("/admin/") && !principal) return sendJson(res, 401, { error: "unauthorized" }, { "www-authenticate": "Bearer" });
+		validateQuery(url, querySpec(p));
 		if (p === "/health" && req.method === "GET")
 			return sendJson(res, draining ? 503 : 200, { ok: !draining, draining, service: "fad-service", version, region, store: store.kind, uptimeMs: Date.now() - stats.startedAt });
 		if (p === "/ready" && req.method === "GET") {
 			let ok = !draining, cves = 0;
-			try { cves = assets ? (counts().cve || 0) : 0; } catch { ok = false; }
+			try { cves = assets ? ((await counts()).cve || 0) : 0; } catch { ok = false; }
 			if (assets && !cves) ok = false;
 			return sendJson(res, ok ? 200 : 503, { ready: ok, cves });
 		}
-		if (routePublic(req, res, url, ctx)) return;
+		if (await routePublic(req, res, url, ctx)) return;
 		if (!ROUTES.has(p)) return sendJson(res, 404, { error: "not found" });
 		if (!principal) return sendJson(res, 401, { error: "unauthorized" }, { "www-authenticate": "Bearer" });
 		if (!limited(principal.hash)) return sendJson(res, 429, { error: "rate limit exceeded" }, { "retry-after": "60" });
 
 		if (p === "/v1/resource" && req.method === "POST") {
-			let payload;
-			try { payload = JSON.parse((await readBody(req, MAX_REQUEST_BYTES)).toString("utf8")); }
-			catch (error) { return sendJson(res, error.status || 400, { error: error.status ? error.message : "invalid resource request" }); }
-			await engine.handleResource(payload, res);
+			const payload = await resourceBody(req);
+			// What the mirrors already hold is answered here: no upstream request at all.
+			const local = localAnswers && assets ? await answerLocally(payload, assets) : null;
+			if (local) return sendJson(res, local.status, local.body, { "x-fad-proxy": "mirror" });
+			await engine.handleResource(payload, res, { principal });
 			if (registry && res.statusCode === 200) {
 				const seed = principal.role === "admin" && req.headers["x-fad-seed"] === "1";
-				try { registry.recordDemand(payload, principal, { seed }); } catch { /* never fail an answered request */ }
+				try { await registry.recordDemand(payload, principal, { seed }); } catch { /* never fail an answered request */ }
 			}
 			return;
 		}
 		if (principal.role !== "admin") return sendJson(res, 403, { error: "admin role required" });
 		if (p === "/admin/stats" && req.method === "GET")
-			return sendJson(res, 200, { ...stats, entries: store.size(), bodyBytes: store.bodyBytes?.() ?? null, activeUpstream: engine.activeUpstream() });
+			return sendJson(res, 200, { ...stats, entries: await store.size(), bodyBytes: (await store.bodyBytes?.()) ?? null, activeUpstream: engine.activeUpstream() });
 		if (p === "/admin/analytics" && req.method === "GET") {
 			if (!serverAnalytics) return sendJson(res, 404, { error: "server analytics disabled (analytics.provider)" });
-			return sendJson(res, 200, serverAnalytics.report(Math.min(366, Number(url.searchParams.get("days")) || 30)));
+			return sendJson(res, 200, await serverAnalytics.report(Math.min(366, Number(url.searchParams.get("days")) || 30)));
 		}
 		if (p === "/admin/purge" && req.method === "POST") {
 			let payload, key;
+			payload = await resourceBody(req);
 			try {
-				payload = JSON.parse((await readBody(req, MAX_REQUEST_BYTES)).toString("utf8"));
 				const { getProvider, providerKey } = fad("providers");
 				const request = getProvider(payload.provider).build(payload.type, payload.params);
 				const headers = upstreamHeadersFor(request.url, { ...request.init?.headers, ...payload.headers }, keys);
@@ -428,8 +455,8 @@ function createServiceServer(opts = {}) {
 			return;
 		}
 		if (!download) { inFlight++; res.once("close", () => { inFlight--; }); }
-		const principal = authenticate(req);
-		const ctx = { search: false, asset: null, principal };
+		let principal = null;                    // set once the token is checked (async)
+		const ctx = { search: false, asset: null, principal: null };
 		res.once("finish", () => {
 			const family = routeFamily(new URL(req.url, "http://service.invalid").pathname);
 			const ms = Date.now() - started;
@@ -442,9 +469,17 @@ function createServiceServer(opts = {}) {
 			else if (logger) logger.info("http", { method: req.method, route: family, status: res.statusCode, ms, rid, client: clientTag(principal) });
 			else if (log && !probe) log(`${new Date(started).toISOString()} ${req.method} ${family} ${res.statusCode} ${ms}ms client=${clientTag(principal)} rid=${rid}`);
 		});
-		route(req, res, principal, ctx).catch(err => {
+		(async () => {
+			principal = await authenticate(req);
+			ctx.principal = principal;
+			await route(req, res, principal, ctx);
+		})().catch(err => {
 			if (err instanceof URIError) {        // a malformed %-escape in the path
 				if (!res.headersSent) return sendJson(res, 400, { error: "malformed URL" });
+				return res.destroy();
+			}
+			if (err instanceof ValidationError) {   // strict typing: refused before any lookup
+				if (!res.headersSent) return sendJson(res, err.status || 400, { error: err.message, ...(err.field ? { field: err.field } : {}) });
 				return res.destroy();
 			}
 			stats.errors++;

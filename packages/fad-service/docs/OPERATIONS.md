@@ -11,8 +11,9 @@ scale. Design and data model: `docs/SPEC-fad-service.md` at the repository root.
 | worker | `fad-service worker` | Ingestion jobs (mirrors). Leased: several workers never run one job twice. |
 | backup | `fad-service backup` | Online, consistent copy of the database (`VACUUM INTO`). |
 
-All three share one SQLite file in SQLite mode (one host). Several hosts need the PostgreSQL
-store (spec §3, coming).
+All three share one database: a SQLite file (one host) or PostgreSQL (`--db postgres://…` /
+`FAD_SERVICE_DB`, any number of hosts). The choice is made at start-up; the same code, tests and
+dumps work on both.
 
 Requirements: Node ≥ 22.13 (24 recommended; `node:sqlite` still prints an "experimental"
 warning on 24 — the image sets `NODE_NO_WARNINGS=1`), `xz` (xz-utils, for the NVD mirror), ~10 GB of
@@ -200,12 +201,53 @@ Pull the new version, `npm install --omit=dev` (or rebuild the image), restart w
 web. Schema changes are applied in place on start (new tables/columns only). Roll back by
 restoring the previous code and the last backup.
 
-## Scaling
+## Scaling and PostgreSQL
 
-One host: `workers` in the config (or `--workers N`), and more web containers. Several hosts:
-a load balancer (Caddy, nginx, HAProxy, the provider's) with `/health` as health check, the
-PostgreSQL store, and one or more workers anywhere — jobs are leased in the database. Clients
-spread themselves by region through health-based instance selection.
+One host: `workers` in the config (or `--workers N`), and more web containers, on SQLite.
+Several hosts: PostgreSQL —
+
+```bash
+export FAD_SERVICE_DB=postgres://fad:…@db.internal:5432/fad     # environment only: it holds a password
+fad-service serve --workers 4                                     # on every web host
+fad-service worker                                                # anywhere, as many as you like: jobs are leased
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d   # the same with Docker
+```
+
+The schema is created on first start (idempotent); a SQLite instance moves to PostgreSQL
+with a `full` dump restored into it. Search uses a `tsvector` column with a GIN index. Every
+instance shares the cache, the publication rule and the leases; rate limits, the negative
+cache and the upstream budgets stay per process (divide `upstream.budgets` accordingly).
+A load balancer (Caddy, nginx, HAProxy, the provider's) uses `/health`; clients also spread
+themselves by region through health-based instance selection. Back up with `pg_dump`
+(`fad-service backup` is for SQLite).
+
+## Protecting the upstreams (never get banned)
+
+A public instance must not let its clients get it banned by NVD, OSV, GitHub or a registry:
+
+- **Answers from the mirrors.** An NVD request for a CVE the fkie mirror holds is answered
+  from the database, in NVD API 2.0 shape (`x-fad-proxy: mirror`); so are EPSS requests when
+  every CVE is known. No upstream request.
+- **Per-source budgets** (`upstream.budgets`, per process): below each source's limit — NVD
+  40/30 s with a key, 4/30 s without (80 % of NVD's own limits), npm/Maven 20/s, PyPI 10/s… Past
+  the budget: the stale copy if there is one, else `503` + `Retry-After`; the source is not
+  called.
+- **Per-client budget** (`upstream.clientPerHour`, default 1200): the upstream requests one
+  token may cause per hour. Cache hits and mirror answers are free; a client sending
+  thousands of unseen identifiers runs out alone.
+- **Negative cache**: a definitive 404/410 is remembered 6 h — in memory only, keyed by a
+  hash (the names that 404 are a client's private packages: never on disk, never in a dump).
+- Maven Central traffic goes to the EU mirror first.
+
+## Input validation
+
+Every input is typed against a whitelist (`lib/validate.js`) and refused with a `400` (or
+`415`) before any lookup: the `/v1/resource` and `/admin/purge` documents (one schema per
+provider/type — exactly what fad-checker sends; unknown fields, headers or types refused), the
+query string of every route (unknown or repeated parameters refused), path parameters
+(identifier patterns). Search text: at most 200 characters, no control character, words of
+letters and digits (joined only by `. _ - : / @`), 8 words of 2–64 characters, prefix
+matching from 3 characters — `%`, `*`, quotes and operators never reach the database.
 
 ## Capacity and protection
 

@@ -22,18 +22,18 @@ function advisoryAsset(ref, e) {
 async function run({ assets, fetcher }) {
 	const { refreshCertFrIndex, indexByCve } = fad("certfr");
 	const entries = {};
-	for (const { key, data } of assets.listByPrefix("advisory", PREFIX))
+	for await (const { key, data } of assets.iteratePrefix("advisory", PREFIX))
 		entries[key.slice(PREFIX.length)] = { kind: data.kind, rev: data.rev, title: data.title, cves: data.cves };
 	// CVEs cited before the refresh: a revised advisory may drop one, which must lose it.
 	const citedBefore = new Set(Object.values(entries).flatMap(e => e.cves || []));
 	const index = { meta: { fetchedAt: 0 }, entries };
 	const { changed, failed } = await refreshCertFrIndex(index, { fetcher, cacheDir: false });
 	if (!changed.length) return `no change${failed ? ` (${failed} failed)` : ""}`;
-	assets.transaction(() => { for (const ref of changed) assets.upsert(advisoryAsset(ref, index.entries[ref])); });
+	await assets.transaction(async t => { for (const ref of changed) await t.upsert(advisoryAsset(ref, index.entries[ref])); });
 	const byCve = indexByCve(index.entries);
 	const rows = Object.entries(byCve).map(([cve, list]) => [cve, list.map(a => ({ ref: a.ref, kind: a.kind, title: a.title }))]);
 	for (const cve of citedBefore) if (!byCve[cve]) rows.push([cve, null]);
-	assets.setSignal("certfr", rows);
+	await assets.setSignal("certfr", rows);
 	return `${changed.length} advisories updated · ${Object.keys(byCve).length} CVEs cited${failed ? ` · ${failed} failed` : ""}`;
 }
 

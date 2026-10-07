@@ -90,11 +90,11 @@ function render(agg, { jobs = [], assets = {}, startedAt = Date.now(), workers =
 
 /** The metrics listener. `collect()` → the exposition text. */
 function startMetricsServer({ host = "127.0.0.1", port = 9464, token = null, collect }) {
-	const server = http.createServer((req, res) => {
+	const server = http.createServer(async (req, res) => {
 		if (req.url !== "/metrics" || req.method !== "GET") { res.writeHead(404); return res.end(); }
 		if (token && !sameSecret(req.headers.authorization, `Bearer ${token}`)) { res.writeHead(401, { "www-authenticate": "Bearer" }); return res.end(); }
 		let body;
-		try { body = collect(); } catch (e) { res.writeHead(500); return res.end(String(e.message)); }
+		try { body = await collect(); } catch (e) { res.writeHead(500); return res.end(String(e.message)); }
 		res.writeHead(200, { "content-type": "text/plain; version=0.0.4; charset=utf-8" });
 		res.end(body);
 	});
