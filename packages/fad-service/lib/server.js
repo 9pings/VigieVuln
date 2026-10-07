@@ -41,6 +41,8 @@ const ID_PATTERNS = [
 	[/^CVE-\d{4}-\d{4,}$/i, id => `/cve/${id.toUpperCase()}`],
 	[/^GCVE-0-(\d{4})-(\d{4,})$/i, (id, m) => `/cve/CVE-${m[1]}-${m[2]}`],
 	[/^CERT(?:FR|A)-\d{4}-(?:AVI|ALE)-\d{1,5}$/i, id => `/advisory/certfr/${id.toUpperCase()}`],
+	[/^(?:GHSA(?:-[23456789cfghjmpqrvwx]{4}){3}|PYSEC-\d{4}-\d+|GO-\d{4}-\d+|MAL-\d{4}-\d+|RUSTSEC-\d{4}-\d+)$/i,
+		id => `/advisory/osv/${/^GHSA/i.test(id) ? "GHSA" + id.slice(4).toLowerCase() : id.toUpperCase()}`],
 ];
 const ROUTES = new Set(["/health", "/v1/resource", "/admin/stats", "/admin/purge"]);
 
@@ -115,7 +117,7 @@ function createServiceServer(opts = {}) {
 		if (req.method !== "GET" && req.method !== "HEAD") return false;
 		if (p === "/static/site.css") { sendPublic(req, res, 200, "text/css; charset=utf-8", SITE_CSS); return true; }
 		if (!assets) return false;
-		const isPage = ["/", "/search", "/sources", "/legal"].includes(p) || /^\/(cve|advisory\/certfr)\/[^/]+$/.test(p);
+		const isPage = ["/", "/search", "/sources", "/legal"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p);
 		const isApi = p === "/api/search" || /^\/api\/cve\/[^/]+$/.test(p);
 		if (!isPage && !isApi) return false;
 		const ip = String(req.socket.remoteAddress || "?");
@@ -135,7 +137,8 @@ function createServiceServer(opts = {}) {
 			const id = decodeURIComponent(p.slice(9)).toUpperCase();
 			const asset = assets.get("cve", id);
 			if (!asset) sendPublic(req, res, 404, "application/json", JSON.stringify({ error: "not found" }));
-			else sendPublic(req, res, 200, "application/json", JSON.stringify({ ...asset, signals: assets.signals(id) }));
+			else sendPublic(req, res, 200, "application/json", JSON.stringify({ ...asset, signals: assets.signals(id),
+				nvd: assets.nvd(id), advisories: assets.advisoriesForCve(id) }));
 			return true;
 		}
 		if (p === "/") { page(200, t("Search"), web.home({ t, counts: assets.counts() })); return true; }
@@ -161,7 +164,15 @@ function createServiceServer(opts = {}) {
 			const { gcveId, gcveUrl } = fad("gcve");
 			const { certfrUrl } = fad("certfr");
 			page(200, id, web.cvePage({ t, locale, asset, signals: assets.signals(id), gcve: gcveId(id), gcveUrl, certfrUrl,
+				nvd: assets.nvd(id), advisories: assets.advisoriesForCve(id),
 				euvdUrl: e => `https://euvd.enisa.europa.eu/vulnerability/${encodeURIComponent(e)}` }));
+			return true;
+		}
+		if (p.startsWith("/advisory/osv/")) {
+			const id = decodeURIComponent(p.slice(14));
+			const asset = assets.get("advisory", "osv:" + id);
+			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
+			page(200, id, web.osvAdvisoryPage({ t, locale, asset }));
 			return true;
 		}
 		if (p.startsWith("/advisory/certfr/")) {

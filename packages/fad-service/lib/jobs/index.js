@@ -19,6 +19,8 @@ const JOBS = {
 	epss: { every: 24 * HOUR, run: (...a) => require("./signals").epss(...a), label: "EPSS (FIRST.org)" },
 	euvd: { every: 24 * HOUR, run: (...a) => require("./signals").euvd(...a), label: "ENISA EUVD" },
 	certfr: { every: HOUR, run: (...a) => require("./certfr").run(...a), label: "CERT-FR (ANSSI)" },
+	nvd: { every: 6 * HOUR, run: (...a) => require("./nvd").run(...a), label: "NVD (fkie-cad mirror)" },
+	osv: { every: HOUR, run: (...a) => require("./osv").run(...a), label: "OSV.dev" },
 };
 const LEASE_MS = 6 * HOUR;
 

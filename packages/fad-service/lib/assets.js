@@ -40,6 +40,17 @@ CREATE TABLE IF NOT EXISTS cve_signals (
 	updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS cve_signals_euvd ON cve_signals (euvd_id);
+CREATE TABLE IF NOT EXISTS cve_nvd (
+	cve TEXT PRIMARY KEY,
+	last_modified TEXT,
+	data TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS advisory_cve (
+	advisory TEXT NOT NULL,
+	cve TEXT NOT NULL,
+	PRIMARY KEY (advisory, cve)
+);
+CREATE INDEX IF NOT EXISTS advisory_cve_by_cve ON advisory_cve (cve);
 CREATE TABLE IF NOT EXISTS job_runs (
 	job TEXT PRIMARY KEY,
 	lease_until INTEGER NOT NULL DEFAULT 0,
@@ -54,6 +65,8 @@ CREATE TABLE IF NOT EXISTS job_runs (
 
 const SIGNAL_COLUMNS = ["kev", "epss_score", "epss_percentile", "epss_date", "euvd_id", "euvd_exploited_since", "certfr"];
 const JSON_COLUMNS = new Set(["kev", "certfr"]);
+/** Columns added after the first release: [table, column, type], created on open so an old database upgrades in place. */
+const MIGRATIONS = [];
 
 /** Turn free text into a safe FTS5 query: quoted tokens, prefix match on the last one. */
 function ftsQuery(text) {
@@ -64,6 +77,10 @@ function ftsQuery(text) {
 
 function createAssetStore(db) {
 	db.exec(SCHEMA);
+	for (const [table, column, type] of MIGRATIONS) {
+		const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+		if (!cols.includes(column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+	}
 	const q = {
 		find: db.prepare("SELECT id FROM assets WHERE type = ? AND key = ?"),
 		insert: db.prepare("INSERT INTO assets (type, key, title, summary, data, sources, published, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
@@ -78,6 +95,13 @@ function createAssetStore(db) {
 			WHERE assets_fts MATCH ? AND a.published = 1 AND (? IS NULL OR a.type = ?)
 			ORDER BY rank LIMIT ?`),
 		count: db.prepare("SELECT type, COUNT(*) AS n FROM assets WHERE published = 1 GROUP BY type"),
+		nvdPut: db.prepare(`INSERT INTO cve_nvd (cve, last_modified, data) VALUES (?, ?, ?)
+			ON CONFLICT(cve) DO UPDATE SET last_modified = excluded.last_modified, data = excluded.data`),
+		nvdGet: db.prepare("SELECT last_modified, data FROM cve_nvd WHERE cve = ?"),
+		linkDel: db.prepare("DELETE FROM advisory_cve WHERE advisory = ?"),
+		linkAdd: db.prepare("INSERT OR IGNORE INTO advisory_cve (advisory, cve) VALUES (?, ?)"),
+		forCve: db.prepare(`SELECT a.key, a.title FROM advisory_cve l JOIN assets a ON a.type = 'advisory' AND a.key = l.advisory
+			WHERE l.cve = ? AND a.published = 1 ORDER BY a.key LIMIT 200`),
 		byPrefix: db.prepare("SELECT key, data FROM assets WHERE type = ? AND key >= ? AND key < ?"),
 		epss: db.prepare(`INSERT INTO cve_signals (cve, epss_score, epss_percentile, epss_date, updated_at) VALUES (?, ?, ?, ?, ?)
 			ON CONFLICT(cve) DO UPDATE SET epss_score = excluded.epss_score, epss_percentile = excluded.epss_percentile,
@@ -138,6 +162,20 @@ function createAssetStore(db) {
 		listByPrefix(type, prefix) {
 			return q.byPrefix.all(type, prefix, prefix + "\uffff").map(r => ({ key: r.key, data: JSON.parse(r.data) }));
 		},
+		/** rows: [{ id, lastModified, ... }] — NVD's enrichment, kept apart from the CVE record. */
+		setNvd(rows) {
+			api.transaction(() => { for (const r of rows) q.nvdPut.run(r.id, r.lastModified || null, JSON.stringify(r)); });
+		},
+		nvd(cve) {
+			const row = q.nvdGet.get(cve);
+			return row ? JSON.parse(row.data) : null;
+		},
+		/** The CVEs an advisory aliases (call inside a transaction for bulk imports). */
+		linkAdvisory(advisoryKey, cves) {
+			q.linkDel.run(advisoryKey);
+			for (const cve of cves) q.linkAdd.run(advisoryKey, cve);
+		},
+		advisoriesForCve(cve) { return q.forCve.all(cve); },
 		cveForEuvd(id) { return q.byAlias.get(id)?.cve || null; },
 		search(text, { type = null, limit = 20 } = {}) {
 			const match = ftsQuery(text);

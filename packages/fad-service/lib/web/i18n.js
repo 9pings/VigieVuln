@@ -54,6 +54,13 @@ const FR = {
 	"Language": "Langue",
 	"Data from the sources listed on each page, under their own licences.": "Données issues des sources indiquées sur chaque page, sous leurs propres licences.",
 	"+{n} more": "+{n} autres",
+	"NVD status": "Statut NVD",
+	"Affected configurations (NVD CPE)": "Configurations affectées (CPE NVD)",
+	"Affected packages": "Paquets affectés",
+	"Package": "Paquet",
+	"Versions": "Versions",
+	"Aliases": "Alias",
+	"Withdrawn": "Retiré",
 	"cve": "CVE",
 	"advisory": "avis",
 };
