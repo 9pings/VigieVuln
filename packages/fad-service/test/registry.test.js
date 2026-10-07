@@ -175,7 +175,8 @@ test("seed: an admin seeding a package publishes it at once; package page with a
 		const page = await (await s.get("/pkg/npm/left-pad?lang=en")).text();
 		assert.match(page, /String left pad/);
 		assert.match(page, /GHSA-aaaa-bbbb-cccc/);
-		assert.match(page, /introduced 0, fixed 1\.2\.0/);
+		// Short form; 1.2.0 is not a version npm listed, so it is not a link (no page for it).
+		assert.match(page, /<code>&lt; 1\.2\.0<\/code>/);
 		// The versions panel: each version, its date, how many advisories affect it.
 		assert.match(page, /<li><a href="\/pkg\/npm\/left-pad\?version=1\.1\.0&amp;lang=en">1\.1\.0<\/a> <span class="badge">deprecated<\/span><span class="v-meta"><time[^>]*>2015-01-01<\/time> <span class="flag"[^>]*>1<\/span>/);
 		assert.match(page, /<li><a href="\/pkg\/npm\/left-pad\?version=1\.3\.0&amp;lang=en">1\.3\.0<\/a><span class="v-meta"><time[^>]*>2018-04-01<\/time> <span class="ok"[^>]*>✓<\/span>/);

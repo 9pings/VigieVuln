@@ -24,7 +24,7 @@
 		}
 		format filter {
 			request>uri multi_regexp {
-				regexp "^/(cve|api/cve|pkg|advisory/osv|advisory/certfr)/[^?]*" "/${1}/:id"
+				regexp "^/(cve|api/cve|pkg|product|advisory/osv|advisory/certfr)/[^?]*" "/${1}/:id"
 				regexp "([?&])q=[^&]*" "${1}q=-"
 			}
 			request>headers>Authorization delete

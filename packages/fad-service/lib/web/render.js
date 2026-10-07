@@ -9,6 +9,7 @@
  * @email: pp9ping@gmail.com
  */
 
+const { productKey, productPath } = require("../product-key");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : null;
 const link = (url, text) => safeUrl(url) ? `<a href="${esc(url)}" rel="noopener noreferrer nofollow">${esc(text ?? url)}</a>` : esc(text ?? url ?? "");
@@ -104,7 +105,7 @@ function cnaVersionsText(t, versions) {
 function affectedCell(t, locale, r, { max = 2 } = {}) {
 	if (r.packages?.length) {
 		const more = (r.packagesTotal || r.packages.length) - Math.min(max, r.packages.length);
-		return r.packages.slice(0, max).map(p => `${libraryLink(locale, p)} <code>${esc(affectedText(p.entries))}</code>`).join("<br>")
+		return r.packages.slice(0, max).map(p => `${libraryLink(locale, p)} <code>${affectedOf(locale, p)}</code>`).join("<br>")
 			+ (more > 0 ? `<br><span class="muted">${t("+{n} more", { n: more })}</span>` : "");
 	}
 	const products = (r.products || []).filter(p => p.product && !/^n\/?a$/i.test(p.product));
@@ -112,7 +113,8 @@ function affectedCell(t, locale, r, { max = 2 } = {}) {
 	return products.slice(0, max).map(p => {
 		const name = [p.vendor, p.product].filter(x => x && !/^n\/?a$/i.test(x)).join(" ");
 		const v = cnaVersionsText(t, p.versions);
-		return `<b>${esc(name)}</b>${v ? ` <code>${esc(v)}</code>` : ""}`;
+		const href = productPath(productKey(p.vendor, p.product));
+		return `${href ? `<a href="${esc(href)}?lang=${locale}"><b>${esc(name)}</b></a>` : `<b>${esc(name)}</b>`}${v ? ` <code>${esc(v)}</code>` : ""}`;
 	}).join("<br>") + (products.length > max ? `<br><span class="muted">${t("+{n} more", { n: products.length - max })}</span>` : "");
 }
 
@@ -131,31 +133,39 @@ const pkgParts = key => { const m = /^pkg:([a-z]+)\/(.+)$/.exec(key); return m ?
 /** A library: its page when it has one, else the advisory that names it. */
 function libraryLink(locale, r) {
 	const { eco, name } = pkgParts(r.key);
-	const href = r.hasPage ? `${pkgPath(r.key)}?lang=${locale}` : assetHref("advisory", r.advisory, locale);
-	return `<a href="${esc(href)}"><b>${esc(name)}</b></a> <span class="muted">${esc(ECOSYSTEM_LABEL[eco] || eco)}</span>`;
+	// Every package an advisory names has a page (built from the advisories when the registry was never asked).
+	return `<a href="${esc(pkgPath(r.key))}?lang=${locale}"><b>${esc(name)}</b></a> <span class="muted">${esc(ECOSYSTEM_LABEL[eco] || eco)}</span>`;
 }
+/**
+ * A fixed version as a link to its version page — only when the registry listed it (a
+ * version page exists for nothing else). known: Set of the package's versions, or null.
+ */
+const versionLinker = (locale, key, known) => v => known && known.has(String(v))
+	? `<a href="${esc(versionHref(key, String(v), locale))}">${esc(v)}</a>` : esc(v);
 
 /**
  * The affected versions of one package, short: "< 3.88.0", "2.0 – < 2.15.0", "≤ 3.0.0-beta3",
  * "≥ 1.2" (no fix), or the advisory's explicit list. The advisory's own bounds, nothing inferred.
  */
-function affectedText(entries) {
+function affectedText(entries, fix = esc) {
 	const parts = [];
 	for (const e of entries) {
 		for (const r of e.ranges || []) {
 			let from = null;
 			for (const ev of r.events || []) {
 				if (ev.introduced != null) from = String(ev.introduced) === "0" ? null : String(ev.introduced);
-				else if (ev.fixed != null) { parts.push(from ? `${from} – < ${ev.fixed}` : `< ${ev.fixed}`); from = undefined; }
-				else if (ev.last_affected != null) { parts.push(from === String(ev.last_affected) ? from : from ? `${from} – ${ev.last_affected}` : `≤ ${ev.last_affected}`); from = undefined; }
+				else if (ev.fixed != null) { parts.push(from ? `${esc(from)} – &lt; ${fix(ev.fixed)}` : `&lt; ${fix(ev.fixed)}`); from = undefined; }
+				else if (ev.last_affected != null) { parts.push(from === String(ev.last_affected) ? esc(from) : from ? `${esc(from)} – ${esc(ev.last_affected)}` : `≤ ${esc(ev.last_affected)}`); from = undefined; }
 			}
-			if (from !== undefined) parts.push(from ? `≥ ${from}` : "*");
+			if (from !== undefined) parts.push(from ? `≥ ${esc(from)}` : "*");
 		}
-		if (!(e.ranges || []).length && (e.versions || []).length) parts.push(e.versions.slice(0, 3).join(", ") + (e.versions.length > 3 ? ", …" : ""));
+		if (!(e.ranges || []).length && (e.versions || []).length) parts.push(esc(e.versions.slice(0, 3).join(", ")) + (e.versions.length > 3 ? ", …" : ""));
 	}
 	const all = [...new Set(parts)];
 	return all.length > 3 ? all.slice(0, 3).join(" ; ") + " ; …" : all.join(" ; ");
 }
+/** affectedText of one package row, its fixed versions linked to their pages. HTML. */
+const affectedOf = (locale, p) => affectedText(p.entries, versionLinker(locale, p.key, p.known));
 
 const CWE_NAMES = (() => { try { const { fadData } = require("../fad"); return { en: fadData("cwe-names.json"), fr: fadData("cwe-names-fr.json") }; } catch { return { en: {}, fr: {} }; } })();
 const cweTitle = (id, locale) => (CWE_NAMES[locale] || {})[id] || CWE_NAMES.en[id] || "";
@@ -171,13 +181,13 @@ const otherCriticals = (t, r) => r.criticalCount > 1 ? ` <span class="muted">${t
 
 function librariesTable(t, locale, rows) {
 	return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Library")}</th><th scope="col">${t("Affected versions")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Weakness")}</th><th scope="col">CVE</th><th scope="col">${t("Fixed in")}</th></tr></thead><tbody>${
-		rows.map(r => `<tr><td>${libraryLink(locale, r)}${otherCriticals(t, r)}</td><td><code>${esc(affectedText(r.entries))}</code></td><td class="nw">${badge(severityOf(r.score), r.score)}${r.kev ? " " + kevMark(t, r.kev) : ""}</td><td>${weaknessText(locale, r)}</td><td class="nw">${cveLink(r.cve, locale)}${r.published ? `<br><span class="muted">${date(r.published)}</span>` : ""}</td><td>${fixCell(t, r.entries)}</td></tr>`).join("")}</tbody></table></div>`;
+		rows.map(r => `<tr><td>${libraryLink(locale, r)}${otherCriticals(t, r)}</td><td><code>${affectedOf(locale, r)}</code></td><td class="nw">${badge(severityOf(r.score), r.score)}${r.kev ? " " + kevMark(t, r.kev) : ""}</td><td>${weaknessText(locale, r)}</td><td class="nw">${cveLink(r.cve, locale)}${r.published ? `<br><span class="muted">${date(r.published)}</span>` : ""}</td><td>${fixCell(t, r.entries, versionLinker(locale, r.key, r.known))}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 /** Home page: "name — versions — CRITICAL 9.8 : CWE-89 SQL Injection". */
 function libraryMiniList(t, locale, rows) {
 	if (!rows.length) return `<p class="muted">${t("Nothing yet — the data is being imported.")}</p>`;
-	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${libraryLink(locale, r)} <code>${esc(affectedText(r.entries))}</code></span><span>${badge(severityOf(r.score), r.score)} ${weaknessText(locale, r, 80)}</span><span class="muted">${cveLink(r.cve, locale)}${otherCriticals(t, r)}</span></li>`).join("")}</ol>`;
+	return `<ol class="cve-mini">${rows.map(r => `<li><span class="cve-mini-head">${libraryLink(locale, r)} <code>${affectedOf(locale, r)}</code></span><span>${badge(severityOf(r.score), r.score)} ${weaknessText(locale, r, 80)}</span><span class="muted">${cveLink(r.cve, locale)}${otherCriticals(t, r)}</span></li>`).join("")}</ol>`;
 }
 
 function cveListPage({ t, locale, kind, rows }) {
@@ -275,7 +285,7 @@ ${certfr.length ? `<h2>${t("CERT-FR advisories")}</h2><ul class="plain">${certfr
 ${cpes.length ? `<h2>${t("Affected configurations (NVD CPE)")}</h2><ul class="plain">${cpes.slice(0, 40).map(m => `<li><code>${esc(m.criteria)}</code>${[
 	m.versionStartIncluding ? " ≥ " + esc(m.versionStartIncluding) : "", m.versionStartExcluding ? " > " + esc(m.versionStartExcluding) : "",
 	m.versionEndExcluding ? " < " + esc(m.versionEndExcluding) : "", m.versionEndIncluding ? " ≤ " + esc(m.versionEndIncluding) : ""].join("")}</li>`).join("")}${cpes.length > 40 ? `<li class="muted">${t("+{n} more", { n: cpes.length - 40 })}</li>` : ""}</ul>` : ""}
-${d.affected?.length ? `<h2>${t("Affected products")}</h2><div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Product")}</th><th scope="col">${t("Versions")}</th></tr></thead><tbody>${d.affected.slice(0, 20).map(a => `<tr><td>${esc([a.vendor, a.product].filter(x => x && x !== "n/a").join(" · ") || a.packageName || "")}</td><td>${
+${d.affected?.length ? `<h2>${t("Affected products")}</h2><div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Product")}</th><th scope="col">${t("Versions")}</th></tr></thead><tbody>${d.affected.slice(0, 20).map(a => `<tr><td>${(() => { const label = esc([a.vendor, a.product].filter(x => x && x !== "n/a").join(" · ") || a.packageName || ""); const href = productPath(productKey(a.vendor, a.product || a.packageName)); return href && label ? `<a href="${esc(href)}?lang=${locale}">${label}</a>` : label; })()}</td><td>${
 	esc((a.versions || []).slice(0, 6).map(v => [v.status, v.version, v.lessThan ? "< " + v.lessThan : "", v.lessThanOrEqual ? "≤ " + v.lessThanOrEqual : ""].filter(Boolean).join(" ")).join(" ; "))}</td></tr>`).join("")}</tbody></table></div>` : ""}
 ${refs.length ? `<h2>${t("References")}</h2><ul class="plain">${refs.slice(0, 50).map(r => `<li>${link(r.url)}</li>`).join("")}${refs.length > 50 ? `<li class="muted">${t("+{n} more", { n: refs.length - 50 })}</li>` : ""}</ul>` : ""}
 <h2>${t("Sources")}</h2>${sourcesTable(t, sources)}`;
@@ -367,9 +377,11 @@ function packagePage({ t, locale, asset, advisories = [], withdrawn = [], versio
 	}
 	if (d.homepage) kv.push([t("Homepage"), link(d.homepage)]);
 	if (d.repository) kv.push([t("Repository"), link(d.repository)]);
-	const rangeOf = entries => esc(entries.flatMap(e => (e.ranges || []).map(rangeText)).filter(Boolean).join(" ; ") || entries.flatMap(e => (e.versions || []).slice(0, 10)).join(", "));
+	const known = new Set((d.versions || []).map(v => v.version));
+	const rangeOf = entries => `<code>${affectedText(entries, versionLinker(locale, asset.key, known))}</code>`;
 	return withPanel(`<h1>${esc(d.name)}</h1>
 ${d.description ? `<p class="record-title">${esc(d.description)}</p>` : ""}
+${asset.advisoryOnly ? `<p class="muted">${t("Built from the advisories that name this package: its registry metadata (versions, licence, dependencies) has not been fetched by this service yet.")}</p>` : ""}
 <section class="summary"><h2>${t("At a glance")}</h2><dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></section>
 <h2>${t("Advisories")} (${advisories.length})</h2>
 ${advisories.length ? `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Advisory")}</th><th scope="col">${t("Affected versions")}</th><th scope="col">${t("Latest version")}</th></tr></thead><tbody>${
@@ -386,11 +398,11 @@ const versionHref = (key, version, locale) => `${pkgPath(key)}?version=${encodeU
  * without one (a last_affected bound, or an open range) — said so, so "fixed 2.25.4" never
  * reads as covering a 3.x branch that has no fix at all.
  */
-function fixCell(t, entries) {
+function fixCell(t, entries, fix = esc) {
 	const parts = [];
 	for (const e of entries) for (const r of e.ranges || []) {
 		const ev = r.events || [];
-		const fixed = ev.filter(x => x.fixed != null).map(x => esc(x.fixed));
+		const fixed = ev.filter(x => x.fixed != null).map(x => fix(x.fixed));
 		const last = ev.filter(x => x.last_affected != null).map(x => String(x.last_affected));
 		if (fixed.length) parts.push(...fixed);
 		else if (last.length) parts.push(`<span class="muted">≤ ${esc(last.join(", "))}, ${t("no fix")}</span>`);
@@ -407,6 +419,7 @@ function fixCell(t, entries) {
 function versionPage({ t, locale, asset, version, advisories = [], withdrawn = [], versionAffected, panelVerdicts = new Map() }) {
 	const d = asset.data, type = d.type;
 	const list = d.versions || [];
+	const known = new Set(list.map(v => v.version));
 	const at = list.findIndex(v => v.version === version);
 	const info = list[at] || { version };
 	const verdicts = advisories.map(a => versionAffected(type, version, a.entries));
@@ -430,7 +443,7 @@ function versionPage({ t, locale, asset, version, advisories = [], withdrawn = [
 	const rows = items => `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">${t("Advisory")}</th><th scope="col">CVE</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Fixed in")}</th></tr></thead><tbody>${
 		items.map(a => `<tr><td><a href="${esc(assetHref("advisory", a.key, locale))}">${esc(assetName(a.key))}</a><br><span class="muted">${esc(a.title || "")}</span></td><td>${
 			a.cves.map(c => `${cveLink(c.cve, locale)}${c.kev ? " " + kevMark(t, c.kev) : ""}${c.epss != null ? ` <span class="muted">EPSS\u00a0${pct(c.epss)}</span>` : ""}`).join("<br>") || `<span class="muted">—</span>`}</td><td>${
-			badge(severityOf(worst(a) >= 0 ? worst(a) : null), worst(a) >= 0 ? worst(a) : null) || `<span class="muted">?</span>`}</td><td>${fixCell(t, a.entries)}</td></tr>`).join("")}</tbody></table></div>`;
+			badge(severityOf(worst(a) >= 0 ? worst(a) : null), worst(a) >= 0 ? worst(a) : null) || `<span class="muted">?</span>`}</td><td>${fixCell(t, a.entries, versionLinker(locale, asset.key, known))}</td></tr>`).join("")}</tbody></table></div>`;
 	return withPanel(`<h1>${esc(d.name)} <span class="muted">${esc(version)}</span></h1>
 <section class="summary"><h2>${t("At a glance")}</h2><dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></section>
 <h2>${t("Advisories affecting this version")} (${hit.length})</h2>
@@ -438,6 +451,21 @@ ${hit.length ? rows(hit) : `<p>${t("No advisory in the mirrored databases affect
 ${unknown.length ? `<h2>${t("Advisories without an exact verdict")} (${unknown.length})</h2><p class="muted">${t("These advisories name the package, but give no range that can be evaluated exactly for this ecosystem: check them by hand.")}</p>${rows(unknown)}` : ""}
 ${withdrawnList(t, locale, withdrawn)}
 <h2>${t("Sources")}</h2>${sourcesTable(t, asset.sources)}`, versionsPanel({ t, locale, asset, verdicts: panelVerdicts, current: version }));
+}
+
+/** A product as CNAs name it: its CVEs newest first, with the versions each CVE gives for it. */
+function productPage({ t, locale, info }) {
+	const name = [info.vendor, info.product].filter(x => x && !/^n\/?a$/i.test(x)).join(" ");
+	const versionsFor = r => {
+		const p = (r.products || []).find(x => productKey(x.vendor, x.product) === info.key);
+		return p ? cnaVersionsText(t, p.versions) : "";
+	};
+	const rows = info.rows;
+	return `<h1>${esc(name)}</h1>
+<p class="lead">${t(info.total === 1 ? "{n} published vulnerability names this product." : "{n} published vulnerabilities name this product.", { n: info.total })}${info.total > rows.length ? " " + t("The {n} most recent are listed.", { n: rows.length }) : ""}</p>
+<p class="muted">${t("As the CNAs write it in their CVE records (vendor and product); the versions are theirs.")}</p>
+${rows.length ? `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t("Scrollable table"))}"><table><thead><tr><th scope="col">CVE</th><th scope="col">${t("Vulnerable versions")}</th><th scope="col">${t("Title")}</th><th scope="col">${t("Severity")}</th><th scope="col">${t("Published")}</th><th scope="col">EPSS</th><th scope="col">${t("Exploitation")}</th></tr></thead><tbody>${
+	rows.map(r => `<tr><td class="nw">${cveLink(r.cve, locale)}</td><td><code>${esc(versionsFor(r))}</code></td><td>${esc(r.title && r.title.length > 140 ? r.title.slice(0, 137) + "…" : r.title || "")}</td><td class="nw">${badge(severityOf(r.score), r.score)}</td><td class="nw">${r.published ? date(r.published) : ""}</td><td class="nw">${pct(r.epss)}</td><td class="nw">${kevMark(t, r.kev)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
 }
 
 const mb = n => `${(n / 1048576).toFixed(1)} MB`;
@@ -494,4 +522,4 @@ function notFound({ t }) {
 	return `<h1>${t("Not found")}</h1><p>${t("This item is not in the service.")}</p>`;
 }
 
-module.exports = { layout, home, cveListPage, versionPage, versionHref, CVE_LISTS, results, cvePage, advisoryPage, osvAdvisoryPage, packagePage, pkgPath, dumpsPage, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };
+module.exports = { layout, home, cveListPage, versionPage, productPage, versionHref, CVE_LISTS, results, cvePage, advisoryPage, osvAdvisoryPage, packagePage, pkgPath, dumpsPage, sourcesPage, legalPage, notFound, esc, safeUrl, assetHref };

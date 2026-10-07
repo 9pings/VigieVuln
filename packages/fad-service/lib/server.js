@@ -48,7 +48,7 @@ function querySpec(p) {
 	if (p.startsWith("/static/")) return { v: Q.hex(10) };
 	if (p === "/cves") return { list: Q.oneOf(["critical", "libraries", "exploited", "kev"]), lang: Q.lang };
 	if (p.startsWith("/pkg/")) return { version: Q.version, lang: Q.lang };
-	if (["/", "/sources", "/legal", "/dumps"].includes(p) || /^\/(cve|advisory)\//.test(p)) return { lang: Q.lang };
+	if (["/", "/sources", "/legal", "/dumps"].includes(p) || /^\/(cve|advisory|product)\//.test(p)) return { lang: Q.lang };
 	return {};
 }
 
@@ -160,7 +160,7 @@ function addressBucket(ip) {
 function routeFamily(pathname) {
 	if (ROUTES.has(pathname)) return pathname;
 	if (pathname === "/") return "/";
-	return /^\/(cves|cve|advisory\/certfr|advisory\/osv|pkg|api\/search|api\/cve|search|sources|legal|static|dumps)\b/.exec(pathname)?.[0] || "/*";
+	return /^\/(cves|cve|product|advisory\/certfr|advisory\/osv|pkg|api\/search|api\/cve|search|sources|legal|static|dumps)\b/.exec(pathname)?.[0] || "/*";
 }
 
 const cspString = parts => Object.entries(parts).map(([k, v]) => `${k} ${[...new Set(v)].join(" ")}`).join("; ");
@@ -237,10 +237,10 @@ function createServiceServer(opts = {}) {
 	async function withPackages(rows) {
 		const { packageOfOsv } = require("./registry/purl");
 		const byCve = await assets.packagesOfCves(rows.map(r => r.cve));
-		const withPage = new Set(await assets.publishedPackages([...new Set([...byCve.values()].flat().map(p => p.key))]));
+		const known = await assets.versionsOf([...new Set([...byCve.values()].flat().map(p => p.key))]);
 		return rows.map(r => {
 			const list = byCve.get(r.cve) || [];
-			return { ...r, packagesTotal: list.length, packages: list.slice(0, 3).map(p => ({ key: p.key, advisory: p.advisory, hasPage: withPage.has(p.key),
+			return { ...r, packagesTotal: list.length, packages: list.slice(0, 3).map(p => ({ key: p.key, advisory: p.advisory, known: known.get(p.key) || null,
 				entries: (p.data.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === p.key) })) };
 		});
 	}
@@ -248,8 +248,8 @@ function createServiceServer(opts = {}) {
 	async function librariesList(limit) {
 		const { packageOfOsv } = require("./registry/purl");
 		const rows = await assets.listLibraries(limit);
-		const withPage = new Set(await assets.publishedPackages(rows.map(r => r.key)));
-		return rows.map(({ data, ...r }) => ({ ...r, hasPage: withPage.has(r.key),
+		const known = await assets.versionsOf(rows.map(r => r.key));
+		return rows.map(({ data, ...r }) => ({ ...r, known: known.get(r.key) || null,
 			entries: (data?.affected || []).filter(e => packageOfOsv({ ecosystem: e.ecosystem, name: e.name }) === r.key) }));
 	}
 
@@ -360,7 +360,7 @@ function createServiceServer(opts = {}) {
 		if (p.startsWith("/dumps")) return routeDumps(req, res, url, ctx.principal);
 		if (!assets) return false;
 		const isPage = ["/", "/search", "/sources", "/legal", "/cves"].includes(p) || /^\/(cve|advisory\/certfr|advisory\/osv)\/[^/]+$/.test(p)
-			|| /^\/pkg\/(npm|pypi|maven|gem|composer|nuget|golang)\/.+$/.test(p);
+			|| /^\/pkg\/(npm|pypi|maven|gem|composer|nuget|golang)\/.+$/.test(p) || /^\/product\/[^/]+\/[^/]+$/.test(p);
 		const isApi = p === "/api/search" || /^\/api\/cve\/[^/]+$/.test(p);
 		if (!isPage && !isApi) return false;
 		if (!publicLimited("ip:" + addressBucket(clientIp(req)))) { sendJson(res, 429, { error: "rate limit exceeded" }, { "retry-after": "60" }); return true; }
@@ -422,11 +422,25 @@ function createServiceServer(opts = {}) {
 				euvdUrl: e => `https://euvd.enisa.europa.eu/vulnerability/${encodeURIComponent(e)}` }));
 			return true;
 		}
+		if (p.startsWith("/product/")) {
+			const parts = p.slice(9).split("/").map(decodeURIComponent);
+			const ok = parts.length === 2 && parts.every(x => /^[\p{L}\p{N}._+-]{1,100}$/u.test(x) && !/^\.+$/.test(x));
+			const info = ok ? await assets.product(parts.join("/")) : null;
+			if (!info) { page(404, t("Not found"), web.notFound({ t })); return true; }
+			page(200, [info.vendor, info.product].filter(Boolean).join(" "), web.productPage({ t, locale, info }));
+			return true;
+		}
 		if (p.startsWith("/pkg/")) {
 			const m = /^\/pkg\/([a-z]+)\/(.+)$/.exec(p);
 			const { packageKey, packageOfOsv } = require("./registry/purl");
 			const key = m ? packageKey(m[1], m[2].split("/").map(decodeURIComponent).join("/")) : null;
-			const asset = key ? await assets.get("package", key) : null;
+			let asset = key ? await assets.get("package", key) : null;
+			// Never fetched from the registry (or not public yet): the page is built from the
+			// public advisories that name it — no registry data, nothing a client asked for.
+			if (!asset && key && await assets.packageHasAdvisories(key)) {
+				const { parseKey } = require("./registry/purl");
+				asset = { key, advisoryOnly: true, data: { type: m[1], name: parseKey(key)?.name || m[2], versions: [] }, sources: [] };
+			}
 			if (!asset) { page(404, t("Not found"), web.notFound({ t })); return true; }
 			ctx.asset = key;
 			const { versionAffected } = require("./registry/versions");

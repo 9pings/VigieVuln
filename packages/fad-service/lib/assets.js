@@ -79,6 +79,16 @@ CREATE TABLE IF NOT EXISTS cve_rank (
 	nvd_score {REAL}
 );
 CREATE INDEX IF NOT EXISTS cve_rank_published ON cve_rank (published);
+-- The CNA's products (CVE 5 affected[].vendor/product) → CVEs, for the product pages.
+-- product_key = productKey(vendor, product); vendor/product = as the CNA wrote them.
+CREATE TABLE IF NOT EXISTS cve_product (
+	product_key TEXT NOT NULL,
+	cve TEXT NOT NULL,
+	vendor TEXT,
+	product TEXT,
+	PRIMARY KEY (product_key, cve)
+);
+CREATE INDEX IF NOT EXISTS cve_product_by_cve ON cve_product (cve);
 CREATE INDEX IF NOT EXISTS cve_signals_epss ON cve_signals (epss_score);
 CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS job_runs (
@@ -110,6 +120,16 @@ function rankOfCve(a) {
 	if (a.type !== "cve") return undefined;
 	if (a.published === false || a.data?.state === "REJECTED") return null;
 	return [a.key, isoSecond(a.data?.published), finiteScore(a.data?.score)];
+}
+const { productKey } = require("./product-key");
+/** A CVE asset → its [productKey, cve, vendor, product] rows (deduplicated). */
+function productsOfCve(a) {
+	const out = new Map();
+	for (const x of (a.data?.affected || []).slice(0, 50)) {
+		const k = productKey(x.vendor, x.product || x.packageName);
+		if (k && !out.has(k)) out.set(k, [k, a.key, String(x.vendor || "").slice(0, 200) || null, String(x.product || x.packageName).slice(0, 200)]);
+	}
+	return [...out.values()];
 }
 const CVSS_ORDER = ["4.0", "3.1", "3.0", "2.0"];
 /** NVD row data → its headline score: newest CVSS version present, NVD's Primary first, highest. */
@@ -207,6 +227,14 @@ function bind(d) {
 			const part = gone.slice(i, i + CHUNK);
 			await d.run(`DELETE FROM cve_rank WHERE cve IN (${part.map(() => "?").join(", ")})`, part);
 		}
+		// Products: replaced as a whole per CVE; a rejected / unpublished CVE lists none.
+		const cves = items.filter(a => a.type === "cve").map(a => a.key);
+		for (let i = 0; i < cves.length; i += CHUNK) {
+			const part = cves.slice(i, i + CHUNK);
+			await d.run(`DELETE FROM cve_product WHERE cve IN (${part.map(() => "?").join(", ")})`, part);
+		}
+		const prods = items.filter(a => rankOfCve(a)).flatMap(productsOfCve);
+		if (prods.length) await insertMany(d, "cve_product", ["product_key", "cve", "vendor", "product"], prods, "ON CONFLICT DO NOTHING");
 	}
 	/** …and with NVD rows (NVD side). NVD's publication date only fills a CVE that has none. */
 	async function rankNvd(rows) {
@@ -535,6 +563,31 @@ function bind(d) {
 			}
 			return out;
 		},
+		/** Is this package named by a published, non-withdrawn advisory? (its page can then be built from them) */
+		async packageHasAdvisories(pkg) {
+			return !!(await d.get(`SELECT 1 AS x FROM advisory_package ap JOIN assets a ON a.type = 'advisory' AND a.key = ap.advisory AND a.published = 1
+				WHERE ap.package = ? LIMIT 1`, [pkg]));
+		},
+		/** Package keys → Map(key → Set(versions)) for the PUBLISHED registry packages among them. */
+		async versionsOf(keys) {
+			const out = new Map();
+			for (let i = 0; i < keys.length; i += CHUNK) {
+				const part = keys.slice(i, i + CHUNK);
+				for (const r of await d.all(`SELECT key, data FROM assets WHERE type = 'package' AND published = 1 AND key IN (${part.map(() => "?").join(", ")})`, part))
+					out.set(r.key, new Set((JSON.parse(r.data).versions || []).map(v => v.version)));
+			}
+			return out;
+		},
+		/** One product page: its display name and its published CVEs, newest first. → null when unknown. */
+		async product(key, limit = 200) {
+			const names = await d.all("SELECT vendor, product, COUNT(*) AS n FROM cve_product WHERE product_key = ? GROUP BY vendor, product ORDER BY n DESC LIMIT 1", [key]);
+			if (!names.length) return null;
+			const total = Number((await d.get("SELECT COUNT(*) AS n FROM cve_product WHERE product_key = ?", [key])).n);
+			const ids = (await d.all(`SELECT p.cve FROM cve_product p LEFT JOIN cve_rank r ON r.cve = p.cve WHERE p.product_key = ?
+				ORDER BY r.published DESC, p.cve DESC LIMIT ?`, [key, limit])).map(r => r.cve);
+			const pub = new Set(await api.publishedCves(ids));
+			return { key, vendor: names[0].vendor, product: names[0].product, total, rows: await api.cveRows(ids.filter(c => pub.has(c))) };
+		},
 		async publishedPackages(keys) {
 			if (!keys.length) return [];
 			return (await d.all(`SELECT key FROM assets WHERE type = 'package' AND published = 1 AND key IN (${keys.map(() => "?").join(", ")})`, keys)).map(r => r.key);
@@ -663,7 +716,7 @@ function bind(d) {
  * (upserts) and marked done only at the end — an interrupted backfill simply runs again.
  */
 async function backfillRank(driver, api, log = () => {}) {
-	const flag = "cve_rank_v1";
+	const flag = "cve_rank_v2";            // v2: + cve_product
 	if (await driver.get("SELECT value FROM settings WHERE name = ?", [flag])) return;
 	const t0 = Date.now();
 	let batch = [], n = 0;
@@ -679,7 +732,7 @@ async function backfillRank(driver, api, log = () => {}) {
 	}
 	await api.rankNvd(batch);
 	await driver.run("INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT (name) DO UPDATE SET value = excluded.value", [flag, String(Date.now())]);
-	if (n) log(`cve_rank backfilled from ${n} CVE records in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+	if (n) log(`cve_rank / cve_product backfilled from ${n} CVE records in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
 }
 
 async function createAssetStore(driver, { log } = {}) {
@@ -691,4 +744,4 @@ async function createAssetStore(driver, { log } = {}) {
 	return api;
 }
 
-module.exports = { createAssetStore, ftsQuery, tsQuery, searchTerms, nvdScore, rankOfCve, SIGNAL_COLUMNS };
+module.exports = { createAssetStore, ftsQuery, tsQuery, searchTerms, nvdScore, rankOfCve, productKey, SIGNAL_COLUMNS };

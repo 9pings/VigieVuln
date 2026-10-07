@@ -178,7 +178,13 @@ Primary first) — is 9.0 or more; the **libraries** most recently hit by one �
 severity, CWE (or the CVE title), fixed versions and how many critical CVEs it has; the highest EPSS probabilities; the
 latest CISA KEV additions. Each CVE row names what is vulnerable: the libraries an OSV/GHSA
 advisory ties to it with their affected versions, else the CNA's own products and versions
-from the CVE record ("fixed in …" when the CNA lists only fixed versions). They
+from the CVE record ("fixed in …" when the CNA lists only fixed versions).
+
+**Links.** Every library name links to its package page — when the registry was never asked
+for it, the page is built from the public advisories that name it (no registry data, no
+upstream request). Every CNA product links to `/product/<vendor>/<product>` (the CVEs that
+name it, newest first, with the versions each CVE gives; `cve_product` table, kept in step
+with the CVE records). A fixed version links to its version page when the registry listed it. They
 read the `cve_rank` table, kept in step by every CVE / NVD write (jobs and dump restores) and
 filled once from the existing data when an older database is opened (402 586 CVEs: 15 s).
 Computed at startup, then memoised 10 minutes.

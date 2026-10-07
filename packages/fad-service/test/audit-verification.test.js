@@ -122,11 +122,11 @@ test("N5 static files: a stable precomputed ETag, 304 on a match", opts, async (
 
 test("N7 the Caddy access log masks detail paths, search text and the Referer", () => {
 	const caddy = fs.readFileSync(path.join(__dirname, "..", "deploy", "docker", "Caddyfile"), "utf8");
-	assert.match(caddy, /regexp "\^\/\(cve\|api\/cve\|pkg\|advisory\/osv\|advisory\/certfr\)\/\[\^\?\]\*" "\/\$\{1\}\/:id"/);
+	assert.match(caddy, /regexp "\^\/\(cve\|api\/cve\|pkg\|product\|advisory\/osv\|advisory\/certfr\)\/\[\^\?\]\*" "\/\$\{1\}\/:id"/);
 	assert.match(caddy, /regexp "\(\[\?&\]\)q=\[\^&\]\*" "\$\{1\}q=-"/);
 	assert.match(caddy, /request>headers>Referer delete/);
 	// The rewrite itself, as Caddy's RE2 applies it to a few real request lines.
-	const rewrite = uri => uri.replace(/^\/(cve|api\/cve|pkg|advisory\/osv|advisory\/certfr)\/[^?]*/, "/$1/:id").replace(/([?&])q=[^&]*/g, "$1q=-");
+	const rewrite = uri => uri.replace(/^\/(cve|api\/cve|pkg|product|advisory\/osv|advisory\/certfr)\/[^?]*/, "/$1/:id").replace(/([?&])q=[^&]*/g, "$1q=-");
 	assert.equal(rewrite("/cve/CVE-2024-31210?lang=fr"), "/cve/:id?lang=fr");
 	assert.equal(rewrite("/advisory/osv/GHSA-xxxx-yyyy-zzzz"), "/advisory/osv/:id");
 	assert.equal(rewrite("/api/search?type=cve&q=secret+words&limit=5"), "/api/search?type=cve&q=-&limit=5");

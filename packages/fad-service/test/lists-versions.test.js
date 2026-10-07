@@ -63,7 +63,8 @@ test("lists: an existing database is backfilled once at open (CVE records + NVD 
 	const { assets, driver } = await open(":memory:");
 	await seedLists(assets);
 	await driver.run("DELETE FROM cve_rank");
-	await driver.run("DELETE FROM settings WHERE name = 'cve_rank_v1'");
+	await driver.run("DELETE FROM cve_product");
+	await driver.run("DELETE FROM settings WHERE name = 'cve_rank_v2'");
 	const { createAssetStore } = require("../lib/assets");
 	const logs = [];
 	const again = await createAssetStore(driver, { log: m => logs.push(m) });
@@ -191,12 +192,12 @@ test("pages: /cves?list=libraries, the versions panel on package and version pag
 	try {
 		const libs = await get("/cves?list=libraries&lang=en");
 		assert.ok(libs.includes("Libraries recently hit by a critical vulnerability"));
-		assert.ok(libs.includes("<code>1.0.0 – &lt; 1.2.0 ; 2.0.0 – 2.1.0</code>"), "the affected versions, short");
+		assert.ok(libs.includes('<code>1.0.0 – &lt; <a href="/pkg/npm/demo?version=1.2.0&amp;lang=en">1.2.0</a> ; 2.0.0 – 2.1.0</code>'), "the affected versions, short, the fix linked");
 		assert.ok(libs.includes('href="/pkg/npm/demo?lang=en"'), "a library with a public page links to it");
 		assert.ok(libs.includes("1.2.0") && libs.includes("≤ 2.1.0, no fix"), "each branch: its fix, or no fix");
 		const home = await get("/?lang=en");
 		assert.ok(home.includes("Libraries recently hit by a critical vulnerability"));
-		assert.match(home, /<b>demo<\/b><\/a> <span class="muted">npm<\/span> <code>1\.0\.0 – &lt; 1\.2\.0 ; 2\.0\.0 – 2\.1\.0<\/code>/, "name — versions");
+		assert.match(home, /<b>demo<\/b><\/a> <span class="muted">npm<\/span> <code>1\.0\.0 – &lt; <a href="\/pkg\/npm\/demo\?version=1\.2\.0&amp;lang=en">1\.2\.0<\/a> ; 2\.0\.0 – 2\.1\.0<\/code>/, "name — versions");
 
 		const pkg = await get("/pkg/npm/demo?lang=en");
 		assert.match(pkg, /<div class="pkg-layout"><div class="pkg-main"><h1>demo<\/h1>/);
@@ -230,7 +231,57 @@ test("pages: CVE lists show what is vulnerable — the library and its versions,
 		const html = await (await fetch(`http://127.0.0.1:${server.address().port}/cves?list=exploited&lang=en`)).text();
 		assert.ok(html.includes("Library / product — vulnerable versions"));
 		assert.match(html, /<b>evil-lib<\/b><\/a> <span class="muted">npm<\/span> <code>2\.0\.0 – &lt; 2\.4\.1<\/code>/);
-		assert.ok(html.includes("<b>Acme Gateway</b> <code>10.2.0 – &lt; 10.2.9-h1 ; 9.1R18</code>"), "equal bounds read as one version");
-		assert.ok(html.includes("<b>Acme Cloud</b> <code>fixed in 22.2R1</code>"), "\"All\" is not a version");
+		assert.ok(html.includes('<a href="/product/acme/gateway?lang=en"><b>Acme Gateway</b></a> <code>10.2.0 – &lt; 10.2.9-h1 ; 9.1R18</code>'), "equal bounds read as one version");
+		assert.ok(html.includes('<a href="/product/acme/cloud?lang=en"><b>Acme Cloud</b></a> <code>fixed in 22.2R1</code>'), "\"All\" is not a version");
+	} finally { await new Promise(ok => server.close(ok)); }
+});
+
+test("links: products and libraries go to their pages, fixed versions to their version pages", opts, async () => {
+	const { createServiceServer } = require("../lib/server");
+	const { packageAsset } = require("../lib/registry");
+	const s = await open(":memory:");
+	await seedLists(s.assets);
+	await s.assets.upsert(packageAsset(PKG, true));                                    // demo: registry-known (2.1.0 … 1.0.0)
+	await s.assets.upsertMany([{ type: "advisory", key: "osv:GHSA-links", title: "x", sources: [], data: { id: "GHSA-links", affected: [
+		{ ecosystem: "npm", name: "demo", ranges: [{ type: "SEMVER", events: [{ introduced: "0" }, { fixed: "1.2.0" }] }] },
+		{ ecosystem: "npm", name: "ghost", ranges: [{ type: "SEMVER", events: [{ introduced: "0" }, { fixed: "3.0.0" }] }] }] } }]);
+	await s.assets.linkMany([{ advisory: "osv:GHSA-links", cves: ["CVE-2026-0006"], packages: ["pkg:npm/demo", "pkg:npm/ghost"] }]);
+	await s.assets.upsert({ ...cve("CVE-2026-0001", { score: 9.8, published: "2026-03-01T10:00:00Z" }), data: { id: "CVE-2026-0001", state: "PUBLISHED",
+		published: "2026-03-01T10:00:00Z", score: 9.8, affected: [{ vendor: "Palo Alto Networks", product: "PAN-OS",
+			versions: [{ version: "10.2.0", status: "affected", lessThan: "10.2.9-h1" }] }] } });
+	await s.assets.upsert({ ...cve("CVE-2026-0008", { score: 7.0, published: "2026-03-02T10:00:00Z" }), data: { id: "CVE-2026-0008", state: "PUBLISHED",
+		published: "2026-03-02T10:00:00Z", score: 7.0, affected: [{ vendor: "Palo Alto Networks", product: "PAN-OS", versions: [{ version: "11.0.0", status: "affected", lessThan: "11.0.4" }] }] } });
+	const server = createServiceServer({ store: s.store, tokens: s.tokens, assets: s.assets });
+	await new Promise(ok => server.listen(0, "127.0.0.1", ok));
+	const base = `http://127.0.0.1:${server.address().port}`;
+	const get = async p => { const r = await fetch(base + p); return { status: r.status, body: await r.text() }; };
+	try {
+		const list = (await get("/cves?list=exploited&lang=en")).body;
+		assert.ok(list.includes('<a href="/product/palo-alto-networks/pan-os?lang=en"><b>Palo Alto Networks PAN-OS</b></a>'), "a CNA product links to its page");
+		assert.ok(list.includes('<a href="/pkg/npm/demo?lang=en"><b>demo</b></a>'));
+		assert.ok(list.includes('&lt; <a href="/pkg/npm/demo?version=1.2.0&amp;lang=en">1.2.0</a>'), "a fixed version the registry listed links to its page");
+
+		const product = await get("/product/palo-alto-networks/pan-os?lang=en");
+		assert.equal(product.status, 200);
+		assert.ok(product.body.includes("<h1>Palo Alto Networks PAN-OS</h1>"));
+		assert.ok(product.body.includes("2 published vulnerabilities name this product."));
+		assert.ok(product.body.indexOf("CVE-2026-0008") < product.body.indexOf("CVE-2026-0001"), "newest first");
+		assert.ok(product.body.includes("<code>11.0.0 – &lt; 11.0.4</code>"), "the versions this CVE gives for this product");
+		assert.equal((await get("/product/palo-alto-networks/nope")).status, 404);
+		assert.equal((await get("/product/a/b/c")).status, 404);
+		assert.equal((await get("/product/../pan-os")).status, 404);
+		assert.equal((await get("/product/x%3Cy/pan-os")).status, 404);
+
+		const cvePage = (await get("/cve/CVE-2026-0001?lang=en")).body;
+		assert.ok(cvePage.includes('href="/product/palo-alto-networks/pan-os?lang=en"'), "the CVE page's affected products link too");
+
+		// ghost: never fetched from npm — its page is built from the advisories; 3.0.0 is not a known version: no link.
+		const ghost = await get("/pkg/npm/ghost?lang=en");
+		assert.equal(ghost.status, 200);
+		assert.ok(ghost.body.includes("Built from the advisories that name this package"));
+		assert.ok(ghost.body.includes("GHSA-links"));
+		assert.ok(ghost.body.includes("&lt; 3.0.0") && !ghost.body.includes("version=3.0.0"));
+		assert.equal((await get("/pkg/npm/ghost?version=3.0.0")).status, 404, "no version page without registry versions");
+		assert.equal((await get("/pkg/npm/nobody-names-me")).status, 404);
 	} finally { await new Promise(ok => server.close(ok)); }
 });
