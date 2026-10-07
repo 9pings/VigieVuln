@@ -18,6 +18,7 @@ Code-level orientation for contributors and Claude Code sessions on this repo.
      NAMES travel, like the registry pass; `-d packagist-audit` disables),
    - NIST NVD (enrichment: CVSS, CPE configurations, references),
    - EPSS (FIRST.org exploit-prediction percentile) + CISA KEV (known-exploited catalogue) — prioritisation signals,
+   - European references (`lib/eu-refs.js`): ENISA EUVD id + exploited flag (`lib/euvd.js`, bulk mapping dump + exploited catalogue — REPORTED, never moves the priority band or the `kev` gate), GCVE id (`lib/gcve.js`, computed: CVE-Y-N = GCVE-0-Y-N, no request) and the CERT-FR advisories citing the CVE (`lib/certfr.js`, local incremental CVE → advisory index, entry-map cache so `--import-cache` merges it). No CVE id of the project is sent. `-d euvd,certfr`,
    - retire.js (vendored JS signatures),
    - optionally Snyk (`--snyk`).
 4. Cross-checks every match's NVD CPE configurations against the dep version (`lib/cpe.js`) to filter false positives, then computes a **composite priority** per match (`lib/priority.js`): KEV (exploited) > EPSS-weighted CVSS, exposed as a band + score and used to sort the report.
@@ -97,6 +98,10 @@ lib/charts.js                Pure dependency-free SVG **donut** charts for the r
 lib/cpe.js                   CPE 2.3 parsing + NVD configurations evaluator (post-match refinement).
 lib/epss.js                  EPSS (FIRST.org) percentile/score enrichment of matched CVEs (24h cache).
 lib/kev.js                   CISA KEV catalogue membership enrichment (24h cache).
+lib/euvd.js                  ENISA EUVD: CVE → EUVD id (mapping CSV dump) + ENISA exploited catalogue (paged search). Bulk only, 24h cache, stale served on failure/offline. → cve.euvd = {id, exploitedSince}.
+lib/certfr.js                CERT-FR (ANSSI): local CVE → advisory index built from the avis/alerte listings + one JSON per new/revised advisory (revision date in the provider key; 404 recorded empty). → cve.certfr = [{ref, kind, title}].
+lib/gcve.js                  GCVE id of a CVE (GNA 0 namespace) — pure, no network.
+lib/eu-refs.js               europeanReferences(cve): EUVD → GCVE → CERT-FR links, shared by the report and every export.
 lib/priority.js              Composite priority (KEV > EPSS-weighted CVSS) → band + score + sortKey. Pure.
 lib/license-policy.js        SPDX normalization + copyleft/proprietary classification (data/license-policy.json).
 lib/maven-license.js         Network-free Maven license detection from cached POMs (transitive.js cache).
@@ -236,6 +241,8 @@ Test fixtures live in `test/fixtures/`:
 | NVD CVE record | `~/.fad-checker/nvd-cache/<cveId>.json` | 7 d (online; **offline ignores the TTL + schema check** and serves the warmed body so air-gapped enrichment incl. CWEs is never dropped) |
 | EPSS scores | `~/.fad-checker/epss-cache.json` | 24 h |
 | CISA KEV catalogue | `~/.fad-checker/kev-cache.json` | 24 h |
+| ENISA EUVD (id mapping + exploited) | `~/.fad-checker/euvd-cache.json` | 24 h (stale snapshot served on failure / offline) |
+| CERT-FR advisory index | `~/.fad-checker/certfr-cache.json` | listings 24 h; an advisory is re-read only when its revision date changes |
 | endoflife.date cycles | `~/.fad-checker/eol-cache.json` | 7 d **per product** (`fetchedAt[product]`; stamped only by a successful fetch — an offline run never makes the cache look fresh). Online: a stale entry is refetched, a failed refetch keeps serving the stale list, an `{error}` entry is always retried. Offline: served regardless of age, never blocks. |
 | Maven Central latest | `~/.fad-checker/version-cache.json` | 24 h |
 | npm registry (deprecation + latest) | `~/.fad-checker/npm-registry-cache.json` | 24 h |

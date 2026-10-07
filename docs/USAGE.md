@@ -126,6 +126,8 @@ Each data source can be disabled independently:
 | `--no-nvd` | Skip NVD enrichment (no full CVSS, no CPE refinement) |
 | `--no-epss` | Skip EPSS (FIRST.org) exploit-prediction enrichment |
 | `--no-kev` | Skip CISA KEV (known-exploited) enrichment |
+| `--no-euvd` | Skip ENISA EUVD (EUVD id + ENISA exploited flag). Two bulk reads (mapping dump + exploited catalogue), 24h cache, no CVE id sent. The exploited flag is reported in the detail panel and every export; it does not move the priority band or the `--fail-on kev` gate |
+| `--no-certfr` | Skip CERT-FR (ANSSI) advisory references. fad keeps a local CVE → advisory index: the first run reads every advisory once (~18 000 small JSON, ~75 s), later runs only the new or revised ones; no CVE id sent. GCVE ids need no source (`GCVE-0-…` is the CVE id by the GCVE rules) |
 | `--licenses` | Run license detection + the copyleft-policy chapter (**off by default**; legacy `--no-licenses` is a no-op) |
 | `--no-retire` | Skip retire.js vendored-JS scan |
 | `--no-vendored-js-inventory` | Keep only **vulnerable** vendored JS (the CVE chapter); skip the full **inventory** of all identified standalone JS libs (under unmanaged components). The inventory is a cyber-hygiene constat — unmanaged third-party JS regardless of CVEs — on by default. |

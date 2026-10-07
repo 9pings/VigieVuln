@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- European references for every matched CVE: the ENISA **EUVD** id and ENISA's exploited
+  flag (`lib/euvd.js` — the mapping dump + the exploited catalogue, bulk, 24h cache), the
+  **GCVE** id (`GCVE-0-…`, computed — the GCVE rules map every CVE to GNA 0) and the
+  **CERT-FR** advisories and alerts that cite it (`lib/certfr.js` — a local, incremental
+  CVE → advisory index; the first run reads ~18 000 advisories once, ~75 s). No CVE id of
+  the project is ever sent. Shown in the CVE detail panel (CERT-FR titles as written) and
+  carried by every export: findings JSON (`euvd`, `euvdExploited`, `euvdExploitedSince`,
+  `gcve`, `certfr`), CycloneDX `vulnerabilities[].references`, CSAF `references`, SARIF
+  `europeanReferences` + `enisa-exploited` tag. ENISA's exploited flag is reported, not
+  gated: the priority band and `--fail-on kev` stay on CISA KEV. `--no-euvd` / `--no-certfr`
+  (`-d euvd,certfr`); both are cached for `--offline` and travel in `--export-cache`.
 - EOL chapter: each row is click-to-expand. The detail panel lists every descriptor
   that declares the framework (or each component of a grouped framework) down to
   `file:line` plus the declaration itself; a transitive finding shows every chain

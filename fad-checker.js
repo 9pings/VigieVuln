@@ -377,6 +377,8 @@ program
 	.option("--no-epss", "skip EPSS (FIRST.org exploit-prediction) enrichment")
 	.option("--no-eol", "skip the end-of-life check (endoflife.date)")
 	.option("--no-kev", "skip CISA KEV (known-exploited) enrichment")
+	.option("--no-euvd", "skip ENISA EUVD enrichment (EUVD id + ENISA exploited catalogue)")
+	.option("--no-certfr", "skip CERT-FR (ANSSI) advisory references")
 	// Output family: each --report-<type> takes an OPTIONAL path (omit → default name
 	// under --report-output). With NO --report-* flag at all, HTML + findings JSON are written
 	// by default. --no-report writes nothing (scan + gate only).
@@ -472,8 +474,8 @@ program
 // The -d / -a vocabularies, laid out once under the options instead of wrapped inside two
 // option descriptions where they cost fifteen lines.
 program.addHelpText("after", `
-  -d  eol nvd nvd-mirror osv packagist-audit epss kev retire transitive all-libs checksums osv-db report
-      vendored-js-inventory default-excludes
+  -d  eol nvd nvd-mirror osv packagist-audit epss kev euvd certfr retire transitive all-libs checksums
+      osv-db report vendored-js-inventory default-excludes
       maven gradle npm yarn nuget composer pypi go ruby js jars binaries certs
   -a  licenses eol-support typosquat snyk osv-db nvd-cpe-match cve-refresh
       cve-offline osv-db-refresh retire-refresh
@@ -1376,6 +1378,8 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const willNvd = !!options.nvd;
 	const willEpss = !!options.epss;
 	const willKev = !!options.kev;
+	const willEuvd = options.euvd !== false;
+	const willCertFr = options.certfr !== false;
 	const willEol = options.eol !== false;
 	const willLicenses = !!options.licenses;
 	const willRetire = !!options.retire;
@@ -1388,7 +1392,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// so it adds no progress step of its own.
 	const totalSteps = [willBom, willReactor, willTransitive, willCve, willEol, willEol && composerPlatforms.length > 0,
 		willOutdated, /*npm reg*/ true, ...otherRegistryIds.map(() => true), willOsv, willPackagistAudit, willOsvDb,
-		willNvd, willEpss, willKev, willRetire, willCerts, willBinaryId].filter(Boolean).length;
+		willNvd, willEpss, willKev, willEuvd, willCertFr, willRetire, willCerts, willBinaryId].filter(Boolean).length;
 	const progress = new ui.Progress(totalSteps, { onStepEnd: abortIfDegraded });
 
 	// The external import-BOM + <parent> managed table, kept for the transitive pass: Maven
@@ -1732,6 +1736,39 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				await enrichKev(cveMatches, { verbose, offline });
 				const kevd = cveMatches.filter(m => m.cve?.kev).length;
 				st.done(`${kevd} known-exploited`);
+			} catch (err) { st.fail(err.message); }
+		}
+	}
+
+	// 4f-bis. European references — GCVE id (defined by the GCVE rules, no request), the
+	// ENISA EUVD id + exploited flag, and the CERT-FR advisories citing the CVE. All three
+	// are bulk/incremental reads: no CVE id of the project is sent anywhere.
+	if (cveMatches.length) {
+		try { require("./lib/gcve").enrichGcve(cveMatches); }
+		catch (err) { ui.warn(`GCVE ids skipped: ${err.message}`); }
+	}
+	if (willEuvd) {
+		const st = progress.start("ENISA EUVD");
+		if (!cveMatches.length) { st.skip("no CVE"); }
+		else {
+			try {
+				const { enrichEuvd } = require("./lib/euvd");
+				await enrichEuvd(cveMatches, { verbose, offline });
+				const ids = new Set(cveMatches.filter(m => m.cve?.euvd?.id).map(m => m.cve.id)).size;
+				const exploited = new Set(cveMatches.filter(m => m.cve?.euvd?.exploitedSince != null).map(m => m.cve.id)).size;
+				st.done(`${ids} EUVD id(s) · ${exploited} exploited per ENISA`);
+			} catch (err) { st.fail(err.message); }
+		}
+	}
+	if (willCertFr) {
+		const st = progress.start("CERT-FR advisories");
+		if (!cveMatches.length) { st.skip("no CVE"); }
+		else {
+			try {
+				const { enrichCertFr } = require("./lib/certfr");
+				await enrichCertFr(cveMatches, { verbose, offline, onProgress: (p, t) => st.tick(p, t) });
+				const cited = new Set(cveMatches.filter(m => m.cve?.certfr?.length).map(m => m.cve.id)).size;
+				st.done(`${cited} CVE(s) cited by CERT-FR`);
 			} catch (err) { st.fail(err.message); }
 		}
 	}

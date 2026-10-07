@@ -30,6 +30,8 @@ const cve = (id, o = {}) => ({
   fixVersion: "2.17.1", published: "2021-12-10", modified: "2022-01-02", cwes: ["CWE-502", "CWE-79"],
   cvssVector: "CVSS:3.1/AV:N", cvssVersion: "CVSS 3.1", epssScore: 0.97, epssPercentile: 0.999,
   kev: true, kevDateAdded: "2021-12-10", kevDueDate: "2021-12-24", kevRansomware: true, ghsa: "GHSA-jfh8-c2jp-5v3q",
+  gcve: "GCVE-0-2021-44228", euvd: { id: "EUVD-2021-34768", exploitedSince: "2021-12-10" },
+  certfr: [{ ref: "CERTFR-2021-ALE-022", kind: "alerte", title: "EVIDENCE_certfr_title" }],
   aliases: ["GHSA-jfh8-c2jp-5v3q", "CVE-2021-45046"], cpes: ["cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*"],
   nvdRefs: [{ url: "https://github.com/x/y/commit/abc", tags: ["Patch"] }, { url: "https://lists.apache.org/x", tags: ["Mailing List"] }],
   osvRefs: [{ url: "https://osv.dev/x", type: "ADVISORY" }],
