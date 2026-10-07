@@ -1,19 +1,21 @@
 :root {
 	--bg: #fff; --fg: #202e3e; --muted: #526174; --line: #ccd4de; --soft: #f2f5f8;
-	--accent: #234eb1; --link: #234eb1; --control: #243e60; --control-text: #fff;
+	--accent: #234eb1; --link: #34537a; --control: #243e60; --control-text: #fff;
 	--crit: #a32220; --high: #a03912; --med: #805400; --low: #326329; --none: #526174;
 	color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
 	:root { --bg: #111923; --fg: #e4eaf1; --muted: #a8b6c7; --line: #425268; --soft: #1b2736;
-		--accent: #91b6ff; --link: #91b6ff; --control: #c6d9f4; --control-text: #152335;
+		--accent: #91b6ff; --link: #b4c8e4; --control: #c6d9f4; --control-text: #152335;
 		--crit: #ffaaa4; --high: #ffc18b; --med: #f0d076; --low: #a6d59b; --none: #a8b6c7; }
 }
 * { box-sizing: border-box; }
 html { scroll-padding-top: 1rem; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif; overflow-wrap: anywhere; }
-a { color: var(--link); text-underline-offset: .2em; text-decoration-thickness: 1px; }
-a:hover { text-decoration-thickness: 2px; }
+/* Links: bold dark grey-blue, not underlined — the underline comes back on hover and on
+   keyboard focus, so a link is still told apart without relying on colour alone. */
+a { color: var(--link); font-weight: 650; text-decoration: none; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+a:hover, a:focus-visible { text-decoration: underline; }
 :focus-visible { outline: 3px solid var(--fg); outline-offset: 4px; }
 header, main, footer { max-width: 1080px; margin: 0 auto; padding: 24px 32px; min-width: 0; }
 .site-header { display: flex; gap: 16px 28px; align-items: center; flex-wrap: wrap; border-top: 4px solid var(--accent); border-bottom: 1px solid var(--line); }
