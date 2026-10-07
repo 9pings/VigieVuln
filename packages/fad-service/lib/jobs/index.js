@@ -20,11 +20,12 @@ const JOBS = {
 	euvd: { every: 24 * HOUR, run: (...a) => require("./signals").euvd(...a), label: "ENISA EUVD" },
 	certfr: { every: HOUR, run: (...a) => require("./certfr").run(...a), label: "CERT-FR (ANSSI)" },
 	nvd: { every: 6 * HOUR, run: (...a) => require("./nvd").run(...a), label: "NVD (fkie-cad mirror)" },
-	osv: { every: HOUR, run: (...a) => require("./osv").run(...a), label: "OSV.dev" },
+	osv: { every: HOUR, run: (ctx) => require("./osv").run({ ...ctx, ...(ctx.options.osvEcosystems ? { ecosystems: ctx.options.osvEcosystems } : {}) }), label: "OSV.dev" },
+	maintenance: { every: 24 * HOUR, run: (...a) => require("./maintenance").run(...a), label: "Database maintenance" },
 };
 const LEASE_MS = 6 * HOUR;
 
-function createJobRunner({ assets, fetcher = globalThis.fetch, log = () => {}, owner = `${os.hostname()}:${process.pid}` } = {}) {
+function createJobRunner({ assets, fetcher = globalThis.fetch, log = () => {}, owner = `${os.hostname()}:${process.pid}`, jobOptions = {} } = {}) {
 	const db = assets.db;
 	const q = {
 		ensure: db.prepare("INSERT OR IGNORE INTO job_runs (job) VALUES (?)"),
@@ -45,10 +46,11 @@ function createJobRunner({ assets, fetcher = globalThis.fetch, log = () => {}, o
 		const state = JSON.parse(q.state.get(name)?.state || "{}");
 		const setState = next => q.setState.run(JSON.stringify(next), name);
 		let status = "ok", detail = "";
-		try { detail = String(await job.run({ assets, fetcher, log, state, setState }) || ""); }
+		const t0 = Date.now();
+		try { detail = String(await job.run({ assets, fetcher, log, state, setState, options: jobOptions }) || ""); }
 		catch (error) { status = "error"; detail = String(error.message || error); }
 		q.finish.run(Date.now(), status, detail.slice(0, 500), name, owner);
-		log(`job ${name}: ${status} ${detail}`);
+		log(`job ${name}: ${status} ${detail} (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 		return { ran: true, status, detail };
 	}
 

@@ -1,0 +1,23 @@
+# TLS is automatic (Let's Encrypt / ZeroSSL). Caddy appends the client address to
+# X-Forwarded-For, which fad-service reads with --trust-proxy (last entry only).
+{$FAD_DOMAIN} {
+	encode zstd gzip
+
+	# Never expose the metrics port or the admin API publicly.
+	@admin path /admin/*
+	respond @admin 404
+
+	reverse_proxy web:8322 {
+		lb_policy least_conn
+		health_uri /health
+		health_interval 10s
+		fail_duration 30s
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 50MiB
+			roll_keep 10
+		}
+	}
+}

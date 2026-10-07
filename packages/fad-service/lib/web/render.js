@@ -20,20 +20,29 @@ const badge = (sev, score) => {
 	return s || score != null ? `<span class="badge sev-${s}">${esc(s || "?")}${score != null ? " " + esc(Number(score).toFixed(1)) : ""}</span>` : "";
 };
 
-function layout({ t, locale, title, body, q = "", path = "/" }) {
+const DEFAULT_NAME = "fad · vulnerabilities";
+
+function layout({ t, locale, title, body, q = "", path = "/", site = {} }) {
+	const brand = site.brand || {};
+	const name = brand.name || DEFAULT_NAME;
 	const other = locale === "fr" ? "en" : "fr";
 	const sep = path.includes("?") ? "&" : "?";
+	const canonical = brand.baseUrl ? `<link rel="canonical" href="${esc(brand.baseUrl.replace(/\/$/, "") + path)}">` : "";
+	const contact = safeUrl(brand.contact) || (/^mailto:[^\s"<>]+$/i.test(String(brand.contact || "")) ? brand.contact : null);
 	return `<!doctype html>
 <html lang="${locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)} · fad-service</title>
+<title>${esc(title)} · ${esc(name)}</title>
+${canonical}
 <link rel="stylesheet" href="/static/site.css">
+${brand.accent ? `<link rel="stylesheet" href="/static/brand.css">` : ""}
+${site.analyticsHead || ""}
 </head>
 <body>
 <header>
-<a class="brand" href="/?lang=${locale}">fad · vulnerabilities</a>
+<a class="brand" href="/?lang=${locale}">${brand.hasLogo ? `<img src="/static/logo" alt="" height="28"> ` : ""}${esc(name)}</a>
 <nav><a href="/sources?lang=${locale}">${t("Data sources")}</a><a href="/legal?lang=${locale}">${t("Legal notice")}</a><a href="${esc(path + sep + "lang=" + other)}" hreflang="${other}">${other.toUpperCase()}</a></nav>
 </header>
 <main>
@@ -44,14 +53,14 @@ function layout({ t, locale, title, body, q = "", path = "/" }) {
 </form>
 ${body}
 </main>
-<footer>${t("Data from the sources listed on each page, under their own licences.")} · <a href="/legal?lang=${locale}">${t("Legal notice")}</a></footer>
+<footer>${brand.footer ? esc(brand.footer) + " · " : ""}${t("Data from the sources listed on each page, under their own licences.")} · <a href="/legal?lang=${locale}">${t("Legal notice")}</a>${contact ? ` · <a href="${esc(contact)}">${t("Contact")}</a>` : ""}</footer>
 </body>
 </html>`;
 }
 
-function home({ t, counts }) {
+function home({ t, counts, site = {} }) {
 	return `<h1>${t("Search CVEs, advisories, packages")}</h1>
-<p class="lead">${t("Vulnerability data hosted in Europe, for fad-checker and for you.")}</p>
+<p class="lead">${site.brand?.tagline ? esc(site.brand.tagline) : t("Vulnerability data hosted in Europe, for fad-checker and for you.")}</p>
 <div class="stats">
 <div><b>${esc((counts.cve || 0).toLocaleString("fr-FR"))}</b>${t("Published vulnerabilities")}</div>
 <div><b>${esc((counts.advisory || 0).toLocaleString("fr-FR"))}</b>${t("Advisories")}</div>
@@ -173,9 +182,19 @@ function sourcesPage({ t, jobs }) {
 }
 
 /** The attributions every source requires. Kept in English and French alike: legal text. */
-function legalPage({ t }) {
+function party(t, label, p) {
+	if (!p || typeof p !== "object") return "";
+	const rows = [["Name", p.name], ["Address", p.address], ["Publication director", p.director], ["Contact", p.contact]].filter(([, v]) => v);
+	return rows.length ? `<h2>${t(label)}</h2><dl class="kv">${rows.map(([k, v]) => `<dt>${t(k)}</dt><dd>${safeUrl(v) ? link(v) : esc(v)}</dd>`).join("")}</dl>` : "";
+}
+
+function legalPage({ t, site = {} }) {
+	const brand = site.brand || {};
 	return `<h1>${t("Legal notice")}</h1>
-<p>fad-service — Apache-2.0. ${t("Data from the sources listed on each page, under their own licences.")}</p>
+${party(t, "Publisher", brand.publisher)}
+${party(t, "Host", brand.host)}
+<h2>${t("Software and data")}</h2>
+<p>${esc(brand.name || DEFAULT_NAME)} — ${link("https://github.com/9pings/fad-checker", "fad-service")} (Apache-2.0). ${t("Data from the sources listed on each page, under their own licences.")}</p>
 <div class="table-wrap"><table><thead><tr><th>${t("Source")}</th><th>${t("Licence")}</th></tr></thead><tbody>
 <tr><td>${link("https://www.cve.org/", "CVE List (CVEProject cvelistV5)")}</td><td>CVE Program Terms of Use — Copyright © 1999–${new Date().getUTCFullYear()}, The MITRE Corporation. CVE and the CVE logo are registered trademarks of The MITRE Corporation. ${link("https://www.cve.org/Legal/TermsOfUse", "Terms of use")}</td></tr>
 <tr><td>${link("https://www.cisa.gov/known-exploited-vulnerabilities-catalog", "CISA KEV")}</td><td>CC0 1.0. No endorsement by CISA is implied.</td></tr>

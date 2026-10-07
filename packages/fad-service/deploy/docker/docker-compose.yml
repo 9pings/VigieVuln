@@ -1,0 +1,60 @@
+# fad-service: Caddy (TLS) → N stateless web instances → one SQLite volume, plus one
+# ingestion worker. Run from this directory:
+#   FAD_DOMAIN=vuln.example.fr docker compose up -d --build
+#   docker compose up -d --scale web=4          # more web instances
+# SQLite mode = one host. Several hosts need the PostgreSQL store (spec §3).
+name: fad-service
+
+x-service: &service
+  build:
+    context: ../../../..
+    dockerfile: packages/fad-service/Dockerfile
+  image: fad-service:latest
+  restart: unless-stopped
+  env_file: [.env]                  # FAD_SERVICE_NVD_KEY, FAD_SERVICE_GITHUB_TOKEN, FAD_SERVICE_METRICS_TOKEN…
+  volumes:
+    - data:/data
+    - ./config.json:/etc/fad-service/config.json:ro
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging:                           # container logs rotated by Docker itself
+    driver: json-file
+    options: { max-size: "50m", max-file: "10" }
+
+services:
+  web:
+    <<: *service
+    command: ["serve", "--config", "/etc/fad-service/config.json", "--host", "0.0.0.0",
+              "--metrics-listen", "0.0.0.0:9464", "--trust-proxy", "--log"]
+    expose: ["8322", "9464"]
+    stop_grace_period: 30s
+
+  worker:
+    <<: *service
+    command: ["worker", "--config", "/etc/fad-service/config.json"]
+    healthcheck: { disable: true }
+    stop_grace_period: 15s
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment: { FAD_DOMAIN: "${FAD_DOMAIN:-localhost}" }
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web]
+
+  # Nightly online backup into the same volume (kept 7 days). Copy /data/backups off-host.
+  backup:
+    <<: *service
+    entrypoint: ["/bin/sh", "-c", "while true; do node /app/packages/fad-service/bin/fad-service.js backup --config /etc/fad-service/config.json --dir /data/backups --keep 7; sleep 86400; done"]
+    healthcheck: { disable: true }
+
+volumes:
+  data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,17 @@
+# /etc/systemd/system/fad-service-backup.service — online SQLite backup (VACUUM INTO), 7 kept.
+# Copy /var/lib/fad-service/backups off-host (restic, rsync, object storage…).
+[Unit]
+Description=fad-service backup
+
+[Service]
+Type=oneshot
+User=fad-service
+Group=fad-service
+EnvironmentFile=-/etc/fad-service/env
+Environment=NODE_NO_WARNINGS=1
+ExecStart=/usr/bin/node /opt/fad-service/packages/fad-service/bin/fad-service.js backup --config /etc/fad-service/config.json --dir /var/lib/fad-service/backups --keep 7
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/fad-service

@@ -2,12 +2,14 @@
 
 The public data service for [fad-checker](../../README.md): the same pull-through
 resource cache as `fad-checker serve-cache`, behind per-client tokens, hosted in Europe.
-Design: `docs/SPEC-fad-service.md`. Status: milestone 3 — `/v1/resource`, tokens, admin
-routes, `--workers`, the vulnerability mirrors (cvelistV5, CISA KEV, EPSS, ENISA EUVD,
-CERT-FR; GCVE ids computed), full-text search and the public pages. NVD (fkie mirror),
-OSV, registries, dumps and PostgreSQL follow.
+Design: `docs/SPEC-fad-service.md` (repository root). **Production: [docs/OPERATIONS.md](docs/OPERATIONS.md)**
+(Docker, systemd, configuration, branding, logs, metrics, analytics, backups).
+Status: milestone 3 — `/v1/resource`, tokens, admin routes, `--workers`, the vulnerability
+mirrors (cvelistV5, NVD via fkie, OSV, CISA KEV, EPSS, ENISA EUVD, CERT-FR; GCVE ids
+computed), full-text search and the public pages. Registries (package metadata), dumps and
+PostgreSQL follow.
 
-Requires Node ≥ 22.13 (built-in `node:sqlite`). No dependency.
+Requires Node ≥ 22.13 (built-in `node:sqlite`), `xz` for the NVD mirror. One dependency (`fflate`).
 
 ```bash
 # one token per client, shown once

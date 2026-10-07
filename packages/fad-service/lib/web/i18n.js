@@ -61,6 +61,13 @@ const FR = {
 	"Versions": "Versions",
 	"Aliases": "Alias",
 	"Withdrawn": "Retiré",
+	"Contact": "Contact",
+	"Publisher": "Éditeur",
+	"Host": "Hébergeur",
+	"Name": "Nom",
+	"Address": "Adresse",
+	"Publication director": "Directeur de la publication",
+	"Software and data": "Logiciel et données",
 	"cve": "CVE",
 	"advisory": "avis",
 };

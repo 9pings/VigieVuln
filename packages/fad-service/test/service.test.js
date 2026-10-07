@@ -146,7 +146,7 @@ test("cli: token add/list/revoke, and serve --workers 2 answers /health from sev
 		assert.match(execFileSync(process.execPath, [BIN, "token", "list", "--db", db], { encoding: "utf8" }), /#1\tclient\tactive/);
 		assert.match(execFileSync(process.execPath, [BIN, "token", "revoke", "1", "--db", db], { encoding: "utf8" }), /revoked/);
 
-		const child = spawn(process.execPath, [BIN, "serve", "--db", db, "--port", "0", "--workers", "2", "--region", "fr"], { stdio: ["ignore", "pipe", "pipe"] });
+		const child = spawn(process.execPath, [BIN, "serve", "--db", db, "--port", "0", "--workers", "2", "--region", "fr", "--metrics-listen", "127.0.0.1:0"], { stdio: ["ignore", "pipe", "pipe"] });
 		try {
 			const pids = new Set();
 			let port = null, buf = "";
@@ -154,7 +154,7 @@ test("cli: token add/list/revoke, and serve --workers 2 answers /health from sev
 				const timer = setTimeout(() => fail(new Error(`workers did not start: ${buf}`)), 15000);
 				child.stdout.on("data", d => {
 					buf += d;
-					for (const m of buf.matchAll(/listening on http:\/\/127\.0\.0\.1:(\d+) \(pid (\d+)/g)) { port = m[1]; pids.add(m[2]); }
+					for (const m of buf.matchAll(/listening url=http:\/\/127\.0\.0\.1:(\d+) pid=(\d+)/g)) { port = m[1]; pids.add(m[2]); }
 					if (pids.size >= 2) { clearTimeout(timer); ok(); }
 				});
 			});
