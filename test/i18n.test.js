@@ -226,7 +226,7 @@ const ENGLISH_CHROME = [
 	"Reachability / exploitability in your app.", "These entries were initially matched by name",
 	"Strong copyleft (GPL)", "Every direct dep with at least one CVE matched",
 	"manual triage", "no clean fix declared", "Paste into the root POM", "Or update the direct dependencies",
-	"Private / internal packages", "Manifests without a lockfile", "ranges / no lockfile",
+	"Possibly private / internal packages", "Manifests without a lockfile", "ranges / no lockfile",
 	"Overview charts", "CWE — direct vulns", "Most vulnerable components", "Fix priority",
 	"not warmed", "ecosystems", "Vulns",
 ];

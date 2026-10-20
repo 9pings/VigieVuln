@@ -28,6 +28,23 @@ test("authHeader returns Basic <base64>", () => {
 	assert.equal(authHeader(null), null);
 });
 
+test("Maven Bearer tokens survive configuration and are used by preflight and artifact requests only on their own repo", async () => {
+	const { reachableRepos } = require("../lib/maven-repo");
+	const repos = buildRepoList([{ name: "private", url: "https://private.invalid/", token: "test-token", auth: "user:password" }], [], { mirrors: false });
+	assert.equal(repos[0].token, "test-token");
+	const calls = [];
+	const fetcher = async (url, init) => {
+		calls.push({ url, authorization: init.headers.Authorization });
+		return { ok: false, status: 404 };
+	};
+	await reachableRepos(repos, { fetcher });
+	await tryRepos(repos, "g/a/maven-metadata.xml", { fetcher });
+	assert.equal(calls.length, 4);
+	for (const call of calls) {
+		assert.equal(call.authorization, call.url.startsWith("https://private.invalid/") ? "Bearer test-token" : undefined);
+	}
+});
+
 test("buildRepoList puts user repos first, then Central ahead of its mirrors, dedupes by URL, normalises trailing slash", () => {
 	const list = buildRepoList(
 		[

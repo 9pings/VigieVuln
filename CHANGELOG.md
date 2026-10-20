@@ -112,6 +112,43 @@ manager's documented semantics, and locked by a test.
   The Maven, NuGet and Go providers now encode every path segment of the upstream URL (a
   `?`, `#` or `%2e%2e` in a client value can no longer reshape the upstream path or query).
 
+## [2.7.4] - 2026-10-20
+
+### Added
+- Reproducible Docker integration check for the complete descriptor/cache transfer
+  cycle, with fresh offline containers, transitive findings, all report formats,
+  expired KEV evidence and zero attempted network calls.
+
+### Fixed
+- Maven presence checks only classify a coordinate as absent when every configured
+  repository answers 404/410. Network/authentication errors, throttling, skipped
+  mirrors and partial preflight reachability remain unknown instead of poisoning
+  the cache with false "private package" verdicts.
+- Legacy negative Maven presence entries are discarded automatically, including
+  after cache imports. New negative entries carry their own evidence, timestamp
+  and repository-scope fingerprint; positive legacy entries remain usable offline.
+- `--import-anonymized` now warms Maven presence alongside the analysis caches.
+- Registry-absence warnings no longer claim that packages are necessarily private
+  or excluded from CVE matching.
+- OSV batch queries follow per-query pagination and validate complete responses and
+  advisory details before replacing cached package results. Failed/incomplete online
+  queries stop the scan instead of writing false clean results. Offline scans report
+  missing coverage; legacy empty entries must be re-warmed with this version.
+- Anonymized descriptors filter Maven properties to version hints, exclude credential
+  properties and URL/path versions, and retain custom version properties referenced
+  locally. Documentation now explains that private coordinates require review.
+- Offline registry/outdated checks preserve cache dates and never write fresh-looking
+  empty snapshots. Online cache-only reads no longer renew unchanged snapshots.
+- Maven custom repositories retain Bearer tokens for both reachability and artifact
+  requests; Basic authentication remains supported.
+- Offline KEV and binary identity lookups retain expired cached evidence without
+  network requests or timestamp changes. An expired KEV snapshot no longer silently
+  removes exploitation markers or bypasses `--fail-on kev`.
+- Cache tar imports/exports pass archive data through file descriptors, so Windows
+  drive paths, spaces and non-ASCII paths are not interpreted as remote tar hosts.
+- GitHub release notes select the current version's changelog section, falling back
+  to `Unreleased` only when no version-specific notes are available.
+
 ## [2.7.0] - 2026-09-24
 
 ### Fixed

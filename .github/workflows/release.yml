@@ -115,9 +115,14 @@ jobs:
           node -e '
             const fs = require("fs");
             const md = fs.readFileSync("CHANGELOG.md", "utf8");
-            // Everything under [Unreleased] up to the next version heading.
-            const m = md.match(/##\s*\[Unreleased\]\s*([\s\S]*?)(?=\n##\s*\[|$)/);
-            const body = (m && m[1].trim()) || "";
+            // Prefer the shipped version; keep Unreleased as a legacy fallback.
+            const version = require("./package.json").version;
+            const sections = md.split(/^##\s*\[([^\]]+)\][^\n]*$/m);
+            const section = name => {
+              const i = sections.findIndex((value, index) => index % 2 === 1 && value === name);
+              return i < 0 ? "" : sections[i + 1].trim();
+            };
+            const body = section(version) || section("Unreleased");
             fs.writeFileSync("RELEASE_NOTES.md", body || "_See CHANGELOG.md._");
           '
           head -20 RELEASE_NOTES.md

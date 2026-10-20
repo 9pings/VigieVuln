@@ -60,6 +60,66 @@ test("serializeDeps omits the maven hints block when there are none", () => {
 	assert.strictEqual(serializeDeps(sampleMap(), {}).maven, undefined);
 });
 
+test("descriptor properties keep version overrides but not paths, URLs, secrets or unrelated values", () => {
+	const { collectPropertyOverrides, collectVersionPropertyNames } = require("../lib/maven-bom");
+	const store = { byPath: { "pom.xml": {
+		properties: {
+			"log4j2.version": ["2.17.1"], "java.version": ["17"], customPin: ["1.2.3"],
+			"server.password": ["DO_NOT_EXPORT"], "server.token.version": ["123456"],
+			"build.path": ["/home/private/project"], "internal.url": ["https://internal.invalid/"],
+			"bogus.version": ["C:\\private\\secret"], "another.version": ["https://internal.invalid/"],
+			"unexpected.version": ["SECRET_VALUE"], "app.class": ["org.internal.Secret"],
+		},
+		dependencies: { dependency: [{ version: ["${customPin}"] }] },
+	} } };
+	let omitted = 0;
+	const descriptor = serializeDeps(sampleMap(), {
+		propertyOverrides: collectPropertyOverrides(store), versionPropertyNames: collectVersionPropertyNames(store),
+		onOmittedProperties: n => { omitted = n; },
+	});
+	assert.deepStrictEqual(descriptor.maven.propertyOverrides, {
+		"log4j2.version": "2.17.1", "java.version": "17", customPin: "1.2.3",
+	});
+	assert.equal(omitted, 8);
+	assert.ok(!/DO_NOT_EXPORT|SECRET_VALUE|internal.invalid|123456|Secret/.test(JSON.stringify(descriptor)));
+});
+
+test("descriptor preserves standard version ranges and Maven revision hints", () => {
+	const { filterVersionProperties } = require("../lib/deps-descriptor");
+	const properties = { "library.version": "[1.0,2.0)", revision: "1.2.3-SNAPSHOT", changelist: "",
+		mavenVersion: "3.9.9", "version.jackson": "2.17.1" };
+	assert.deepStrictEqual(filterVersionProperties(properties), properties);
+});
+
+test("URL/file versions are omitted while coordinates and other concrete versions survive", () => {
+	const deps = sampleMap(), npm = deps.get("npm:lodash");
+	npm.version = "https://user:SECRET@private.invalid/pkg.tgz";
+	npm.versions = [npm.version, "file:C:\\private\\pkg", "4.17.21"];
+	const descriptor = serializeDeps(deps);
+	const serialized = descriptor.deps.find(d => d.name === "lodash");
+	assert.equal(serialized.version, "4.17.21");
+	assert.deepEqual(serialized.versions, ["4.17.21"]);
+	assert.ok(!/SECRET|private.invalid|C:\\/.test(JSON.stringify(descriptor)));
+});
+
+test("filtered overrides still backfill versions inherited from an external Maven parent", async () => {
+	const { resolveBomManagedVersions, backfillVersions } = require("../lib/maven-bom");
+	const descriptor = serializeDeps(new Map(), {
+		externalParents: [{ groupId: "org.example", artifactId: "parent", version: "1.0" }],
+		propertyOverrides: { "snakeyaml.version": "2.2", "server.password": "SECRET" },
+	});
+	const imported = deserializeDeps(descriptor);
+	const mgmt = await resolveBomManagedVersions(imported.externalParents, {
+		via: "parent", propertyOverrides: imported.propertyOverrides,
+		effectivePom: async (_g, _a, _v, opts) => ({ depMgmt: [
+			{ groupId: "org.yaml", artifactId: "snakeyaml", version: opts.propertyOverrides["snakeyaml.version"] || "1.30" },
+		] }),
+	});
+	const deps = new Map([["org.yaml:snakeyaml", { ecosystem: "maven", groupId: "org.yaml", artifactId: "snakeyaml", version: null, versions: [] }]]);
+	assert.equal(backfillVersions(deps, mgmt), 1);
+	assert.equal(deps.get("org.yaml:snakeyaml").version, "2.2");
+});
+
 test("deserializeDeps round-trips the maven resolution hints, defaulting absent ones to empty", () => {
 	const d = serializeDeps(sampleMap(), {
 		externalParents: [{ groupId: "org.springframework.boot", artifactId: "spring-boot-starter-parent", version: "2.7.18" }],

@@ -494,8 +494,10 @@ tunnel. For the server-side equivalent see `serve-cache --upstream-proxy` above.
 ## Anonymized descriptor (air-gapped audits)
 
 For an offline/confidential system that can't reach the vuln databases, split the scan
-across machines while keeping **only public coordinates** off the secure enclave — no
-paths, URLs, hostnames or usernames. The detailed report is produced **back offline**.
+across machines using dependency coordinates and filtered version hints. Manifest paths
+and registry URLs are removed. Private coordinates cannot be identified offline: exclude
+internal dependencies and review the complete descriptor before transfer. The detailed
+report is produced **back offline**.
 
 ```bash
 # Phase 1 — OFFLINE (audited machine): export the anonymized descriptor, then stop.
@@ -538,10 +540,13 @@ to warm its CVEs). To avoid that, the descriptor also carries a small `maven` hi
 
 Phase 2 replays the parent/BOM backfill from these coords (resolving them from Maven
 Central), so the versions — **including a `<log4j2.version>` you patched**, honored via
-`propertyOverrides` — resolve and their CVE caches warm in **one** exchange. Only public
-coords + version strings travel; a private parent listed here simply doesn't resolve
-online (a harmless no-op). If your enclave policy prefers it, you can still run two
-exchanges instead — the hints just make one suffice.
+`propertyOverrides` — resolve and their CVE caches warm in **one** exchange. Parent/BOM
+coordinates may themselves be private; review them before transfer. Version properties
+are filtered by name and value, excluding credentials, URLs, paths and unrelated build
+settings. Custom property names referenced by local version expressions are retained
+when their values pass the version filter. A custom override used only inside an
+uncached external parent may be omitted: review the exported hints and resolved versions
+in that case. If your enclave policy prefers it, you can still run two exchanges instead.
 
 > **If instead your online/warming machine DOES have the source tree** (the common
 > `--export-cache` workflow, not the anonymized one), none of this applies: the parent
@@ -696,7 +701,8 @@ diff reports/2026-04-01/cve-report.html reports/2026-05-01/cve-report.html
 ### Air-gapped scan (anonymized descriptor)
 
 The robust way: export an anonymized descriptor offline, warm caches online from it,
-re-scan offline. Only public coordinates ever leave the secure machine.
+re-scan offline. Exclude private dependencies and review all exported coordinates and
+version hints before they leave the secure machine.
 
 ```bash
 # OFFLINE (audited machine)

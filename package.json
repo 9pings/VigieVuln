@@ -1,6 +1,6 @@
 {
   "name": "fad-checker",
-  "version": "2.7.3",
+  "version": "2.7.4",
   "description": "One-shot polyglot dependency auditor (10 ecosystems + 9 CMS/Frameworks). No build tools. Real & complete air-gapped mode. Private deps, binaries, certs, EOL, CVE (KEV+EPSS) - Made for professional code audits.",
   "keywords": [
     "sca",
@@ -62,7 +62,10 @@
     "binary-analysis"
   ],
   "license": "Apache-2.0",
-  "repository": "https://github.com/9pings/fad-checker",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/9pings/fad-checker.git"
+  },
   "homepage": "https://github.com/9pings/fad-checker#readme",
   "bugs": "https://github.com/9pings/fad-checker/issues",
   "author": "pp9Ping <pp9Ping@gmail.com>",

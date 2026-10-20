@@ -695,34 +695,38 @@ function assertSafeExtractionTarget() {
 }
 assertSafeExtractionTarget();
 
-// Maven Central presence cache (~/.fad-checker/maven-exists-cache.json) — keyed by
-// "g:a", value true (on a repo) / false (absent → likely private). Persisted so an
-// online warm-up populates it, --export-cache ships it, and an --offline air-gapped
-// run reads it instead of probing the network. Returns:
-//   true  → present on a configured repo
-//   false → absent (likely private)
-//   null  → unknown (offline + not cached, or probe error) — caller must NOT guess
+// Shared by source scans and descriptor imports, so the air-gapped warm-up also
+// refreshes presence. Only per-entry, repository-scoped 404/410 evidence is trusted.
 const MAVEN_EXISTS_CACHE_PATH = require("path").join(require("./lib/outdated").CACHE_DIR, "maven-exists-cache.json");
-const MAVEN_EXISTS_MAX_AGE_MS = 7 * 24 * 3600 * 1000; // 7 days
-
-async function checkMavenLibExist(groupId, artifactId, repos, cache, opts = {}) {
-	const g = core.coord(groupId);
-	const a = core.coord(artifactId);
-	if (!g || !a) return null;
-	const key = `${g}:${a}`;
-	if (cache && Object.prototype.hasOwnProperty.call(cache.entries, key)) return cache.entries[key];
-	if (opts.offline) return null;  // air-gapped + not warmed: honestly unknown, never network
-	const p = `${g.replace(/\./g, "/")}/${a}/maven-metadata.xml`;
-	const { existsInAny } = require("./lib/maven-repo");
-	try {
-		const hit = await existsInAny(repos, p, { userAgent: "fad-checker-existence" });
-		if (cache) cache.entries[key] = !!hit;
-		if (!hit && verbose) console.log(chalk.dim(`   not on any repo: ${g}:${a}`));
-		return !!hit;
-	} catch (err) {
-		if (verbose) console.info(chalk.dim(`   error querying repos: ${g}:${a} — ${err.message}`));
-		return null;  // probe failed → unknown, don't poison the cache or mislabel as private
+async function classifyMavenLibs(ids, repos) {
+	const { loadJsonCache, saveJsonCache } = require("./lib/outdated");
+	const { MAX_AGE_MS, discardUnverifiedEntries, checkMavenLibExist } = require("./lib/maven-presence");
+	const cache = loadJsonCache(MAVEN_EXISTS_CACHE_PATH);
+	const migrated = discardUnverifiedEntries(cache);
+	let probeRepos = repos;
+	if (!options.offline) {
+		probeRepos = await require("./lib/maven-repo").reachableRepos(repos, { timeoutMs: 5000 });
+		if (!probeRepos.length) ui.warn("no Maven repository reachable — existence check skipped, cache reused; pass --offline on an air-gapped box");
 	}
+	const noNetwork = options.offline || !probeRepos.length;
+	const fresh = cache.meta?.fetchedAt && Date.now() - cache.meta.fetchedAt < MAX_AGE_MS;
+	if (!fresh && !noNetwork) cache.entries = {};
+	const limit = pLimit(10);
+	const results = await Promise.all([...new Set(ids)].map(id => limit(async () => {
+		const [g, a] = id.split(":");
+		return { id, found: await checkMavenLibExist(g, a, probeRepos, cache, { offline: noNetwork, configuredRepos: repos }) };
+	})));
+	if (!noNetwork) cache.meta = { fetchedAt: Date.now() };
+	if (!noNetwork || migrated) saveJsonCache(MAVEN_EXISTS_CACHE_PATH, cache);
+	const absent = results.filter(r => r.found === false).map(r => r.id);
+	const unknown = results.filter(r => r.found === null).length;
+	if (absent.length) {
+		ui.warn(`${absent.length} lib(s) absent from all configured Maven repositories (possibly private):`);
+		for (const id of absent.slice(0, 10)) ui.info(chalk.magenta(id));
+		if (absent.length > 10) ui.info(chalk.dim(`…and ${absent.length - 10} more`));
+	}
+	if (unknown) ui.info(chalk.dim(`${unknown} lib(s) with unknown registry presence — warm the presence cache online to classify them`));
+	return absent;
 }
 
 /**
@@ -907,7 +911,11 @@ async function timedPhase(label, fn) {
 		// (still honor an explicit --report-<type> if a user really wants a path-free one).
 		const anyReportRequested = [options.reportHtml, options.reportDoc, options.reportXlsx, options.reportSbom, options.reportCsaf, options.reportJson, options.reportSarif].some(v => v !== undefined);
 		if (!anyReportRequested) options.report = false;
-		await runReportFlow(resolved, { activeIds, runMaven, runNpm, privateLibIds: [], mavenRepos, regMap, collectWarnings: [], walkOpts });
+		const privateLibIds = runMaven && options.allLibs
+			? await classifyMavenLibs([...resolved.values()].filter(d => d.ecosystem === "maven")
+				.map(d => `${d.namespace || d.groupId}:${d.name || d.artifactId}`), mavenRepos)
+			: [];
+		await runReportFlow(resolved, { activeIds, runMaven, runNpm, privateLibIds, mavenRepos, regMap, collectWarnings: [], walkOpts });
 		return;
 	}
 
@@ -1006,7 +1014,7 @@ async function timedPhase(label, fn) {
 	// --- Anonymized phase 1: export a descriptor and exit (no network, no report) ---
 	if (options.exportAnonymized) {
 		const { serializeDeps } = require("./lib/deps-descriptor");
-		const { collectExternalParents, collectImportBoms, collectPropertyOverrides } = require("./lib/maven-bom");
+		const { collectExternalParents, collectImportBoms, collectPropertyOverrides, collectVersionPropertyNames } = require("./lib/maven-bom");
 		const pkgVersion = require("./package.json").version;
 		// Carry the Maven resolution hints so a no-source-tree online warm run (Phase 2) can
 		// resolve the versionless deps' versions and warm their CVE caches in ONE exchange.
@@ -1037,13 +1045,17 @@ async function timedPhase(label, fn) {
 				});
 			} catch { /* the descriptor stays valid without application identities */ }
 		}
-		const descriptor = serializeDeps(resolved, { generator: `fad-checker ${pkgVersion}`, externalParents, importBoms, propertyOverrides, applications });
+		let omittedProperties = 0;
+		const descriptor = serializeDeps(resolved, { generator: `fad-checker ${pkgVersion}`, externalParents, importBoms,
+			propertyOverrides, versionPropertyNames: collectVersionPropertyNames(mavenCtx?.store), applications,
+			onOmittedProperties: n => { omittedProperties = n; } });
 		try { fs.writeFileSync(options.exportAnonymized, JSON.stringify(descriptor, null, 2) + "\n"); }
 		catch (e) { console.error(chalk.red(`❌  could not write --export-anonymized file: ${e.message}`)); process.exit(1); }
 		const ecoSummary = Object.entries(descriptor.summary.byEcosystem).map(([k, v]) => `${k}:${v}`).join(", ");
 		ui.section("Anonymized export");
 		ui.ok(`${chalk.bold(descriptor.summary.total)} dep(s) (${ecoSummary || "none"}) → ${chalk.white(options.exportAnonymized)}`);
-		ui.info(chalk.dim("public coordinates only — no paths/URLs/host info. Review before transfer."));
+		ui.info(chalk.dim("dependency coordinates and filtered version hints — exclude private coordinates and review before transfer."));
+		if (omittedProperties) ui.warn(`${omittedProperties} Maven property value(s) omitted for privacy. Unusual version-property overrides used only by uncached external parents may require review.`);
 		if (!descriptor.summary.total) ui.warn("no dependencies collected — descriptor is empty");
 		// Guide the operator through the remaining two phases (the descriptor file +
 		// this run's --src are filled in so the commands are copy-paste ready).
@@ -1136,45 +1148,13 @@ async function timedPhase(label, fn) {
 		// A coord that's neither cached nor probeable (offline + cold) stays UNKNOWN —
 		// we never fake it as "private", which is what made offline both wrong and slow.
 		if (options.allLibs) {
-			const { loadJsonCache, saveJsonCache } = require("./lib/outdated");
-			const existsCache = loadJsonCache(MAVEN_EXISTS_CACHE_PATH);
-			// Preflight BEFORE touching the cache: one bounded HEAD per repo root. A box that
-			// is offline without --offline (DNS ok, route blackholed) otherwise sits through
-			// 100+ probes × the OS TCP timeout right after "no missing Maven parent POMs".
-			let probeRepos = mavenRepos;
-			if (!options.offline) {
-				const { reachableRepos } = require("./lib/maven-repo");
-				probeRepos = await reachableRepos(mavenRepos, { timeoutMs: 5000 });
-				if (!probeRepos.length) ui.warn(`no Maven repository reachable (${mavenRepos.map(r => r.name).join(", ")}) — existence check skipped, cache reused; pass --offline on an air-gapped box`);
-			}
-			const noNetwork = options.offline || !probeRepos.length;
-			const fresh = existsCache.meta?.fetchedAt && (Date.now() - existsCache.meta.fetchedAt) < MAVEN_EXISTS_MAX_AGE_MS;
-			if (!fresh && !noNetwork) existsCache.entries = {};   // refresh stale probes when online
-			if (!existsCache.entries) existsCache.entries = {};
-
 			const anyMissingLibs = Object.keys(allPomMetadata.anyMissingById)
 				.filter(id => {
 					const parts = id.split(":");
 					if (parts.length === 3) return false;
 					return !(allPomMetadata.byId[id] || allPomMetadata.byId[`${parts[0]}:${parts[1]}`]);
 				});
-			const limit = pLimit(10);
-			const results = await Promise.all(anyMissingLibs.map(id => {
-				const [g, a] = id.split(":");
-				return limit(async () => ({ id, found: await checkMavenLibExist(g, a, probeRepos, existsCache, { offline: noNetwork }) }));
-			}));
-			let unknown = 0;
-			for (const r of results) {
-				if (r.found === false) privateLibIds.push(r.id);
-				else if (r.found === null) unknown++;
-			}
-			if (!noNetwork) { existsCache.meta = { fetchedAt: Date.now() }; saveJsonCache(MAVEN_EXISTS_CACHE_PATH, existsCache); }
-			if (privateLibIds.length) {
-				ui.warn(`${privateLibIds.length} lib(s) absent from Maven Central (likely private):`);
-				for (const id of privateLibIds.slice(0, 10)) ui.info(chalk.magenta(id));
-				if (privateLibIds.length > 10) ui.info(chalk.dim(`…and ${privateLibIds.length - 10} more`));
-			}
-			if (unknown) ui.info(chalk.dim(`${unknown} lib(s) not in the presence cache — run online once (or --export-cache from an online host) to classify them`));
+			privateLibIds = await classifyMavenLibs(anyMissingLibs, mavenRepos);
 		}
 
 		if (deps2Exclude) {
@@ -1614,12 +1594,17 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		const st = progress.start("OSV.dev");
 		try {
 			const { queryOsvForDeps } = require("./lib/osv");
-			const osvMatches = await queryOsvForDeps(resolved, { verbose, offline, onProgress: (p, t) => st.tick(p, t) });
+			const osvMatches = await queryOsvForDeps(resolved, { verbose, offline,
+				onProgress: (p, t) => st.tick(p, t), onWarning: w => scanWarnings.push(w) });
 			const before = cveMatches.length;
 			cveMatches = mergeBySource(cveMatches, osvMatches);
 			st.done(`${osvMatches.length} vulns · +${cveMatches.length - before} after merge`);
 		} catch (err) {
 			st.fail(err.message);
+			if (err.code === "OSV_INCOMPLETE") {
+				console.error(chalk.red(`❌  ${err.message}. Existing package caches were preserved. No report was written.`));
+				process.exit(2);
+			}
 		}
 	}
 
@@ -2201,7 +2186,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				type: "private-libs",
 				count: items.length,
 				items,
-				message: `${items.length} coordinate(s) found in none of the configured registries (${ecos}) — they are private/internal packages. Their CVEs (if any) cannot be detected by fad-checker; if you have an internal CVE feed, audit them separately. Registries that timed out or errored are NOT counted here, only definitive 404/410 answers.`,
+				message: `${items.length} coordinate(s) absent from all configured registries (${ecos}) — possibly private/internal, removed, or incorrect coordinates. This does not exclude them from CVE matching against available data; coverage is not guaranteed. Audit internal packages against your internal feed. Only definitive 404/410 answers from every configured registry count; timeouts and errors leave presence unknown.`,
 			}];
 		})(),
 	];

@@ -163,10 +163,12 @@ Every advisory snapshot a live lane fetches is stamped and cached in `~/.fad-che
 > an air-gapped multi-module project it finds the transitive CVEs they can't.
 
 When the audited system is **offline / confidential** (typical of a regulated or air-gapped audit) it
-can't reach OSV / NVD / Maven Central / npm. Split the work across machines while keeping
-**zero environment information** off the secure enclave: an anonymized descriptor carries
-only **public package coordinates**; no filesystem paths, no registry URLs, no
-hostnames/usernames; and the **detailed report is produced back on the offline machine**.
+can't reach OSV / NVD / Maven Central / npm. Split the work across machines using a
+descriptor of **dependency coordinates and filtered version hints**, with manifest paths
+and registry URLs removed. Offline collection cannot distinguish private package names
+from public ones: exclude internal dependencies and review the descriptor, including
+parent/BOM coordinates, before transfer. The **detailed report is produced back on the
+offline machine**.
 
 The transfer relies on a property of fad-checker's caches: they are keyed by *coordinate*
 or *vuln id*, never by path, so they are **machine-independent**. The online step just
@@ -176,7 +178,7 @@ or *vuln id*, never by path, so they are **machine-independent**. The online ste
 # ── Phase 1; OFFLINE (audited machine): export the anonymized descriptor ──
 # Exclude private/internal packages with -e (offline we can't tell private from public).
 fad-checker -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
-#   → deps.json: public coordinates only. Review it before it leaves the enclave.
+#   → deps.json: dependency coordinates and version hints. Review before transfer.
 
 # ── Phase 2; ONLINE (any machine, no source needed): warm the caches ──
 fad-checker --import-anonymized deps.json     # scans coordinates → OSV/NVD/CVE/registry/EOL + retire signatures
@@ -191,6 +193,27 @@ fad-checker -s ./proj --offline               # re-collect locally (real paths) 
 #   CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds, WP checksums) fetched live by
 #   the online phase ride the same archive and are consumed automatically — no flags.
 ```
+
+Since **2.7.4**, descriptor imports also warm Maven registry presence (unless
+`--no-all-libs` is set). Legacy negative presence entries are discarded automatically:
+older versions could confuse network errors with missing packages. Until verified
+online, those entries remain **unknown**, including after a cache merge. Other warmed
+analysis data is retained.
+
+Version **2.7.4** also stops trusting legacy empty OSV cache entries, because an older
+failed request could have been stored as “no vulnerabilities”. Re-warm and export the
+cache with 2.7.4 to verify these entries; until then offline reports warn about incomplete
+OSV coverage. Existing cached advisory IDs remain usable. Offline KEV and binary identity
+lookups reuse the last available snapshot even after 24 hours, without changing its date.
+
+To reproduce the Docker integration check, run `node scripts/test-offline-docker.cjs`
+with dependencies installed and the `node:22-bookworm` image available locally
+(`FAD_DOCKER_IMAGE` overrides it). It exports a small public Maven fixture offline,
+warms real registries/OSV/NVD/EPSS/KEV online, then imports the archive and scans the
+source in a fresh container with `--network none`. It checks direct/transitive findings,
+all seven report formats, the expired-KEV gate and zero attempted offline network calls.
+No host cache is mounted. The full CVE index, EUVD and CERT-FR downloads are excluded
+from this focused check; logs and reports are retained in the printed temporary directory.
 
 What the descriptor (`fad-deps/1`) contains vs. drops:
 

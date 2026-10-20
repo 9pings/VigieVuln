@@ -4,6 +4,7 @@ The public data service for [fad-checker](../../README.md): the same pull-throug
 resource cache as `fad-checker serve-cache`, behind per-client tokens, hosted in Europe.
 Design: `docs/SPEC-fad-service.md` (repository root). **Production: [docs/OPERATIONS.md](docs/OPERATIONS.md)**
 (Docker, systemd, configuration, branding, logs, metrics, analytics, backups).
+Roadmap: [provenance, update history, backups, continuity and naming](docs/TODO.md).
 Status: milestone 6 — `/v1/resource`, tokens, admin routes, `--workers`, the vulnerability
 mirrors (cvelistV5, NVD via fkie, OSV, CISA KEV, EPSS, ENISA EUVD, CERT-FR; GCVE ids
 computed), package metadata (projections, Maven EU mirror, K-client publication rule, seed),
