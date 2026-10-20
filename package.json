@@ -90,7 +90,7 @@
     "chalk": "^4.1.2",
     "commander": "^14.0.3",
     "fflate": "^0.8.3",
-    "js-yaml": "^4.3.2",
+    "js-yaml": "^5.5.0",
     "minimatch": "^10.2.6",
     "p-limit": "^3.1.0",
     "retire": "^5.7.0",
