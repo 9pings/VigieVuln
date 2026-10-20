@@ -41,7 +41,10 @@ async function linesOf(payload) {
 function keys(dir) {
 	const out = execFileSync(process.execPath, [BIN, "keygen", "--out", dir], { encoding: "utf8" });
 	assert.match(out, /fingerprint [0-9a-f]{4}(:[0-9a-f]{4}){7}/);
-	assert.equal((fs.statSync(path.join(dir, "dump-signing.key")).mode & 0o777).toString(8), "600");
+	// Windows stat modes do not represent owner/group/other access (ACLs).
+	// Key creation, overwrite refusal and signing still run on Windows.
+	if (process.platform !== "win32")
+		assert.equal(fs.statSync(path.join(dir, "dump-signing.key")).mode & 0o777, 0o600);
 	assert.throws(() => execFileSync(process.execPath, [BIN, "keygen", "--out", dir], { stdio: "pipe" }), "never overwrites a key");
 	return { priv: fs.readFileSync(path.join(dir, "dump-signing.key"), "utf8"), pubFile: path.join(dir, "dump-signing.pub.pem") };
 }

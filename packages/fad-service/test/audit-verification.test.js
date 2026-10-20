@@ -200,7 +200,7 @@ test("N11 metrics off loopback without a token: refused at startup", async () =>
 	assert.equal((compose.match(/mem_limit:/g) || []).length, 4, "web, worker, caddy, backup");
 });
 
-test("N12 backups are created 0600; the seed's admin token never touches the database", opts, async () => {
+test("N12 backups are created (0600 on POSIX); the seed's admin token never touches the database", opts, async () => {
 	const dir = tmp();
 	const dbFile = path.join(dir, "svc.db");
 	const s = await open(dbFile);
@@ -208,7 +208,9 @@ test("N12 backups are created 0600; the seed's admin token never touches the dat
 	s.driver.close?.();
 	const out = path.join(dir, "backup.db");
 	execFileSync(process.execPath, [path.join(__dirname, "..", "bin", "fad-service.js"), "backup", "--db", dbFile, "--out", out], { stdio: "pipe" });
-	assert.equal(fs.statSync(out).mode & 0o777, 0o600);
+	// Windows stat modes do not represent owner/group/other access (ACLs).
+	// Keep exercising the backup and token checks on every platform.
+	if (process.platform !== "win32") assert.equal(fs.statSync(out).mode & 0o777, 0o600);
 	assert.ok(fs.statSync(out).size > 0);
 
 	const { withEphemeralToken } = require("../lib/tokens");
