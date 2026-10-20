@@ -143,6 +143,7 @@ test("cli: token add/list/revoke, and serve --workers 2 answers /health from sev
 		assert.match(execFileSync(process.execPath, [BIN, "token", "revoke", "1", "--db", db], { encoding: "utf8" }), /revoked/);
 
 		const child = spawn(process.execPath, [BIN, "serve", "--db", db, "--port", "0", "--workers", "2", "--region", "fr", "--metrics-listen", "127.0.0.1:0"], { stdio: ["ignore", "pipe", "pipe"] });
+		const closed = new Promise(resolve => child.once("close", resolve));
 		try {
 			const pids = new Set();
 			let port = null, buf = "";
@@ -156,6 +157,17 @@ test("cli: token add/list/revoke, and serve --workers 2 answers /health from sev
 			});
 			const r = await fetch(`http://127.0.0.1:${port}/health`);
 			assert.equal((await r.json()).region, "fr");
-		} finally { child.kill("SIGTERM"); }
+		} finally {
+			if (child.exitCode === null && child.signalCode === null) {
+				// Windows kills the primary abruptly: its SIGTERM handler cannot
+				// stop the workers. Terminate this test's entire process tree.
+				if (process.platform === "win32")
+					execFileSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "pipe", timeout: 15000 });
+				else child.kill("SIGTERM");
+			}
+			// kill() only requests termination. Wait for the service and its
+			// inherited pipes to close before unlinking the SQLite database.
+			await closed;
+		}
 	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

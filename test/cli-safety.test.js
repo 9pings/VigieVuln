@@ -81,7 +81,9 @@ test("--force still refuses a symlink target", () => {
 		const target = path.join(root, "target-link");
 		fs.mkdirSync(src); fs.mkdirSync(destination);
 		fs.writeFileSync(path.join(destination, "IMPORTANT.txt"), "precious");
-		fs.symlinkSync(destination, target, "dir");
+		// Directory junctions exercise the same symlink guard on Windows
+		// without requiring administrator rights or Developer Mode.
+		fs.symlinkSync(destination, target, process.platform === "win32" ? "junction" : "dir");
 		const result = run(["-s", src, "-t", target, "--force", "--offline"]);
 		assert.notEqual(result.status, 0);
 		assert.match(result.stderr, /symlink/i);
