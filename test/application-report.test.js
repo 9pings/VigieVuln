@@ -229,7 +229,7 @@ test("application subsections group coverage diagnostics by cause", () => {
 		{ applicationId: "wordpress:wp", capability: "advisories", sourceId: "wordfence-v3", occurrenceId: "wordpress:wp:module:acme",
 			execution: "not-run", result: "indeterminate", expected: 1, executed: 0, diagnostic: "CMS_PRIVATE_COMPONENT" },
 	];
-	// What fad-checker.js passes for the same scan: one structured group per
+	// What vigievuln.js passes for the same scan: one structured group per
 	// (application, capability, source, diagnostic) cause, each listing its components.
 	const warnings = [
 		{ type: "cms-coverage", code: "CMS_IDENTITY_UNVERIFIED", applicationId: "wordpress:wp",

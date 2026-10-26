@@ -26,5 +26,5 @@ rr2.json
 .DS_Store
 Thumbs.db
 
-# The service package ships on its own (packages/fad-service)
+# The service package ships on its own (server)
 packages/

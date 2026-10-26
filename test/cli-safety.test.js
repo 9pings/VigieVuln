@@ -9,7 +9,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 
 function run(args, opts = {}) {
 	return spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8", ...opts });

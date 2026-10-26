@@ -36,7 +36,7 @@ test("effectivePom honors injected propertyOverrides for parent-chain managed ve
 
 // Per-test cache dir so we don't poison ~/.fad-checker/poms-cache during tests
 function freshCache() {
-	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-checker-pom-cache-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-pom-cache-"));
 	return dir;
 }
 

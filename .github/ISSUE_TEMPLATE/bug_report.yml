@@ -21,7 +21,7 @@ body:
     id: command
     attributes:
       label: Command you ran
-      placeholder: "fad-checker -s ./proj --licenses --fail-on high"
+      placeholder: "vigievuln -s ./proj --licenses --fail-on high"
     validations:
       required: true
 
@@ -35,8 +35,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: fad-checker version
-      description: "`fad-checker --version`"
+      label: vigievuln version
+      description: "`vigievuln --version`"
     validations:
       required: true
 
@@ -45,7 +45,7 @@ body:
     attributes:
       label: How did you install it?
       options:
-        - npm install -g fad-checker
+        - npm install -g vigievuln
         - Single binary from dist/ (bun-compiled)
         - From source (git clone)
     validations:

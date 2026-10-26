@@ -26,13 +26,13 @@ TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 
 # 0. optionally warm the cache online before recording
 if [[ "${1:-}" == "--warm" ]]; then
-  node fad-checker.js -s "$FIXTURE" --no-report >/dev/null
+  node vigievuln.js -s "$FIXTURE" --no-report >/dev/null
 fi
 
 # 1. capture real CLI output in a PTY, preserving ANSI colour
 TERM=xterm-256color script -q -e \
   --log-out "$TMP/raw" \
-  -c "stty cols 120 rows 54; node fad-checker.js -s $FIXTURE --offline --no-report" >/dev/null
+  -c "stty cols 120 rows 54; node vigievuln.js -s $FIXTURE --offline --no-report" >/dev/null
 
 # 2. -> asciicast v2 (adds the typed prompt line and the Tokyo Night palette)
 node scripts/asciicast-from-script.js "$TMP/raw" "$TMP/demo.cast" 120 54

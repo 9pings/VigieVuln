@@ -6,7 +6,7 @@
  *   node scripts/adjudicate-gap.js --snyk snyk-test.json
  *
  * Input is a list of (Maven coordinate, version, vulnerability id) another scanner
- * reported and fad-checker did not. Each id is resolved against the live OSV API — its
+ * reported and vigievuln did not. Each id is resolved against the live OSV API — its
  * aliases too, since a `SNYK-*` or `GHSA-*` id may be the only handle you have — and the
  * pair is adjudicated by `lib/gap-adjudicate` using the scanner's own range evaluation.
  *

@@ -1,13 +1,13 @@
-# fad-checker vs other tools — and how it stays build-free
+# vigievuln vs other tools — and how it stays build-free
 
-`fad-checker` is **not** a Trivy/Grype competitor — those are container-and-SBOM supply-chain
+`vigievuln` is **not** a Trivy/Grype competitor — those are container-and-SBOM supply-chain
 scanners. It targets a narrower job: a **zero-setup, multi-ecosystem audit of a source
 checkout, with an audit-ready report and a confidential / air-gapped workflow** — the kind
 of thing a security consultant or a regulated / air-gapped engagement needs.
 
 ## At a glance
 
-| | **fad-checker** | OSV-Scanner | Trivy | Grype + Syft | OWASP DC | Snyk OSS |
+| | **vigievuln** | OSV-Scanner | Trivy | Grype + Syft | OWASP DC | Snyk OSS |
 | --- | --- | --- | --- | --- | --- | --- |
 | Ecosystems it targets¹ | Maven, **Gradle**, npm, Yarn, **pnpm**, Composer, PyPI, NuGet, Go, Ruby + vendored JS + **native binaries** | 13 langs / 28 lockfile & manifest types | 13 langs (+ 23 OS families) | 20+ | Java/.NET (others exp.) | many |
 | Reads lockfiles without `install`/build | ✅ | ✅ | ✅ | ✅ | ⚠️ Java needs Maven Central/build | ⚠️ Maven & pip need a build; npm/Yarn/pnpm/Composer lockfiles read directly |
@@ -52,7 +52,7 @@ all findings: 908 pairs.
 
 | Scanner | Found | Unique to it | Not reported |
 | --- | --- | --- | --- |
-| **fad-checker** | **790 (87.0%)** | 125 | 118 → **0 real** |
+| **vigievuln** | **790 (87.0%)** | 125 | 118 → **0 real** |
 | OSV-Scanner 2.4.0 | 657 (72.4%) | 0 | 251 |
 | Snyk 1.1302.1 (mvn build) | 603 (66.4%) | **117** | 305 |
 | Trivy 0.72.0 | 546 (60.1%) | 0 | 362 |
@@ -60,16 +60,16 @@ all findings: 908 pairs.
 
 **"Not reported" is union arithmetic, not a verified recall gap.** It counts pairs another tool
 produced and this one did not, which is a miss only if the public record actually binds that
-vulnerability to that coordinate and version. For fad-checker that was checked pair by pair
+vulnerability to that coordinate and version. For vigievuln that was checked pair by pair
 against OSV: **0 are recall bugs**, and roughly two thirds are Snyk contradicting the public
 record — wrong artifact, or a version outside every declared affected range
-([method and caveats](BENCHMARK.md#what-fad-checker-misses-and-why), reproduce with
+([method and caveats](BENCHMARK.md#what-vigievuln-misses-and-why), reproduce with
 `scripts/adjudicate-gap.js`). The other rows have **not** been adjudicated, so read their column
 the same way. Snyk and Trivy at full capability both assume a real Maven build has happened; fad
 and OSV-Scanner read the tree without one.
 
 **With no network at all** (every tool under `unshare -rn`, against OSV-Scanner's *online* output
-as the reference, 657 pairs): **fad-checker 657 (100%)**, Grype+Syft 45, Trivy 40 on a cold
+as the reference, 657 pairs): **vigievuln 657 (100%)**, Grype+Syft 45, Trivy 40 on a cold
 `~/.m2`, OSV-Scanner 37 — its transitive resolution is disabled offline, per its own docs:
 > "This feature is enabled by default when scanning, but it can be disabled using the
 > `--no-resolve` flag. It is also disabled in the offline mode."
@@ -108,7 +108,7 @@ Grype **v0.118.0** + Syft **v1.51.1**, OWASP Dependency-Check **v13.0.0**, Snyk 
 **v1.1307.2**. The measured benchmark rows keep the version they were measured with. All of these
 are actively maintained projects; none of the ⚠️/❌ cells above mean "abandoned". Every
 competitor cell is meant to be checkable against the linked upstream doc. If one is wrong or has
-gone stale, [open an issue](https://github.com/9pings/fad-checker/issues) and it gets corrected.
+gone stale, [open an issue](https://github.com/9pings/VigieVuln/issues) and it gets corrected.
 
 **Where it fits:** a one-shot audit of a polyglot checkout you may not be able to build, a
 presentable HTML/Word deliverable, and confidential / air-gapped engagements.
@@ -122,7 +122,7 @@ limitations* chapter. Call-graph reachability answers a different question, need
 context an auditor has and a scanner doesn't, and an unreachable-therefore-ignored verdict is
 exactly the kind of judgement an audit should not automate.
 
-You don't have to choose — `fad-checker` takes Snyk's results as input (`--snyk`) and merges them.
+You don't have to choose — `vigievuln` takes Snyk's results as input (`--snyk`) and merges them.
 
 ## What moved in 2025–2026
 
@@ -130,7 +130,7 @@ Checked on 2026-09-14 against the projects' own repositories and docs. The five 
 still the right column set; these are the newcomers and shifts worth knowing about, and the
 reason each one is or isn't in the table.
 
-| Project | What changed | Overlap with fad-checker | In the table? |
+| Project | What changed | Overlap with vigievuln | In the table? |
 | --- | --- | --- | --- |
 | [OSV-SCALIBR](https://github.com/google/osv-scalibr) v0.5.2 (2026-08) | Google's extraction engine; OSV-Scanner 2.5+ runs on it end-to-end. Build-free `pom.xml` transitive resolver, deps.dev deprecation + license, 70+ secret detectors, Go/Java reachability, OS-only EOL ([inventory](https://github.com/google/osv-scalibr/blob/main/docs/supported_inventory_types.md)) | Direct — it is now the OSV-Scanner column. No EPSS/KEV, no framework EOL, no offline Maven graph | Via OSV-Scanner |
 | [OWASP dep-scan](https://github.com/owasp-dep-scan/dep-scan) v6.3.0 (2026-07) + [cdxgen](https://github.com/CycloneDX/cdxgen) v13 | Reachability across 7 languages, CSAF 2.1 VEX/VDR, air-gapped vulnerability DB (`vdb --download-image`). cdxgen still states "Apache maven 3.x is required for parsing pom.xml", with a degraded pom fallback flagged by its own build-fidelity rule ([project types](https://github.com/CycloneDX/cdxgen/blob/master/docs/PROJECT_TYPES.md)) | Closest in spirit for air-gapped audits; Maven needs a build for the full graph, no EPSS/KEV, no EOL/outdated | Not yet — candidate for a 7th column |
@@ -158,7 +158,7 @@ repositories (lockvet, IcebergSCA) that have not yet earned a comparison.
 
 ## Detection on presence: how the official tools select what to scan
 
-fad-checker's application plugins are activated by the default `--app-plugins auto` — a
+vigievuln's application plugins are activated by the default `--app-plugins auto` — a
 present CMS/framework is inventoried. Checked against each ecosystem's own tools
 (2026-09-23): **automatic detection of what is present is the norm, opt-in per product is
 the exception.**
@@ -175,7 +175,7 @@ the exception.**
 | Wordfence | Only works on an installed WordPress at all |
 
 The one tool that pulled automatic scope back (WPScan) did it to spare a cloud API's
-request budget — its CMS *detection* stayed automatic. fad-checker's split matches that
+request budget — its CMS *detection* stayed automatic. vigievuln's split matches that
 logic without the constraint: local inventory (cheap, no network) is automatic on
 detection, while the networked advisory sources stay behind their explicit configuration
 and report `not-run (CMS_PROVIDER_UNCONFIGURED)` until then — never a silent clean

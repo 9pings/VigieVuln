@@ -38,7 +38,7 @@ const payload = locale => ({
 
 test("the French report translates its own chrome and leaves the evidence alone", () => {
 	const fr = generateHtmlReport(payload("fr"));
-	assert.match(fr, /Rapport FAD-Checker/);
+	assert.match(fr, /Rapport VigieVuln/);
 	assert.match(fr, /<th>Dépendance<\/th>/);
 	assert.match(fr, /Version corrigée/);
 	// Advisory text is evidence. Paraphrasing it in an audit report would be wrong, so it
@@ -222,7 +222,7 @@ const ENGLISH_CHROME = [
 	"Standalone JavaScript libraries committed", "no known vuln",
 	"Cryptographic material committed into the source tree", "PRIVATE KEY", "public key",
 	"private key committed", "expiring soon",
-	"Directories the scan", "How this report was produced", "Limitations — fad-checker does not assess:",
+	"Directories the scan", "How this report was produced", "Limitations — vigievuln does not assess:",
 	"Reachability / exploitability in your app.", "These entries were initially matched by name",
 	"Strong copyleft (GPL)", "Every direct dep with at least one CVE matched",
 	"manual triage", "no clean fix declared", "Paste into the root POM", "Or update the direct dependencies",

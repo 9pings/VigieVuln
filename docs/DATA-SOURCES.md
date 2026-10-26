@@ -1,6 +1,6 @@
 # Data sources & acknowledgments
 
-`fad-checker` is glue around several outstanding public datasets. Each is used per its license terms.
+`vigievuln` is glue around several outstanding public datasets. Each is used per its license terms.
 
 | Source | What we use | License | API / endpoint |
 | --- | --- | --- | --- |
@@ -35,7 +35,7 @@
 
 Persistent caches (`~/.fad-checker/`) mean each source is hit at most once per its TTL (full
 table → [`USAGE.md`](USAGE.md)). **No telemetry, no third-party analytics** — every request
-above targets the named endpoint, optionally through the configured shared proxy with a `User-Agent: fad-checker-*` header, and
+above targets the named endpoint, optionally through the configured shared proxy with a `User-Agent: vigievuln-*` header, and
 `--offline` makes none at all.
 
 Application inventory reads local files. Configured PrestaShop and TYPO3 advisory

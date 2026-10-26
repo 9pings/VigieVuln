@@ -1,7 +1,7 @@
 /**
  * test/extract-mode.test.js — `-t <dir>` is an EXTRACTION step, not a scan.
  *
- * With -t, fad-checker walks the source tree, links the reactor modules, writes the
+ * With -t, vigievuln walks the source tree, links the reactor modules, writes the
  * cleaned POM tree + mirrored manifests, reports the Maven POM analysis (missing
  * parents / private libs — the ONLY online action, and only when online) and STOPS.
  * The vulnerability scan + report only run when something explicitly asks for them
@@ -14,7 +14,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 const SIMPLE = path.join(__dirname, "fixtures", "simple");
 
 function run(args, cwd) {
@@ -31,7 +31,7 @@ test("-t alone writes the cleaned tree and stops before the vulnerability scan",
 	assert.ok(fs.existsSync(path.join(target, "pom.xml")), "root cleaned POM written");
 	assert.ok(fs.existsSync(path.join(target, "app", "pom.xml")), "module cleaned POM written");
 	assert.doesNotMatch(res.stdout, /Vulnerability database update/, "no scan in extraction mode");
-	assert.ok(!fs.existsSync(path.join(root, "fad-checker-report")), "no report dir in extraction mode");
+	assert.ok(!fs.existsSync(path.join(root, "vigievuln-report")), "no report dir in extraction mode");
 	assert.match(res.stdout, /extraction/i, "the terminal says it was an extraction");
 	fs.rmSync(root, { recursive: true, force: true });
 });

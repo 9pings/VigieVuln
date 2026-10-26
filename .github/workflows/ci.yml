@@ -1,21 +1,16 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-  test:
-    name: test (node ${{ matrix.node }} · ${{ matrix.os }})
+  cli:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -31,28 +26,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+          cache-dependency-path: package-lock.json
       - run: npm ci
       - run: npm test
-
-  smoke:
-    name: smoke (offline, zero network)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-
-      # Scans a polyglot fixture (Maven + npm + yarn) with a COLD cache and
-      # --offline: no network call may happen, and the CLI must still exit 0.
-      - name: scan a fixture fully offline
-        run: node fad-checker.js -s test/fixtures/monorepo-mixed --offline --no-report
-
-      # The same run must produce a parseable findings export.
-      - name: findings JSON export is valid
-        run: |
-          node fad-checker.js -s test/fixtures/monorepo-mixed --offline \
-            --report-json /tmp/findings.json
-          node -e "const d=require('/tmp/findings.json'); if(!d.summary) throw new Error('no summary in findings JSON'); console.log('findings JSON ok')"
+      - run: node vigievuln.js -s test/fixtures/monorepo-mixed --offline --no-report
+      - run: npm pack --dry-run

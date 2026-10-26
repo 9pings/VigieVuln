@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 
 test("CLI lists bundled application plugins without a scan root", () => {
 	const run = spawnSync(process.execPath, [CLI, "--list-app-plugins"], { encoding: "utf8" });

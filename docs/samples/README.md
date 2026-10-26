@@ -1,6 +1,9 @@
+> Historical fad-checker reports, preserved byte-for-byte. Their tool names and
+> versions identify the original runs; they are not VigieVuln 1.0.0 outputs.
+
 # HTML report samples
 
-Generated with **fad-checker 2.7.1** on **2026-09-24**, using the local warmed cache in `--offline` mode. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
+Generated with **vigievuln 2.7.1** on **2026-09-24**, using the local warmed cache in `--offline` mode. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
 
 | Sample | Source and scope | What to explore |
 | --- | --- | --- |
@@ -31,9 +34,9 @@ The CMS corpus contains source trees and their existing lockfiles, without insta
 Arrange the CMS directories above under `multi-cms-frameworks/`. Use the existing upstream lockfiles. Warm or import the required caches first; a fresh empty offline cache will not reproduce these results.
 
 ```sh
-fad-checker -s ./dubbo --offline -a licenses -r html,json -o ./sample-dubbo
+vigievuln -s ./dubbo --offline -a licenses -r html,json -o ./sample-dubbo
 
-fad-checker -s ./multi-cms-frameworks --offline --ecosystem composer \
+vigievuln -s ./multi-cms-frameworks --offline --ecosystem composer \
   -a licenses --exclude-path '**/tests/**' '**/test/**' '**/Tests/**' '**/Test/**' \
   -r html,json -o ./sample-cms
 ```

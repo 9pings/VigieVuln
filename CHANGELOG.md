@@ -1,3 +1,17 @@
+# Changelog — VigieVuln
+
+## [1.0.0] — 2026-10-25
+
+- First VigieVuln release, continuing fad-checker 2.7.4 with the same audit capabilities.
+- New package/command `vigievuln`, professional report branding and updated project links.
+- Legacy CLI aliases, cache paths, credentials, findings/baseline/dump formats preserved.
+- New configuration names with fallback to existing FAD settings.
+- CLI and server now have separate Git repositories; only `vigievuln` CLI is prepared for npm publication.
+
+## Predecessor history — fad-checker
+
+Versions below belong to fad-checker and are not VigieVuln releases.
+
 # Changelog
 
 All notable changes to `fad-checker` are documented here.
@@ -105,7 +119,7 @@ manager's documented semantics, and locked by a test.
 
 ### Security
 - **`serve-cache` types every `/v1/resource` document before any lookup** (the whitelist
-  fad-service applies, now `lib/resource-cache/validate.js`): an unknown provider/type, an
+  vigievuln applies, now `lib/resource-cache/validate.js`): an unknown provider/type, an
   unknown field or header, a malformed identifier is a `400` and never reaches an upstream —
   a `serve-cache` exposed on a network no longer forwards whatever a caller sends. OSV
   queries are accepted in fad's flat form and in OSV's own `{ package, version }` form.

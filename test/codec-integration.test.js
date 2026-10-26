@@ -13,7 +13,7 @@ const { generateHtmlReport } = require("../lib/cve-report");
 
 const POLY = path.join(__dirname, "fixtures", "polyglot");
 
-// Collect every active codec into one Map, exactly like fad-checker.js main().
+// Collect every active codec into one Map, exactly like vigievuln.js main().
 async function collectAll(dir) {
 	const resolved = new Map();
 	const warnings = [];

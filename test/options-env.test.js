@@ -46,8 +46,31 @@ test("loadLayers: --config path beats ./.fad-env.json; malformed JSON throws", (
 	fs.writeFileSync(path.join(tmp, ".fad-env.json"), JSON.stringify({ failOn: "low" }));
 	fs.writeFileSync(path.join(tmp, "alt.json"), JSON.stringify({ failOn: "high" }));
 	assert.strictEqual(OE.loadLayers({ cwd: tmp }).fileLayer.failOn, "low");
+	fs.writeFileSync(path.join(tmp, ".vigievuln-env.json"), JSON.stringify({ failOn: "critical" }));
+	assert.strictEqual(OE.loadLayers({ cwd: tmp }).fileLayer.failOn, "critical", "new configuration wins over the legacy file");
 	assert.strictEqual(OE.loadLayers({ cwd: tmp, configPath: path.join(tmp, "alt.json") }).fileLayer.failOn, "high");
 	fs.writeFileSync(path.join(tmp, "bad.json"), "{ not json");
 	assert.throws(() => OE.loadLayers({ cwd: tmp, configPath: path.join(tmp, "bad.json") }), /JSON|parse/i);
 	fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+test("VigieVuln environment overrides FAD flags, including an explicitly empty override", () => {
+	const keys = ["VIGIEVULN_ENV", "FAD_CHECKER_ENV"];
+	const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-env-"));
+	try {
+		delete process.env.VIGIEVULN_ENV;
+		process.env.FAD_CHECKER_ENV = "--fail-on low";
+		assert.strictEqual(OE.loadLayers({ cwd: tmp, program: makeProgram() }).envLayer.failOn, "low");
+		process.env.VIGIEVULN_ENV = "--fail-on high";
+		assert.strictEqual(OE.loadLayers({ cwd: tmp, program: makeProgram() }).envLayer.failOn, "high");
+		process.env.VIGIEVULN_ENV = "";
+		assert.deepStrictEqual(OE.loadLayers({ cwd: tmp, program: makeProgram() }).envLayer, {});
+	} finally {
+		for (const key of keys) {
+			if (saved[key] === undefined) delete process.env[key];
+			else process.env[key] = saved[key];
+		}
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
 });

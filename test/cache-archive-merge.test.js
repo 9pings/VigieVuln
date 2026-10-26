@@ -15,7 +15,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 
 function run(args, home) {
 	return execFileSync("node", [CLI, ...args], {

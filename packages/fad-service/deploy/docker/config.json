@@ -1,9 +1,0 @@
-{
-	"db": "/data/fad-service.db",
-	"workers": 2,
-	"region": "fr",
-	"log": { "file": null, "format": "json" },
-	"brand": { "name": "fad · vulnerabilities", "baseUrl": null },
-	"metrics": { "enabled": true },
-	"analytics": { "provider": "server" }
-}

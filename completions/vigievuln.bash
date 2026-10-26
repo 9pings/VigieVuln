@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Bash completion for fad-checker (Fucking Autonomous Dependency Checker)
-# Source this file or copy it to /etc/bash_completion.d/fad-checker
+# Bash completion for vigievuln (VigieVuln — autonomous dependency auditor)
+# Source this file or copy it to /etc/bash_completion.d/vigievuln
 _fad_check_complete() {
 	local cur prev opts
 	COMPREPLY=()
@@ -23,4 +23,4 @@ _fad_check_complete() {
 		return 0
 	fi
 }
-complete -F _fad_check_complete fad-checker
+complete -F _fad_check_complete vigievuln fad-checker fad

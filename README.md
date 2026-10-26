@@ -1,24 +1,24 @@
 <h1 align="center">
- fad-checker
+ VigieVuln
 </h1>
 
-[![npm version](https://img.shields.io/npm/v/fad-checker.svg)](https://www.npmjs.com/package/fad-checker)
-[![npm downloads](https://img.shields.io/npm/dm/fad-checker.svg)](https://www.npmjs.com/package/fad-checker)
-[![license](https://img.shields.io/npm/l/fad-checker.svg)](LICENSE)
-[![node](https://img.shields.io/node/v/fad-checker.svg)](https://nodejs.org)
-[![CI](https://github.com/9pings/fad-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/fad-checker/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/vigievuln.svg)](https://www.npmjs.com/package/vigievuln)
+[![npm downloads](https://img.shields.io/npm/dm/vigievuln.svg)](https://www.npmjs.com/package/vigievuln)
+[![license](https://img.shields.io/npm/l/vigievuln.svg)](LICENSE)
+[![node](https://img.shields.io/node/v/vigievuln.svg)](https://nodejs.org)
+[![CI](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml)
 
-> AKA **F**ormidable **A**uditor's **D**ependency **C**hecker<br>
-> AKA **F**uckin' **A**utonomous **D**ependency **C**hecker<br>
 
-`fad-checker` is a polyglot dependency auditor built for **professional code audits**.
+**VigieVuln** (formerly `fad-checker`) is a polyglot dependency auditor built for **professional code audits**.
 
 It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Laravel…) in one pass, with **no build tools**, support **air-gapped** workflows using transferred caches, private package detection, committed binaries & certificates, then produces clean **HTML reports + json baseline + (DOC/XLSX/SARIF/CycloneDX/etc)** .
 
 
-🌐 **[Project site & docs →](https://9pings.github.io/fad-checker/)**
+🌐 **[Project site & docs →](https://9pings.github.io/VigieVuln/)**
 
-<p align="center"><img src="docs/assets/demo.gif" alt="fad-checker animated terminal demo: an offline Maven audit — dependencies absent from Maven Central flagged as private/internal, the compact single-line vulnerability-database progress, then findings coloured by severity" height="500"></p>
+*The screenshots and sample reports below document the predecessor fad-checker; newly generated reports use VigieVuln 1.0.0.*
+
+<p align="center"><img src="docs/assets/demo.gif" alt="vigievuln animated terminal demo: an offline Maven audit — dependencies absent from Maven Central flagged as private/internal, the compact single-line vulnerability-database progress, then findings coloured by severity" height="500"></p>
 
 ## Features
 
@@ -30,7 +30,7 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 - **CMS & frameworks audited as instances**; Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP with per-instance inventory (core, plugins, themes, bundles, components) → [the dedicated guide](docs/CMS-FRAMEWORKS.md)
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
 - **Air-gapped flow**; **zero network under `--offline`** → [Benchmark](docs/BENCHMARK.md) · [Air-gapped](#air-gapped-audits)
-- **Shared cache for a scanner fleet**; `fad-checker serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
+- **Shared cache for a scanner fleet**; `vigievuln serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
 - **Supply-chain risk**; known-**malicious** advisories and suspected **typosquats** (`--typosquat`).
 - **Audit-grade**; every report carries a **provenance manifest** and a **Methodology & limitations** chapter; a `SHA256SUMS`;
 - **Differential audits** diff against a prior run (`--baseline`) and CI can gate on *new* findings only.
@@ -40,26 +40,35 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 
 📖 **[Usage & all flags](docs/USAGE.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Comparison vs other tools](docs/COMPARISON.md)** · **[Data sources](docs/DATA-SOURCES.md)**
 
+## Migration from fad-checker
+
+The npm package and primary command are now `vigievuln`. Existing `fad` and
+`fad-checker` commands remain aliases. The cache stays in `~/.fad-checker/` so
+existing credentials, warmed data and air-gapped workflows keep working.
+`VIGIEVULN_ENV` and `.vigievuln-env.json` take precedence over their legacy
+`FAD_CHECKER_ENV` / `.fad-env.json` counterparts. Default report output is now
+`./vigievuln-report`; pass `-o` to retain another location.
+
 ## Quick start
 
 ```bash
-npm install -g fad-checker
-fad-checker -s ./my-project          # → ./fad-checker-report/cve-report.html
+npm install -g vigievuln
+vigievuln -s ./my-project          # → ./vigievuln-report/cve-report.html
 ```
 
-A free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) (instant) gives 10× faster enrichment: `fad-checker --set-nvd-key YOUR_KEY`. A few common runs; full list via `fad-checker --help` or [docs/USAGE.md](docs/USAGE.md)
+A free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) (instant) gives 10× faster enrichment: `vigievuln --set-nvd-key YOUR_KEY`. A few common runs; full list via `vigievuln --help` or [docs/USAGE.md](docs/USAGE.md)
 
 ### Interactive HTML samples
 
-- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/fad-checker/samples/dubbo.html)**: the project used for the screenshot above, rescanned with v2.7.1; 105 Maven descriptors, direct/transitive CVEs, KEV/EPSS, EOL and fix recommendations.
-- **[Multi-instance CMS & frameworks — open the report](https://9pings.github.io/fad-checker/samples/multi-cms-frameworks.html)**: WordPress 6.4.2, Drupal 8.5.0, Symfony Demo (Symfony 7.1.1) and BookStack v24.10 (Laravel 10.48.22), with findings attributed to each instance.
+- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the screenshot above, rescanned with v2.7.1; 105 Maven descriptors, direct/transitive CVEs, KEV/EPSS, EOL and fix recommendations.
+- **[Multi-instance CMS & frameworks — open the report](https://9pings.github.io/VigieVuln/samples/multi-cms-frameworks.html)**: WordPress 6.4.2, Drupal 8.5.0, Symfony Demo (Symfony 7.1.1) and BookStack v24.10 (Laravel 10.48.22), with findings attributed to each instance.
 
 These are standalone reports from real source scans, frozen on **2026-09-24**. The CMS sample focuses on PHP dependencies; WordPress advisory coverage is explicitly incomplete without a Wordfence feed. [Sample scope, sources and reproduction commands](docs/samples/README.md).
 
 > [!WARNING]
-> fad-checker is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, **double-check anything critical**, and please [report issues](https://github.com/9pings/fad-checker/issues); they get fixed fast.
+> vigievuln is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, **double-check anything critical**, and please [report issues](https://github.com/9pings/VigieVuln/issues); they get fixed fast.
 
-## Why use fad-checker for code audits?
+## Why use vigievuln for code audits?
 
 What it does for an audit that the others don't. Same column set and sourcing discipline as
 [`docs/COMPARISON.md`](docs/COMPARISON.md) — `⚠️` is *partial* and says how, cells are meant to be
@@ -91,16 +100,16 @@ application context no scanner has.
 ## More basic exemples :
 
 ```bash
-fad-checker -s ./proj -e "^com\.acme\."                        # exclude private libs (coord regex)
-fad-checker -s ./proj -t ../clean -e "^com\.acme\."            # extract only: normalised descriptors, private modules flagged
-fad-checker -s ./proj -t ../clean -e "^com\.acme\." -a snyk   # same extraction + scan + merge Snyk
-fad-checker -s ./proj --offline                                # fully offline (zero network, needs a warmed cache)
-fad-checker -s ./proj -a osv-db,typosquat                      # offline-complete OSV + typosquat
-fad-checker -s ./proj -a licenses --fail-on high               # license chapter + CI gate
-fad-checker -s ./proj --report-json --baseline last.json --fail-on-new   # differential audit: fail CI on NEW findings
-fad-checker diff last.json this.json                           # standalone diff of two findings JSONs
-fad-checker -s ./proj -r html,json,xlsx                        # include the Excel workbook
-fad-checker -s ./site --app-plugins wordpress --private-component wp-content/plugins/acme --offline
+vigievuln -s ./proj -e "^com\.acme\."                        # exclude private libs (coord regex)
+vigievuln -s ./proj -t ../clean -e "^com\.acme\."            # extract only: normalised descriptors, private modules flagged
+vigievuln -s ./proj -t ../clean -e "^com\.acme\." -a snyk   # same extraction + scan + merge Snyk
+vigievuln -s ./proj --offline                                # fully offline (zero network, needs a warmed cache)
+vigievuln -s ./proj -a osv-db,typosquat                      # offline-complete OSV + typosquat
+vigievuln -s ./proj -a licenses --fail-on high               # license chapter + CI gate
+vigievuln -s ./proj --report-json --baseline last.json --fail-on-new   # differential audit: fail CI on NEW findings
+vigievuln diff last.json this.json                           # standalone diff of two findings JSONs
+vigievuln -s ./proj -r html,json,xlsx                        # include the Excel workbook
+vigievuln -s ./site --app-plugins wordpress --private-component wp-content/plugins/acme --offline
 ```
 
 > [!IMPORTANT]
@@ -123,12 +132,12 @@ The report keeps the six root chapters. Sub-chapters appear only when they conta
 | **3. Maintenance / EOL** *(X EOL, Y obsolete, Z outdated)* | endoflife.date · curated + registry flags · Maven Central / npm / Packagist / PyPI / NuGet | **End-of-Life** frameworks (+ an "Out of active support" band with `--eol-support`; Symfony/Laravel grouped as one row per framework; PHP runtime when the Composer constraint proves it), split **direct** (declared / parent-POM-inherited — bump these) vs **transitive** (bump the dep that pulls them in) · **Obsolete / deprecated / abandoned / yanked** · **Outdated** (newer version available, with release dates; direct deps only) |
 | **4. Licenses** *(opt-in: `--licenses`)* | registry metadata + Maven POMs → SPDX policy | Each dep's license normalised to SPDX and classified; copyleft (GPL/AGPL/LGPL/MPL), proprietary and unknown flagged for review |
 | **5. Fix Recommendations** | computed | Per-ecosystem pin recipes: Maven `<dependencyManagement>`, Gradle `constraints { }`, npm `overrides`, yarn `resolutions`, `composer require`, `pip install`, `dotnet add package` |
-| **6. Scan context & limitations** | provenance manifest + walk | **Scanned descriptors** (every manifest parsed) · **Ignored directories** (pruned paths + rule) · **Methodology, data sources & limitations** (data-source freshness, run config, explicit statement of **what fad-checker does *not* assess**) · **Application inventory & coverage** (also shown when no CVE matches) |
+| **6. Scan context & limitations** | provenance manifest + walk | **Scanned descriptors** (every manifest parsed) · **Ignored directories** (pruned paths + rule) · **Methodology, data sources & limitations** (data-source freshness, run config, explicit statement of **what vigievuln does *not* assess**) · **Application inventory & coverage** (also shown when no CVE matches) |
 | **Supply-chain risk** *(cross-cutting)* | OSV `MAL-…` + name heuristic | **Known-malicious** packages (always block the CI gate, any `--fail-on` level) and **suspected typosquats** (`--typosquat`: an npm/PyPI name one edit from a popular package; `lodahs`↔`lodash`) |
 
 The HTML report opens in any browser, contains every detail (CVSS vectors, references, full descriptions, CPE configurations, via-paths for transitives) and ships a Word-compatible `.doc` twin. Every match carries a **composite priority** (KEV-exploited > EPSS likelihood > CVSS severity), and the run can additionally emit a **CycloneDX 1.6 SBOM** (`--report-sbom`, vulnerabilities inline) and a **CSAF 2.0 VEX** (`--report-csaf`) for downstream tooling.
 
-<p align="center"><img src="docs/assets/report.png" alt="fad-checker HTML report; executive summary with severity tiles and a detailed CVE table with CWE, descriptions and fix versions" width="900"></p>
+<p align="center"><img src="docs/assets/report.png" alt="vigievuln HTML report; executive summary with severity tiles and a detailed CVE table with CWE, descriptions and fix versions" width="900"></p>
 
 
 ## CMS & frameworks
@@ -136,7 +145,7 @@ The HTML report opens in any browser, contains every detail (CVSS vectors, refer
 See the [CMS coverage limits](docs/CMS-FRAMEWORKS.md#coverage-and-its-current-limits)
 and [shared-cache operating limits](docs/USAGE.md#shared-proxy-cache-server-serve-cache--proxy-cache).
 
-fad-checker doesn't just read the `composer.json` under a WordPress or Drupal site — it inventories the **instance**: core, plugins, themes, bundles and framework components with their observed versions, attributes every dependency CVE to the component that ships it, and reports each instance in its own sub-chapter — synthesis included even when it comes out clean. Any recognized layout is activated by the default `--app-plugins auto`; `none` opts out.
+vigievuln doesn't just read the `composer.json` under a WordPress or Drupal site — it inventories the **instance**: core, plugins, themes, bundles and framework components with their observed versions, attributes every dependency CVE to the component that ships it, and reports each instance in its own sub-chapter — synthesis included even when it comes out clean. Any recognized layout is activated by the default `--app-plugins auto`; `none` opts out.
 
 | Product | Inventory | Advisory lane |
 | --- | --- | --- |
@@ -153,11 +162,11 @@ Every advisory snapshot a live lane fetches is stamped and cached in `~/.fad-che
 
 ## Air-gapped audits
 
-> **Zero-data-sent guarantee.** Under `--offline`, fad-checker makes **no network calls
+> **Zero-data-sent guarantee.** Under `--offline`, vigievuln makes **no network calls
 > whatsoever**; it reads only the warmed `~/.fad-checker/` caches and never transmits a
 > dependency, path or finding off the machine. It is regression-tested
 > (`test/offline-guarantee.test.js`, a tripwire fetcher that throws if touched) and
-> auditor-reproducible: `unshare -rn node fad-checker.js -s ./proj --offline …` runs it in a
+> auditor-reproducible: `unshare -rn node vigievuln.js -s ./proj --offline …` runs it in a
 > namespace with **no network interface** and yields byte-identical findings. Unlike the
 > mainstream OSS scanners, fad also resolves the **Maven transitive graph** offline; so on
 > an air-gapped multi-module project it finds the transitive CVEs they can't.
@@ -170,39 +179,39 @@ from public ones: exclude internal dependencies and review the descriptor, inclu
 parent/BOM coordinates, before transfer. The **detailed report is produced back on the
 offline machine**.
 
-The transfer relies on a property of fad-checker's caches: they are keyed by *coordinate*
+The transfer relies on a property of vigievuln's caches: they are keyed by *coordinate*
 or *vuln id*, never by path, so they are **machine-independent**. The online step just
 **warms the caches**; the offline step replays the scan and gets cache hits.
 
 ```bash
 # ── Phase 1; OFFLINE (audited machine): export the anonymized descriptor ──
 # Exclude private/internal packages with -e (offline we can't tell private from public).
-fad-checker -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
+vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
 #   → deps.json: dependency coordinates and version hints. Review before transfer.
 
 # ── Phase 2; ONLINE (any machine, no source needed): warm the caches ──
-fad-checker --import-anonymized deps.json     # scans coordinates → OSV/NVD/CVE/registry/EOL + retire signatures
+vigievuln --import-anonymized deps.json     # scans coordinates → OSV/NVD/CVE/registry/EOL + retire signatures
                                               #   + warms the CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds,
                                               #   WP checksums per core version, Wordfence when a key is set)
-fad-checker --export-cache fad-cache.tar.gz   # bundle the warmed ~/.fad-checker/
+vigievuln --export-cache fad-cache.tar.gz   # bundle the warmed ~/.fad-checker/
 
 # ── Phase 3; OFFLINE (audited machine): full report, all local context ──
-fad-checker --import-cache fad-cache.tar.gz   # merged into the enclave's own cache
-fad-checker -s ./proj --offline               # re-collect locally (real paths) + cache hits
+vigievuln --import-cache fad-cache.tar.gz   # merged into the enclave's own cache
+vigievuln -s ./proj --offline               # re-collect locally (real paths) + cache hits
 #   → full HTML/.doc report with manifests & structure, generated inside the enclave.
 #   CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds, WP checksums) fetched live by
 #   the online phase ride the same archive and are consumed automatically — no flags.
 ```
 
-Since **2.7.4**, descriptor imports also warm Maven registry presence (unless
+Since **fad-checker 2.7.4** (included in VigieVuln 1.0.0), descriptor imports also warm Maven registry presence (unless
 `--no-all-libs` is set). Legacy negative presence entries are discarded automatically:
 older versions could confuse network errors with missing packages. Until verified
 online, those entries remain **unknown**, including after a cache merge. Other warmed
 analysis data is retained.
 
-Version **2.7.4** also stops trusting legacy empty OSV cache entries, because an older
+The inherited **fad-checker 2.7.4** release also stops trusting legacy empty OSV cache entries, because an older
 failed request could have been stored as “no vulnerabilities”. Re-warm and export the
-cache with 2.7.4 to verify these entries; until then offline reports warn about incomplete
+cache with VigieVuln 1.0.0 to verify these entries; until then offline reports warn about incomplete
 OSV coverage. Existing cached advisory IDs remain usable. Offline KEV and binary identity
 lookups reuse the last available snapshot even after 24 hours, without changing its date.
 
@@ -237,25 +246,25 @@ DB is warmed online (phase 2) and carried by `--export-cache`. Full offline/cach
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); internals: codecs, collection, matching, report pipeline.
 - [`docs/COMPARISON.md`](docs/COMPARISON.md); vs OSV-Scanner / Trivy / Grype / OWASP DC / Snyk, and how it stays build-free.
 - [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — reproducible air-gapped recall benchmark vs OSV-Scanner on a public 105-module project.
-- [`docs/DATA-SOURCES.md`](docs/DATA-SOURCES.md); the public datasets fad-checker uses + their licenses.
-- [`CHANGELOG.md`](CHANGELOG.md) · [`CLAUDE.md`](CLAUDE.md); release history · code-level orientation for contributors.
+- [`docs/DATA-SOURCES.md`](docs/DATA-SOURCES.md); the public datasets vigievuln uses + their licenses.
+- [`CHANGELOG.md`](CHANGELOG.md) · [`CLAUDE.md`](../CLAUDE.md); release history · code-level orientation for contributors.
 
 ## Contributing
 
 The most useful contribution to a young scanner is **telling it where it's wrong**: run it on a
-real project and file a [false positive / false negative report](https://github.com/9pings/fad-checker/issues/new?template=false_positive.yml)
+real project and file a [false positive / false negative report](https://github.com/9pings/VigieVuln/issues/new?template=false_positive.yml)
 with the coordinate and the manifest snippet that produced it. Dev setup, ground rules and the
-codec extension point → [`CONTRIBUTING.md`](CONTRIBUTING.md). Vulnerabilities in fad-checker
-itself → [`SECURITY.md`](SECURITY.md) (please report privately).
+codec extension point → [`CONTRIBUTING.md`](../CONTRIBUTING.md). Vulnerabilities in vigievuln
+itself → [`SECURITY.md`](../SECURITY.md) (please report privately).
 
-**On AI assistance:** this codebase is written with heavy use of Claude Code; [`CLAUDE.md`](CLAUDE.md)
+**On AI assistance:** this codebase is written with heavy use of Claude Code; [`CLAUDE.md`](../CLAUDE.md)
 in the repo root is exactly what it looks like. The bar it's held to is the one you can check
 yourself: **847 tests** (`npm test`), the zero-network guarantee enforced by a tripwire test and
 reproducible under `unshare -rn`, and coverage numbers measured against a Snyk baseline rather
-than asserted. `fad-checker` itself uses **no LLM at runtime**; findings come from public
+than asserted. `vigievuln` itself uses **no LLM at runtime**; findings come from public
 vulnerability databases and deterministic parsers, and no report text is generated. Full
 statement, including where review actually caught a bad finding →
-[`AI_POLICY.md`](AI_POLICY.md). Where the code doesn't meet that bar, that's a bug report I want.
+[`AI_POLICY.md`](../AI_POLICY.md). Where the code doesn't meet that bar, that's a bug report I want.
 
 ## License
 

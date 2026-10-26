@@ -1,7 +1,7 @@
 /**
  * The Packagist security-advisories lane (the data `composer audit` itself queries).
  *
- * Why it exists: three advisories measured missing from fad-checker's OSV lane on the
+ * Why it exists: three advisories measured missing from vigievuln's OSV lane on the
  * real-instance corpus (2026-09-23) — twig/twig CVE-2026-46636 + CVE-2026-46627
  * (drupal 8.5.0 @1.35.0 AND symfony-demo @3.10.3) and knplabs/knp-snappy CVE-2026-46643
  * (BookStack @1.4.2). In OSV these CVEs exist only as CVEProject entries with GIT/CPE

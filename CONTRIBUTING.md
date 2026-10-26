@@ -8,10 +8,10 @@ contribution isn't necessarily code — it's **telling me where the output is wr
 Run it on a real project and report what it got wrong:
 
 ```bash
-npx fad-checker -s ./your-project
+npx vigievuln -s ./your-project
 ```
 
-A [false positive / false negative report](https://github.com/9pings/fad-checker/issues/new?template=false_positive.yml)
+A [false positive / false negative report](https://github.com/9pings/VigieVuln/issues/new?template=false_positive.yml)
 with the coordinate and the manifest snippet that produced it is worth more than a feature
 request. Dependency resolution has a long tail of real-world shapes — inherited BOMs, profile
 matrices, `replace` directives, vendored jars — and the only way to cover them is to be shown
@@ -19,13 +19,13 @@ one that breaks.
 
 ## Development setup
 
-Node ≥ 20, no other tooling required.
+Node ≥ 20. This repository contains the CLI; the server has its own repository.
 
 ```bash
 npm ci
-npm test                      # offline suite via node --test
+npm test
 node --test test/core.test.js # a single file
-node fad-checker.js -s test/fixtures/monorepo-mixed --offline --no-report
+node vigievuln.js -s test/fixtures/monorepo-mixed --offline --no-report
 ```
 
 Building the single-file binaries needs [bun](https://bun.sh): `npm run build`.
@@ -67,6 +67,6 @@ after, a fixture derived from a real-world shape, and no claim in the docs that 
 by something you can run. If you find a place where the code doesn't meet that bar, that's a
 bug report I want.
 
-## Reporting a vulnerability in fad-checker itself
+## Reporting a vulnerability in vigievuln itself
 
 See [`SECURITY.md`](SECURITY.md) — please report privately, not as a public issue.

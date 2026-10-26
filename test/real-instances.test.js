@@ -33,7 +33,7 @@ const { spawnSync } = require("node:child_process");
 
 const RUN = process.env.FAD_REAL_INSTANCES === "1";
 const SKIP = !RUN && "set FAD_REAL_INSTANCES=1 (network + git required)";
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 const CLONE_TIMEOUT_MS = 300000;
 const SCAN_TIMEOUT_MS = 600000;
 

@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert");
 const { execFileSync } = require("child_process");
 const fs = require("fs"); const os = require("os"); const path = require("path");
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 
 function run(args, env = {}) {
 	return execFileSync("node", [CLI, ...args], { env: { ...process.env, ...env }, encoding: "utf8" });

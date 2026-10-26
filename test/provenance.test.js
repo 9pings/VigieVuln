@@ -20,7 +20,7 @@ test("buildScanProvenance records tool, mode and the run configuration", () => {
 			cacheDir: dir,
 			runtime: { node: "v20.0.0", platform: "linux", arch: "x64" },
 		});
-		assert.strictEqual(p.tool.name, "fad-checker");
+		assert.strictEqual(p.tool.name, "VigieVuln");
 		assert.strictEqual(p.tool.version, "2.3.2");
 		assert.strictEqual(p.generatedAt, "2026-06-18T00:00:00.000Z");
 		assert.strictEqual(p.mode, "offline");

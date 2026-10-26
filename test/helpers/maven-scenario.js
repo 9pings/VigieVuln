@@ -1,7 +1,7 @@
 /**
  * Build a Maven scenario on disk + an in-memory Maven Central, and run fad's real Maven
  * pipeline over it (collectResolvedDeps → lib/maven-reactor → settleManagedOnly), wired
- * exactly as fad-checker.js does. Zero network.
+ * exactly as vigievuln.js does. Zero network.
  */
 const fs = require("fs");
 const os = require("os");

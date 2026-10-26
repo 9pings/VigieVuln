@@ -22,7 +22,7 @@ test("buildCsaf emits a csaf_vex document with product_tree + vulnerabilities", 
 
 	assert.equal(doc.document.category, "csaf_vex");
 	assert.equal(doc.document.csaf_version, "2.0");
-	assert.equal(doc.document.tracking.id, "fad-checker-demo-2026-06-01");
+	assert.equal(doc.document.tracking.id, "vigievuln-demo-2026-06-01");
 	assert.equal(doc.product_tree.full_product_names.length, 2);
 	const log4jProd = doc.product_tree.full_product_names.find(p => p.name.includes("log4j-core"));
 	assert.equal(log4jProd.product_identification_helper.purl, "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1");

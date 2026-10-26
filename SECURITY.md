@@ -2,18 +2,18 @@
 
 ## Reporting a vulnerability
 
-Report vulnerabilities in `fad-checker` itself **privately**, via
-[GitHub private security advisories](https://github.com/9pings/fad-checker/security/advisories/new).
-If that isn't available to you, email `pp9Ping@gmail.com` with `fad-checker security` in the
+Report vulnerabilities in `vigievuln` itself **privately**, via
+[GitHub private security advisories](https://github.com/9pings/VigieVuln/security/advisories/new).
+If that isn't available to you, email `pp9Ping@gmail.com` with `vigievuln security` in the
 subject.
 
 Please don't open a public issue for a vulnerability. This is a single-maintainer project —
 expect a first response within **7 days**, and a fix or a plan within **30 days** for anything
 confirmed. Credit is given in the release notes unless you'd rather stay anonymous.
 
-Findings *about your own dependencies* that fad-checker reported are not vulnerabilities in
+Findings *about your own dependencies* that vigievuln reported are not vulnerabilities in
 this project — those belong in a normal issue (the
-[false positive / false negative](https://github.com/9pings/fad-checker/issues/new?template=false_positive.yml)
+[false positive / false negative](https://github.com/9pings/VigieVuln/issues/new?template=false_positive.yml)
 template).
 
 ## Supported versions
@@ -22,7 +22,7 @@ Only the latest released version on npm is supported. There are no backport bran
 
 ## Threat model
 
-fad-checker parses **untrusted input**: manifests, lockfiles, archives and certificates from a
+vigievuln parses **untrusted input**: manifests, lockfiles, archives and certificates from a
 source tree you may not control. The parsing surface is where security bugs are expected, and
 reports there are especially welcome. In particular:
 
@@ -42,7 +42,7 @@ reports there are especially welcome. In particular:
   statistics and cache clearing. Use TLS termination when crossing an untrusted
   network; HTTP alone exposes tokens and forwarded source credentials. Upstream deadlines, transfer limits, a metadata/body/spool quota and concurrency
   limits bound shared-cache work; filesystem block overhead needs additional headroom. See the operating limits in
-  [`docs/USAGE.md`](docs/USAGE.md#shared-proxy-cache-server-serve-cache--proxy-cache).
+  [`docs/USAGE.md`](cli/docs/USAGE.md#shared-proxy-cache-server-serve-cache--proxy-cache).
 
 ## What leaves your machine
 
@@ -52,11 +52,11 @@ Under `--offline`, **nothing**: no network call is made at all, only the warmed
 reproducible in a network-free namespace:
 
 ```bash
-unshare -rn node fad-checker.js -s ./proj --offline
+unshare -rn node cli/vigievuln.js -s ./proj --offline
 ```
 
-Online, fad-checker sends **package coordinates and versions** to the data sources listed in
-[`docs/DATA-SOURCES.md`](docs/DATA-SOURCES.md) (OSV.dev, NVD, Maven Central, npm, Packagist,
+Online, vigievuln sends **package coordinates and versions** to the data sources listed in
+[`docs/DATA-SOURCES.md`](cli/docs/DATA-SOURCES.md) (OSV.dev, NVD, Maven Central, npm, Packagist,
 PyPI, NuGet, RubyGems, proxy.golang.org, endoflife.date, FIRST.org EPSS, CISA KEV, deps.dev,
 CIRCL hashlookup) — plus **file checksums** for committed native binaries. It never uploads
 source code, file paths or manifest contents. If you consider your dependency list itself

@@ -1,5 +1,5 @@
 // serve-cache exposed on a network: the /v1/resource document is typed strictly BEFORE any
-// lookup (lib/resource-cache/validate.js — the same whitelist fad-service applies), and the
+// lookup (lib/resource-cache/validate.js — the same whitelist vigievuln applies), and the
 // providers that put a client value in an upstream PATH encode every segment, so no query,
 // fragment or dot-segment can be smuggled to the upstream host. Zero network.
 const { test } = require("node:test");

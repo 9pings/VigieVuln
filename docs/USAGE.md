@@ -5,7 +5,7 @@ Every flag, every common workflow, with copy-pasteable commands.
 ## Synopsis
 
 ```text
-fad-checker -s <src> [-t <target>] [-e <regex>] [other options]
+vigievuln -s <src> [-t <target>] [-e <regex>] [other options]
 ```
 
 - `-s, --src <src>` — **required**. Root of the source tree to scan. Contains `pom.xml` and/or `package(-lock).json` / `yarn.lock`.
@@ -13,35 +13,35 @@ fad-checker -s <src> [-t <target>] [-e <regex>] [other options]
 
 ## Output
 
-By default the HTML report and a `findings.json` land in `./fad-checker-report/` (the JSON so the next run can `--baseline` against it; add `--report-doc` for the Word file). Override with `--report-output <dir>`.
+By default the HTML report and a `findings.json` land in `./vigievuln-report/` (the JSON so the next run can `--baseline` against it; add `--report-doc` for the Word file). Override with `--report-output <dir>`.
 
 ## Ecosystem selection
 
 ```bash
 # Auto-detect (default): scan whatever pom.xml / package(-lock).json / yarn.lock exists
-fad-checker -s .
+vigievuln -s .
 
 # Pick ecosystems (codecs). --ecosystem is a list: auto (default) | all | comma list.
 # Codec ids: maven, gradle, npm, yarn, composer, pypi, nuget, go, ruby.
-fad-checker -s . --ecosystem maven            # Maven only
-fad-checker -s . --ecosystem gradle           # Gradle only
-fad-checker -s . --ecosystem maven,npm,go     # several, even if only one is auto-detected
-fad-checker -s . --ecosystem all              # every supported codec
-fad-checker -s . --ecosystem both             # legacy alias for maven,npm
+vigievuln -s . --ecosystem maven            # Maven only
+vigievuln -s . --ecosystem gradle           # Gradle only
+vigievuln -s . --ecosystem maven,npm,go     # several, even if only one is auto-detected
+vigievuln -s . --ecosystem all              # every supported codec
+vigievuln -s . --ecosystem both             # legacy alias for maven,npm
 
 # Opt out of specific codecs (combine freely)
-fad-checker -s . -d npm                       # skip npm
-fad-checker -s . -d js                        # alias: skip npm + yarn (Maven-only)
-fad-checker -s . -d gradle                    # skip Gradle
-fad-checker -s . -d pypi,nuget                # skip Python + C#
-fad-checker -s . -d go,ruby                   # skip Go + Ruby
-fad-checker -s . -d jars                      # skip embedded .jar/.war/.ear scanning
-fad-checker -s . -d binaries                  # skip committed native-binary scanning
-fad-checker -s . -d certs                     # skip certificate / key-material scanning
-fad-checker -s . -d nvd,epss,certs -a licenses,typosquat -o ./audit   # the general shape
+vigievuln -s . -d npm                       # skip npm
+vigievuln -s . -d js                        # alias: skip npm + yarn (Maven-only)
+vigievuln -s . -d gradle                    # skip Gradle
+vigievuln -s . -d pypi,nuget                # skip Python + C#
+vigievuln -s . -d go,ruby                   # skip Go + Ruby
+vigievuln -s . -d jars                      # skip embedded .jar/.war/.ear scanning
+vigievuln -s . -d binaries                  # skip committed native-binary scanning
+vigievuln -s . -d certs                     # skip certificate / key-material scanning
+vigievuln -s . -d nvd,epss,certs -a licenses,typosquat -o ./audit   # the general shape
 
-fad-checker -s . -a eol-support               # also flag "security-only" frameworks (e.g. Symfony 5.4 LTS since 2024-11-30)
-fad-checker -s . --cert-expiry-days 30        # warn on certs expiring within 30 days (default 90)
+vigievuln -s . -a eol-support               # also flag "security-only" frameworks (e.g. Symfony 5.4 LTS since 2024-11-30)
+vigievuln -s . --cert-expiry-days 30        # warn on certs expiring within 30 days (default 90)
 ```
 
 > The individual `--no-npm`, `--licenses`, … flags still work; they are hidden from `--help`
@@ -85,8 +85,8 @@ fad-checker -s . --cert-expiry-days 30        # warn on certs expiring within 30
 `-e <regex>` filters out coords whose **groupId** (Maven) or **name** (npm) matches the regex. Useful for private/internal libs that you know aren't on a public registry.
 
 ```bash
-fad-checker -s . -e "^(com\.acme|org\.private)\."
-fad-checker -s . -e "^@acme/"
+vigievuln -s . -e "^(com\.acme|org\.private)\."
+vigievuln -s . -e "^@acme/"
 ```
 
 The excluded coords are listed at the end of the run so you can audit the regex.
@@ -100,9 +100,9 @@ This applies to the **retire.js vendored-JS scan** too: retire skips the same de
 All patterns are **anchored to the `--src` root** — `truc`, `/truc` and `./truc` are equivalent (a leading `/` or `./` is stripped). To match a name at any depth, use `**/` (e.g. `**/fixtures/**`).
 
 ```bash
-fad-checker -s . --exclude-path "packages/legacy/**" --exclude-path "**/fixtures/**"
-fad-checker -s . --exclude-path "apps/*/e2e"          # repeatable
-fad-checker -s . --no-default-excludes                # also walk node_modules/vendor/target/.git/…
+vigievuln -s . --exclude-path "packages/legacy/**" --exclude-path "**/fixtures/**"
+vigievuln -s . --exclude-path "apps/*/e2e"          # repeatable
+vigievuln -s . --no-default-excludes                # also walk node_modules/vendor/target/.git/…
 ```
 
 | Flag | Effect |
@@ -148,7 +148,7 @@ Each data source can be disabled independently:
 | *(EOL + paid support)* | When endoflife.date lists **paid** support past the open-source end of life (`extendedSupport` — e.g. Broadcom for Spring 5.3/6.x), the EOL row stays an EOL finding (those fixes are builds from the vendor's private repository, for subscribers) and states: the support end date, the build of the dependency's own branch that fixes the CVEs found (`A 5.3 build > 5.3.40 fixes 7 of the 9 CVEs found`), and — when the vendor repository is configured with `--add-repo maven <name> <url> --token <TOKEN>` — the newest vendor build of the branch. A project already on a vendor build (newer than the branch's last public release and absent from Maven Central) is not reported as EOL; chapter 0 notes it. |
 | `--eol-support` | Also report frameworks/runtimes whose **active (bug-fix) support has ended** while security fixes are still provided (endoflife.date `support` field) — rendered as an "Out of active support" band under the maintenance chapter, status `unsupported` in the JSON. Off by default: the default EOL set is unchanged. |
 | `--ignore-test` | Drop test-scoped Maven deps and dev npm deps from the scan entirely (the dev-CVE section will be absent) |
-| `--proxy-cache <url>` | Route every public data-source request through a shared `fad-checker serve-cache` server — one upstream call per requested resource for all instances, persisted across restarts. Private registries always go direct. See **Shared proxy-cache server** |
+| `--proxy-cache <url>` | Route every public data-source request through a shared `vigievuln serve-cache` server — one upstream call per requested resource for all instances, persisted across restarts. Private registries always go direct. See **Shared proxy-cache server** |
 | `--proxy <url>` | Route ALL outbound requests through a corporate forward proxy (`http://host:port`; Node >= 24 or bun). See **Corporate forward proxy** |
 
 If Packagist answers successfully but omits a package from its advisory data, the scan
@@ -163,19 +163,19 @@ The bundled `symfony`, `wordpress`, `drupal`, `laravel`, `joomla`, `prestashop`,
 Every subtree is also scanned through its supported dependency descriptors. If its CMS layout is recognized, dependency findings are shown under that CMS instance; otherwise those findings remain in the ordinary dependency sections.
 
 ```bash
-fad-checker -s ./project --app-plugins symfony --offline --report-json
-fad-checker -s ./project --app-plugins wordpress --private-component site/wp-content/plugins/acme --offline
-fad-checker -s ./project --app-plugins wordpress --wordfence-feed ./wordfence-production.json --public-component site/wp-content/plugins/example=example --offline
-fad-checker -s ./project --app-plugins drupal --offline --fail-on-incomplete inventory,advisories
-fad-checker -s ./project --app-plugins drupal --drupal-advisories ./drupal-advisories.json --offline
-fad-checker -s ./shop --app-plugins prestashop,typo3 --prestashop-advisories ./ps-advisories.json --typo3-advisories ./t3-advisories.json --offline
-fad-checker -s ./shop --app-plugins prestashop,typo3 --prestashop-advisories-live --typo3-advisories-live
-fad-checker -s ./project --app-plugins wordpress --wp-checksums-live
-fad-checker -s ./project --app-plugins wordpress --wp-checksums ./wp-checksums-6.4.2-en_US.json --wp-checksums-locale en_US --offline
-fad-checker -s ./project --app-plugins laravel --offline --report-json
-fad-checker -s ./my-wordpress-plugin --app-plugins wordpress --scan-context component --offline --report-json
-fad-checker -s ./shop --app-plugins magento --offline --report-json
-fad-checker -s ./cms --app-plugins joomla,prestashop,typo3 --offline --report-json
+vigievuln -s ./project --app-plugins symfony --offline --report-json
+vigievuln -s ./project --app-plugins wordpress --private-component site/wp-content/plugins/acme --offline
+vigievuln -s ./project --app-plugins wordpress --wordfence-feed ./wordfence-production.json --public-component site/wp-content/plugins/example=example --offline
+vigievuln -s ./project --app-plugins drupal --offline --fail-on-incomplete inventory,advisories
+vigievuln -s ./project --app-plugins drupal --drupal-advisories ./drupal-advisories.json --offline
+vigievuln -s ./shop --app-plugins prestashop,typo3 --prestashop-advisories ./ps-advisories.json --typo3-advisories ./t3-advisories.json --offline
+vigievuln -s ./shop --app-plugins prestashop,typo3 --prestashop-advisories-live --typo3-advisories-live
+vigievuln -s ./project --app-plugins wordpress --wp-checksums-live
+vigievuln -s ./project --app-plugins wordpress --wp-checksums ./wp-checksums-6.4.2-en_US.json --wp-checksums-locale en_US --offline
+vigievuln -s ./project --app-plugins laravel --offline --report-json
+vigievuln -s ./my-wordpress-plugin --app-plugins wordpress --scan-context component --offline --report-json
+vigievuln -s ./shop --app-plugins magento --offline --report-json
+vigievuln -s ./cms --app-plugins joomla,prestashop,typo3 --offline --report-json
 ```
 
 Wave 2 recognizes these product layouts and component metadata:
@@ -193,7 +193,7 @@ A missing `composer.lock` leaves package versions and dependency origins incompl
 
 `--scan-context component` treats `--src` as a standalone WordPress plugin or theme directory when its root header identifies it. It inventories that component and its Composer dependencies without inventing a WordPress core installation. The default `source` and explicit `installation` contexts describe how the input was obtained; neither proves runtime activation or a deployed configuration.
 
-`--wordfence-feed` reads a local JSON snapshot of the Wordfence Intelligence v3 **production** feed. It makes no network request. `--public-component path=slug` explicitly declares the public WordPress catalogue slug for an installed plugin or theme; it can be repeated. This declaration is recorded as `user-declared`, not independently verified. A directory name or display name alone never authorizes a public advisory match. Private components are never matched to that catalogue and retain incomplete advisory coverage. A feed snapshot supplied by the operator must be complete and current for its `no-match` results to be meaningful; fad-checker cannot prove those properties from the JSON file alone. Coverage records retain its SHA-256 and local file modification time, which do not establish its download date. Advisory records retain Wordfence identifiers, references and copyright notices. See the [Wordfence v3 feed documentation](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/) for obtaining a key and the feed usage terms.
+`--wordfence-feed` reads a local JSON snapshot of the Wordfence Intelligence v3 **production** feed. It makes no network request. `--public-component path=slug` explicitly declares the public WordPress catalogue slug for an installed plugin or theme; it can be repeated. This declaration is recorded as `user-declared`, not independently verified. A directory name or display name alone never authorizes a public advisory match. Private components are never matched to that catalogue and retain incomplete advisory coverage. A feed snapshot supplied by the operator must be complete and current for its `no-match` results to be meaningful; vigievuln cannot prove those properties from the JSON file alone. Coverage records retain its SHA-256 and local file modification time, which do not establish its download date. Advisory records retain Wordfence identifiers, references and copyright notices. See the [Wordfence v3 feed documentation](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/) for obtaining a key and the feed usage terms.
 
 `--drupal-advisories` reads a local snapshot of the [official Drupal Composer security-advisories response](https://packages.drupal.org/8/packages.json). Save it as `{ "queriedPackages": ["drupal/core", ...], "advisories": { ... } }`; `queriedPackages` must list every package requested from the API, including those omitted from its response because no advisory was returned. Unlisted packages retain `CMS_PACKAGE_NOT_QUERIED` and no negative conclusion. Drupal 7 remains outside the current community security-advisory coverage. Drupal's advisory ratings are kept separately from CVSS scores; the report shows their original rating and the derived gate severity.
 
@@ -205,7 +205,7 @@ An explicitly configured advisory file requires its corresponding `--app-plugins
 
 `--max-advisory-age <duration>` (e.g. `72h`, `30d`) bounds the age of every configured advisory snapshot. A snapshot's file modification time proves nothing about when it was collected, so the date must be declared **inside the snapshot file**: a top-level `collectedAt` or `generatedAt` ISO 8601 string, or a reserved `_fadSnapshot: { "collectedAt": "..." }` object (the Wordfence v3 feed is a flat UUID-keyed map, so the reserved key is the only metadata it tolerates). A snapshot without a declared date, a malformed date, or one older than the limit exits with code `2` before any report is written. A declared date also travels with the coverage provenance (`sourceSnapshot.collectedAt`) whether or not the limit is set.
 
-Live sources are the alternative to operator-supplied files. `--spip-advisories-live` queries NVD's SPIP product CVEs (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source that exists (no publisher API, no Packagist package); an NVD API key is optional and only lifts the rate limit. `--drupal-advisories-live` queries the official `https://packages.drupal.org/8/security-advisories` endpoint (announced by the packages.drupal.org Composer descriptor; no authentication) for exactly the inventoried public `drupal/*` identities — private components are never sent. `--prestashop-advisories-live` and `--typo3-advisories-live` page the publishers' GitHub advisory feeds (unauthenticated, subject to GitHub's rate limits), and `--wp-checksums-live` fetches the official api.wordpress.org checksums reference; each can take an optional URL override for a mirror of the same API. Wordfence publishes a [free production feed with bearer authentication](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/). Set `WORDFENCE_API_KEY` (recommended, to keep it out of the process command line) or pass `--wordfence-api-key <key>`; the key alone selects the official production endpoint, or `--wordfence-feed-url <url>` can override its URL. A live Wordfence request without a key stops with code `2` and an explanatory warning. A WordPress instance without either a local feed or a live key gets an explicit warning and incomplete advisory coverage. A fetched snapshot is stamped `_fadSnapshot.collectedAt` at collection time (so `--max-advisory-age` accepts it by construction), written atomically to `~/.fad-checker/advisory-snapshots/<provider>.json` for offline reuse, and recorded in coverage with `completeness: "tool-fetched"`. Those cached snapshots are consumed **automatically — in every mode**: the lanes a scan runs are a function of the cache state, not of online/offline, so `fad-checker -s <proj>` online and `fad-checker -s <proj> --offline` in the air-gapped enclave (same command, same options, warmed by the same phase 2) produce identical reports — no `--drupal-advisories` / `--prestashop-advisories` / `--typo3-advisories` / `--wp-checksums` flag needed. The files travel with `--export-cache` / `--import-cache`; `--import-anonymized` **warms them from the descriptor alone** (its `applications` section carries the public product identities — type, core version, inventoried public components — the phase-1 export emits): the Drupal feed for the union of the lock's `drupal/*` coordinates and the inventoried public identities, the PrestaShop/TYPO3 repository feeds, one WordPress checksums reference per declared core version (pinned by the warming run's `--wp-checksums-locale`, so both phases must agree on it), and the Wordfence catalogue when the warming machine holds an API key (the key itself never travels — the enclave reads the snapshot back without one). An explicit flag or live URL always wins, the fallback only engages when the source's application plugin is selected, and the file goes through the same schema and `--max-advisory-age` validation as an operator-supplied one. The WordPress checksums reference is pinned by version and locale, so its fallback resolves per instance. Live sources refuse to run under `--offline` (exit `2`); an air-gapped scan supplies a local feed snapshot — the tool's own cache counts as one. A failed or invalid live response stops the scan before any report, and a live source still requires its `--app-plugins` selection.
+Live sources are the alternative to operator-supplied files. `--spip-advisories-live` queries NVD's SPIP product CVEs (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source that exists (no publisher API, no Packagist package); an NVD API key is optional and only lifts the rate limit. `--drupal-advisories-live` queries the official `https://packages.drupal.org/8/security-advisories` endpoint (announced by the packages.drupal.org Composer descriptor; no authentication) for exactly the inventoried public `drupal/*` identities — private components are never sent. `--prestashop-advisories-live` and `--typo3-advisories-live` page the publishers' GitHub advisory feeds (unauthenticated, subject to GitHub's rate limits), and `--wp-checksums-live` fetches the official api.wordpress.org checksums reference; each can take an optional URL override for a mirror of the same API. Wordfence publishes a [free production feed with bearer authentication](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/). Set `WORDFENCE_API_KEY` (recommended, to keep it out of the process command line) or pass `--wordfence-api-key <key>`; the key alone selects the official production endpoint, or `--wordfence-feed-url <url>` can override its URL. A live Wordfence request without a key stops with code `2` and an explanatory warning. A WordPress instance without either a local feed or a live key gets an explicit warning and incomplete advisory coverage. A fetched snapshot is stamped `_fadSnapshot.collectedAt` at collection time (so `--max-advisory-age` accepts it by construction), written atomically to `~/.fad-checker/advisory-snapshots/<provider>.json` for offline reuse, and recorded in coverage with `completeness: "tool-fetched"`. Those cached snapshots are consumed **automatically — in every mode**: the lanes a scan runs are a function of the cache state, not of online/offline, so `vigievuln -s <proj>` online and `vigievuln -s <proj> --offline` in the air-gapped enclave (same command, same options, warmed by the same phase 2) produce identical reports — no `--drupal-advisories` / `--prestashop-advisories` / `--typo3-advisories` / `--wp-checksums` flag needed. The files travel with `--export-cache` / `--import-cache`; `--import-anonymized` **warms them from the descriptor alone** (its `applications` section carries the public product identities — type, core version, inventoried public components — the phase-1 export emits): the Drupal feed for the union of the lock's `drupal/*` coordinates and the inventoried public identities, the PrestaShop/TYPO3 repository feeds, one WordPress checksums reference per declared core version (pinned by the warming run's `--wp-checksums-locale`, so both phases must agree on it), and the Wordfence catalogue when the warming machine holds an API key (the key itself never travels — the enclave reads the snapshot back without one). An explicit flag or live URL always wins, the fallback only engages when the source's application plugin is selected, and the file goes through the same schema and `--max-advisory-age` validation as an operator-supplied one. The WordPress checksums reference is pinned by version and locale, so its fallback resolves per instance. Live sources refuse to run under `--offline` (exit `2`); an air-gapped scan supplies a local feed snapshot — the tool's own cache counts as one. A failed or invalid live response stops the scan before any report, and a live source still requires its `--app-plugins` selection.
 
 Symfony Flex `symfony.lock` recipes and `extra.symfony.require` are context. Installed package versions come from `composer.lock`. Extraction with `-t` also mirrors `symfony.lock`. The Symfony and Laravel application-advisory capabilities are currently recorded as `not-run (CMS_ADVISORY_NOT_QUALIFIED)`: their CVEs come from the standard Composer lane (OSV/Packagist), and a capability that never ran never becomes a clean result. WordPress and Drupal advisories run through the Wordfence and Drupal sources configured above. `--fail-on-incomplete` exits with code 2 after writing the partial report when a requested capability is incomplete. The default capability set is `inventory,advisories`.
 
@@ -213,7 +213,7 @@ Report subsections with no results are omitted, and the remaining ones are numbe
 
 ## Outputs
 
-Every output has its own `--report-<type>` flag, each taking an **optional** path. Give a path to write there; omit the path to use a default name under `--report-output` (default dir `./fad-checker-report`). **If you pass no `--report-*` flag, HTML + `findings.json` are written by default**; pass `--no-report` to write nothing (gate-only / CI). Selecting any `--report-*` flag writes exactly that set — e.g. `--report-sbom` alone writes only the SBOM, no HTML.
+Every output has its own `--report-<type>` flag, each taking an **optional** path. Give a path to write there; omit the path to use a default name under `--report-output` (default dir `./vigievuln-report`). **If you pass no `--report-*` flag, HTML + `findings.json` are written by default**; pass `--no-report` to write nothing (gate-only / CI). Selecting any `--report-*` flag writes exactly that set — e.g. `--report-sbom` alone writes only the SBOM, no HTML.
 
 | Flag | Default name | Effect |
 | --- | --- | --- |
@@ -224,18 +224,18 @@ Every output has its own `--report-<type>` flag, each taking an **optional** pat
 | `--report-csaf [file]` | `csaf-vex.json` | A **CSAF 2.0 VEX** (`csaf_vex`) document: a `product_tree` of every dep (purl-identified) plus per-CVE `product_status.known_affected`, `cvss_v3` scores, a KEV `exploited` flag, and prioritization notes. |
 | `--report-json [file]` | `findings.json` | A flat **findings JSON** (fad's own format): every chapter (CVE/EOL/obsolete/outdated/licenses/vendored) + an `unmanaged` array (native-binary inventory with identity/integrity/signals), an `embedded` array (every JAR/WAR/EAR coordinate, vuln or not, with `vulnCount`/`maxSeverity`), EOL entries carrying their `productSlug`/`via`/`viaKey` origin + `status`/`cycle`/`support` and, for grouped frameworks, `anchor`/`components[]` (each component with its own `manifestPaths`, or `scope:"transitive"` + `via` chain), + a summary, easy to diff between audits and post-process. |
 | `--report-sarif [file]` | `fad.sarif` | A **SARIF 2.1.0** log for GitHub Code Scanning / GitLab: one rule per CVE with `security-severity` (drives GitHub's severity), KEV tags, and the manifest (or embedding jar) as the result location. |
-| `--report-output <dir>` | `./fad-checker-report` | Base directory for any output left at its default name. |
+| `--report-output <dir>` | `./vigievuln-report` | Base directory for any output left at its default name. |
 
 ```bash
-# default: HTML + findings.json into ./fad-checker-report
-fad-checker -s ./proj
+# default: HTML + findings.json into ./vigievuln-report
+vigievuln -s ./proj
 
 # only the machine artifacts, default names under a custom dir
-fad-checker -s ./proj --report-output ./out --report-sbom --report-csaf --report-json --report-sarif
+vigievuln -s ./proj --report-output ./out --report-sbom --report-csaf --report-json --report-sarif
 
 # explicit paths
-fad-checker -s ./proj --report-sbom sbom.cdx.json --report-sarif fad.sarif
-fad-checker -s ./proj -r html,json,xlsx            # add an Excel workbook to the default pair
+vigievuln -s ./proj --report-sbom sbom.cdx.json --report-sarif fad.sarif
+vigievuln -s ./proj -r html,json,xlsx            # add an Excel workbook to the default pair
 ```
 
 All honour `--offline` (they render from whatever the scan already resolved).
@@ -253,7 +253,7 @@ Suppressed findings are dropped from the report chapters and from `--fail-on`, b
 
 ```bash
 # Fail the pipeline only on exploited-in-the-wild vulns, minus accepted risks
-fad-checker -s . --fail-on kev --ignore .fadignore --report-sarif fad.sarif
+vigievuln -s . --fail-on kev --ignore .fadignore --report-sarif fad.sarif
 ```
 
 ## Differential audits (`--baseline` / `fad diff`)
@@ -274,10 +274,10 @@ are diffed but excluded from the `--fail-on-new` signal.
 
 ```bash
 # CI: fail only when this build introduces NEW vulnerabilities vs main's last report
-fad-checker -s . --report-json this.json --baseline main.json --fail-on-new
+vigievuln -s . --report-json this.json --baseline main.json --fail-on-new
 
 # Ad-hoc comparison of two historical reports
-fad-checker diff audit-q1.json audit-q2.json --report-json delta.json
+vigievuln diff audit-q1.json audit-q2.json --report-json delta.json
 ```
 
 ## Report integrity & methodology
@@ -290,7 +290,7 @@ Every run aimed at a deliverable is **reproducible** and **tamper-evident**:
   registry caches) read from `~/.fad-checker/`. An `--offline` re-run against the same cache
   (ship it with `--export-cache`) reproduces the findings.
 - **Methodology chapter** — appendix 12 of the HTML/`.doc` report renders that source table
-  plus an explicit statement of **what fad-checker does *not* assess** (reachability,
+  plus an explicit statement of **what vigievuln does *not* assess** (reachability,
   runtime config, secrets/IaC, first-party code, malware beyond the OSV/CIRCL signal, legal
   license advice) — the audit's scope, stated up front.
 - **Integrity manifest** — a standard **`SHA256SUMS`** is written beside the artifacts,
@@ -312,33 +312,33 @@ Two signals beyond known CVEs:
   hit, and add legitimate near-misses to the popular list to suppress them.
 
 ```bash
-fad-checker -s . --typosquat                       # add the typosquat heuristic
-fad-checker -s . --fail-on critical                # malware blocks even below 'critical'
+vigievuln -s . --typosquat                       # add the typosquat heuristic
+vigievuln -s . --fail-on critical                # malware blocks even below 'critical'
 ```
 
 ## Offline / cache control
 
 ```bash
 # Use cached data only, no network (works for everything)
-fad-checker -s . --offline
+vigievuln -s . --offline
 
 # Per-source offline
-fad-checker -s . --cve-offline                  # use cached CVE index only
-fad-checker -s . --cve-refresh                  # force re-download of CVE bundle
-fad-checker -s . --retire-refresh               # force re-scan with retire.js (ignore cache)
+vigievuln -s . --cve-offline                  # use cached CVE index only
+vigievuln -s . --cve-refresh                  # force re-download of CVE bundle
+vigievuln -s . --retire-refresh               # force re-scan with retire.js (ignore cache)
 
 # Offline-COMPLETE OSV (Maven): import the full OSV database once, then match offline
 # regardless of the per-dep OSV cache (the OSV-Scanner air-gap model).
-fad-checker -s . --osv-db                        # online: download (~9 MB) + match
-fad-checker -s . --osv-db --offline              # offline: match against the imported DB
-fad-checker -s . --osv-db --osv-db-refresh       # force re-download of the OSV DB
+vigievuln -s . --osv-db                        # online: download (~9 MB) + match
+vigievuln -s . --osv-db --offline              # offline: match against the imported DB
+vigievuln -s . --osv-db --osv-db-refresh       # force re-download of the OSV DB
 
 # Cache export / import (useful for air-gapped boxes)
-fad-checker --export-cache fad-cache.tar.gz
-fad-checker --export-cache fad-cache.tar.gz --include-config   # bundle NVD key too
-fad-checker --import-cache fad-cache.tar.gz                    # merge into the existing cache
-fad-checker --import-cache fad-cache.tar.gz --replace           # wholesale swap, previous kept as .bak
-fad-checker --import-cache fad-cache.tar.gz --replace --force   # wholesale swap, no backup
+vigievuln --export-cache fad-cache.tar.gz
+vigievuln --export-cache fad-cache.tar.gz --include-config   # bundle NVD key too
+vigievuln --import-cache fad-cache.tar.gz                    # merge into the existing cache
+vigievuln --import-cache fad-cache.tar.gz --replace           # wholesale swap, previous kept as .bak
+vigievuln --import-cache fad-cache.tar.gz --replace --force   # wholesale swap, no backup
 ```
 
 The cache archive bundles everything under `~/.fad-checker/` (except `config.json`),
@@ -358,7 +358,7 @@ ever lose it. Pass `--replace` for the old wholesale swap (previous cache kept a
 
 ### Zero-data-sent guarantee (air-gap)
 
-Under `--offline`, `fad-checker` makes **zero network calls** — it reads only the warmed
+Under `--offline`, `vigievuln` makes **zero network calls** — it reads only the warmed
 caches under `~/.fad-checker/` and never transmits any dependency, path, hostname or
 finding off the machine. This is the property a regulated / air-gapped engagement needs, and it
 is enforced two ways:
@@ -372,14 +372,14 @@ is enforced two ways:
 
   ```bash
   # true air-gap: no network device exists inside the namespace
-  unshare -rn node fad-checker.js -s ./proj --offline --report-json /tmp/airgap.json
+  unshare -rn node vigievuln.js -s ./proj --offline --report-json /tmp/airgap.json
   # → exit 0, and /tmp/airgap.json is identical to a normal `--offline` run
   ```
 
   (Measured on a 25-module Spring/JSF project: identical findings, ~1.8 s.)
 
 > **Compiled binary, no `node`/`retire` needed:** the bun-compiled single binary
-> (`dist/fad-checker`, `.exe`, `-macos`) statically bundles the retire.js CLI and
+> (`dist/vigievuln`, `.exe`, `-macos`) statically bundles the retire.js CLI and
 > re-execs itself to run it — so vendored-JS scanning works from the
 > lone binary on an air-gapped box with no Node.js and no `retire` on `PATH`. The only
 > input it needs is the signature DB warmed in phase 2 (carried in the cache archive).
@@ -398,14 +398,14 @@ bundled, swapped or merged together by `--export-cache` / `--import-cache`.
 
 ```bash
 # Terminal 1 — start the server (default 127.0.0.1:8321, store ~/.fad-checker-proxy-cache/)
-fad-checker serve-cache
-fad-checker serve-cache --port 9000 --host 0.0.0.0 --token s3cret   # shared across machines
-fad-checker serve-cache --nvd-key <key> --wordfence-key <key> --github-token <t>
-fad-checker serve-cache --upstream-proxy http://corp-proxy:3128     # the server itself behind a corporate proxy
+vigievuln serve-cache
+vigievuln serve-cache --port 9000 --host 0.0.0.0 --token s3cret   # shared across machines
+vigievuln serve-cache --nvd-key <key> --wordfence-key <key> --github-token <t>
+vigievuln serve-cache --upstream-proxy http://corp-proxy:3128     # the server itself behind a corporate proxy
 
 # Then every scan (same machine, CI runners, other developers) points at it:
-fad-checker -s ./proj --proxy-cache http://127.0.0.1:8321
-FAD_PROXY_CACHE_TOKEN=s3cret fad-checker -s ./proj --proxy-cache http://cache-host:9000
+vigievuln -s ./proj --proxy-cache http://127.0.0.1:8321
+FAD_PROXY_CACHE_TOKEN=s3cret vigievuln -s ./proj --proxy-cache http://cache-host:9000
 ```
 
 | Flag (serve-cache) | Effect |
@@ -466,9 +466,9 @@ encrypt that token or forwarded source credentials; terminate TLS when crossing
 an untrusted network.
 
 ```bash
-fad-checker serve-cache --wordfence-key <key> --max-store-mb 4096 --upstream-timeout 180
-fad-checker -s ./wordpress --proxy-cache http://127.0.0.1:8321 --wordfence-live
-fad-checker --import-anonymized deps.json --proxy-cache http://127.0.0.1:8321 --wordfence-live
+vigievuln serve-cache --wordfence-key <key> --max-store-mb 4096 --upstream-timeout 180
+vigievuln -s ./wordpress --proxy-cache http://127.0.0.1:8321 --wordfence-live
+vigievuln --import-anonymized deps.json --proxy-cache http://127.0.0.1:8321 --wordfence-live
 ```
 
 When neither client nor server has a Wordfence key, the server refuses the request
@@ -481,7 +481,7 @@ per-entry guarantee, not a transaction spanning the entire imported cache.
 ### Corporate forward proxy (`--proxy`)
 
 ```bash
-fad-checker -s ./proj --proxy http://corp-proxy:3128
+vigievuln -s ./proj --proxy http://corp-proxy:3128
 ```
 
 Routes **every** outbound request through a corporate forward proxy (Node >= 24 or
@@ -502,19 +502,19 @@ report is produced **back offline**.
 ```bash
 # Phase 1 — OFFLINE (audited machine): export the anonymized descriptor, then stop.
 #   -e excludes private/internal packages (offline we can't classify private vs public).
-fad-checker -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
+vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
 #   deps.json is plain JSON (schema "fad-deps/1") — review it before transfer.
 
 # Phase 2 — ONLINE (any machine, NO --src): warm the coordinate-keyed caches.
-fad-checker --import-anonymized deps.json     # OSV/NVD/CVE/registry/EOL + retire signatures
-fad-checker --export-cache fad-cache.tar.gz   # carry the warmed caches back
+vigievuln --import-anonymized deps.json     # OSV/NVD/CVE/registry/EOL + retire signatures
+vigievuln --export-cache fad-cache.tar.gz   # carry the warmed caches back
 
 # Phase 3 — OFFLINE (audited machine): full report with real paths/manifests.
-fad-checker --import-cache fad-cache.tar.gz   # merged into the enclave's own cache
-fad-checker -s ./proj --offline               # re-collect locally + cache hits → full report
+vigievuln --import-cache fad-cache.tar.gz   # merged into the enclave's own cache
+vigievuln -s ./proj --offline               # re-collect locally + cache hits → full report
 ```
 
-Why it works: fad-checker's caches are keyed by *coordinate* / *vuln id*, never by path,
+Why it works: vigievuln's caches are keyed by *coordinate* / *vuln id*, never by path,
 so warming them online and replaying offline yields cache hits. The descriptor keeps
 `ecosystem`/`ecosystemType`/`namespace`/`name`/`version`/`versions`/`scope`/`isDev` and
 drops manifest paths, registry URLs, integrity hashes and parent chains. The phase-2
@@ -556,7 +556,7 @@ in that case. If your enclave policy prefers it, you can still run two exchanges
 
 ## Custom registries (private repos)
 
-`fad-checker` queries each ecosystem's public registry by default. Register private ones for **`maven`, `npm`, `pypi`, `ruby`, `go`, `nuget`, `composer`** so transitive resolution, outdated/deprecation and license lookups reach them.
+`vigievuln` queries each ecosystem's public registry by default. Register private ones for **`maven`, `npm`, `pypi`, `ruby`, `go`, `nuget`, `composer`** so transitive resolution, outdated/deprecation and license lookups reach them.
 
 | Flag | Effect |
 | --- | --- |
@@ -566,12 +566,12 @@ in that case. If your enclave policy prefers it, you can still run two exchanges
 | `--repo <eco>=<url>` | One-off, not persisted; **repeatable**; auth via inline `https://user:pass@host/`. |
 
 ```bash
-fad-checker --add-repo maven   nexus     https://nexus.acme.com/repository/maven-public/ --auth alice:s3cr3t
-fad-checker --add-repo npm     verdaccio https://npm.acme.com/                            --token "$NPM_TOKEN"
-fad-checker --add-repo nuget   azure     https://pkgs.dev.azure.com/org/_packaging/feed/nuget/v3/index.json --token "$AZ_TOKEN"
-fad-checker --add-repo composer satis    https://composer.acme.com/                       --auth alice:s3cr3t
-fad-checker --list-repos
-fad-checker -s ./proj --repo npm=https://npm.acme.com/ --repo maven=https://nexus.acme.com/repository/maven-public/
+vigievuln --add-repo maven   nexus     https://nexus.acme.com/repository/maven-public/ --auth alice:s3cr3t
+vigievuln --add-repo npm     verdaccio https://npm.acme.com/                            --token "$NPM_TOKEN"
+vigievuln --add-repo nuget   azure     https://pkgs.dev.azure.com/org/_packaging/feed/nuget/v3/index.json --token "$AZ_TOKEN"
+vigievuln --add-repo composer satis    https://composer.acme.com/                       --auth alice:s3cr3t
+vigievuln --list-repos
+vigievuln -s ./proj --repo npm=https://npm.acme.com/ --repo maven=https://nexus.acme.com/repository/maven-public/
 ```
 
 Registries are tried **in declared order, the public registry last** (first 2xx wins). `--auth user:pass` → `Basic <base64>`; `--token TOK` → `Bearer TOK`. Responses are cached per coordinate. Same-API constraint per ecosystem: **PyPI/Ruby** custom bases must expose the same JSON API as the public one (`<base>/<pkg>/json`, `<base>/<gem>.json`), not a bare PEP 503 simple index; **NuGet** bases speak the v3 registration API — a service index (`…/index.json`) is auto-resolved to its `RegistrationsBaseUrl`; **Composer** bases are queried via the v2 metadata API (`<base>/p2/<vendor>/<pkg>.json`).
@@ -581,8 +581,8 @@ Registries are tried **in declared order, the public registry last** (first 2xx 
 Reusable defaults come from (lowest priority first): **`~/.fad-checker/config.json`** (global) → **`FAD_CHECKER_ENV`** (a CLI-flag string) → **config file** (`--config <file.json>`, else `./.fad-env.json`, JSON) → **CLI flags** (always win). A file/env value only fills an option you did not pass on the CLI; `registries` are unioned across all layers.
 
 ```bash
-fad-checker --config ./ci/fad-env.json                         # JSON file of defaults
-FAD_CHECKER_ENV='--fail-on high --no-nuget' fad-checker -s ./proj   # flag string of defaults
+vigievuln --config ./ci/fad-env.json                         # JSON file of defaults
+FAD_CHECKER_ENV='--fail-on high --no-nuget' vigievuln -s ./proj   # flag string of defaults
 ```
 
 ```jsonc
@@ -609,28 +609,28 @@ NVD's public rate limit is 5 requests / 30s without a key. The free key bumps it
 
 ```bash
 # Get a key in 30 seconds: https://nvd.nist.gov/developers/request-an-api-key
-fad-checker --set-nvd-key YOUR_KEY      # stored in ~/.fad-checker/config.json (mode 0600)
-fad-checker --show-config               # confirm it's persisted (key masked)
+vigievuln --set-nvd-key YOUR_KEY      # stored in ~/.fad-checker/config.json (mode 0600)
+vigievuln --show-config               # confirm it's persisted (key masked)
 ```
 
 Or pass it ad-hoc via the `NVD_API_KEY` env var.
 
 ## Snyk integration
 
-If you have `snyk` installed and authenticated, `fad-checker` can drive it:
+If you have `snyk` installed and authenticated, `vigievuln` can drive it:
 
 ```bash
-fad-checker -s ./proj -t ../proj-clean -e "^com\.acme\." --snyk
+vigievuln -s ./proj -t ../proj-clean -e "^com\.acme\." --snyk
 ```
 
 This:
 1. Generates the cleaned POM tree at `../proj-clean/`.
 2. Runs `snyk test --all-projects --json` against it.
-3. Merges Snyk's findings into the report — entries present in both `fad-checker` and Snyk are tagged `source: "both"`.
+3. Merges Snyk's findings into the report — entries present in both `vigievuln` and Snyk are tagged `source: "both"`.
 
 `--snyk` requires `-t` (Snyk needs a real POM tree to scan).
 
-If the snyk run itself **fails** — not authenticated, an unsupported project, a timeout — fad-checker now reports it as a `Snyk run failed: <reason>` warning and continues the scan with fad-checker's own findings. (Earlier versions parsed snyk's error-shaped `--json` output as zero vulnerabilities and printed a misleading `Snyk: 0 findings merged`.) A snyk exit of 1 is **not** a failure — it just means snyk found vulnerabilities, which are merged as usual.
+If the snyk run itself **fails** — not authenticated, an unsupported project, a timeout — vigievuln now reports it as a `Snyk run failed: <reason>` warning and continues the scan with vigievuln's own findings. (Earlier versions parsed snyk's error-shaped `--json` output as zero vulnerabilities and printed a misleading `Snyk: 0 findings merged`.) A snyk exit of 1 is **not** a failure — it just means snyk found vulnerabilities, which are merged as usual.
 
 ## Read-only vs write mode
 
@@ -649,41 +649,41 @@ The `--target` guardrails refuse:
 ## Verbosity
 
 ```bash
-fad-checker -s . --verbose   # progress per source (OSV batches, NVD pages, retire scan, …)
+vigievuln -s . --verbose   # progress per source (OSV batches, NVD pages, retire scan, …)
 ```
 
 ## Help & version
 
 ```bash
-fad-checker                  # no arguments: a mini help with the running version (exit 1 — nothing was scanned)
-fad-checker -h, --help       # every option
-fad-checker -v, --version    # the running version (-V still works; it was the version flag before)
+vigievuln                  # no arguments: a mini help with the running version (exit 1 — nothing was scanned)
+vigievuln -h, --help       # every option
+vigievuln -v, --version    # the running version (-V still works; it was the version flag before)
 ```
 
 > `--verbose` is **long-form only**: `-v` used to mean verbose and now means version, so an old
-> `fad-checker -s . -v` prints the version and exits 0 **without scanning**. Grep CI for it.
+> `vigievuln -s . -v` prints the version and exits 0 **without scanning**. Grep CI for it.
 
 ## Shell completion
 
 ```bash
-fad-checker --completion bash > /etc/bash_completion.d/fad-checker
-fad-checker --completion zsh  > ~/.zsh/completions/_fad-checker
+vigievuln --completion bash > /etc/bash_completion.d/vigievuln
+vigievuln --completion zsh  > ~/.zsh/completions/_vigievuln
 ```
 
 ## All flags at a glance
 
 ```bash
-fad-checker --help
+vigievuln --help
 ```
 
 ## Recipes
 
 ### CI gate: fail the build on any CRITICAL prod CVE
 
-`fad-checker` exits 0 even when CVEs are found (it's a reporter, not a gate). Wire your own:
+`vigievuln` exits 0 even when CVEs are found (it's a reporter, not a gate). Wire your own:
 
 ```bash
-fad-checker -s . --no-nvd > /dev/null
+vigievuln -s . --no-nvd > /dev/null
 # Then grep the report or parse the structured output (planned).
 ```
 
@@ -694,7 +694,7 @@ fad-checker -s . --no-nvd > /dev/null
 Keep dated copies of the report:
 
 ```bash
-fad-checker -s . --report-output reports/$(date +%F)
+vigievuln -s . --report-output reports/$(date +%F)
 diff reports/2026-04-01/cve-report.html reports/2026-05-01/cve-report.html
 ```
 
@@ -706,15 +706,15 @@ version hints before they leave the secure machine.
 
 ```bash
 # OFFLINE (audited machine)
-fad-checker -s ./real-project -e "^(client|internal)\." --export-anonymized deps.json
+vigievuln -s ./real-project -e "^(client|internal)\." --export-anonymized deps.json
 
 # ONLINE (connected machine, no source needed)
-fad-checker --import-anonymized deps.json      # warms ~/.fad-checker/ caches from the coords
-fad-checker --export-cache fad-cache.tar.gz
+vigievuln --import-anonymized deps.json      # warms ~/.fad-checker/ caches from the coords
+vigievuln --export-cache fad-cache.tar.gz
 
 # OFFLINE again — full report with real paths
-fad-checker --import-cache fad-cache.tar.gz    # merged, the enclave keeps what it had
-fad-checker -s ./real-project --offline
+vigievuln --import-cache fad-cache.tar.gz    # merged, the enclave keeps what it had
+vigievuln -s ./real-project --offline
 ```
 
 See the **Anonymized descriptor** section above for what the descriptor contains and why

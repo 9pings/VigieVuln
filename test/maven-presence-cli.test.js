@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
-const CLI = path.resolve(__dirname, "../fad-checker.js");
+const CLI = path.resolve(__dirname, "../vigievuln.js");
 const key = "org.slf4j:slf4j-api";
 const flags = ["--cve-offline", "--no-transitive", "--no-osv", "--no-osv-db", "--no-nvd",
 	"--no-epss", "--no-kev", "--no-euvd", "--no-certfr", "--no-eol", "--no-retire",

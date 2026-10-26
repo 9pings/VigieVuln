@@ -23,7 +23,7 @@ function sampleMap() {
 }
 
 test("serializeDeps produces the fad-deps/1 schema with per-ecosystem summary", () => {
-	const d = serializeDeps(sampleMap(), { generator: "fad-checker test", generatedAt: "2026-01-01T00:00:00Z" });
+	const d = serializeDeps(sampleMap(), { generator: "vigievuln test", generatedAt: "2026-01-01T00:00:00Z" });
 	assert.strictEqual(d.schema, SCHEMA);
 	assert.strictEqual(d.generatedAt, "2026-01-01T00:00:00Z");
 	assert.strictEqual(d.summary.total, 3);

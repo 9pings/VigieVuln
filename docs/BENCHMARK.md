@@ -5,10 +5,10 @@ target is pinned to a commit, the commands are below, and every number can be re
 the tools' own JSON output. Run it and tell me if it doesn't hold.
 
 Spoiler for the impatient, so nothing here reads as a sales pitch: **at full capability no tool
-finds everything** — fad-checker leads at 87% of the union, and 118 pairs were reported by Snyk
+finds everything** — vigievuln leads at 87% of the union, and 118 pairs were reported by Snyk
 and not by it. Those 118 were published here as a recall gap; they are not one. Every pair has
 since been adjudicated against the public record and **none is a recall bug** —
-[the measurement](#what-fad-checker-misses-and-why). Its differentiator remains the second table:
+[the measurement](#what-vigievuln-misses-and-why). Its differentiator remains the second table:
 what survives when the network is gone.
 
 > **Re-measured — 2026-10-02, after the Maven mediation fixes** (dependencyManagement-only
@@ -41,7 +41,7 @@ answers are not the same.
 
 1. **At full capability, what does each tool find?** Every scanner online, in its best
    configuration, with a populated `~/.m2`. This is the fair product comparison.
-2. **With no network, what survives?** The narrower question fad-checker is built around.
+2. **With no network, what survives?** The narrower question vigievuln is built around.
 
 Target for both: **Apache Dubbo 2.7.8**, a 105-module Maven reactor
 (`0be2a1bbbf9168490acecaf1eed1bd16cb8db402`).
@@ -57,7 +57,7 @@ Union of everything any tool found: **908** pairs.
 
 | Scanner, best configuration | Found | Unique to it | % of union | Not reported¹ |
 | --- | --- | --- | --- | --- |
-| **fad-checker 2.4.6** | **790** | 125 | **87.0%** | 118 → **0 real**¹ |
+| **vigievuln 2.4.6** | **790** | 125 | **87.0%** | 118 → **0 real**¹ |
 | OSV-Scanner 2.4.0 (online) | 657 | 0 | 72.4% | 251 |
 | Snyk 1.1302.1 (`--all-projects`, mvn build) | 603 | **117** | 66.4% | 305 |
 | Trivy 0.72.0 (populated `~/.m2`) | 546 | 0 | 60.1% | 362 |
@@ -65,9 +65,9 @@ Union of everything any tool found: **908** pairs.
 
 ¹ **"Not reported" is union arithmetic, not a verified recall gap.** It counts pairs some other
 tool produced and this one did not — which is only a miss if the public record actually binds that
-vulnerability to that coordinate and version. For fad-checker that was checked, pair by pair:
+vulnerability to that coordinate and version. For vigievuln that was checked, pair by pair:
 **0 of them are recall bugs**, and two thirds are Snyk contradicting the public record
-([detail](#what-fad-checker-misses-and-why)). The other rows have *not* been adjudicated, so read
+([detail](#what-vigievuln-misses-and-why)). The other rows have *not* been adjudicated, so read
 their column the same way — as "did not report", not "missed".
 
 Read the other rows fairly too: Trivy and Grype are **container and SBOM scanners**; a raw Maven
@@ -75,7 +75,7 @@ source checkout is not the job they are built for.
 
 Snyk and Trivy at full capability both depend
 on a real Maven build having happened — Snyk invokes `mvn`, and Trivy needs either network access
-or a `~/.m2` that a previous build populated. fad-checker and OSV-Scanner read the tree without
+or a `~/.m2` that a previous build populated. vigievuln and OSV-Scanner read the tree without
 building. That is a different starting assumption, not a better one, and it is the reason the
 second table exists.
 
@@ -92,7 +92,7 @@ not merely an offline flag. Reference: OSV-Scanner's own **online** output, 657 
 
 | Scanner, no network | Recovers | Wall clock |
 | --- | --- | --- |
-| **fad-checker 2.4.6** `--offline` | **657 (100%)** | 4.5 s |
+| **vigievuln 2.4.6** `--offline` | **657 (100%)** | 4.5 s |
 | Grype + Syft (defaults) | 45 (6.8%) | 32 s |
 | Trivy `--offline-scan`, cold `~/.m2` | 40 (6.1%) | 1.0 s |
 | OSV-Scanner `--offline` | 37 (5.6%) | 0.8 s |
@@ -119,9 +119,9 @@ prior build can supply. fad's cache is coordinate-keyed and travels
 
 ## Per-ecosystem results
 
-Maven is where fad-checker's design pays off, so it gets its own deep dive above. But it
+Maven is where vigievuln's design pays off, so it gets its own deep dive above. But it
 claims ten ecosystems, and "we benchmarked one of them" is not an answer. Here are the others,
-same method: OSV-Scanner and fad-checker on the same public project, findings normalised to
+same method: OSV-Scanner and vigievuln on the same public project, findings normalised to
 `(package@version | CVE)` with GHSA/PYSEC ids mapped to their CVE alias.
 
 **Expect parity, and that is the point.** For npm, PyPI, Go, RubyGems and Composer the
@@ -146,7 +146,7 @@ vulnerabilities, and reproducible by anyone.
 
 ### Results
 
-| Ecosystem | OSV-Scanner | fad-checker | Both | fad only | OSV only |
+| Ecosystem | OSV-Scanner | vigievuln | Both | fad only | OSV only |
 | --- | --- | --- | --- | --- | --- |
 | Maven | 657 | **790** | 657 | 133 | 0 |
 | npm | 274 | 274 | **274** | 0 | 0 |
@@ -216,9 +216,9 @@ osv-scanner scan source -r ./dubbo --offline --download-offline-databases \
 unshare -rn osv-scanner scan source -r ./dubbo --offline \
   --format json --output osv-airgap.json           # real air gap
 
-# 4. fad-checker: one online run to warm the cache, then no network
-fad-checker -s ./dubbo --report-json fad-online.json
-unshare -rn fad-checker -s ./dubbo --offline --report-json fad-airgap.json
+# 4. vigievuln: one online run to warm the cache, then no network
+vigievuln -s ./dubbo --report-json fad-online.json
+unshare -rn vigievuln -s ./dubbo --offline --report-json fad-airgap.json
 
 # 5. Snyk at full capability — it invokes mvn, so this also populates ~/.m2
 cd dubbo && snyk test --all-projects --json > ../snyk.json; cd ..
@@ -260,10 +260,10 @@ Compare on `(coordinate@version | vulnerability id)` pairs, restricted to Maven.
 things or the comparison is meaningless: map OSV `GHSA-*` ids to their `CVE-*` alias, and strip
 Maven hard-pin brackets (`[1.2.3]` → `1.2.3`).
 
-Environment for the numbers above: Node 24.14.0, Linux 6.6.87 (WSL2), fad-checker 2.4.6,
+Environment for the numbers above: Node 24.14.0, Linux 6.6.87 (WSL2), vigievuln 2.4.6,
 OSV-Scanner 2.4.0 (osv-scalibr 0.4.5).
 
-## What fad-checker misses, and why
+## What vigievuln misses, and why
 
 **At full capability: 118 pairs**, all found by Snyk and by no other tool.
 
@@ -312,7 +312,7 @@ OSV-Scanner 2.4.0 (osv-scalibr 0.4.5).
 > exactly 3 pairs — all out of range anyway, so no verdict depends on it.
 >
 > **One authority, named — and where that cuts against this document.** The adjudication is
-> defined against **OSV**, because OSV is what fad-checker queries by default and the adjudicator
+> defined against **OSV**, because OSV is what vigievuln queries by default and the adjudicator
 > reuses its own range evaluation. Under NVD's CPE ranges instead, 36 of the 131 would sit inside
 > a vulnerable range — but 24 of those are the framework-vs-artifact granularity noise that
 > [`--nvd-cpe-match` was measured at 12% precision for](#a-negative-result-nvd-cpe-ranges-as-a-matching-tier)

@@ -1,5 +1,5 @@
 name: "False positive / false negative"
-description: A finding that shouldn't be there, or a real one that fad-checker missed
+description: A finding that shouldn't be there, or a real one that vigievuln missed
 title: "[FP/FN] "
 labels: ["accuracy"]
 body:
@@ -24,7 +24,7 @@ body:
     id: coordinate
     attributes:
       label: Coordinate and version
-      description: Exactly as fad-checker printed it, or as it appears in your manifest.
+      description: Exactly as vigievuln printed it, or as it appears in your manifest.
       placeholder: "org.apache.logging.log4j:log4j-core:2.14.0  ·  npm:lodash@4.17.20"
     validations:
       required: true
@@ -79,12 +79,12 @@ body:
     id: command
     attributes:
       label: Command you ran
-      placeholder: "fad-checker -s ./proj --transitive --offline"
+      placeholder: "vigievuln -s ./proj --transitive --offline"
 
   - type: input
     id: version
     attributes:
-      label: fad-checker version
-      description: "`fad-checker --version`"
+      label: vigievuln version
+      description: "`vigievuln --version`"
     validations:
       required: true

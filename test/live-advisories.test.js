@@ -250,7 +250,7 @@ test("the CLI refuses live advisory sources under --offline", () => {
 		const src = path.join(__dirname, "fixtures", "drupal-custom");
 		for (const extra of [["--drupal-advisories-live"], ["--wordfence-feed-url", "https://operator.invalid/feed.json"],
 			["--prestashop-advisories-live"], ["--typo3-advisories-live"], ["--wp-checksums-live"]]) {
-			const run = spawnSync(process.execPath, [path.join(__dirname, "..", "fad-checker.js"), "-s", src,
+			const run = spawnSync(process.execPath, [path.join(__dirname, "..", "vigievuln.js"), "-s", src,
 				"--ecosystem", "composer", "--app-plugins", "drupal", "--offline", ...extra,
 				"-d", "eol,nvd,epss,kev,retire,transitive"], { encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
 			assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);

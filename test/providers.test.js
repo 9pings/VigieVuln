@@ -318,7 +318,7 @@ test("CLI --wordfence-live works without a client key through the shared server"
 	fs.writeFileSync(isolate, 'require("node:os").homedir = () => __dirname;');
 	const env = { ...process.env, FORCE_COLOR: "0" }; delete env.WORDFENCE_API_KEY;
 	try {
-		await promisify(execFile)(process.execPath, ["--require", isolate, path.join(__dirname, "..", "fad-checker.js"),
+		await promisify(execFile)(process.execPath, ["--require", isolate, path.join(__dirname, "..", "vigievuln.js"),
 			"-s", source, "--ecosystem", "composer", "--app-plugins", "wordpress", "--wordfence-live",
 			"--proxy-cache", running.url, "-d", "osv,packagist-audit,nvd,eol,epss,kev,retire,transitive",
 			"--report-json", output, "--no-checksums"], { env, timeout: 15000 });

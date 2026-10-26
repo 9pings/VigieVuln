@@ -7,7 +7,7 @@
  * regression that sneaks a network call into the offline path fails the suite.
  *
  * Empirical end-to-end proof (auditor-reproducible) is documented in README/USAGE:
- *   unshare -rn node fad-checker.js -s <tree> --offline …   # no network namespace
+ *   unshare -rn node vigievuln.js -s <tree> --offline …   # no network namespace
  *   → identical findings to a normal --offline run.
  */
 const { test } = require("node:test");

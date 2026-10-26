@@ -1,5 +1,5 @@
-#compdef fad-checker
-# Zsh completion for fad-checker (Fucking Autonomous Dependency Checker)
+#compdef vigievuln fad-checker fad
+# Zsh completion for vigievuln (VigieVuln — autonomous dependency auditor)
 _fad_check() {
 	local -a opts
 	opts=(

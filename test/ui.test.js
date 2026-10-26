@@ -30,7 +30,7 @@ test("banner / section / ok / warn / info render without throwing", () => {
 		ui.info("note");
 		ui.kv("source", "/x");
 	});
-	assert.match(out, /fad-checker/);
+	assert.match(out, /VigieVuln/);
 	assert.match(out, /▸ Collection/);
 	assert.match(out, /done/);
 });

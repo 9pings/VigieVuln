@@ -1,7 +1,7 @@
 # CMS & frameworks — the instance view
 
 Most scanners read a WordPress or Drupal site the way they read any other directory: as a
-bunch of lockfiles. fad-checker inventories the **instance** — the CMS or framework as a
+bunch of lockfiles. vigievuln inventories the **instance** — the CMS or framework as a
 product with a version, its plugins, themes, bundles, extensions and framework components —
 attributes every dependency CVE to the component that actually ships it, and reports each
 instance in its own sub-chapter. This guide is the reference for that view; every flag it

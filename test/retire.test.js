@@ -161,7 +161,7 @@ test("buildRetireIgnorePatterns is segment-bounded — does not clip lookalike f
 
 test("buildRetireIgnorePatterns is independent of retire's cwd (anchored to the scan tree)", () => {
 	// srcDir deliberately unrelated to process.cwd() — the original bug surfaced only
-	// when fad-checker ran from a different directory than -s.
+	// when vigievuln ran from a different directory than -s.
 	const lines = R.buildRetireIgnorePatterns({ srcDir: "/totally/other/proj" });
 	assert.ok(retireIgnores(lines, "/totally/other/proj/sub/node_modules/lodash/lodash.js"));
 });
@@ -218,8 +218,8 @@ test("chooseRetireLauncher: the compiled binary self-invokes EVEN when a local b
 	// never held the checkout, does NOT show it — which is exactly why the order must not
 	// depend on what happens to be on disk.
 	assert.deepStrictEqual(
-		R.chooseRetireLauncher({ localBin: "/$bunfs/root/node_modules/.bin/retire", isBun: true, execPath: "/opt/fad-checker" }),
-		{ cmd: "/opt/fad-checker", env: { __FAD_RETIRE__: "1" } });
+		R.chooseRetireLauncher({ localBin: "/$bunfs/root/node_modules/.bin/retire", isBun: true, execPath: "/opt/vigievuln" }),
+		{ cmd: "/opt/vigievuln", env: { __FAD_RETIRE__: "1" } });
 });
 
 // Windows: retire turns each ignorefile line into a REGEX and tests it against the file path

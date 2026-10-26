@@ -31,7 +31,7 @@ const { makeDepRecord } = require("../lib/dep-record");
 const MC = "https://repo1.maven.org/maven2";
 
 function freshCache() {
-	return fs.mkdtempSync(path.join(os.tmpdir(), "fad-checker-testscope-"));
+	return fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-testscope-"));
 }
 
 const pom = (g, a, v, deps = "") => `<?xml version="1.0"?>

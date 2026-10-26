@@ -22,7 +22,7 @@ test("buildSarif emits a valid 2.1.0 log with rules + results", () => {
 
 	assert.equal(doc.version, "2.1.0");
 	const run = doc.runs[0];
-	assert.equal(run.tool.driver.name, "fad-checker");
+	assert.equal(run.tool.driver.name, "VigieVuln");
 	assert.equal(run.tool.driver.rules.length, 1);
 	const rule = run.tool.driver.rules[0];
 	assert.equal(rule.id, "CVE-2021-44228");

@@ -4,7 +4,7 @@
  *   - 1 npm package (package-lock v3) with prod/dev/peer deps
  *   - 1 yarn-v1 package with prod/dev deps + a private @acme/* dep
  *
- * Drives the same code paths as `fad-checker --report` minus the network calls.
+ * Drives the same code paths as `vigievuln --report` minus the network calls.
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");

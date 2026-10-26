@@ -476,22 +476,22 @@ test("server: a keyless instance is served by the server's NVD key (shared quota
 
 test("parseProxyFlag: --proxy and serve-cache --upstream-proxy, never --proxy-cache", () => {
 	// exact-token match: --proxy-cache must NOT be read as --proxy
-	assert.equal(parseProxyFlag(["node", "fad-checker.js", "-s", ".", "--proxy-cache", "http://127.0.0.1:8321"]), null);
-	assert.equal(parseProxyFlag(["node", "fad-checker.js", "-s", ".", "--proxy", "http://corp:3128"]), "http://corp:3128");
-	assert.equal(parseProxyFlag(["node", "fad-checker.js", "serve-cache", "--upstream-proxy", "http://corp:3128", "--port", "9000"]), "http://corp:3128");
-	assert.equal(parseProxyFlag(["node", "fad-checker.js", "serve-cache", "--proxy", "http://x:1"]), null); // serve-cache uses --upstream-proxy
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "-s", ".", "--proxy-cache", "http://127.0.0.1:8321"]), null);
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "-s", ".", "--proxy", "http://corp:3128"]), "http://corp:3128");
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "serve-cache", "--upstream-proxy", "http://corp:3128", "--port", "9000"]), "http://corp:3128");
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "serve-cache", "--proxy", "http://x:1"]), null); // serve-cache uses --upstream-proxy
 	// a missing/bad value is ignored, not fatal
-	assert.equal(parseProxyFlag(["node", "fad-checker.js", "--proxy"]), null);
-	assert.equal(parseProxyFlag(["node", "fad-checker.js", "--proxy", "--verbose"]), null);
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "--proxy"]), null);
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "--proxy", "--verbose"]), null);
 });
 
 test("--proxy re-exec: the child runs with the proxy env applied and exit code is preserved", { timeout: 30_000 }, async () => {
-	// `fad-checker.js --proxy <url> --version` re-execs itself; the child prints the
+	// `vigievuln.js --proxy <url> --version` re-execs itself; the child prints the
 	// version and exits 0. A sentinel env var prevents infinite recursion, and the
 	// proxy host is exempted from NO_PROXY handling — asserted by __FAD_PROXY_URL.
 	const root = path.join(__dirname, "..");
 	const res = await new Promise(resolve => {
-		const child = spawn(process.execPath, [path.join(root, "fad-checker.js"), "--proxy", "http://127.0.0.1:3128", "--version"], { cwd: root });
+		const child = spawn(process.execPath, [path.join(root, "vigievuln.js"), "--proxy", "http://127.0.0.1:3128", "--version"], { cwd: root });
 		let out = "", err = "";
 		child.stdout.on("data", d => out += d);
 		child.stderr.on("data", d => err += d);

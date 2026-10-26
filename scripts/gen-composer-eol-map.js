@@ -48,7 +48,7 @@ function computeCoreComponents(versions, majors, monorepo) {
 }
 
 async function fetchVersions(pkg) {
-	const res = await fetch(`https://repo.packagist.org/p2/${pkg}.json`, { headers: { "User-Agent": "fad-checker-gen-composer-eol-map" } });
+	const res = await fetch(`https://repo.packagist.org/p2/${pkg}.json`, { headers: { "User-Agent": "vigievuln-gen-composer-eol-map" } });
 	if (!res.ok) throw new Error(`packagist ${pkg}: HTTP ${res.status}`);
 	const j = await res.json();
 	return j.packages?.[pkg] || [];

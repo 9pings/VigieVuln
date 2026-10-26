@@ -1,6 +1,0 @@
-# Context for packages/fad-service/Dockerfile (built from the repository root)
-*
-!lib/
-!packages/fad-service/
-packages/fad-service/node_modules
-packages/fad-service/test

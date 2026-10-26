@@ -1,35 +1,19 @@
-# Dependencies
 node_modules/
-
-# Build outputs
 dist/
-
-# Generated reports
-fad-checker-report/
+build/
 *-report/
-
-# IDE / editor
 .idea/
 .vscode/
+.claude/
 *.swp
 .DS_Store
-
-# Session-local agent state
-.claude/
-docs/superpowers/
-
-# Working documents (not part of the project)
-launch-kit.md
-rr2.json
-
-# OS junk
 Thumbs.db
-
-# Local planning, review and specification documents
-docs/PLAN-*.md
-docs/REVIEW-*.md
-docs/SPEC-*.md
-docs/HANDOFF-*.md
-
-# fad-service docker secrets (copy of deploy/docker/.env.example)
-packages/fad-service/deploy/docker/.env
+.env
+.env.*
+!.env.example
+*.local.md
+*.tgz
+*.db
+*.db-wal
+*.db-shm
+*.log

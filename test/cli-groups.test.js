@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { execFileSync } = require("child_process");
 const path = require("path");
 const { DISABLE, ACTIVATE, REPORTS, applyGroups, applyReports, foldedFlags, parseList } = require("../lib/cli-groups");
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 
 function help(args) {
 	try { return execFileSync("node", [CLI, ...args], { env: { ...process.env, FORCE_COLOR: "0" }, encoding: "utf8" }); }

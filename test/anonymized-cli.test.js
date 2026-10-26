@@ -5,7 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const { spawnSync } = require("child_process");
 
-const CLI = path.join(__dirname, "..", "fad-checker.js");
+const CLI = path.join(__dirname, "..", "vigievuln.js");
 const FIX = n => path.join(__dirname, "fixtures", n);
 const tmp = name => path.join(os.tmpdir(), `fad-anon-${process.pid}-${name}`);
 

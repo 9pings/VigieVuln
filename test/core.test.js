@@ -22,7 +22,7 @@ async function pipeline(src, { deps2Exclude } = {}) {
 }
 
 test("findPomFiles skips target/.git/node_modules", () => {
-	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-checker-test-"));
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-test-"));
 	fs.mkdirSync(path.join(tmp, "target"));
 	fs.writeFileSync(path.join(tmp, "target", "pom.xml"), "<project/>");
 	fs.writeFileSync(path.join(tmp, "pom.xml"), "<project/>");
@@ -93,7 +93,7 @@ test("BOM import (scope=import) pulls in managed deps from local BOM", async () 
 });
 
 test("rewritePoms writes a clean tree in --target mode, target ≠ src", async () => {
-	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-checker-target-"));
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-target-"));
 	const { store, props, pomFiles } = await pipeline(COMPLEX);
 	const opts = {
 		srcRoot: COMPLEX, targetRoot: tmp,
@@ -125,7 +125,7 @@ test("rewritePoms in --test (readOnly) mode does not crash with undefined target
 
 test("missing external parent is flagged in missingById", async () => {
 	const { store, props, pomFiles } = await pipeline(PRIVATE_FIX);
-	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-checker-priv-"));
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-priv-"));
 	const opts = {
 		srcRoot: PRIVATE_FIX, targetRoot: tmp,
 		deps2Exclude: /^(com\.client\.private|org\.megacorp)/,
@@ -143,7 +143,7 @@ test("missing external parent is flagged in missingById", async () => {
 
 test("parent version in rewritten POM uses parent's version, not child's", async () => {
 	// Simple has child app with no own <version>; the rewritten parent ref should be 1.0.0
-	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-checker-pv-"));
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-pv-"));
 	const { store, props, pomFiles } = await pipeline(SIMPLE);
 	const opts = { srcRoot: SIMPLE, targetRoot: tmp, deps2Exclude: null, verbose: false, readOnly: false };
 	for (const f of pomFiles) await core.rewritePoms(f, store, props, opts);

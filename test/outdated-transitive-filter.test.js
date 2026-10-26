@@ -1,6 +1,6 @@
 /**
  * checkOutdatedDeps must not query Maven Central for TRANSITIVE deps: the
- * Outdated chapter only reports deps you declare (fad-checker.js drops
+ * Outdated chapter only reports deps you declare (vigievuln.js drops
  * transitive rows), so fetching their latest version is pure waste — on a
  * real reactor transitives outnumber directs 5-10× and this was where most
  * of the pass's wall-clock went.

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>fad-checker — polyglot dependency CVE/EOL scanner, no build needed</title>
+<title>VigieVuln — polyglot dependency CVE/EOL scanner, no build needed</title>
 <meta name="description" content="Scan Maven, Gradle, npm, Yarn, pnpm, Composer, PyPI, NuGet, Go and Ruby dependencies — plus embedded JARs (fat-jars/war/ear), committed native binaries (.dll/.so/.exe, identified by checksum via deps.dev + CIRCL) and cryptographic material (certificates, private/public keys, keystores) — for CVEs (prioritised by EPSS + CISA KEV), end-of-life, outdated versions and licenses in one shot — no build, no install. Audit-ready HTML/Word report, CycloneDX SBOM + CSAF VEX exports, and an air-gapped mode for confidential code.">
-<meta property="og:title" content="fad-checker — audit every dependency, no build, no leaks">
+<meta property="og:title" content="VigieVuln — audit every dependency, no build, no leaks">
 <meta property="og:description" content="Polyglot CVE / EOL / outdated / license scanner that reads your source tree directly. Merged sources, CPE filtering, EPSS + KEV priority, CycloneDX SBOM + CSAF VEX, HTML + findings JSON by default, optional Word report, application coverage and air-gapped mode.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -191,7 +191,7 @@
 
 <header>
   <nav class="wrap">
-    <a class="brand" href="#top">fad<span class="blink"></span>checker</a>
+    <a class="brand" href="#top">Vigie<span class="blink"></span>Vuln</a>
     <div class="navlinks">
       <a href="#features">Features</a>
       <a href="#cms">CMS &amp; frameworks</a>
@@ -200,7 +200,7 @@
       <a href="#compare">Compare</a>
       <a href="#benchmark">Benchmark</a>
       <a href="#docs">Docs</a>
-      <a class="gh" href="https://github.com/9pings/fad-checker">GitHub ↗</a>
+      <a class="gh" href="https://github.com/9pings/VigieVuln">GitHub ↗</a>
     </div>
   </nav>
 </header>
@@ -225,18 +225,19 @@
         and <b>CSAF VEX</b>, and an <b>air-gapped mode</b> for confidential code.</p>
       <div class="cta reveal">
         <a class="btn primary" href="#start">$ get started</a>
-        <a class="btn ghost" href="https://github.com/9pings/fad-checker">★ Star on GitHub</a>
+        <a class="btn ghost" href="https://github.com/9pings/VigieVuln">★ Star on GitHub</a>
       </div>
       <div class="install reveal" id="start">
-        <span class="pr">$</span><code id="cmd">npm i -g fad-checker &amp;&amp; fad -s ./your-project</code>
-        <button class="copy" data-copy="npm i -g fad-checker && fad -s ./your-project">copy</button>
+        <span class="pr">$</span><code id="cmd">npm i -g vigievuln &amp;&amp; vigievuln -s ./your-project</code>
+        <button class="copy" data-copy="npm i -g vigievuln && vigievuln -s ./your-project">copy</button>
       </div>
       <p class="reveal" style="margin-top:18px;font-size:14px;color:var(--muted);border-left:3px solid var(--amber);background:rgba(255,180,84,.06);padding:10px 14px;border-radius:0 8px 8px 0;max-width:560px">
-        ⚠️ fad-checker is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, <b style="color:var(--text)">double-check anything critical</b>, and please <a href="https://github.com/9pings/fad-checker/issues" style="color:var(--amber);text-decoration:underline">report issues</a>; they get fixed fast.
+        ⚠️ vigievuln is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, <b style="color:var(--text)">double-check anything critical</b>, and please <a href="https://github.com/9pings/VigieVuln/issues" style="color:var(--amber);text-decoration:underline">report issues</a>; they get fixed fast.
       </p>
     </div>
     <div class="shotwrap reveal">
-      <img class="shot" src="assets/demo.gif" alt="fad-checker animated terminal demo: an offline Maven audit — dependencies absent from Maven Central flagged as private/internal, the compact single-line vulnerability-database progress, then findings coloured by severity" loading="lazy">
+      <p class="note">Historical fad-checker demo; the CLI and reports now carry the VigieVuln name.</p>
+      <img class="shot" src="assets/demo.gif" alt="vigievuln animated terminal demo: an offline Maven audit — dependencies absent from Maven Central flagged as private/internal, the compact single-line vulnerability-database progress, then findings coloured by severity" loading="lazy">
     </div>
   </section>
 
@@ -267,10 +268,10 @@
       <div class="card reveal"><div class="ic">05</div><h3>Report made for productivity</h3><p>Every table and chart carries a split <b>Copy for Word</b> button — the whole table, or the selection that matters — and pastes into Word with formatting intact. The whole report ships in <b>English or French</b> (<span class="mono">--lang fr</span>): chapter counts, status pills, fix recipes and the Word-ready summary included.</p></div>
       <div class="card reveal"><div class="ic">06</div><h3>Exports &amp; CI gating</h3><p>Writes an HTML report and a <span class="mono">findings.json</span> by default &mdash; the JSON so the next run can <span class="mono">--baseline</span> against it. Emit <b>CycloneDX 1.6</b> SBOM, <b>CSAF 2.0 VEX</b>, flat <b>JSON</b>, an <b>Excel .xlsx workbook</b> (<span class="mono">-r xlsx</span>) and <b>SARIF 2.1.0</b> (GitHub/GitLab code scanning). Gate with <span class="mono">--fail-on critical|kev</span> or — for repeat audits — on <b>new</b> findings only with <span class="mono">--baseline</span> + <span class="mono">--fail-on-new</span>; triage false-positives via <span class="mono">--ignore</span> / <span class="mono">--vex</span>. Private registries for every ecosystem.</p></div>
             <div class="card reveal"><div class="ic">07</div><h3>Air-gapped</h3><p><b>Zero network under <span class="mono">--offline</span></b> — regression-tested with a fetch tripwire and reproducible under <span class="mono">unshare -rn</span> (no network interface at all). Export an <b>anonymized</b> descriptor (public coordinates only), warm the caches online, report offline: on Maven it recovers <b>657/657</b> of OSV-Scanner's <i>online</i> result from the warmed cache alone, and the same command produces the same report online and offline. <a href="#airgap" style="color:var(--amber);text-decoration:underline">How it works</a>.</p></div>
-                              <div class="card reveal"><div class="ic">08</div><h3>Audit-grade</h3><p>Every report carries a <b>provenance manifest</b> (tool, runtime, mode, run configuration and cache freshness for each consulted source) and a <b>Methodology &amp; limitations</b> chapter that states what fad doesn't assess. Artifacts ship a <span class="mono">SHA256SUMS</span> integrity manifest (<span class="mono">sha256sum -c</span>), and <b>differential audits</b> diff a scan against a prior run (<span class="mono">--baseline</span>) so CI can gate on <b>new</b> findings only.</p></div>
+                              <div class="card reveal"><div class="ic">08</div><h3>Audit-grade</h3><p>Every report carries a <b>provenance manifest</b> (tool, runtime, mode, run configuration and cache freshness for each consulted source) and a <b>Methodology &amp; limitations</b> chapter that states what VigieVuln doesn't assess. Artifacts ship a <span class="mono">SHA256SUMS</span> integrity manifest (<span class="mono">sha256sum -c</span>), and <b>differential audits</b> diff a scan against a prior run (<span class="mono">--baseline</span>) so CI can gate on <b>new</b> findings only.</p></div>
       <div class="card reveal"><div class="ic">09</div><h3>Certificates &amp; keys</h3><p>Finds committed <b>X.509 certificates</b> (flags <b>expired</b>, expiring, <b>weak key</b> RSA&lt;2048, <b>weak signature</b> MD5/SHA1, self-signed), <b>private &amp; public keys</b> — each labelled <b>private</b> (a leaked secret) or <b>public</b> — across PEM, <b>OpenSSH every algorithm</b>, PuTTY, PGP and one-line SSH (<span class="mono">id_rsa</span>, <span class="mono">authorized_keys</span>, <span class="mono">known_hosts</span>), plus JKS/PKCS#12 keystores. Parsed <b>100% offline</b> with the built-in X.509 parser — no network.</p></div>
-      <div class="card reveal"><div class="ic">10</div><h3>CMS &amp; frameworks audited as instances</h3><p>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP are <b>auto-activated</b>, with per-instance inventory — core, plugins, themes, bundles, components. <a href="#cms" style="color:var(--amber);text-decoration:underline">The dedicated section</a> · <a href="https://github.com/9pings/fad-checker/blob/main/docs/CMS-FRAMEWORKS.md" style="color:var(--amber);text-decoration:underline">the guide</a>.</p></div>
-      <div class="card reveal"><div class="ic">11</div><h3>Shared cache for a scanner fleet</h3><p><span class="mono">fad-checker serve-cache</span> + <span class="mono">--proxy-cache</span> turns one box into the cache point for every other instance — one upstream call per provider resource per TTL, keys held server-side. <a href="https://github.com/9pings/fad-checker/blob/main/docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache" style="color:var(--amber);text-decoration:underline">Cache usage</a>.</p></div>
+      <div class="card reveal"><div class="ic">10</div><h3>CMS &amp; frameworks audited as instances</h3><p>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP are <b>auto-activated</b>, with per-instance inventory — core, plugins, themes, bundles, components. <a href="#cms" style="color:var(--amber);text-decoration:underline">The dedicated section</a> · <a href="https://github.com/9pings/VigieVuln/blob/main/docs/CMS-FRAMEWORKS.md" style="color:var(--amber);text-decoration:underline">the guide</a>.</p></div>
+      <div class="card reveal"><div class="ic">11</div><h3>Shared cache for a scanner fleet</h3><p><span class="mono">vigievuln serve-cache</span> + <span class="mono">--proxy-cache</span> turns one box into the cache point for every other instance — one upstream call per provider resource per TTL, keys held server-side. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache" style="color:var(--amber);text-decoration:underline">Cache usage</a>.</p></div>
       <div class="card reveal"><div class="ic">12</div><h3>Supply-chain risk</h3><p>Flags advisories on <b>known-malicious</b> packages (a compromised dependency is a finding whatever its version — they always block the CI gate, <span class="mono">--fail-on</span> or not) and surfaces suspected <b>typosquats</b> (<span class="mono">--typosquat</span>): a lookalike name close to a popular package is a red flag even before any CVE exists against it.</p></div>
     </div>
   </section>
@@ -280,7 +281,7 @@
     <div class="kicker reveal">CMS &amp; frameworks</div>
     <h2 class="reveal">Inventoried as instances, not just lockfiles</h2>
     <p class="sub reveal">A WordPress or Drupal site isn't a directory of lockfiles — it's a
-      product with a version, plugins, themes and framework components. fad-checker inventories
+      product with a version, plugins, themes and framework components. vigievuln inventories
       the <b>instance</b>: core and component versions read from the tree's own markers, every
       dependency CVE attributed to the component that ships it, each instance reported in its own
       sub-chapter — <b>synthesis included even when it comes out clean</b> — and private/custom
@@ -305,18 +306,18 @@
       <span class="mono">--export-cache</span> / <span class="mono">--import-cache</span>, <b>warmed from the
       air-gapped descriptor itself</b> by <span class="mono">--import-anonymized</span> and reused automatically
       offline — the Wordfence API key never travels to the enclave. Full reference in
-      <a href="https://github.com/9pings/fad-checker/blob/main/docs/CMS-FRAMEWORKS.md" style="color:var(--amber);text-decoration:underline">docs/CMS-FRAMEWORKS.md</a>.</p>
+      <a href="https://github.com/9pings/VigieVuln/blob/main/docs/CMS-FRAMEWORKS.md" style="color:var(--amber);text-decoration:underline">docs/CMS-FRAMEWORKS.md</a>.</p>
   </section>
 
   <section id="audit">
     <div class="kicker reveal">For auditors</div>
-    <h2 class="reveal">Why use fad-checker for code audits?</h2>
+    <h2 class="reveal">Why use vigievuln for code audits?</h2>
     <p class="sub reveal">What it does for an audit that the others don't. Same column set and sourcing
-      discipline as <a href="https://github.com/9pings/fad-checker/blob/main/docs/COMPARISON.md" style="color:var(--amber);text-decoration:underline">COMPARISON.md</a>
+      discipline as <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md" style="color:var(--amber);text-decoration:underline">COMPARISON.md</a>
       &mdash; an <span class="warn">amber</span> cell is <i>partial</i> and says how, and every cell is meant to be checkable.</p>
     <div class="tablewrap reveal">
       <table>
-        <thead><tr><th>What an auditor actually needs to do</th><th class="me">fad-checker</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
+        <thead><tr><th>What an auditor actually needs to do</th><th class="me">VigieVuln</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
         <tbody>
           <tr><th>Audit a <b>100-module polyglot monorepo in one command</b>, with <b>no toolchain installed</b> <sup>1</sup></th><td class="f me yes">✓ 105 modules</td><td class="f warn">reactor skipped</td><td class="f warn">needs <span class='mono'>~/.m2</span></td><td class="f warn">opt-in</td><td class="f warn">Java build</td><td class="f warn"><span class='mono'>mvn</span> build</td></tr>
           <tr><th><b>Scan offline / air-gapped without dropping transitive deps</b> <sup>2</sup></th><td class="f me yes">✓ 657/657</td><td class="f no">✗</td><td class="f warn"><span class='mono'>~/.m2</span></td><td class="f warn">opt-in</td><td class="f warn">mirror</td><td class="f no">✗</td></tr>
@@ -335,7 +336,7 @@
         </tbody>
       </table>
     </div>
-    <ol class="auditnotes reveal"><li>No <span class="mono">mvn</span>/<span class="mono">go</span>/<span class="mono">npm</span>/<span class="mono">pip</span>/<span class="mono">dotnet</span> &mdash; manifests parsed off disk, nothing installed or executed. 105 × <span class="mono">pom.xml</span> in one pass: <b>790 pairs vs OSV-Scanner's 657</b>, 133 fad-only, versions mediated <i>per module</i> not flattened.</li><li><b>657 of 657</b> of OSV-Scanner's <i>online</i> Maven result, under <span class="mono">unshare -rn</span> &mdash; no network interface. Tripwire-tested; only public coordinates ever leave the enclave.</li><li>Chapter 0 names every coordinate that <b>every</b> configured registry answered 404 for &mdash; Maven, npm, PyPI, NuGet, Composer, Go and RubyGems &mdash; with the manifest(s) declaring it. A registry that timed out is never counted. <span class="mono">-e &lt;regex&gt;</span> then excludes them.</li><li><span class="mono">-t &lt;dir&gt;</span>: normalised POMs plus every non-Maven lockfile mirrored, private coordinates stripped. Archivable, and scannable by anything &mdash; <span class="mono">--snyk</span> included.</li><li>endoflife.date, split <b>direct vs transitive</b> so you know which dep to bump, plus deprecated / abandoned / yanked and outdated. Trivy covers OS distros only; Snyk's package health is web-only.</li><li>Inventory <i>and</i> verdicts: expiry, RSA&lt;2048, MD5/SHA1, self-signed; private <b>vs</b> public keys; JKS/PKCS#12. Offline parser. Trivy's secret rule finds the file, not the flaw.</li><li>Identified by <b>hash</b> via deps.dev + CIRCL → should-be-declared / name≠checksum / unknown / malicious. Syft's patterns name a version, not an identity.</li><li>Chapter 0 flags what <i>this</i> scan could not reach (missing lockfiles, unresolved versions, incomplete application checks); Methodology states what the tool never assesses. Elsewhere the first is a log line the audit never sees, the second isn't written down.</li><li>Provenance manifest: tool, runtime, mode, run configuration and cache freshness for <b>each consulted source</b>. Grype and Dependency-Check carry one source's date, not the run.</li><li>Chapters 0→6 with an executive summary and fix recipes, self-contained HTML + findings JSON by default, with optional Word <span class="mono">.doc</span>. None of the others emits Word.</li><li>Four inline-SVG charts &mdash; CWE by worst severity, vulnerable transitives per root dep, your most vulnerable modules, fix-priority bands &mdash; rendered in the <span class="mono">.doc</span> too, with one-click copy as PNG (or a table as rich HTML) that pastes into Word formatted. Every CVE keeps its CVSS vector, CWE, references, CPE config and via-path behind a drill-down, with zero external assets.</li><li><span class="mono">--baseline</span> adds a Δ chapter (new / fixed / unchanged); <span class="mono">--fail-on-new</span> gates on new findings only. Snyk tracks this on its platform, not as a local diff.</li><li>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP inventoried <b>per instance</b> &mdash; core, plugins, themes, bundles, components, with direct/indirect attribution, publisher advisory feeds where they exist (Wordfence, packages.drupal.org, PrestaShop/TYPO3 GitHub) and WordPress core checksums. The others read lockfiles; none of them has a CMS-instance view. → <a href="#cms" style="color:var(--amber);text-decoration:underline">the dedicated section</a></li><li><span class="mono">fad-checker serve-cache</span> + <span class="mono">--proxy-cache</span>: one upstream call per provider resource per TTL for the whole fleet, single-flight coalescing, stale-if-error, and NVD/Wordfence/GitHub keys held by the server — use <span class="mono">--wordfence-live</span> to activate Wordfence with a server key. Trivy/Grype/DC cache a local DB; Snyk's lives on its platform.</li></ol>
+    <ol class="auditnotes reveal"><li>No <span class="mono">mvn</span>/<span class="mono">go</span>/<span class="mono">npm</span>/<span class="mono">pip</span>/<span class="mono">dotnet</span> &mdash; manifests parsed off disk, nothing installed or executed. 105 × <span class="mono">pom.xml</span> in one pass: <b>790 pairs vs OSV-Scanner's 657</b>, 133 VigieVuln-only, versions mediated <i>per module</i> not flattened.</li><li><b>657 of 657</b> of OSV-Scanner's <i>online</i> Maven result, under <span class="mono">unshare -rn</span> &mdash; no network interface. Tripwire-tested; only public coordinates ever leave the enclave.</li><li>Chapter 0 names every coordinate that <b>every</b> configured registry answered 404 for &mdash; Maven, npm, PyPI, NuGet, Composer, Go and RubyGems &mdash; with the manifest(s) declaring it. A registry that timed out is never counted. <span class="mono">-e &lt;regex&gt;</span> then excludes them.</li><li><span class="mono">-t &lt;dir&gt;</span>: normalised POMs plus every non-Maven lockfile mirrored, private coordinates stripped. Archivable, and scannable by anything &mdash; <span class="mono">--snyk</span> included.</li><li>endoflife.date, split <b>direct vs transitive</b> so you know which dep to bump, plus deprecated / abandoned / yanked and outdated. Trivy covers OS distros only; Snyk's package health is web-only.</li><li>Inventory <i>and</i> verdicts: expiry, RSA&lt;2048, MD5/SHA1, self-signed; private <b>vs</b> public keys; JKS/PKCS#12. Offline parser. Trivy's secret rule finds the file, not the flaw.</li><li>Identified by <b>hash</b> via deps.dev + CIRCL → should-be-declared / name≠checksum / unknown / malicious. Syft's patterns name a version, not an identity.</li><li>Chapter 0 flags what <i>this</i> scan could not reach (missing lockfiles, unresolved versions, incomplete application checks); Methodology states what the tool never assesses. Elsewhere the first is a log line the audit never sees, the second isn't written down.</li><li>Provenance manifest: tool, runtime, mode, run configuration and cache freshness for <b>each consulted source</b>. Grype and Dependency-Check carry one source's date, not the run.</li><li>Chapters 0→6 with an executive summary and fix recipes, self-contained HTML + findings JSON by default, with optional Word <span class="mono">.doc</span>. None of the others emits Word.</li><li>Four inline-SVG charts &mdash; CWE by worst severity, vulnerable transitives per root dep, your most vulnerable modules, fix-priority bands &mdash; rendered in the <span class="mono">.doc</span> too, with one-click copy as PNG (or a table as rich HTML) that pastes into Word formatted. Every CVE keeps its CVSS vector, CWE, references, CPE config and via-path behind a drill-down, with zero external assets.</li><li><span class="mono">--baseline</span> adds a Δ chapter (new / fixed / unchanged); <span class="mono">--fail-on-new</span> gates on new findings only. Snyk tracks this on its platform, not as a local diff.</li><li>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP inventoried <b>per instance</b> &mdash; core, plugins, themes, bundles, components, with direct/indirect attribution, publisher advisory feeds where they exist (Wordfence, packages.drupal.org, PrestaShop/TYPO3 GitHub) and WordPress core checksums. The others read lockfiles; none of them has a CMS-instance view. → <a href="#cms" style="color:var(--amber);text-decoration:underline">the dedicated section</a></li><li><span class="mono">vigievuln serve-cache</span> + <span class="mono">--proxy-cache</span>: one upstream call per provider resource per TTL for the whole fleet, single-flight coalescing, stale-if-error, and NVD/Wordfence/GitHub keys held by the server — use <span class="mono">--wordfence-live</span> to activate Wordfence with a server key. Trivy/Grype/DC cache a local DB; Snyk's lives on its platform.</li></ol>
     <p class="note reveal"><b>Where it loses</b> &mdash; containers/OS packages, auto-fix PRs, and CVE
       coverage against Snyk's curated feed: <a href="#benchmark">the gap, measured</a>.<br>
       <b>Deliberately not a goal &mdash; reachability.</b> A finding is a vulnerable version on the
@@ -352,8 +353,8 @@
     <h2 class="reveal">An executive summary, then the detail</h2>
     <p class="sub reveal">Severity tiles, an application-first CVE chapter when relevant, and a CVE table with a <b>priority</b> column (KEV / EPSS), CWE &amp; fix versions, EOL / obsolete / outdated / <b>license</b> chapters, and a "likely false positives" appendix — all in a single file you can email.</p>
     <figure class="reveal">
-      <img class="shot" src="assets/report.png" alt="fad-checker HTML report: executive summary with severity tiles and a detailed CVE table with CWE, descriptions and fix versions" loading="lazy">
-      <figcaption>cve-report.html — generated by <span class="mono">fad -s ./project</span></figcaption>
+      <img class="shot" src="assets/report.png" alt="vigievuln HTML report: executive summary with severity tiles and a detailed CVE table with CWE, descriptions and fix versions" loading="lazy">
+      <figcaption>cve-report.html — generated by <span class="mono">vigievuln -s ./project</span></figcaption>
     </figure>
   </div>
 </section>
@@ -371,15 +372,15 @@
       <div class="code reveal">
         <div class="top"><i class="r"></i><i class="y"></i><i class="g"></i></div>
 <pre><span class="c"># 1 — OFFLINE (audited machine): export anonymized descriptor</span>
-<span class="p">fad</span> -s ./proj <span class="k">-e</span> "^(client|internal)\." <span class="k">--export-anonymized</span> deps.json
+<span class="p">vigievuln</span> -s ./proj <span class="k">-e</span> "^(client|internal)\." <span class="k">--export-anonymized</span> deps.json
 
 <span class="c"># 2 — ONLINE (any box, no source): warm the caches</span>
-<span class="p">fad</span> <span class="k">--import-anonymized</span> deps.json
-<span class="p">fad</span> <span class="k">--export-cache</span> fad-cache.tar.gz
+<span class="p">vigievuln</span> <span class="k">--import-anonymized</span> deps.json
+<span class="p">vigievuln</span> <span class="k">--export-cache</span> fad-cache.tar.gz
 
 <span class="c"># 3 — OFFLINE again: full report, real paths</span>
-<span class="p">fad</span> <span class="k">--import-cache</span> fad-cache.tar.gz
-<span class="p">fad</span> -s ./proj <span class="k">--offline</span></pre>
+<span class="p">vigievuln</span> <span class="k">--import-cache</span> fad-cache.tar.gz
+<span class="p">vigievuln</span> -s ./proj <span class="k">--offline</span></pre>
       </div>
     </div>
   </section>
@@ -388,10 +389,10 @@
   <section id="compare">
     <div class="kicker reveal">Honest positioning</div>
     <h2 class="reveal">Where it fits</h2>
-    <p class="sub reveal">Not a Trivy/Grype replacement — those own containers and continuous CI. fad-checker owns the <b>zero-setup source audit</b> with an air-gapped story (and now emits SBOM/VEX, flags licenses and prioritises by EPSS/KEV too).</p>
+    <p class="sub reveal">Not a Trivy/Grype replacement — those own containers and continuous CI. vigievuln owns the <b>zero-setup source audit</b> with an air-gapped story (and now emits SBOM/VEX, flags licenses and prioritises by EPSS/KEV too).</p>
     <div class="tablewrap reveal">
       <table>
-        <thead><tr><th>Capability</th><th class="me">fad-checker</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
+        <thead><tr><th>Capability</th><th class="me">VigieVuln</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
         <tbody>
           <tr><th>Reads lockfiles without build</th><td class="f me yes">✓</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f warn">~Java</td><td class="f warn">~Maven/pip build</td></tr>
           <tr><th>Best-effort without a lockfile</th><td class="f me yes">✓</td><td class="f warn">~</td><td class="f no">✗</td><td class="f no">✗</td><td class="f warn">~</td><td class="f warn">~</td></tr>
@@ -406,8 +407,8 @@
         </tbody>
       </table>
     </div>
-    <p class="note reveal">² For <span class="mono">pom.xml</span>, transitives need Maven Central <b>once</b> — after that fad-checker resolves the graph from its cached POMs, which is what makes the air-gapped run work. Snyk needs a real build, Trivy needs the network or a populated <span class="mono">~/.m2</span>. Reach for Trivy or Grype+Syft for continuous CI, containers and SBOM pipelines.</p>
-    <p class="note reveal">³ EOL row is scoped to <b>application</b> frameworks and libraries. Trivy does compute an end-of-service-life status, but only for OS distributions. Snyk's package-health signal exists on its website, not in the CLI or CI output. Cells re-verified against upstream docs on 2026-09-14 (OSV-Scanner 2.6.0, Trivy 0.74.0, Grype 0.118.0 + Syft 1.51.1, Dependency-Check 13.0.0, Snyk CLI 1.1307.2) — detail and sources in <a href="https://github.com/9pings/fad-checker/blob/main/docs/COMPARISON.md">COMPARISON.md</a>.</p>
+    <p class="note reveal">² For <span class="mono">pom.xml</span>, transitives need Maven Central <b>once</b> — after that vigievuln resolves the graph from its cached POMs, which is what makes the air-gapped run work. Snyk needs a real build, Trivy needs the network or a populated <span class="mono">~/.m2</span>. Reach for Trivy or Grype+Syft for continuous CI, containers and SBOM pipelines.</p>
+    <p class="note reveal">³ EOL row is scoped to <b>application</b> frameworks and libraries. Trivy does compute an end-of-service-life status, but only for OS distributions. Snyk's package-health signal exists on its website, not in the CLI or CI output. Cells re-verified against upstream docs on 2026-09-14 (OSV-Scanner 2.6.0, Trivy 0.74.0, Grype 0.118.0 + Syft 1.51.1, Dependency-Check 13.0.0, Snyk CLI 1.1307.2) — detail and sources in <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">COMPARISON.md</a>.</p>
   </section>
 
 
@@ -423,7 +424,7 @@
       <table>
         <thead><tr><th>Scanner</th><th class="me">Found</th><th>Unique to it</th><th>Not reported</th></tr></thead>
         <tbody>
-          <tr><th>fad-checker</th><td class="f me yes">790 · 87.0%</td><td class="f">125</td><td class="f">118 → <b class="yes">0 real</b></td></tr>
+          <tr><th>VigieVuln</th><td class="f me yes">790 · 87.0%</td><td class="f">125</td><td class="f">118 → <b class="yes">0 real</b></td></tr>
           <tr><th>OSV-Scanner 2.4.0</th><td class="f">657 · 72.4%</td><td class="f">0</td><td class="f">251</td></tr>
           <tr><th>Snyk 1.1302.1 (mvn build)</th><td class="f">603 · 66.4%</td><td class="f warn">117</td><td class="f">305</td></tr>
           <tr><th>Trivy 0.72.0</th><td class="f">546 · 60.1%</td><td class="f">0</td><td class="f">362</td></tr>
@@ -431,7 +432,7 @@
         </tbody>
       </table>
     </div>
-    <p class="note reveal"><b>&ldquo;Not reported&rdquo; is union arithmetic, not a verified recall gap.</b> It counts pairs another tool produced and this one did not — a miss only if the public record actually binds that vulnerability to that coordinate and version. For fad-checker that was checked pair by pair: <b class="yes">0 are recall bugs</b>. The other rows have not been adjudicated, so read their column the same way. Trivy and Grype are container/SBOM scanners; a raw source checkout is not the job they are built for.</p>
+    <p class="note reveal"><b>&ldquo;Not reported&rdquo; is union arithmetic, not a verified recall gap.</b> It counts pairs another tool produced and this one did not — a miss only if the public record actually binds that vulnerability to that coordinate and version. For vigievuln that was checked pair by pair: <b class="yes">0 are recall bugs</b>. The other rows have not been adjudicated, so read their column the same way. Trivy and Grype are container/SBOM scanners; a raw source checkout is not the job they are built for.</p>
 
     <h3 class="reveal" style="margin-top:26px;font-size:17px">2 · With no network at all</h3>
     <p class="sub reveal">Same tree, every scanner under <span class="mono">unshare -rn</span> — a namespace with no network interface, not just an offline flag. Reference: OSV-Scanner's own <b>online</b> output, 657 pairs.</p>
@@ -439,7 +440,7 @@
       <table>
         <thead><tr><th>Scanner, no network</th><th class="me">Recovers</th></tr></thead>
         <tbody>
-          <tr><th>fad-checker <span class="mono">--offline</span></th><td class="f me yes">657 · 100%</td></tr>
+          <tr><th>vigievuln <span class="mono">--offline</span></th><td class="f me yes">657 · 100%</td></tr>
           <tr><th>Grype + Syft</th><td class="f">45 · 6.8%</td></tr>
           <tr><th>Trivy <span class="mono">--offline-scan</span>, cold <span class="mono">~/.m2</span></th><td class="f">40 · 6.1%</td></tr>
           <tr><th>OSV-Scanner <span class="mono">--offline</span></th><td class="f">37 · 5.6%</td></tr>
@@ -450,46 +451,46 @@
 
 
     <h3 class="reveal" style="margin-top:34px;font-size:17px">3 · Every other ecosystem</h3>
-    <p class="sub reveal">fad-checker claims ten ecosystems, and benchmarking one of them is not an answer. Same method on five more public projects, findings normalised to <span class="mono">(package@version | CVE)</span>. <b>Expect parity — that is the point.</b> Outside Maven the transitive graph is already in the lockfile, so no scanner has a structural advantage and none should.</p>
+    <p class="sub reveal">vigievuln claims ten ecosystems, and benchmarking one of them is not an answer. Same method on five more public projects, findings normalised to <span class="mono">(package@version | CVE)</span>. <b>Expect parity — that is the point.</b> Outside Maven the transitive graph is already in the lockfile, so no scanner has a structural advantage and none should.</p>
     <div class="tabs reveal" role="tablist"><button class="tab" role="tab" aria-selected="true" data-eco="maven">Maven</button><button class="tab" role="tab" aria-selected="false" data-eco="npm">npm</button><button class="tab" role="tab" aria-selected="false" data-eco="ruby">RubyGems</button><button class="tab" role="tab" aria-selected="false" data-eco="composer">Composer</button><button class="tab" role="tab" aria-selected="false" data-eco="go">Go</button><button class="tab" role="tab" aria-selected="false" data-eco="pypi">PyPI</button></div>
     <div class="reveal">
       <div class="panel" data-eco="maven">
         <p class="meta">target <b>apache/dubbo 2.7.8</b> · pinned <b>0be2a1bb</b> · reads <b>105 × pom.xml</b></p>
-        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">657</td></tr><tr><th>fad-checker</th><td class="f me yes">790</td></tr><tr><th>communs</th><td class="f">657</td></tr><tr><th>fad seul</th><td class="f">133</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
+        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">657</td></tr><tr><th>VigieVuln</th><td class="f me yes">790</td></tr><tr><th>communs</th><td class="f">657</td></tr><tr><th>VigieVuln seul</th><td class="f">133</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
         <p class="note">The one ecosystem where the graph is not in the tree: it must be resolved from the registry. That is why an offline gap exists here and nowhere else.</p>
       </div>
       <div class="panel" data-eco="npm" hidden>
         <p class="meta">target <b>OWASP/NodeGoat</b> · pinned <b>c5cb68a</b> · reads <b>package-lock.json · 1 927 entries</b></p>
-        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">274</td></tr><tr><th>fad-checker</th><td class="f me yes">274</td></tr><tr><th>communs</th><td class="f">274</td></tr><tr><th>fad seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
+        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">274</td></tr><tr><th>VigieVuln</th><td class="f me yes">274</td></tr><tr><th>communs</th><td class="f">274</td></tr><tr><th>VigieVuln seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
         <p class="note">Identical sets, not merely equal counts. Both tools read the same lockfile, so parity is the correct outcome.</p>
       </div>
       <div class="panel" data-eco="ruby" hidden>
         <p class="meta">target <b>mastodon 3.5.3</b> · pinned <b>fbcbf78</b> · reads <b>Gemfile.lock · 426 specs</b></p>
-        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">150</td></tr><tr><th>fad-checker</th><td class="f me yes">150</td></tr><tr><th>communs</th><td class="f">150</td></tr><tr><th>fad seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
-        <p class="note">Identical sets. fad additionally reports 1 120 outdated gems and 58 deprecated — a different question, not a better score on the same one.</p>
+        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">150</td></tr><tr><th>VigieVuln</th><td class="f me yes">150</td></tr><tr><th>communs</th><td class="f">150</td></tr><tr><th>VigieVuln seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
+        <p class="note">Identical sets. VigieVuln additionally reports 1 120 outdated gems and 58 deprecated — a different question, not a better score on the same one.</p>
       </div>
       <div class="panel" data-eco="composer" hidden>
         <p class="meta">target <b>phpMyAdmin 5.1.1</b> · pinned <b>ed65cd2</b> · reads <b>composer.lock · 224 entries</b></p>
-        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">34*</td></tr><tr><th>fad-checker</th><td class="f me yes">34</td></tr><tr><th>communs</th><td class="f">34</td></tr><tr><th>fad seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
-        <p class="note">* OSV-Scanner needed --no-ignore: phpMyAdmin gitignores composer.lock although it is committed, and OSV honours .gitignore, so its recursive scan reported 0. fad scans what is on disk, which for an audit is the right answer.</p>
+        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">34*</td></tr><tr><th>VigieVuln</th><td class="f me yes">34</td></tr><tr><th>communs</th><td class="f">34</td></tr><tr><th>VigieVuln seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">0</td></tr></tbody></table></div>
+        <p class="note">* OSV-Scanner needed --no-ignore: phpMyAdmin gitignores composer.lock although it is committed, and OSV honours .gitignore, so its recursive scan reported 0. VigieVuln scans what is on disk, which for an audit is the right answer.</p>
       </div>
       <div class="panel" data-eco="go" hidden>
         <p class="meta">target <b>prometheus v2.30.0</b> · pinned <b>37468d8</b> · reads <b>go.mod (go 1.14) + go.sum · 578 modules</b></p>
-        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">113</td></tr><tr><th>fad-checker</th><td class="f me yes">110</td></tr><tr><th>communs</th><td class="f">110</td></tr><tr><th>fad seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">3</td></tr></tbody></table></div>
+        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">113</td></tr><tr><th>VigieVuln</th><td class="f me yes">110</td></tr><tr><th>communs</th><td class="f">110</td></tr><tr><th>VigieVuln seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">3</td></tr></tbody></table></div>
         <p class="note">go.sum is not the build graph: it also records modules that version selection merely weighed. Only those carrying a module zip hash are actually built, and only those are scanned — 187 of 578 on this project. The 3 remaining differences are version selection on x/sys and yaml.v2.</p>
       </div>
       <div class="panel" data-eco="pypi" hidden>
         <p class="meta">target <b>poetry 1.1.15</b> · pinned <b>46bf7fd</b> · reads <b>poetry.lock · 91 packages</b></p>
-        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">83</td></tr><tr><th>fad-checker</th><td class="f me yes">79</td></tr><tr><th>communs</th><td class="f">79</td></tr><tr><th>fad seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">4</td></tr></tbody></table></div>
-        <p class="note">The 4 are all setuptools@9.1.0, which OSV picked up from a test fixture inside poetry's own test suite. fad reads poetry.lock, which is authoritative.</p>
+        <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">83</td></tr><tr><th>VigieVuln</th><td class="f me yes">79</td></tr><tr><th>communs</th><td class="f">79</td></tr><tr><th>VigieVuln seul</th><td class="f">0</td></tr><tr><th>OSV seul</th><td class="f">4</td></tr></tbody></table></div>
+        <p class="note">The 4 are all setuptools@9.1.0, which OSV picked up from a test fixture inside poetry's own test suite. VigieVuln reads poetry.lock, which is authoritative.</p>
       </div>
     </div>
-    <p class="note reveal">Equal CVE counts do not make two tools equivalent: on these same projects fad also reported 1 120 outdated dependencies on mastodon, 618 and 2 EOL frameworks on phpMyAdmin, 65 on poetry — questions OSV-Scanner does not attempt. Full per-ecosystem detail, targets and method → <a href="https://github.com/9pings/fad-checker/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
+    <p class="note reveal">Equal CVE counts do not make two tools equivalent: on these same projects VigieVuln also reported 1 120 outdated dependencies on mastodon, 618 and 2 EOL frameworks on phpMyAdmin, 65 on poetry — questions OSV-Scanner does not attempt. Full per-ecosystem detail, targets and method → <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
 
     <h3 class="reveal" style="margin-top:38px;font-size:17px">4 · The Snyk delta, explained</h3>
-    <p class="sub reveal">131 pairs came back from Snyk and not from fad-checker. Adjudicated one by one against OSV, none is a recall bug. Here is what they actually are.</p>
+    <p class="sub reveal">131 pairs came back from Snyk and not from vigievuln. Adjudicated one by one against OSV, none is a recall bug. Here is what they actually are.</p>
     <div class="audit reveal">
-      <div class="arow"><h3><span class="ck">01</span>It is one commercial database, not the field</h3><p>Every such pair is Snyk's. <b>OSV-Scanner, Trivy and Grype+Syft each found 0</b> pairs nobody else had, so this was never &ldquo;fad-checker is behind the other scanners&rdquo; — it is <b>every public advisory source, aggregated, against one hand-curated commercial feed</b>.</p></div>
+      <div class="arow"><h3><span class="ck">01</span>It is one commercial database, not the field</h3><p>Every such pair is Snyk's. <b>OSV-Scanner, Trivy and Grype+Syft each found 0</b> pairs nobody else had, so this was never &ldquo;vigievuln is behind the other scanners&rdquo; — it is <b>every public advisory source, aggregated, against one hand-curated commercial feed</b>.</p></div>
       <div class="arow"><h3><span class="ck">02</span>It is a Maven/Java phenomenon</h3><p>The delta was measured on the Maven target. <b>Outside Maven the resolved graph is already in the lockfile</b>, every scanner reads the same input, and the per-ecosystem tables above measure <b>identical finding sets</b> on npm, RubyGems and Composer. There is no equivalent gap there to explain.</p></div>
       <div class="arow"><h3><span class="ck">03</span>Two thirds contradict the public record</h3><p><b>57</b> name a coordinate the advisory does not bind, <b>31</b> a version outside every declared affected range. Reporting them would mean shipping false positives — which is why every claimed miss is adjudicated before it becomes a ticket.</p></div>
       <div class="arow"><h3><span class="ck">04</span>The verdicts, against OSV</h3><p><b>57</b> wrong artifact · <b>31</b> out of range · <b>23</b> not in OSV (19 proprietary <span class="mono">SNYK-*</span>, 4 NVD-only) · <b>19</b> no Maven binding · <b>1</b> already reported under the CVE alias · <b>0 confirmed</b>. Under NVD's looser CPE ranges 5 would be reported — named, with the tension that creates, in BENCHMARK.md.</p></div>
@@ -500,16 +501,16 @@
     <div class="split reveal" style="margin-top:26px">
       <div>
         <h3 style="font-size:17px;margin:0 0 10px">Which is why <span class="mono">--snyk</span> exists</h3>
-        <p class="sub" style="margin:0">Rather than pick a side, fad-checker takes <span class="mono">snyk test</span> output as an <b>input</b> and merges it: <b>union beats either tool alone</b>, and the merge is one flag. On a tree with private modules, extract it with <span class="mono">-t</span> first &mdash; the normalised descriptors it writes have those coordinates stripped, so Snyk gets something it can actually resolve. Merging it is a coverage choice, not a correction: two thirds of what Snyk adds on its own contradicts the public record. The per-pair adjudication is in <a href="https://github.com/9pings/fad-checker/blob/main/docs/BENCHMARK.md" style="color:var(--amber);text-decoration:underline">BENCHMARK.md</a>.</p>
+        <p class="sub" style="margin:0">Rather than pick a side, vigievuln takes <span class="mono">snyk test</span> output as an <b>input</b> and merges it: <b>union beats either tool alone</b>, and the merge is one flag. On a tree with private modules, extract it with <span class="mono">-t</span> first &mdash; the normalised descriptors it writes have those coordinates stripped, so Snyk gets something it can actually resolve. Merging it is a coverage choice, not a correction: two thirds of what Snyk adds on its own contradicts the public record. The per-pair adjudication is in <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md" style="color:var(--amber);text-decoration:underline">BENCHMARK.md</a>.</p>
       </div>
       <div class="code">
         <div class="top"><i class="r"></i><i class="y"></i><i class="g"></i></div>
 <pre><span class="c"># strip private modules, scan, merge Snyk</span>
-<span class="p">fad</span> -s ./proj <span class="k">-t</span> ../clean <span class="k">-e</span> "^client\." <span class="k">--snyk</span></pre>
+<span class="p">vigievuln</span> -s ./proj <span class="k">-t</span> ../clean <span class="k">-e</span> "^client\." <span class="k">--snyk</span></pre>
       </div>
     </div>
 
-    <p class="note reveal" style="margin-top:22px">Full method, per-tool configuration, the four bugs this benchmark found in fad-checker, and every caveat → <a href="https://github.com/9pings/fad-checker/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
+    <p class="note reveal" style="margin-top:22px">Full method, per-tool configuration, the four bugs this benchmark found in vigievuln, and every caveat → <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
   </section>
 
   <!-- DOCS -->
@@ -518,10 +519,10 @@
     <h2 class="reveal">Everything is documented</h2>
     <p class="sub reveal">Per-flag usage, internals, and the full source — all in the repo.</p>
     <div class="docs">
-      <a class="doc reveal" href="https://github.com/9pings/fad-checker#readme"><div class="t">▸ README <span class="arr">↗</span></div><div class="d">Quick start, install, every supported manifest, the comparison table.</div></a>
-      <a class="doc reveal" href="https://github.com/9pings/fad-checker/blob/main/docs/USAGE.md"><div class="t">▸ Usage <span class="arr">↗</span></div><div class="d">Every flag and workflow: ecosystems, offline/cache, NVD key, Snyk, recipes.</div></a>
-      <a class="doc reveal" href="https://github.com/9pings/fad-checker/blob/main/docs/ARCHITECTURE.md"><div class="t">▸ Architecture <span class="arr">↗</span></div><div class="d">Codecs, the resolved-deps map, matching tiers, the report pipeline.</div></a>
-      <a class="doc reveal" href="https://github.com/9pings/fad-checker/blob/main/CHANGELOG.md"><div class="t">▸ Changelog <span class="arr">↗</span></div><div class="d">Release history and what changed in each version.</div></a>
+      <a class="doc reveal" href="https://github.com/9pings/VigieVuln#readme"><div class="t">▸ README <span class="arr">↗</span></div><div class="d">Quick start, install, every supported manifest, the comparison table.</div></a>
+      <a class="doc reveal" href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md"><div class="t">▸ Usage <span class="arr">↗</span></div><div class="d">Every flag and workflow: ecosystems, offline/cache, NVD key, Snyk, recipes.</div></a>
+      <a class="doc reveal" href="https://github.com/9pings/VigieVuln/blob/main/docs/ARCHITECTURE.md"><div class="t">▸ Architecture <span class="arr">↗</span></div><div class="d">Codecs, the resolved-deps map, matching tiers, the report pipeline.</div></a>
+      <a class="doc reveal" href="https://github.com/9pings/VigieVuln/blob/main/CHANGELOG.md"><div class="t">▸ Changelog <span class="arr">↗</span></div><div class="d">Release history and what changed in each version.</div></a>
     </div>
   </section>
 
@@ -530,17 +531,17 @@
     <div class="code reveal" style="max-width:760px">
       <div class="top"><i class="r"></i><i class="y"></i><i class="g"></i></div>
 <pre><span class="c"># read-only full scan (default: all sources on)</span>
-<span class="p">fad</span> -s ./proj
+<span class="p">vigievuln</span> -s ./proj
 
 <span class="c"># pick ecosystems · go fully offline · skip the Maven Central queries</span>
-<span class="p">fad</span> -s . <span class="k">--ecosystem</span> maven,npm,pypi
-<span class="p">fad</span> -s . <span class="k">--offline</span>
+<span class="p">vigievuln</span> -s . <span class="k">--ecosystem</span> maven,npm,pypi
+<span class="p">vigievuln</span> -s . <span class="k">--offline</span>
 
 <span class="c"># extract only: normalised descriptors + private modules identified</span>
-<span class="p">fad</span> -s ./proj <span class="k">-t</span> ../clean <span class="k">-e</span> "^client\."
+<span class="p">vigievuln</span> -s ./proj <span class="k">-t</span> ../clean <span class="k">-e</span> "^client\."
 
 <span class="c"># …and the same run, with a scan + Snyk merged in</span>
-<span class="p">fad</span> -s ./proj <span class="k">-t</span> ../clean <span class="k">-e</span> "^client\." <span class="k">--snyk</span></pre>
+<span class="p">vigievuln</span> -s ./proj <span class="k">-t</span> ../clean <span class="k">-e</span> "^client\." <span class="k">--snyk</span></pre>
     </div>
   </section>
 </main>
@@ -548,13 +549,13 @@
 <footer>
   <div class="wrap foot">
     <div>
-      <div class="brand" style="font-size:16px;margin-bottom:6px">fad<span class="blink"></span>checker</div>
-      <span class="mono">Fucking Autonomous Dependency Checker — Apache-2.0</span>
+      <div class="brand" style="font-size:16px;margin-bottom:6px">Vigie<span class="blink"></span>Vuln</div>
+      <span class="mono">VigieVuln — autonomous dependency auditor — Apache-2.0</span>
     </div>
     <div class="navlinks" style="gap:22px">
-      <a href="https://github.com/9pings/fad-checker">GitHub</a>
-      <a href="https://www.npmjs.com/package/fad-checker">npm</a>
-      <a href="https://github.com/9pings/fad-checker/issues">Issues</a>
+      <a href="https://github.com/9pings/VigieVuln">GitHub</a>
+      <a href="https://www.npmjs.com/package/vigievuln">npm</a>
+      <a href="https://github.com/9pings/VigieVuln/issues">Issues</a>
       <a href="#top">Top ↑</a>
     </div>
   </div>

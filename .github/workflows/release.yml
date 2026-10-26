@@ -1,157 +1,53 @@
 name: Release
-
-# Auto-release on push to main, but ONLY when package.json's version changed.
-# Rationale: releasing on every push would be unusable, and tagging by hand defeats the
-# point. The maintainer owns versioning, so the version bump IS the release signal — push a
-# bump and the binaries build and publish themselves; push anything else and nothing happens.
+# Deliberate release action: preparation/push alone never publishes packages or binaries.
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:        # manual re-run, same guard applies
-
+  workflow_dispatch:
 permissions:
-  contents: write           # needed to create the tag and the release
-
+  contents: write
 concurrency:
   group: release
-  cancel-in-progress: false # never abort a half-uploaded release
-
+  cancel-in-progress: false
 jobs:
-  guard:
-    name: version changed?
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.v.outputs.version }}
-      release: ${{ steps.v.outputs.release }}
-    steps:
-      - uses: actions/checkout@v4
-      # The state we compare against is the RELEASE, not the tag: a tag pushed by hand (or
-      # left behind by a failed run) without a release must not turn every later push into
-      # "nothing to release" — that is exactly what silently swallowed v2.4.8.
-      - id: v
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if gh release view "v$VERSION" --json tagName >/dev/null 2>&1; then
-            echo "v$VERSION is already released — nothing to do."
-            echo "release=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "v$VERSION has no release yet — releasing."
-            echo "release=true" >> "$GITHUB_OUTPUT"
-          fi
-
   release:
-    needs: guard
-    if: needs.guard.outputs.release == 'true'
-    name: build & publish
     runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.guard.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-
-      # ---- gate: never publish a binary from a red tree ----
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: npm }
+        with: { node-version: '24', cache: npm, cache-dependency-path: package-lock.json }
       - run: npm ci
       - run: npm test
-
-      # ---- build: bun cross-compiles every target from this one runner ----
+      - name: verify versions
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
-      # Each target builds into its own directory under the CANONICAL name, so the file
-      # inside the archive is `fad-checker` (or `fad-checker.exe`) — extract and run, no
-      # renaming. The platform/arch lives in the ARCHIVE name, where it belongs.
-      - name: build binaries
+      - name: build CLI binaries
         run: |
           set -eu
-          build() { mkdir -p "build/$2"; bun build fad-checker.js --compile --target="$1" --outfile="build/$2/$3"; }
-          build bun-linux-x64     linux-x64     fad-checker
-          build bun-linux-arm64   linux-arm64   fad-checker
-          build bun-darwin-x64    macos-x64     fad-checker
-          build bun-darwin-arm64  macos-arm64   fad-checker
-          build bun-windows-x64   windows-x64   fad-checker.exe
-          chmod +x build/linux-x64/fad-checker build/linux-arm64/fad-checker \
-                   build/macos-x64/fad-checker build/macos-arm64/fad-checker
-          ls -l build/*/
-
-      # ---- smoke: the artifact we ship must run, with no network ----
-      # Source-via-node passing does not prove the compiled binary works: it has no
-      # node_modules, so the retire.js hand-off and the bundled data files are only
-      # exercised here.
-      - name: smoke-test the linux binary offline
+          build() { mkdir -p "build/$2"; bun build vigievuln.js --compile --target="$1" --outfile="build/$2/$3"; }
+          build bun-linux-x64 linux-x64 vigievuln
+          build bun-linux-arm64 linux-arm64 vigievuln
+          build bun-darwin-x64 macos-x64 vigievuln
+          build bun-darwin-arm64 macos-arm64 vigievuln
+          build bun-windows-x64 windows-x64 vigievuln.exe
+      - name: smoke-test the Linux binary offline
+        run: |
+          build/linux-x64/vigievuln --version
+          build/linux-x64/vigievuln -s test/fixtures/monorepo-mixed --offline --no-report
+      - run: node scripts/pack-release.js
+      - name: archive and checksum
         run: |
           set -eu
-          BIN=build/linux-x64/fad-checker
-          "$BIN" --version
-          # --offline makes zero network calls by design; a namespace with no interface
-          # proves it rather than trusting the flag. Runners may forbid user namespaces,
-          # so fall back to a plain offline run instead of failing the release for it.
-          if unshare -rn true 2>/dev/null; then
-            unshare -rn "$BIN" -s test/fixtures/monorepo-mixed --offline --no-report
-          else
-            echo "user namespaces unavailable on this runner — running without one"
-            "$BIN" -s test/fixtures/monorepo-mixed --offline --no-report
-          fi
-
-      # ---- package: ~100 MB each raw, ~38 MB compressed ----
-      # tar preserves the executable bit, so `tar xzf` yields a runnable fad-checker with
-      # no chmod step. Archives are named per platform; the file inside never is.
-      - name: compress and checksum
-        run: |
-          set -eu
-          mkdir -p dist
           for t in linux-x64 linux-arm64 macos-x64 macos-arm64; do
-            tar -czf "dist/fad-checker-$t-v${VERSION}.tar.gz" -C "build/$t" fad-checker
+            tar -czf "dist/vigievuln-$t-v${VERSION}.tar.gz" -C "build/$t" vigievuln
           done
-          (cd build/windows-x64 && zip -q -9 "../../dist/fad-checker-windows-x64-v${VERSION}.zip" fad-checker.exe)
-          (cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS)
-          tar -tvzf "dist/fad-checker-linux-x64-v${VERSION}.tar.gz"
-
-      - name: release notes from CHANGELOG
-        run: |
-          node -e '
-            const fs = require("fs");
-            const md = fs.readFileSync("CHANGELOG.md", "utf8");
-            // Prefer the shipped version; keep Unreleased as a legacy fallback.
-            const version = require("./package.json").version;
-            const sections = md.split(/^##\s*\[([^\]]+)\][^\n]*$/m);
-            const section = name => {
-              const i = sections.findIndex((value, index) => index % 2 === 1 && value === name);
-              return i < 0 ? "" : sections[i + 1].trim();
-            };
-            const body = section(version) || section("Unreleased");
-            fs.writeFileSync("RELEASE_NOTES.md", body || "_See CHANGELOG.md._");
-          '
-          head -20 RELEASE_NOTES.md
-
-      # The tag must point at the commit the binaries were built from. Normally there is
-      # no tag yet and `gh release create` makes it at HEAD; a stray pre-existing tag
-      # (pushed by hand, or from a run that died before publishing) is moved here so the
-      # published assets, notes and tag never disagree.
-      - name: align the tag with this commit
-        run: |
-          set -eu
-          TAG="v${VERSION}"
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-            REMOTE=$(git ls-remote origin "refs/tags/$TAG^{}" | cut -f1)
-            [ -n "$REMOTE" ] || REMOTE=$(git ls-remote origin "refs/tags/$TAG" | cut -f1)
-            if [ "$REMOTE" != "$GITHUB_SHA" ]; then
-              echo "$TAG exists at ${REMOTE:0:7}, moving it to ${GITHUB_SHA:0:7} (the released commit)"
-              git push --force origin "$GITHUB_SHA:refs/tags/$TAG"
-            fi
-          fi
-
-      # gh is preinstalled on the runner — no third-party action in the release path of a
-      # security tool.
-      - name: create release
+          (cd build/windows-x64 && zip -q -9 "../../dist/vigievuln-windows-x64-v${VERSION}.zip" vigievuln.exe)
+          (cd dist && sha256sum *.tgz *.tar.gz *.zip > SHA256SUMS)
+      - name: create a draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${VERSION}" dist/* \
-            --title "v${VERSION}" \
-            --notes-file RELEASE_NOTES.md \
-            --target "$GITHUB_SHA" \
-            --verify-tag=false
+          gh release create "vigievuln-v${VERSION}" dist/* \
+            --draft --title "VigieVuln ${VERSION}" \
+            --notes-file CHANGELOG.md --target "$GITHUB_SHA"

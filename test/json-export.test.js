@@ -21,7 +21,7 @@ test("buildFindings produces a flat findings document with summary counts", () =
 		toolVersion: "2.0.2",
 	});
 
-	assert.equal(doc.tool.name, "fad-checker");
+	assert.equal(doc.tool.name, "VigieVuln");
 	assert.equal(doc.summary.dependencies, 2);
 	assert.equal(doc.summary.cve.critical, 1);
 	assert.equal(doc.summary.cve.kev, 1);

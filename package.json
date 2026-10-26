@@ -1,6 +1,6 @@
 {
-  "name": "fad-checker",
-  "version": "2.7.4",
+  "name": "vigievuln",
+  "version": "1.0.0",
   "description": "One-shot polyglot dependency auditor (10 ecosystems + 9 CMS/Frameworks). No build tools. Real & complete air-gapped mode. Private deps, binaries, certs, EOL, CVE (KEV+EPSS) - Made for professional code audits.",
   "keywords": [
     "sca",
@@ -64,10 +64,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/9pings/fad-checker.git"
+    "url": "git+https://github.com/9pings/VigieVuln.git"
   },
-  "homepage": "https://github.com/9pings/fad-checker#readme",
-  "bugs": "https://github.com/9pings/fad-checker/issues",
+  "homepage": "https://github.com/9pings/VigieVuln#readme",
+  "bugs": "https://github.com/9pings/VigieVuln/issues",
   "author": "pp9Ping <pp9Ping@gmail.com>",
   "maintainers": [
     "pp9Ping <pp9Ping@gmail.com>"
@@ -76,15 +76,17 @@
     "pp9Ping <pp9Ping@gmail.com>"
   ],
   "bin": {
-    "fad-checker": "fad-checker.js",
-    "fad": "fad-checker.js"
+    "vigievuln": "vigievuln.js",
+    "fad-checker": "vigievuln.js",
+    "fad": "vigievuln.js"
   },
   "scripts": {
-    "test": "node --test test/*.test.js packages/fad-service/test/*.test.js",
-    "build:linux": "bun build fad-checker.js --compile --target=bun-linux-x64 --outfile=dist/fad-checker",
-    "build:win": "bun build fad-checker.js --compile --target=bun-windows-x64 --outfile=dist/fad-checker.exe",
-    "build:macos": "bun build fad-checker.js --compile --target=bun-darwin-x64 --outfile=dist/fad-checker-macos",
-    "build": "npm run build:linux && npm run build:win"
+    "test": "node --test test/*.test.js",
+    "build:linux": "bun build vigievuln.js --compile --target=bun-linux-x64 --outfile=dist/vigievuln",
+    "build:win": "bun build vigievuln.js --compile --target=bun-windows-x64 --outfile=dist/vigievuln.exe",
+    "build:macos": "bun build vigievuln.js --compile --target=bun-darwin-x64 --outfile=dist/vigievuln-macos",
+    "build": "npm run build:linux && npm run build:win",
+    "pack:release": "node scripts/pack-release.js"
   },
   "dependencies": {
     "chalk": "^4.1.2",
@@ -100,5 +102,15 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "files": [
+    "vigievuln.js",
+    "fad-checker.js",
+    "lib/",
+    "data/",
+    "completions/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ]
 }

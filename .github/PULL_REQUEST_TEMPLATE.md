@@ -4,7 +4,7 @@
 
 ## Checklist
 
-- [ ] `npm test` passes
+- [ ] `npm test` passes in this CLI repository
 - [ ] New behaviour is covered by a test (a fixture if it's a parsing change)
 - [ ] No test reaches the network; `--offline` still makes zero network calls
 - [ ] Docs updated if a flag, output or invariant changed (`README.md`, `docs/USAGE.md`, `CLAUDE.md`)

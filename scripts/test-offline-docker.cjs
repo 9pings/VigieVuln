@@ -67,7 +67,7 @@ const phase = process.argv[2], offline = phase !== "warm";
 assert.equal(fs.existsSync("/root/.fad-checker"), false, "each phase starts with no cache");
 function cli(args, status = 0) {
 	const preload = offline ? ["--require", "/audit.cjs"] : [];
-	const r = spawnSync(process.execPath, [...preload, "/app/fad-checker.js", ...args],
+	const r = spawnSync(process.execPath, [...preload, "/app/vigievuln.js", ...args],
 		{ stdio: "inherit", timeout: 500000 });
 	assert.ifError(r.error); assert.equal(r.status, status, args.join(" "));
 }
@@ -144,4 +144,4 @@ function phase(name) {
 phase("export");
 phase("warm");
 phase("scan");
-console.log(`PASS: packaged fad-checker ${packed.version}; fresh containers; offline transfer; stale KEV gate; zero offline network attempts.`);
+console.log(`PASS: packaged vigievuln ${packed.version}; fresh containers; offline transfer; stale KEV gate; zero offline network attempts.`);

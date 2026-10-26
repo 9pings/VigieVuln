@@ -35,7 +35,7 @@ test("parseSnykStdout accepts a JSON object or array", () => {
 	assert.equal(obj.length, 1);
 });
 
-test("parseSnykResults normalises to fad-checker match shape", () => {
+test("parseSnykResults normalises to vigievuln match shape", () => {
 	const out = parseSnykResults(snykSample);
 	assert.equal(out.length, 2);
 	assert.equal(out[0].dep.groupId, "org.apache.logging.log4j");
