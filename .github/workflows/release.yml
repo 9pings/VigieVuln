@@ -1,6 +1,8 @@
 name: Release
-# Deliberate release action: preparation/push alone never publishes packages or binaries.
+# Publish binaries when a version tag is pushed; manual runs must select that tag.
 on:
+  push:
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
 permissions:
   contents: write
@@ -14,12 +16,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '24', cache: npm, cache-dependency-path: package-lock.json }
-      - run: npm ci
-      - run: npm test
       - name: verify versions
         run: |
+          set -eu
           VERSION=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF" != "refs/tags/$VERSION" ]; then
+            echo "::error::Run this workflow on the version tag $VERSION (package.json must match)."
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm test
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
       - name: build CLI binaries
@@ -44,10 +51,16 @@ jobs:
           done
           (cd build/windows-x64 && zip -q -9 "../../dist/vigievuln-windows-x64-v${VERSION}.zip" vigievuln.exe)
           (cd dist && sha256sum *.tgz *.tar.gz *.zip > SHA256SUMS)
-      - name: create a draft release
+      - name: publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "vigievuln-v${VERSION}" dist/* \
-            --draft --title "VigieVuln ${VERSION}" \
-            --notes-file CHANGELOG.md --target "$GITHUB_SHA"
+          set -eu
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            gh release upload "$VERSION" dist/* --clobber
+            gh release edit "$VERSION" --draft=false
+          else
+            gh release create "$VERSION" dist/* \
+              --verify-tag --title "VigieVuln ${VERSION}" \
+              --notes-file CHANGELOG.md
+          fi
