@@ -11,7 +11,7 @@
 # The run is --offline on purpose: deterministic (no network timing in the
 # recording) and it is the headline capability — a full audit, zero packets.
 # The fixture is the one carrying unresolvable/private coordinates, so the
-# "Maven POM analysis" block shows the dependencies fad could NOT reach — the
+# "Maven POM analysis" block shows the dependencies VigieVuln could NOT reach — the
 # failure mode that otherwise reads as a clean scan.
 #
 # Geometry: 120x54 at font 13 / line-height 1.185 stays below the previous

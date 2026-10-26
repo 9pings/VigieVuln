@@ -1,18 +1,15 @@
-> Historical fad-checker reports, preserved byte-for-byte. Their tool names and
-> versions identify the original runs; they are not VigieVuln 1.0.0 outputs.
-
 # HTML report samples
 
-Generated with **vigievuln 2.7.1** on **2026-09-24**, using the local warmed cache in `--offline` mode. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
+Generated with **VigieVuln 1.0.1** on **2026-10-26**, using the local warmed cache in `--offline` mode. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
 
 | Sample | Source and scope | What to explore |
 | --- | --- | --- |
-| [Dubbo](dubbo.html) | Apache Dubbo **2.7.8**, commit `0be2a1bbbf9168490acecaf1eed1bd16cb8db402`; **105 Maven descriptors**, **426 dependencies** | 721 production findings (238 direct, 483 transitive), 157 dev findings, 8 KEV matches, 4 EOL frameworks; per-POM ownership, evidence, priority and remediation |
-| [Multi-instance CMS/frameworks](multi-cms-frameworks.html) | **4 applications**, **281 application components**, **251 Composer dependencies** | Per-instance CVEs and ownership; application inventory and coverage; 5 EOL results; vendored JavaScript, certificate inventory, licenses and fix recommendations |
+| [Dubbo](dubbo.html) | Apache Dubbo **2.7.8**, commit `0be2a1bbbf9168490acecaf1eed1bd16cb8db402`; **105 Maven descriptors**, **400 dependencies** | 735 production findings (220 direct, 515 transitive), 139 dev findings, 8 KEV matches, 4 EOL frameworks; per-POM ownership, evidence, priority and remediation |
+| [Multi-instance CMS/frameworks](multi-cms-frameworks.html) | **4 applications**, **270 application components**, **251 Composer dependencies** | Per-instance CVEs and ownership; application inventory and coverage; 5 EOL results; vendored JavaScript, certificate inventory, licenses and fix recommendations |
 
 ## Source corpus
 
-- [Apache Dubbo 2.7.8](https://github.com/apache/dubbo/tree/0be2a1bbbf9168490acecaf1eed1bd16cb8db402): same revision as the README report screenshot, regenerated with the current reporter and cache. Counts therefore differ from the older screenshot.
+- [Apache Dubbo 2.7.8](https://github.com/apache/dubbo/tree/0be2a1bbbf9168490acecaf1eed1bd16cb8db402): the README report screenshot is captured directly from this HTML sample.
 - [WordPress 6.4.2](https://wordpress.org/wordpress-6.4.2.zip), under `wp/`.
 - [Drupal 8.5.0](https://ftp.drupal.org/files/projects/drupal-8.5.0.tar.gz), under `drupal/`.
 - [Symfony Demo v2.6.0](https://github.com/symfony/demo/tree/v2.6.0), under `symfony-demo/`; the supplied lockfile resolves `symfony/framework-bundle` **7.1.1**.
@@ -24,10 +21,11 @@ The CMS corpus contains source trees and their existing lockfiles, without insta
 
 - The CMS scan selects **Composer** for dependency analysis. Vendored JavaScript and certificate discovery remain enabled. npm/yarn lockfiles are outside this sample's selected scope.
 - Test directories are explicitly excluded. Default exclusions are also recorded in the report.
-- WordPress inventory and checksum comparison ran, but **Wordfence advisory matching did not run** because a complete feed was unavailable in the cache. The report marks that coverage as indeterminate. The source tree also lacks files from the official distribution reference; these integrity warnings are retained.
+- WordPress inventory and checksum comparison ran against the official distribution, but **Wordfence advisory matching did not run** because a complete feed was unavailable in the cache. The report marks that coverage as indeterminate.
 - The 146 certificates belong to WordPress's bundled CA trust store. They are public certificates, not 146 leaked private keys.
 - Drupal uses a cached publisher advisory snapshot. Symfony and Laravel findings come from the dependency advisory lanes and are attributed to their application components.
 - Cache gaps, missing lockfiles and unknown licenses are retained in the output. These samples do not claim complete runtime reachability or current security status.
+- The Dubbo scan retains unresolved parent POMs and unknown registry presence from the offline cache. EPSS scores and Maven outdated-version results were unavailable in this run; their absence does not imply that dependencies are current or low risk.
 
 ## Reproduce
 

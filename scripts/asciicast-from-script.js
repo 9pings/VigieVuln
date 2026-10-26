@@ -8,7 +8,7 @@ let output = fs.readFileSync(raw, "utf8");
 output = output.replace(/^Script started on [^\n]*\n/, "")
 	.replace(/\nScript done on [\s\S]*$/, "");
 
-const CMD = "fad -s test/fixtures/private-lib-detection --offline --no-report";
+const CMD = "vigievuln -s test/fixtures/private-lib-detection --offline --no-report";
 const PROMPT = "\u001b[38;5;114m❯\u001b[0m ";
 const ev = [];
 let t = 0;

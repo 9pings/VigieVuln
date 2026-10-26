@@ -1,4 +1,4 @@
-# Release VigieVuln 1.0.0
+# Release VigieVuln 1.0.1
 
 This is the CLI Git repository. Its source, package.json, workflows and docs are
 at the repository root. The separate server repository lives locally at
@@ -14,7 +14,7 @@ npm test
 npm run pack:release
 ```
 
-Packaging creates `dist/vigievuln-1.0.0.tgz` and `dist/SHA256SUMS`. Plain `npm pack`
+Packaging creates `dist/vigievuln-1.0.1.tgz` and `dist/SHA256SUMS`. Plain `npm pack`
 is also available. For the installed-package and server interoperability smoke:
 
 ```bash
@@ -26,7 +26,7 @@ npm run smoke:packages
 
 The server keeps its npm dependency on `vigievuln`, using `file:../cli` until
 publication. After publishing, its manifest/lock can be switched together using
-`npm install --save-exact vigievuln@1.0.0` from the server repository.
+`npm install --save-exact vigievuln@1.0.1` from the server repository.
 
 ## Publish the CLI
 
@@ -34,8 +34,8 @@ After reviewing the archive, using the intended publisher account:
 
 ```bash
 npm whoami
-npm publish ./dist/vigievuln-1.0.0.tgz --access public
-npm view vigievuln@1.0.0 name version
+npm publish ./dist/vigievuln-1.0.1.tgz --access public
+npm view vigievuln@1.0.1 name version
 ```
 
 The server is deployed from its own repository, using source or Docker.
@@ -63,8 +63,10 @@ commit the rename before pushing; no force push or history rewrite is required.
 The public branded URL prepared earlier remains `https://github.com/9pings/VigieVuln`;
 if the upstream repository is renamed, update origin deliberately afterward.
 
-The manual release workflow creates a draft CLI release with binaries and the npm
-archive. It does not publish to npm. New tags use `vigievuln-v1.0.0`.
+Pushing a version tag such as `1.0.1` runs the release workflow, tests the CLI,
+builds the five platform binaries and publishes a GitHub release with the binaries
+and npm archive. The tag must match `package.json`. A manual run must also select
+that version tag. The workflow does not publish to npm.
 
 ```bash
 npm run build

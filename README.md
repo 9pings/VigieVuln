@@ -16,7 +16,7 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 
 🌐 **[Project site & docs →](https://9pings.github.io/VigieVuln/)**
 
-*The screenshots and sample reports below document the predecessor fad-checker; newly generated reports use VigieVuln 1.0.0.*
+*Demo and sample reports generated with VigieVuln 1.0.1.*
 
 <p align="center"><img src="docs/assets/demo.gif" alt="vigievuln animated terminal demo: an offline Maven audit — dependencies absent from Maven Central flagged as private/internal, the compact single-line vulnerability-database progress, then findings coloured by severity" height="500"></p>
 
@@ -60,10 +60,10 @@ A free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) (instan
 
 ### Interactive HTML samples
 
-- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the screenshot above, rescanned with v2.7.1; 105 Maven descriptors, direct/transitive CVEs, KEV/EPSS, EOL and fix recommendations.
+- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the report screenshot below, rescanned with VigieVuln 1.0.1; 105 Maven descriptors, direct/transitive CVEs, KEV matches, EOL and fix recommendations.
 - **[Multi-instance CMS & frameworks — open the report](https://9pings.github.io/VigieVuln/samples/multi-cms-frameworks.html)**: WordPress 6.4.2, Drupal 8.5.0, Symfony Demo (Symfony 7.1.1) and BookStack v24.10 (Laravel 10.48.22), with findings attributed to each instance.
 
-These are standalone reports from real source scans, frozen on **2026-09-24**. The CMS sample focuses on PHP dependencies; WordPress advisory coverage is explicitly incomplete without a Wordfence feed. [Sample scope, sources and reproduction commands](docs/samples/README.md).
+These are standalone reports from real source scans, generated offline on **2026-10-26** using the local cache. The CMS sample focuses on PHP dependencies; WordPress advisory coverage is explicitly incomplete without a Wordfence feed. [Sample scope, sources and reproduction commands](docs/samples/README.md).
 
 > [!WARNING]
 > vigievuln is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, **double-check anything critical**, and please [report issues](https://github.com/9pings/VigieVuln/issues); they get fixed fast.

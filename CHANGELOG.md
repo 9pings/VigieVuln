@@ -1,5 +1,10 @@
 # Changelog — VigieVuln
 
+## [1.0.1] — 2026-10-26
+
+- Regenerated the HTML sample reports, terminal demo and report screenshot with VigieVuln branding.
+- Release binaries are now built and published automatically when a matching version tag is pushed.
+
 ## [1.0.0] — 2026-10-25
 
 - First VigieVuln release, continuing fad-checker 2.7.4 with the same audit capabilities.
