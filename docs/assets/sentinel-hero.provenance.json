@@ -1,5 +1,5 @@
 {
-  "asset": "sentinel-hero.png",
+  "asset": "sentinel-hero.jpg",
   "reference": "User-provided artwork/maquette.png",
   "method": "Built-in image_gen image editing tool",
   "prompt": "Edit the provided website mockup to produce ONLY its hero illustration as a standalone raster web asset. Preserve faithfully the original illustration style and character: orange fox sentinel in a white French tricorn with blue-white-red cockade, black gloves holding large blue binoculars with red warning triangle, a tall illuminated stone lighthouse to the fox's left, royal blue European flag with gold stars, rocky footing. Dark midnight navy background (#050e16) with cyan radar rings and subtle glowing map of Europe behind them, warm golden lighthouse light. Composition: landscape image roughly 3:2, lighthouse left of center and fox center-right, fully show hat/ears/binoculars/lighthouse top. Make the illustration fill the image, with dark edge space fading smoothly to solid #050e16 on the left and bottom for integration into a website. Remove ALL website UI, ALL typography, ALL logos/wordmarks, buttons, navigation, cards, terminal, text, lettering and code. No new text. This is the illustrated scene only, not a screenshot of a website. Keep the reference's clean illustrated outlines, vivid cyan edges and dramatic amber lighting. Do not add new characters.",
