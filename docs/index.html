@@ -55,17 +55,27 @@
     </div>
     <div class="hero-visual">
       <img class="hero-art" src="assets/sentinel-hero.jpg" alt="A fox sentinel watches through binoculars beside a glowing lighthouse, with a European flag and a blue radar map." width="1536" height="1024" fetchpriority="high">
-      <div class="terminal" aria-label="Excerpt from a real offline CLI scan">
-        <div class="terminal-top"><span>VigieVuln 1.0.1 — real offline scan · excerpt</span><button class="copy" type="button" data-copy="vigievuln -s test/fixtures/monorepo-mixed --offline --no-report" aria-label="Copy the fixture scan command"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg></button></div>
-<pre><b>vigievuln</b> -s test/fixtures/monorepo-mixed
-          --offline --no-report
-
-<span class="ok">[OK]</span>  Maven       4 modules · 7 direct dependencies
-<span class="ok">[OK]</span>  npm/yarn    9 dependencies
-<span class="ok">[OK]</span>  Yarn        7 dependencies
-<span class="info">[INFO]</span> Cached data only. No network requests.
-<span class="warn">[WARN]</span> OSV cache incomplete — coverage has gaps.</pre>
-        <p class="terminal-note">Recorded 27 Oct 2026. Offline results depend on cached data.<br><a href="#reports">Explore complete sample reports ↗</a></p>
+      <div class="terminal" role="region" aria-label="Terminal: excerpts from an offline VigieVuln scan" aria-describedby="terminal-caption">
+        <div class="terminal-top"><span class="terminal-lights" aria-hidden="true"><i></i><i></i><i></i></span><span>bash — monorepo-mixed</span><span class="terminal-shell" aria-hidden="true">~/projects</span></div>
+<pre tabindex="0" aria-label="Scan command and output"><code><span class="prompt">$</span> <b>vigievuln</b> -s test/fixtures/monorepo-mixed \
+    --offline --no-report
+<b>VigieVuln v1.0.1</b> <span class="muted">· Autonomous Dependency Checker</span>
+<span class="info">▸ Collection</span>
+  <span class="ok">✓</span> Maven    4 module(s) · 7 direct dep(s)
+  <span class="ok">✓</span> npm/yarn 9 dep(s)
+  <span class="ok">✓</span> Yarn     7 dep(s)
+  <span class="muted">…</span>
+<span class="info">▸ Vulnerability database update</span>
+  · --offline: cached data only, no network
+  <span class="muted">…</span>
+<span class="info">▸ Results</span>
+  CVE · production <b>(135)</b> <span class="critical">12 critical</span> <span class="warn">66 high</span> 50 medium 7 low <span class="critical">2 KEV</span>
+  <span class="critical">CRITICAL CVE-2021-44228</span> log4j-core:2.14.0 <span class="critical">KEV</span>
+  <span class="muted">…</span>
+  <span class="warn">⚠ Offline OSV cache incomplete: 10 lookups unavailable.</span>
+  · --no-report: no files written (scan + gate only)
+<span class="prompt">$</span> <span class="terminal-cursor" aria-hidden="true">▍</span></code></pre>
+        <p class="terminal-note" id="terminal-caption"><span>Real scan · excerpt</span><a href="#reports">Sample reports ↗</a></p>
       </div>
     </div>
   </div>

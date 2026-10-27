@@ -241,7 +241,7 @@ svg.icon {
   display:none;
 }
 
-/* Hero follows the supplied mockup: oversized type, illustration, live HTML terminal. */
+/* Hero follows the supplied mockup: oversized type, illustration, HTML terminal. */
 .hero-shell {
   padding:0;
   position:relative;
@@ -263,12 +263,12 @@ svg.icon {
 
 .hero {
   padding-top:70px;
-  padding-bottom:48px;
+  padding-bottom:28px;
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   gap:32px;
   align-items:start;
-  min-height:755px;
+  min-height:0;
 }
 
 .hero-copy {
@@ -398,7 +398,7 @@ h1 .l2 {
 .hero-visual {
   position:relative;
   min-width:0;
-  padding-top:386px;
+  padding-top:330px;
 }
 
 .hero-art {
@@ -410,7 +410,9 @@ h1 .l2 {
   left:-105px;
   top:-60px;
   aspect-ratio:3/2;
-  object-fit:cover;
+  transform:scale(.84);
+  transform-origin:top center;
+  object-fit:contain;
   mask-image:linear-gradient(90deg,transparent,#000 10%,#000 95%,transparent),linear-gradient(#000 65%,transparent 100%);
   mask-composite:intersect;
 }
@@ -421,7 +423,7 @@ h1 .l2 {
   overflow:hidden;
   background:linear-gradient(140deg,#081520f5,#050b13f5);
   border:1px solid #31536c;
-  border-radius:16px;
+  border-radius:10px;
   box-shadow:0 20px 60px #0005;
   min-width:0;
   font-family:var(--mono);
@@ -432,22 +434,66 @@ h1 .l2 {
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  padding:12px 18px;
+  padding:6px 14px;
   border-bottom:1px solid #233e53;
   color:#8eaec9;
   font-size:11px;
   background:#0a1723c9;
 }
 
-.terminal-top .copy {
+.terminal-lights {
+  display:flex;
+  gap:6px;
   flex-shrink:0;
 }
 
+.terminal-lights i {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#ff6058;
+}
+
+.terminal-lights i:nth-child(2) {
+  background:#febc2e;
+}
+
+.terminal-lights i:nth-child(3) {
+  background:#28c840;
+}
+
+.terminal-shell {
+  color:#91a5bb;
+  font-size:10px;
+}
+
 .terminal pre {
-  font:12px/1.95 var(--mono);
-  padding:17px 21px 4px;
+  font:11px/1.5 var(--mono);
+  padding:10px 16px 8px;
   margin:0;
   overflow-x:auto;
+  color:#d3e4f8;
+}
+
+.terminal pre code {
+  font:inherit;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+.terminal .prompt {
+  color:#74e57b;
+}
+
+.terminal .muted {
+  color:#91a5bb;
+}
+
+.terminal .critical {
+  color:#ff8585;
+}
+
+.terminal-cursor {
   color:#d3e4f8;
 }
 
@@ -469,10 +515,16 @@ h1 .l2 {
 }
 
 .terminal-note {
-  font:10px/1.6 var(--mono);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  font:10px/1.5 var(--mono);
   color:#91a5bb;
   margin:0;
-  padding:9px 21px 17px;
+  padding:6px 14px;
+  border-top:1px solid #233e53;
+  white-space:nowrap;
 }
 
 .terminal-note a {
@@ -503,15 +555,6 @@ h1 .l2 {
 .copy .icon {
   width:17px;
   height:17px;
-}
-
-.terminal .copy {
-  color:#c4d8eb;
-  border-color:#355269;
-}
-
-.terminal .copy:disabled {
-  opacity:.6;
 }
 
 /* The five compact benefits from the mockup. */
@@ -1255,11 +1298,8 @@ html[data-theme=light] .theme-toggle .moon {
 
 /* Responsive layout */
 @media(min-width:1600px) {
-  .hero {
-    min-height:790px;
-  }
   .hero-visual {
-    padding-top:406px;
+    padding-top:330px;
   }
   .hero-art {
     top:-60px;
@@ -1295,10 +1335,9 @@ html[data-theme=light] .theme-toggle .moon {
   .hero {
     gap:24px;
     padding-top:52px;
-    min-height:715px;
   }
   .hero-visual {
-    padding-top:320px;
+    padding-top:260px;
   }
   .hero-art {
     top:-25px;
@@ -1384,17 +1423,17 @@ html[data-theme=light] .theme-toggle .moon {
     gap:14px;
   }
   .hero-visual {
-    padding-top:310px;
+    padding-top:260px;
   }
   .terminal pre {
-    padding:15px;
+    padding:10px 12px 8px;
     font-size:10px;
   }
   .terminal-top {
-    padding:10px 13px;
+    padding:6px 12px;
   }
   .terminal-note {
-    padding:8px 15px 14px;
+    padding:6px 12px;
   }
   .benefits {
     grid-template-columns:repeat(3,minmax(0,1fr));
@@ -1516,21 +1555,19 @@ html[data-theme=light] .theme-toggle .moon {
     top:-15px;
     width:calc(100% + 50px);
     left:-25px;
-    max-height:440px;
-    object-fit:cover;
-    object-position:center 45%;
+    max-height:none;
   }
   .terminal-top {
     font-size:10px;
-    padding:12px 15px;
+    padding:6px 12px;
   }
   .terminal pre {
     font-size:11px;
-    padding:16px 17px 4px;
+    padding:10px 12px 8px;
   }
   .terminal-note {
     font-size:10px;
-    padding:8px 17px 16px;
+    padding:6px 12px;
   }
   .benefits {
     grid-template-columns:1fr 1fr;
