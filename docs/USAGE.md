@@ -148,6 +148,7 @@ Each data source can be disabled independently:
 | *(EOL + paid support)* | When endoflife.date lists **paid** support past the open-source end of life (`extendedSupport` — e.g. Broadcom for Spring 5.3/6.x), the EOL row stays an EOL finding (those fixes are builds from the vendor's private repository, for subscribers) and states: the support end date, the build of the dependency's own branch that fixes the CVEs found (`A 5.3 build > 5.3.40 fixes 7 of the 9 CVEs found`), and — when the vendor repository is configured with `--add-repo maven <name> <url> --token <TOKEN>` — the newest vendor build of the branch. A project already on a vendor build (newer than the branch's last public release and absent from Maven Central) is not reported as EOL; chapter 0 notes it. |
 | `--eol-support` | Also report frameworks/runtimes whose **active (bug-fix) support has ended** while security fixes are still provided (endoflife.date `support` field) — rendered as an "Out of active support" band under the maintenance chapter, status `unsupported` in the JSON. Off by default: the default EOL set is unchanged. |
 | `--ignore-test` | Drop test-scoped Maven deps and dev npm deps from the scan entirely (the dev-CVE section will be absent) |
+| `--vigievuln-proxy [fr\|com]` | Use the hosted VigieVuln proxy with an individual key from a verified account; defaults to `fr`. Set `VIGIEVULN_PROXY_CACHE_TOKEN`. |
 | `--proxy-cache <url>` | Route every public data-source request through a shared `vigievuln serve-cache` server — one upstream call per requested resource for all instances, persisted across restarts. Private registries always go direct. See **Shared proxy-cache server** |
 | `--proxy <url>` | Route ALL outbound requests through a corporate forward proxy (`http://host:port`; Node >= 24 or bun). See **Corporate forward proxy** |
 
@@ -385,6 +386,38 @@ is enforced two ways:
 > input it needs is the signature DB warmed in phase 2 (carried in the cache archive).
 > If retire still can't run, the failure is reported as a chapter-0 warning (run `-v`
 > for the exact reason) instead of an empty chapter.
+
+## Hosted VigieVuln proxy
+
+Create and verify your account at `https://www.vigievuln.fr/account`, then create
+an individual proxy key. Set `VIGIEVULN_PROXY_CACHE_TOKEN` in your environment
+(or your CI secret store) and run:
+
+```bash
+# Bash: enter the token without putting it in command history.
+read -rs -p 'Proxy token: ' VIGIEVULN_PROXY_CACHE_TOKEN; echo
+export VIGIEVULN_PROXY_CACHE_TOKEN
+vigievuln -s ./project --vigievuln-proxy
+vigievuln -s ./project --vigievuln-proxy com
+```
+
+The default endpoint is `https://api.vigievuln.fr`; `com` selects
+`https://api.vigievuln.com`. Authentication is checked before scanning. Invalid,
+expired or revoked keys stop the scan with exit code 2. The option cannot be
+combined with a custom `--proxy-cache` URL. `--offline` makes no network request,
+including no authentication preflight, and does not require a token.
+
+This routes supported public provider requests through the shared cache. Private
+registries still use their configured direct connections. The proxy sees requested
+package coordinates and vulnerability identifiers; this option does not upload
+your source code or create a monitored project. A failed proxy request does not
+silently switch to direct upstream access (an existing local cached answer may
+still be used after the initial authentication check succeeds).
+
+The option also works in layered JSON configuration as `"vigievulnProxy": "fr"`
+or `"vigievulnProxy": "com"`. Keep the token in the environment, outside checked-in
+configuration. See the server's deployment instructions when running your own
+instance; the following section covers a custom cache URL.
 
 ## Shared proxy-cache server (`serve-cache` / `--proxy-cache`)
 

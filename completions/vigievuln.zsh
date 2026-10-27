@@ -3,6 +3,9 @@
 _fad_check() {
 	local -a opts
 	opts=(
+		'--vigievuln-proxy[Use the hosted proxy]::domain:(fr com)'
+		'--proxy-cache[Shared proxy URL]:url:'
+		'--proxy-cache-token[Proxy authentication key]:token:'
 		'-s[root directory containing pom.xml files]:directory:_directories'
 		'--src[root directory containing pom.xml files]:directory:_directories'
 		'-t[output directory]:directory:_directories'

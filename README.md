@@ -1,6 +1,8 @@
 <h1 align="center">
- VigieVuln
+<img src="docs/assets/VigieVuln_Logo_sm.png" alt="VigieVuln" height="200">
 </h1>
+
+---
 
 [![npm version](https://img.shields.io/npm/v/vigievuln.svg)](https://www.npmjs.com/package/vigievuln)
 [![npm downloads](https://img.shields.io/npm/dm/vigievuln.svg)](https://www.npmjs.com/package/vigievuln)
@@ -30,6 +32,7 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 - **CMS & frameworks audited as instances**; Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP with per-instance inventory (core, plugins, themes, bundles, components) → [the dedicated guide](docs/CMS-FRAMEWORKS.md)
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
 - **Air-gapped flow**; **zero network under `--offline`** → [Benchmark](docs/BENCHMARK.md) · [Air-gapped](#air-gapped-audits)
+- **Hosted proxy with a verified account**; `--vigievuln-proxy [fr|com]` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
 - **Shared cache for a scanner fleet**; `vigievuln serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
 - **Supply-chain risk**; known-**malicious** advisories and suspected **typosquats** (`--typosquat`).
 - **Audit-grade**; every report carries a **provenance manifest** and a **Methodology & limitations** chapter; a `SHA256SUMS`;

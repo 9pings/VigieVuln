@@ -376,7 +376,7 @@ program
 	.option("-d, --disable <list>", "turn features OFF (comma-separated) — see the token list below")
 	.option("-a, --activate <list>", "turn ON what is off by default (comma-separated) — see below")
 	.option("-r, --report <list>", "outputs to write, comma-separated: html,doc,xlsx,sbom,csaf,json,sarif (default: html,json)")
-	.option("--help-all", "every option, incl. the flags -d/-a/-r replace and the cache / registry / config commands")
+	.option("--help-all", "show all flags, cache and config commands")
 	.option("-e, --exclude <exclude>", "regex of groupId/name to exclude, e.g. '^(client|private)\\.'")
 	.option("--exclude-path <glob...>", "ignore sub-paths during the walk (gitignore-style glob, relative to --src). Repeatable")
 	.option("--no-default-excludes", "walk everything, including node_modules/vendor/target/…")
@@ -416,6 +416,7 @@ program
 	.option("--no-nvd-mirror", "NVD only: don't fall back to the fkie-cad/nvd-json-data-feeds mirror when NVD does not answer")
 	.option("--retries <n>", "retries (waiting 5+n s each) before a data source that does not answer stops the run; 0 = none", "5")
 	.option("--proxy-cache <url>", "shared data-source cache (`serve-cache`)")
+	.option("--vigievuln-proxy [domain]", "hosted cache: fr (default) or com; key required")
 	.option("--proxy-cache-token <token>", "authenticate to a shared proxy-cache server (or set VIGIEVULN_PROXY_CACHE_TOKEN)")
 	.option("--proxy <url>", "corporate proxy for all requests")
 	.option("--set-nvd-key <key>", "save NVD API key to ~/.fad-checker/config.json (10× faster NVD enrichment)")
@@ -556,6 +557,8 @@ try {
 	process.exit(1);
 }
 Object.assign(options, applyLayers(program, _layers, require("./lib/config").load()));
+try { Object.assign(options, require("./lib/hosted-proxy").resolveHostedProxy(options)); }
+catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 // --source CLI alias → src (applyLayers already maps the file/env JSON 'source' key).
 if (!options.src && options.source) options.src = options.source;
 
@@ -784,6 +787,10 @@ async function timedPhase(label, fn) {
 }
 
 (async function main() {
+	if (options.vigievulnProxy && !options.offline) {
+		try { await require("./lib/hosted-proxy").checkHostedProxy(options.proxyCache, options.proxyCacheToken); }
+		catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exitCode = 2; return; }
+	}
 	ui.banner(pkg.version);
 
 	// Build the Maven repo list once: persisted repos (from ~/.fad-checker/config.json)
