@@ -9,272 +9,92 @@
 <meta property="og:description" content="Polyglot CVE / EOL / outdated / license scanner that reads your source tree directly. Merged sources, CPE filtering, EPSS + KEV priority, CycloneDX SBOM + CSAF VEX, HTML + findings JSON by default, optional Word report, application coverage and air-gapped mode.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://9pings.github.io/VigieVuln/">
-<meta property="og:image" content="https://9pings.github.io/VigieVuln/assets/VigieVuln_Logo_sm.png">
-<meta property="og:image:width" content="300">
-<meta property="og:image:height" content="286">
+<meta property="og:image" content="https://9pings.github.io/VigieVuln/assets/sentinel-hero.png">
+<meta property="og:image:width" content="1536">
+<meta property="og:image:height" content="1024">
 <meta property="og:image:alt" content="VigieVuln: a fox keeping watch with binoculars beside a lighthouse">
-<meta name="twitter:card" content="summary">
-<meta name="theme-color" content="#0a0d13">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#050d14">
 <link rel="canonical" href="https://9pings.github.io/VigieVuln/">
-<link rel="icon" type="image/png" href="assets/VigieVuln_Logo_sm.png">
+<link rel="icon" type="image/png" href="assets/site-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0a0d13; --bg2:#0d121b; --panel:#10161f; --raised:#141c28;
-    --line:#202b3a; --line2:#2b3a4f;
-    --text:#d8e0ea; --muted:#8a98ad; --dim:#5e6b7e;
-    --amber:#ffb454; --amber-d:#e89a3c; --teal:#5ccfe6; --green:#9ece6a;
-    --crit:#ff6a7a; --high:#ff9560; --med:#ffd166; --low:#7cc7ff;
-    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
-    --maxw:1120px;
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{
-    margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
-    font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
-  }
-  /* atmospheric background: grid + radial glow */
-  body::before{
-    content:"";position:fixed;inset:0;z-index:-2;
-    background:
-      radial-gradient(1100px 600px at 78% -8%, rgba(255,180,84,.10), transparent 60%),
-      radial-gradient(900px 600px at 8% 12%, rgba(92,207,230,.07), transparent 55%);
-  }
-  body::after{
-    content:"";position:fixed;inset:0;z-index:-1;opacity:.5;
-    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-    background-size:46px 46px;
-    -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 0%, #000 35%, transparent 80%);
-    mask-image:radial-gradient(ellipse 90% 70% at 50% 0%, #000 35%, transparent 80%);
-  }
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
-  .mono{font-family:var(--mono)}
-  .accent{color:var(--amber)}
-
-  /* nav */
-  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
-    background:rgba(10,13,19,.72);border-bottom:1px solid var(--line)}
-  nav{display:flex;align-items:center;justify-content:space-between;height:64px}
-  .brand{font-family:var(--mono);font-weight:700;letter-spacing:-.5px;font-size:18px;display:flex;align-items:center;gap:9px}
-  .brand img{width:44px;height:auto;flex-shrink:0}
-  .brand{flex-shrink:0}
-  .navlinks{flex-wrap:wrap;justify-content:flex-end}
-  :target{scroll-margin-top:88px}
-  a:focus-visible,button:focus-visible{outline:2px solid var(--teal);outline-offset:5px}
-  .navlinks{display:flex;gap:28px;align-items:center;font-family:var(--mono);font-size:14px;color:var(--muted)}
-  header .navlinks{flex-wrap:nowrap;gap:16px;font-size:12px}
-  .navlinks a:hover{color:var(--text)}
-  .navlinks .gh{color:var(--text);border:1px solid var(--line2);padding:7px 14px;border-radius:7px}
-  .navlinks .gh:hover{border-color:var(--amber);color:var(--amber)}
-  @media(max-width:1080px){header .navlinks a:not(.gh){display:none}}
-  @media(max-width:380px){.brand{font-size:16px}.brand img{width:36px}.navlinks .gh{padding:7px 10px}}
-
-  /* hero */
-  .hero{padding:78px 0 40px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:48px;align-items:center}
-  @media(max-width:920px){.hero{grid-template-columns:minmax(0,1fr);padding-top:52px}}
-  .eyebrow{font-family:var(--mono);font-size:13px;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .eyebrow .tag{color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 11px;font-size:12px;text-transform:none;letter-spacing:0}
-  h1{font-family:var(--mono);font-weight:700;font-size:clamp(38px,5.4vw,62px);line-height:1.02;letter-spacing:-2px;margin:0 0 22px}
-  h1 .l2{color:var(--amber);display:block}
-  .lead{font-size:19px;color:var(--muted);max-width:560px;margin:0 0 30px}
-  .lead b{color:var(--text);font-weight:600}
-  .cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
-  .btn{font-family:var(--mono);font-size:15px;font-weight:600;padding:13px 22px;border-radius:9px;border:1px solid transparent;cursor:pointer;transition:.18s;display:inline-flex;gap:9px;align-items:center}
-  .btn.primary{background:var(--amber);color:#1a1205}
-  .btn.primary:hover{background:var(--amber-d);transform:translateY(-2px);box-shadow:0 12px 28px rgba(255,180,84,.28)}
-  .btn.ghost{border-color:var(--line2);color:var(--text)}
-  .btn.ghost:hover{border-color:var(--text);transform:translateY(-2px)}
-
-  /* code pill */
-  .install{margin-top:30px;display:inline-flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 16px;font-family:var(--mono);font-size:15px;max-width:100%}
-  .install .pr{color:var(--dim)}
-  .install code{color:var(--text);white-space:nowrap;overflow:auto}
-  .copy{margin-left:auto;background:transparent;border:1px solid var(--line2);color:var(--muted);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;cursor:pointer;transition:.15s}
-  .copy:hover{color:var(--amber);border-color:var(--amber)}
-
-  .shot{border:1px solid var(--line);border-radius:14px;width:100%;display:block;box-shadow:0 30px 70px rgba(0,0,0,.55)}
-  .hero > *, .split > *{min-width:0}
-  .hero-visual{display:flex;flex-direction:column;align-items:center;gap:24px;min-width:0}
-  .hero-logo{display:block;width:280px;max-width:75%;height:auto;filter:drop-shadow(0 16px 32px rgba(0,0,0,.4))}
-  .hero .shotwrap{width:100%;min-width:0}
-  .hero .shotwrap .note{text-align:center}
-  .release{display:flex;flex-wrap:wrap;gap:8px 18px;font-family:var(--mono);font-size:12px;color:var(--muted);margin:18px 0 0}
-  .release a{color:var(--teal);text-decoration:underline;text-underline-offset:3px}
-  .sample-links{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
-  .sample-links .doc .t{font-size:16px}
-  @media(max-width:920px){.hero{gap:28px}.hero-visual{display:contents}.hero-logo{grid-row:1;justify-self:center}.hero-copy{grid-row:2}.hero .shotwrap{grid-row:3}}
-  @media(max-width:600px){.sample-links{grid-template-columns:1fr}.hero-logo{width:240px}}
-
-  /* section scaffolding */
-  section{padding:64px 0;position:relative}
-  .kicker{font-family:var(--mono);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:12px}
-  h2{font-family:var(--mono);font-weight:700;font-size:clamp(26px,3.4vw,38px);letter-spacing:-1px;margin:0 0 14px}
-  .sub{color:var(--muted);max-width:640px;margin:0 0 38px;font-size:18px}
-
-  /* ecosystems strip */
-  .ecos{display:flex;flex-wrap:wrap;gap:10px}
-  .ecos span{font-family:var(--mono);font-size:14px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:9px 15px;background:var(--bg2);transition:.18s}
-  .ecos span:hover{color:var(--amber);border-color:var(--line2);transform:translateY(-2px)}
-
-  /* features grid */
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
-  @media(max-width:600px){.grid{grid-template-columns:1fr}}
-  .card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:26px;transition:.2s;position:relative;overflow:hidden}
-  .card:hover{border-color:var(--line2);transform:translateY(-4px)}
-  .card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent);opacity:0;transition:.2s}
-  .card:hover::before{opacity:1}
-  .card .ic{font-family:var(--mono);font-size:13px;color:var(--amber);border:1px solid var(--line2);border-radius:6px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
-  .card h3{font-family:var(--mono);font-size:17px;margin:0 0 9px;letter-spacing:-.3px}
-  .card p{margin:0;color:var(--muted);font-size:15px;line-height:1.55}
-
-  /* auditor ledger — teal left rule, deliberately not another card grid */
-  .audit{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:820px){.audit{grid-template-columns:1fr}}
-  .arow{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
-        border-left:3px solid var(--teal);border-radius:0 12px 12px 0;padding:20px 22px;transition:.18s}
-  .arow:hover{border-color:var(--line2);border-left-color:var(--amber);transform:translateX(3px)}
-  .arow h3{font-family:var(--mono);font-size:15.5px;margin:0 0 8px;letter-spacing:-.3px;line-height:1.35}
-  .arow h3 .ck{color:var(--teal);margin-right:8px}
-  .arow:hover h3 .ck{color:var(--amber)}
-  .arow p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.6}
-  .arow p b{color:var(--text);font-weight:600}
-  .arow p .mono{color:var(--amber);font-size:13.5px}
-  .auditnotes{margin:16px 0 0;padding-left:26px;color:var(--dim);font-size:13px;line-height:1.6}
-  .auditnotes li{margin:9px 0}
-  .auditnotes .mono{font-size:12.5px}
-
-  /* report showcase */
-  .showcase{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-  figure{margin:0}
-  figcaption{font-family:var(--mono);font-size:13px;color:var(--dim);text-align:center;margin-top:14px}
-
-  /* code block */
-  .code{background:#0c1119;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-family:var(--mono);font-size:14.5px}
-  .code .top{display:flex;gap:7px;padding:11px 15px;border-bottom:1px solid var(--line);background:#0e141d}
-  .code .top i{width:11px;height:11px;border-radius:50%;display:inline-block}
-  .code .top .r{background:#ff5f56}.code .top .y{background:#ffbd2e}.code .top .g{background:#27c93f}
-  .code pre{margin:0;padding:20px 22px;overflow:auto;line-height:1.7;color:#c9d3e0}
-  .code .c{color:var(--dim)}    /* comment */
-  .code .p{color:var(--amber)}  /* prompt/cmd */
-  .code .k{color:var(--teal)}   /* flag */
-
-  .split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-  @media(max-width:860px){.split{grid-template-columns:1fr;gap:26px}}
-
-
-  /* ecosystem tabs */
-  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 14px}
-  .tab{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:8px;
-       padding:8px 14px;font-family:var(--mono);font-size:13px;cursor:pointer;transition:.15s}
-  .tab:hover{color:var(--text);border-color:var(--line2)}
-  .tab[aria-selected="true"]{background:var(--bg2);color:var(--amber);border-color:var(--amber)}
-  .panel[hidden]{display:none}
-  .meta{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin:0 0 12px}
-  .meta b{color:var(--text)}
-  /* comparison table */
-  .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
-  table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:680px}
-  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line)}
-  thead th{font-family:var(--mono);font-size:12.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:var(--bg2);position:sticky;top:0}
-  tbody th{font-weight:500;color:var(--text)}
-  td.f{font-family:var(--mono)}
-  .yes{color:var(--green);font-weight:700}.no{color:var(--dim)}.warn{color:var(--med)}
-  .me{background:rgba(255,180,84,.06)}
-  thead th.me{color:var(--amber)}
-  tr:last-child td,tr:last-child th{border-bottom:none}
-  .note{font-size:13px;color:var(--dim);margin-top:14px;line-height:1.6}
-
-  /* docs cards */
-  .docs{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-  @media(max-width:840px){.docs{grid-template-columns:1fr 1fr}}
-  @media(max-width:480px){.docs{grid-template-columns:1fr}}
-  .doc{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px;transition:.18s}
-  .doc:hover{border-color:var(--amber);transform:translateY(-3px)}
-  .doc .t{font-family:var(--mono);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-  .doc .d{color:var(--muted);font-size:14px}
-  .doc .arr{margin-left:auto;color:var(--dim)}
-
-  footer{border-top:1px solid var(--line);padding:40px 0;color:var(--muted);font-size:14px}
-  .foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
-  .foot .mono{color:var(--dim)}
-  footer a{color:var(--muted)}footer a:hover{color:var(--amber)}
-
-  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
-  .reveal.in{opacity:1;transform:none}
-  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;650;700;750;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="assets/site-icon.png">
+<link rel="preload" as="image" href="assets/sentinel-hero.png">
+<link rel="stylesheet" href="assets/site.css">
+<script>try{if(localStorage.getItem('vigievuln-theme')==='light')document.documentElement.dataset.theme='light';}catch{}</script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-
-<header>
-  <nav class="wrap">
-    <a class="brand" href="#top" aria-label="VigieVuln home"><img src="assets/VigieVuln_Logo_sm.png" alt="" width="300" height="286">VigieVuln</a>
-    <div class="navlinks">
-      <a href="#features">Features</a>
-      <a href="#reports">Reports</a>
-      <a href="#cms">CMS &amp; frameworks</a>
-      <a href="#audit">For auditors</a>
-      <a href="#airgap">Air-gapped</a>
-      <a href="#compare">Compare</a>
-      <a href="#benchmark">Benchmark</a>
-      <a href="#docs">Docs</a>
-      <a class="gh" href="https://github.com/9pings/VigieVuln">GitHub ↗</a>
+<a class="skip-link" href="#main">Skip to content</a>
+<svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 .8a11.2 11.2 0 0 0-3.54 21.82c.56.1.77-.24.77-.54v-2.09c-3.14.68-3.8-1.33-3.8-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.63 1.22 3.27.93.1-.72.39-1.22.71-1.5-2.51-.28-5.15-1.25-5.15-5.58 0-1.23.44-2.24 1.16-3.03-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.08 1.16a10.73 10.73 0 0 1 5.6 0c2.14-1.45 3.08-1.16 3.08-1.16.62 1.55.23 2.7.11 2.98.73.79 1.16 1.8 1.16 3.03 0 4.34-2.65 5.3-5.17 5.58.4.35.76 1.04.76 2.1v3.07c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol><symbol id="i-external" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13A8.8 8.8 0 0 1 11 3.5 9 9 0 1 0 20.5 13Z"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 9 4v6c0 6-9 10-9 10S3 18 3 12V6l9-4Z"/><path d="m8 12 3 3 5-6"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7l10-5Zm-10 10 10 5 10-5M2 17l10 5 10-5"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="m14 2-11 12h8l-1 8 11-13h-8l1-7Z"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="12" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3m-5 5v3"/></symbol><symbol id="i-report" viewBox="0 0 24 24"><path d="M14 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-7-7Zm0 0v7h7M7 13h10M7 17h7"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-16-2 20"/></symbol><symbol id="i-activity" viewBox="0 0 24 24"><path d="M2 12h4l3-9 6 18 3-9h4"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><path d="M2 12h20M4 6h16M4 18h16"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-4-4 3-3m-6 0 3-3"/></symbol><symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="4" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="20" r="2"/><path d="M6 6v12M18 8a10 10 0 0 1-10 8H6"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-network" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="6" rx="1"/><rect x="2" y="16" width="7" height="6" rx="1"/><rect x="15" y="16" width="7" height="6" rx="1"/><path d="M12 8v4M5.5 16v-4h13v4"/></symbol></defs></svg>
+<header class="site-header">
+  <nav class="site-nav" aria-label="Main navigation">
+    <a class="brand" href="#top" aria-label="VigieVuln home"><img src="assets/site-icon.png" alt="" width="329" height="292"><span>Vigie<strong>Vuln</strong></span></a>
+    <div class="navlinks" id="main-nav"><a href="#features" aria-current="location">Features</a><a href="#reports">Reports</a><a href="#cms">CMS &amp; frameworks</a><a href="#audit">For auditors</a><a href="#airgap">Air-gapped</a><a href="#compare">Compare</a><a href="#benchmark">Benchmark</a><a href="#docs">Docs</a></div>
+    <div class="nav-actions">
+      <a class="github-link" href="https://github.com/9pings/VigieVuln" aria-label="VigieVuln on GitHub"><svg class="icon " aria-hidden="true"><use href="#i-github"></use></svg><span>GitHub ↗</span></a>
+      <button class="icon-button theme-toggle" type="button" aria-label="Switch to light theme"><svg class="icon sun" aria-hidden="true"><use href="#i-sun"></use></svg><svg class="icon moon" aria-hidden="true"><use href="#i-moon"></use></svg></button>
+      <button class="icon-button menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="main-nav"><svg class="icon " aria-hidden="true"><use href="#i-menu"></use></svg></button>
     </div>
   </nav>
 </header>
-
-<a id="top"></a>
-<main class="wrap">
-
-  <!-- HERO -->
-  <section class="hero">
+<main id="main">
+<section class="hero-shell" id="top" aria-labelledby="hero-title">
+  <div class="wrap hero">
     <div class="hero-copy">
-      <div class="eyebrow reveal">
-        Apache-2.0 · zero-build
-        <span class="tag">Maven</span><span class="tag">Gradle</span><span class="tag">npm</span><span class="tag">pnpm</span>
-        <span class="tag">Composer</span><span class="tag">PyPI</span><span class="tag">NuGet</span>
-        <span class="tag">Go</span><span class="tag">Ruby</span><span class="tag">CMS/Fmwk</span><span class="tag">Native bins</span>
-      </div>
-      <h1 class="reveal">Audit every dependency.<span class="l2">No build. No leaks.</span></h1>
-      <p class="lead reveal">A polyglot <b>CVE · EOL · outdated · license</b> scanner that reads your source tree
-        directly — no <span class="mono">mvn</span>, no <span class="mono">npm install</span>, no Docker.
-        Findings merged from <b>CVEProject, OSV, Packagist, NVD &amp; retire.js</b>, prioritised with
-        <b>EPSS + CISA KEV</b>, an audit-ready <b>HTML + findings JSON</b> report with optional Word, <b>CycloneDX SBOM</b>
-        and <b>CSAF VEX</b>, and an <b>air-gapped mode</b> for confidential code.</p>
-      <div class="cta reveal">
-        <a class="btn primary" href="#start">$ get started</a>
-        <a class="btn ghost" href="https://github.com/9pings/VigieVuln">★ Star on GitHub</a>
-      </div>
-      <div class="install reveal" id="start">
-        <span class="pr">$</span><code id="cmd">npm i -g vigievuln &amp;&amp; vigievuln -s ./your-project</code>
-        <button class="copy" data-copy="npm i -g vigievuln && vigievuln -s ./your-project">copy</button>
-      </div>
-      <p class="release reveal"><a href="https://www.npmjs.com/package/vigievuln">Latest release: 1.0.1</a><span>Node.js 20+</span><a href="https://github.com/9pings/VigieVuln/releases">Standalone binaries</a></p>
-      <p class="reveal" style="margin-top:18px;font-size:14px;color:var(--muted);border-left:3px solid var(--amber);background:rgba(255,180,84,.06);padding:10px 14px;border-radius:0 8px 8px 0;max-width:560px">
-        ⚠️ vigievuln is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, <b style="color:var(--text)">double-check anything critical</b>, and please <a href="https://github.com/9pings/VigieVuln/issues" style="color:var(--amber);text-decoration:underline">report issues</a>; they get fixed fast.
-      </p>
-    </div>
-    <div class="hero-visual reveal">
-      <img class="hero-logo" src="assets/VigieVuln_Logo_sm.png" alt="VigieVuln — a fox keeping watch with binoculars beside a lighthouse" width="300" height="286" fetchpriority="high">
-      <div class="shotwrap">
-      <p class="note">VigieVuln 1.0.1 — a real offline audit using cached vulnerability data.</p>
-      <img class="shot" src="assets/demo.gif" alt="vigievuln animated terminal demo: an offline Maven audit — dependencies absent from Maven Central flagged as private/internal, the compact single-line vulnerability-database progress, then findings coloured by severity" loading="lazy">
+      <div class="license-badge"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg> APACHE 2.0 · ZERO BUILD</div>
+      <div class="hero-tags" aria-label="Supported ecosystems"><span>Maven</span><span>Gradle</span><span>npm</span><span>pnpm</span><span>Composer</span><span>PyPI</span><span>NuGet</span><span>Go</span><span>Ruby</span><span>CMS/Fmwk</span><span>Native bins</span></div>
+      <h1 id="hero-title">Audit every<br>dependency<span class="dot">.</span><span class="l2">No build. No leaks.</span></h1>
+      <p class="lead">A polyglot <b>CVE · EOL · outdated · license</b> scanner that reads your source tree directly — no mvn, no npm install, no Docker. Findings merged from <b>CVEProject, OSV, Packagist, NVD &amp; retire.js</b>, prioritised with <b>EPSS + CISA KEV</b>, an audit-ready <b>HTML + findings JSON</b> report with optional <b>Word, CycloneDX SBOM</b> and <b>CSAF VEX</b>, and an air-gapped mode for confidential code.</p>
+      <div class="cta">
+        <a class="btn primary" href="#start"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg>get started<svg class="icon " aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+        <a class="btn ghost" href="https://github.com/9pings/VigieVuln"><svg class="icon " aria-hidden="true"><use href="#i-github"></use></svg>Star on GitHub</a>
       </div>
     </div>
-  </section>
+    <div class="hero-visual">
+      <img class="hero-art" src="assets/sentinel-hero.png" alt="A fox sentinel watches through binoculars beside a glowing lighthouse, with a European flag and a blue radar map." width="1536" height="1024" fetchpriority="high">
+      <div class="terminal" aria-label="Excerpt from a real offline CLI scan">
+        <div class="terminal-top"><span>VigieVuln 1.0.1 — real offline scan · excerpt</span><button class="copy" type="button" data-copy="vigievuln -s test/fixtures/monorepo-mixed --offline --no-report" aria-label="Copy the fixture scan command"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg></button></div>
+<pre><b>vigievuln</b> -s test/fixtures/monorepo-mixed
+          --offline --no-report
 
+<span class="ok">[OK]</span>  Maven       4 modules · 7 direct dependencies
+<span class="ok">[OK]</span>  npm/yarn    9 dependencies
+<span class="ok">[OK]</span>  Yarn        7 dependencies
+<span class="info">[INFO]</span> Cached data only. No network requests.
+<span class="warn">[WARN]</span> OSV cache incomplete — coverage has gaps.</pre>
+        <p class="terminal-note">Recorded 27 Oct 2026. Offline results depend on cached data.<br><a href="#reports">Explore complete sample reports ↗</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="benefit-strip">
+  <ul class="wrap benefits">
+<li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-shield"></use></svg><div><strong>CVE, EOL &amp; advisories</strong><span>Multiple sources, one view</span></div></li>
+<li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-layers"></use></svg><div><strong>Multi-ecosystem</strong><span>10 ecosystems · 9 CMS</span></div></li>
+<li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-bolt"></use></svg><div><strong>Fast &amp; zero build</strong><span>No install, no Docker</span></div></li>
+<li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-lock"></use></svg><div><strong>Air-gapped ready</strong><span>Offline, with warmed caches</span></div></li>
+<li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-report"></use></svg><div><strong>Audit-ready reports</strong><span>HTML, JSON, Word, SBOM, VEX</span></div></li>
+  </ul>
+</div>
+<section class="start-section" id="start" aria-labelledby="start-title">
+  <div class="wrap start-layout">
+    <div class="start-copy"><h2 id="start-title">Your next audit starts here.</h2><p>Install once. Point it at a checkout. Get the full picture.</p></div>
+    <div>
+      <div class="install"><span class="pr">$</span><code>npm i -g vigievuln &amp;&amp; vigievuln -s ./your-project</code><button class="copy" type="button" data-copy="npm i -g vigievuln &amp;&amp; vigievuln -s ./your-project" aria-label="Copy the install and scan command"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg><span>copy</span></button></div>
+      <p class="release"><a href="https://www.npmjs.com/package/vigievuln">Latest release: 1.0.1 ↗</a><span>Node.js 20+</span><a href="https://github.com/9pings/VigieVuln/releases">Standalone binaries ↗</a></p>
+    </div>
+  </div>
+</section>
+<div class="wrap">
   <!-- ECOSYSTEMS -->
-  <section style="padding-top:18px">
-    <div class="kicker reveal">One tool, one pass</div>
-    <h2 class="reveal">Ten ecosystems + 9 CMS/frameworks + vendored JS + embedded JARs + native binaries</h2>
-    <p class="sub reveal">Point it at any checkout — multi-module, monorepo, polyglot. It parses manifests and lockfiles directly, and falls back to best-effort (pinned versions) when there's no lockfile.</p>
-    <div class="ecos reveal">
+  <section>
+    <div class="kicker">One tool, one pass</div>
+    <h2 >Ten ecosystems + 9 CMS/frameworks + vendored JS + embedded JARs + native binaries</h2>
+    <p class="sub">Point it at any checkout — multi-module, monorepo, polyglot. It parses manifests and lockfiles directly, and falls back to best-effort (pinned versions) when there's no lockfile.</p>
+    <div class="ecos">
       <span>Maven · pom.xml</span><span>Gradle · build.gradle(.kts) + libs.versions.toml</span><span>npm · package-lock</span><span>Yarn · v1 + Berry</span>
       <span>pnpm · v5/6/9</span><span>Composer · composer.lock</span><span>PyPI · poetry/uv/pdm/pip</span>
       <span>NuGet · .csproj/.fsproj/.vbproj</span><span>Go · go.mod/go.sum</span>
@@ -286,37 +106,37 @@
 
   <!-- FEATURES -->
   <section id="features">
-    <div class="kicker reveal">Why it's different</div>
-    <h2 class="reveal">Built for audits, not just CI</h2>
+    <div class="kicker">Why it's different</div>
+    <h2 >Built for audits, not just CI</h2>
     <div class="grid">
-      <div class="card reveal"><div class="ic">01</div><h3>No build, polyglot</h3><p>Reads <span class="mono">pom.xml</span>, <span class="mono">build.gradle</span> &amp; lockfiles across all ten ecosystems. No JDK, no <span class="mono">install</span>, no Docker — audit a checkout you can't even compile. It resolves the Maven graph the way Maven resolves it, and cracks open committed <span class="mono">.jar</span>/<span class="mono">.war</span>/<span class="mono">.ear</span> binaries in-memory to scan what is shaded inside them.</p></div>
-      <div class="card reveal"><div class="ic">02</div><h3>Merged sources, fewer false positives</h3><p>CVEProject + OSV.dev + Packagist + NVD + retire.js, merged &amp; deduped, then cross-checked against NVD <span class="mono">CPE</span> version ranges to filter noise.</p></div>
-      <div class="card reveal"><div class="ic">03</div><h3>Risk-based priority</h3><p>Every CVE enriched with <b>EPSS</b> (FIRST.org exploit-prediction) and <b>CISA KEV</b> (known-exploited). A composite score puts <b>exploited-in-the-wild</b> first, not just the highest CVSS.</p></div>
-      <div class="card reveal"><div class="ic">04</div><h3>Beyond CVEs</h3><p>Flags <b>end-of-life</b> (endoflife.date, with a <b>Source</b> column tracing each verdict to its mapping rule — plus an opt-in <b>out-of-active-support</b> level and a <b>PHP runtime</b> verdict when the Composer constraint proves end of life), <b>deprecated / abandoned / yanked</b>, <b>outdated</b> versions, and <b>licenses</b> (SPDX + copyleft policy) — signals most scanners skip.</p></div>
-      <div class="card reveal"><div class="ic">05</div><h3>Report made for productivity</h3><p>Every table and chart carries a split <b>Copy for Word</b> button — the whole table, or the selection that matters — and pastes into Word with formatting intact. The whole report ships in <b>English or French</b> (<span class="mono">--lang fr</span>): chapter counts, status pills, fix recipes and the Word-ready summary included.</p></div>
-      <div class="card reveal"><div class="ic">06</div><h3>Exports &amp; CI gating</h3><p>Writes an HTML report and a <span class="mono">findings.json</span> by default &mdash; the JSON so the next run can <span class="mono">--baseline</span> against it. Emit <b>CycloneDX 1.6</b> SBOM, <b>CSAF 2.0 VEX</b>, flat <b>JSON</b>, an <b>Excel .xlsx workbook</b> (<span class="mono">-r xlsx</span>) and <b>SARIF 2.1.0</b> (GitHub/GitLab code scanning). Gate with <span class="mono">--fail-on critical|kev</span> or — for repeat audits — on <b>new</b> findings only with <span class="mono">--baseline</span> + <span class="mono">--fail-on-new</span>; triage false-positives via <span class="mono">--ignore</span> / <span class="mono">--vex</span>. Private registries for every ecosystem.</p></div>
-            <div class="card reveal"><div class="ic">07</div><h3>Air-gapped</h3><p><b>Zero network under <span class="mono">--offline</span></b> — regression-tested with a fetch tripwire and reproducible under <span class="mono">unshare -rn</span> (no network interface at all). Export an <b>anonymized</b> descriptor (public coordinates only), warm the caches online, report offline: the latest documented Maven re-measurement recovered <b>705/705</b> of OSV-Scanner's <i>online</i> pairs from the warmed cache (2026-10-02). <a href="#airgap" style="color:var(--amber);text-decoration:underline">How it works</a>.</p></div>
-                              <div class="card reveal"><div class="ic">08</div><h3>Audit-grade</h3><p>Every report carries a <b>provenance manifest</b> (tool, runtime, mode, run configuration and cache freshness for each consulted source) and a <b>Methodology &amp; limitations</b> chapter that states what VigieVuln doesn't assess. Artifacts ship a <span class="mono">SHA256SUMS</span> integrity manifest (<span class="mono">sha256sum -c</span>), and <b>differential audits</b> diff a scan against a prior run (<span class="mono">--baseline</span>) so CI can gate on <b>new</b> findings only.</p></div>
-      <div class="card reveal"><div class="ic">09</div><h3>Certificates &amp; keys</h3><p>Finds committed <b>X.509 certificates</b> (flags <b>expired</b>, expiring, <b>weak key</b> RSA&lt;2048, <b>weak signature</b> MD5/SHA1, self-signed), <b>private &amp; public keys</b> — each labelled <b>private</b> (a leaked secret) or <b>public</b> — across PEM, <b>OpenSSH every algorithm</b>, PuTTY, PGP and one-line SSH (<span class="mono">id_rsa</span>, <span class="mono">authorized_keys</span>, <span class="mono">known_hosts</span>), plus JKS/PKCS#12 keystores. Parsed <b>100% offline</b> with the built-in X.509 parser — no network.</p></div>
-      <div class="card reveal"><div class="ic">10</div><h3>CMS &amp; frameworks audited as instances</h3><p>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP are <b>auto-activated</b>, with per-instance inventory — core, plugins, themes, bundles, components. <a href="#cms" style="color:var(--amber);text-decoration:underline">The dedicated section</a> · <a href="https://github.com/9pings/VigieVuln/blob/main/docs/CMS-FRAMEWORKS.md" style="color:var(--amber);text-decoration:underline">the guide</a>.</p></div>
-      <div class="card reveal"><div class="ic">11</div><h3>Shared cache for a scanner fleet</h3><p><span class="mono">vigievuln serve-cache</span> + <span class="mono">--proxy-cache</span> turns one box into the cache point for every other instance — one upstream call per provider resource per TTL, keys held server-side. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache" style="color:var(--amber);text-decoration:underline">Cache usage</a>.</p></div>
-      <div class="card reveal"><div class="ic">12</div><h3>Supply-chain risk</h3><p>Flags advisories on <b>known-malicious</b> packages (a compromised dependency is a finding whatever its version — they always block the CI gate, <span class="mono">--fail-on</span> or not) and surfaces suspected <b>typosquats</b> (<span class="mono">--typosquat</span>): a lookalike name close to a popular package is a red flag even before any CVE exists against it.</p></div>
-      <div class="card reveal"><div class="ic">13</div><h3>European vulnerability references</h3><p>Matched CVEs carry <b>ENISA EUVD</b> identifiers and its exploited flag, <b>GCVE</b> identifiers, and related <b>CERT-FR</b> advisories. References appear in the report and exports; bulk and incremental lookups do not send your project's CVE list. Cached data stays available offline. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/DATA-SOURCES.md" style="color:var(--amber);text-decoration:underline">Data sources</a>.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg></div><h3>No build, polyglot</h3><p>Read manifests and lockfiles across <b>ten ecosystems</b>, without installing or executing project code. Resolve Maven modules individually and inspect embedded JARs, WARs and EARs.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-layers"></use></svg></div><h3>Merged sources, fewer false positives</h3><p><b>CVEProject, OSV, Packagist, NVD and retire.js</b> findings are merged and deduplicated. Version and CPE checks help reduce false positives.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-activity"></use></svg></div><h3>Risk-based priority</h3><p>See what needs attention first. <b>CISA KEV</b> highlights known exploitation, while <b>EPSS</b> adds exploit probability alongside CVSS severity.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-eye"></use></svg></div><h3>Beyond CVEs</h3><p>Spot <b>end-of-life frameworks</b>, deprecated or abandoned packages, outdated versions and license obligations. Trace each verdict to its evidence.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-report"></use></svg></div><h3>Report made for productivity</h3><p>Share a self-contained HTML report, export to Word, or <b>copy individual tables and charts</b> with formatting. Reports are available in English and French.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-branch"></use></svg></div><h3>Exports &amp; CI gating</h3><p>Export <b>JSON, Excel, SARIF, CycloneDX SBOM and CSAF VEX</b>. Compare with a baseline and gate CI on new findings, severity or known exploitation.</p></div>
+            <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-lock"></use></svg></div><h3>Air-gapped</h3><p><b>No network requests under <span class="mono">--offline</span>.</b> Transfer warmed caches into the secure environment and audit locally. <a href="#airgap" style="color:var(--amber);text-decoration:underline">See the workflow</a>.</p></div>
+                              <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-shield"></use></svg></div><h3>Audit-grade</h3><p>A <b>provenance manifest</b>, source freshness, explicit coverage limits and artifact checksums make the result easier to review and reproduce.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-key"></use></svg></div><h3>Certificates &amp; keys</h3><p>Inventory committed certificates, public and private keys, and keystores. Flag <b>expiry, weak keys and signatures</b> using offline parsing.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-network"></use></svg></div><h3>CMS &amp; frameworks audited as instances</h3><p>Inventory <b>nine CMS and frameworks</b> as applications, with component ownership and explicit advisory coverage. <a href="#cms" style="color:var(--amber);text-decoration:underline">Explore supported applications</a>.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-network"></use></svg></div><h3>Shared cache for a scanner fleet</h3><p>Use the CLI’s <span class="mono">serve-cache</span> and <span class="mono">--proxy-cache</span> to share public provider responses across scanners. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache" style="color:var(--amber);text-decoration:underline">Cache configuration</a>.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-shield"></use></svg></div><h3>Supply-chain risk</h3><p>Flag advisories on <b>known-malicious packages</b> and optionally surface suspected typosquats. Malicious findings block the CI gate regardless of severity.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-globe"></use></svg></div><h3>European vulnerability references</h3><p>Add <b>ENISA EUVD, GCVE and CERT-FR</b> context to matched CVEs. References travel with the report and exports, and cached data remains usable offline. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/DATA-SOURCES.md" style="color:var(--amber);text-decoration:underline">Explore the data sources</a>.</p></div>
     </div>
   </section>
 
   <!-- FOR AUDITORS -->
   <section id="cms">
-    <div class="kicker reveal">CMS &amp; frameworks</div>
-    <h2 class="reveal">Inventoried as instances, not just lockfiles</h2>
-    <p class="sub reveal">A WordPress or Drupal site isn't a directory of lockfiles — it's a
-      product with a version, plugins, themes and framework components. vigievuln inventories
+    <div class="kicker">CMS &amp; frameworks</div>
+    <h2 >Inventoried as instances, not just lockfiles</h2>
+    <p class="sub">A WordPress or Drupal site isn't a directory of lockfiles — it's a
+      product with a version, plugins, themes and framework components. VigieVuln inventories
       the <b>instance</b>: core and component versions read from the tree's own markers, every
       dependency CVE attributed to the component that ships it, each instance reported in its own
       sub-chapter — <b>synthesis included even when it comes out clean</b> — and private/custom
       components kept separate, never sent to any publisher. Activated by the default
       <span class="mono">--app-plugins auto</span>.</p>
-    <div class="tablewrap reveal">
+    <div class="tablewrap">
       <table>
         <thead><tr><th>Product</th><th>Inventory</th><th>Advisory lane</th></tr></thead>
         <tbody>
@@ -331,7 +151,7 @@
         </tbody>
       </table>
     </div>
-    <p class="sub reveal">Every advisory snapshot a live lane fetches is stamped and cached, carried by
+    <p class="sub">Every advisory snapshot a live lane fetches is stamped and cached, carried by
       <span class="mono">--export-cache</span> / <span class="mono">--import-cache</span>, <b>warmed from the
       air-gapped descriptor itself</b> by <span class="mono">--import-anonymized</span> and reused automatically
       offline — the Wordfence API key never travels to the enclave. Full reference in
@@ -339,12 +159,12 @@
   </section>
 
   <section id="audit">
-    <div class="kicker reveal">For auditors</div>
-    <h2 class="reveal">Why use vigievuln for code audits?</h2>
-    <p class="sub reveal">What it does for an audit that the others don't. Same column set and sourcing
+    <div class="kicker">For auditors</div>
+    <h2 >Why use VigieVuln for code audits?</h2>
+    <p class="sub">What it does for an audit that the others don't. Same column set and sourcing
       discipline as <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md" style="color:var(--amber);text-decoration:underline">COMPARISON.md</a>
       &mdash; an <span class="warn">amber</span> cell is <i>partial</i> and says how, and every cell is meant to be checkable.</p>
-    <div class="tablewrap reveal">
+    <div class="tablewrap">
       <table>
         <thead><tr><th>What an auditor actually needs to do</th><th class="me">VigieVuln</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
         <tbody>
@@ -365,45 +185,45 @@
         </tbody>
       </table>
     </div>
-    <ol class="auditnotes reveal"><li>No <span class="mono">mvn</span>/<span class="mono">go</span>/<span class="mono">npm</span>/<span class="mono">pip</span>/<span class="mono">dotnet</span> &mdash; manifests parsed off disk, nothing installed or executed. 105 × <span class="mono">pom.xml</span> in one pass, with versions mediated <i>per module</i>. The 2026-10-02 re-measurement recorded <b>834 pairs</b>, including <b>705/705</b> OSV-Scanner pairs; see the benchmark for scope and historical comparisons.</li><li><b>705 of 705</b> of OSV-Scanner's <i>online</i> Maven result in the 2026-10-02 re-measurement, under <span class="mono">unshare -rn</span> &mdash; no network interface. Tripwire-tested; only public coordinates ever leave the enclave.</li><li>Chapter 0 names every coordinate that <b>every</b> configured registry answered 404 for &mdash; Maven, npm, PyPI, NuGet, Composer, Go and RubyGems &mdash; with the manifest(s) declaring it. A registry that timed out is never counted. <span class="mono">-e &lt;regex&gt;</span> then excludes them.</li><li><span class="mono">-t &lt;dir&gt;</span>: normalised POMs plus every non-Maven lockfile mirrored, private coordinates stripped. Archivable, and scannable by anything &mdash; <span class="mono">--snyk</span> included.</li><li>endoflife.date, split <b>direct vs transitive</b> so you know which dep to bump, plus deprecated / abandoned / yanked and outdated. Trivy covers OS distros only; Snyk's package health is web-only.</li><li>Inventory <i>and</i> verdicts: expiry, RSA&lt;2048, MD5/SHA1, self-signed; private <b>vs</b> public keys; JKS/PKCS#12. Offline parser. Trivy's secret rule finds the file, not the flaw.</li><li>Identified by <b>hash</b> via deps.dev + CIRCL → should-be-declared / name≠checksum / unknown / malicious. Syft's patterns name a version, not an identity.</li><li>Chapter 0 flags what <i>this</i> scan could not reach (missing lockfiles, unresolved versions, incomplete application checks); Methodology states what the tool never assesses. Elsewhere the first is a log line the audit never sees, the second isn't written down.</li><li>Provenance manifest: tool, runtime, mode, run configuration and cache freshness for <b>each consulted source</b>. Grype and Dependency-Check carry one source's date, not the run.</li><li>Chapters 0→6 with an executive summary and fix recipes, self-contained HTML + findings JSON by default, with optional Word <span class="mono">.doc</span>. None of the others emits Word.</li><li>Four inline-SVG charts &mdash; CWE by worst severity, vulnerable transitives per root dep, your most vulnerable modules, fix-priority bands &mdash; rendered in the <span class="mono">.doc</span> too, with one-click copy as PNG (or a table as rich HTML) that pastes into Word formatted. Every CVE keeps its CVSS vector, CWE, references, CPE config and via-path behind a drill-down, with zero external assets.</li><li><span class="mono">--baseline</span> adds a Δ chapter (new / fixed / unchanged); <span class="mono">--fail-on-new</span> gates on new findings only. Snyk tracks this on its platform, not as a local diff.</li><li>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP inventoried <b>per instance</b> &mdash; core, plugins, themes, bundles, components, with direct/indirect attribution, publisher advisory feeds where they exist (Wordfence, packages.drupal.org, PrestaShop/TYPO3 GitHub) and WordPress core checksums. The others read lockfiles; none of them has a CMS-instance view. → <a href="#cms" style="color:var(--amber);text-decoration:underline">the dedicated section</a></li><li><span class="mono">vigievuln serve-cache</span> + <span class="mono">--proxy-cache</span>: one upstream call per provider resource per TTL for the whole fleet, single-flight coalescing, stale-if-error, and NVD/Wordfence/GitHub keys held by the server — use <span class="mono">--wordfence-live</span> to activate Wordfence with a server key. Trivy/Grype/DC cache a local DB; Snyk's lives on its platform.</li></ol>
-    <p class="note reveal"><b>Where it loses</b> &mdash; containers/OS packages, auto-fix PRs, and CVE
+    <ol class="auditnotes"><li>No <span class="mono">mvn</span>/<span class="mono">go</span>/<span class="mono">npm</span>/<span class="mono">pip</span>/<span class="mono">dotnet</span> &mdash; manifests parsed off disk, nothing installed or executed. 105 × <span class="mono">pom.xml</span> in one pass, with versions mediated <i>per module</i>. The 2026-10-02 re-measurement recorded <b>834 pairs</b>, including <b>705/705</b> OSV-Scanner pairs; see the benchmark for scope and historical comparisons.</li><li><b>705 of 705</b> of OSV-Scanner's <i>online</i> Maven result in the 2026-10-02 re-measurement, under <span class="mono">unshare -rn</span> &mdash; no network interface. Tripwire-tested; only public coordinates ever leave the enclave.</li><li>Chapter 0 names every coordinate that <b>every</b> configured registry answered 404 for &mdash; Maven, npm, PyPI, NuGet, Composer, Go and RubyGems &mdash; with the manifest(s) declaring it. A registry that timed out is never counted. <span class="mono">-e &lt;regex&gt;</span> then excludes them.</li><li><span class="mono">-t &lt;dir&gt;</span>: normalised POMs plus every non-Maven lockfile mirrored, private coordinates stripped. Archivable, and scannable by anything &mdash; <span class="mono">--snyk</span> included.</li><li>endoflife.date, split <b>direct vs transitive</b> so you know which dep to bump, plus deprecated / abandoned / yanked and outdated. Trivy covers OS distros only; Snyk's package health is web-only.</li><li>Inventory <i>and</i> verdicts: expiry, RSA&lt;2048, MD5/SHA1, self-signed; private <b>vs</b> public keys; JKS/PKCS#12. Offline parser. Trivy's secret rule finds the file, not the flaw.</li><li>Identified by <b>hash</b> via deps.dev + CIRCL → should-be-declared / name≠checksum / unknown / malicious. Syft's patterns name a version, not an identity.</li><li>Chapter 0 flags what <i>this</i> scan could not reach (missing lockfiles, unresolved versions, incomplete application checks); Methodology states what the tool never assesses. Elsewhere the first is a log line the audit never sees, the second isn't written down.</li><li>Provenance manifest: tool, runtime, mode, run configuration and cache freshness for <b>each consulted source</b>. Grype and Dependency-Check carry one source's date, not the run.</li><li>Chapters 0→6 with an executive summary and fix recipes, self-contained HTML + findings JSON by default, with optional Word <span class="mono">.doc</span>. None of the others emits Word.</li><li>Four inline-SVG charts &mdash; CWE by worst severity, vulnerable transitives per root dep, your most vulnerable modules, fix-priority bands &mdash; rendered in the <span class="mono">.doc</span> too, with one-click copy as PNG (or a table as rich HTML) that pastes into Word formatted. Every CVE keeps its CVSS vector, CWE, references, CPE config and via-path behind a drill-down, with zero external assets.</li><li><span class="mono">--baseline</span> adds a Δ chapter (new / fixed / unchanged); <span class="mono">--fail-on-new</span> gates on new findings only. Snyk tracks this on its platform, not as a local diff.</li><li>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP inventoried <b>per instance</b> &mdash; core, plugins, themes, bundles, components, with direct/indirect attribution, publisher advisory feeds where they exist (Wordfence, packages.drupal.org, PrestaShop/TYPO3 GitHub) and WordPress core checksums. The others read lockfiles; none of them has a CMS-instance view. → <a href="#cms" style="color:var(--amber);text-decoration:underline">the dedicated section</a></li><li><span class="mono">vigievuln serve-cache</span> + <span class="mono">--proxy-cache</span>: one upstream call per provider resource per TTL for the whole fleet, single-flight coalescing, stale-if-error, and NVD/Wordfence/GitHub keys held by the server — use <span class="mono">--wordfence-live</span> to activate Wordfence with a server key. Trivy/Grype/DC cache a local DB; Snyk's lives on its platform.</li></ol>
+    <p class="note"><b>Where it loses</b> &mdash; containers/OS packages, auto-fix PRs, and CVE
       coverage against Snyk's curated feed: <a href="#benchmark">the gap, measured</a>.<br>
       <b>Deliberately not a goal &mdash; reachability.</b> A finding is a vulnerable version on the
       dependency graph, and the report says exactly that in Methodology instead of guessing at call
       paths. Whether the vulnerable code is reachable in <i>this</i> application is the auditor's
       call, made with application context no scanner has.</p>
   </section>
-</main>
+</div>
 
 <!-- REPORT SHOWCASE -->
 <section class="showcase" id="reports">
   <div class="wrap">
-    <div class="kicker reveal">The deliverable</div>
-    <h2 class="reveal">An executive summary, then the detail</h2>
-    <p class="sub reveal">Severity tiles, an application-first CVE chapter when relevant, and a CVE table with a <b>priority</b> column (KEV / EPSS), CWE &amp; fix versions, EOL / obsolete / outdated / <b>license</b> chapters, and a "likely false positives" appendix — all in a single file you can email.</p>
-    <figure class="reveal">
-      <img class="shot" src="assets/report.png" alt="vigievuln HTML report: executive summary with severity tiles and a detailed CVE table with CWE, descriptions and fix versions" loading="lazy">
+    <div class="kicker">The deliverable</div>
+    <h2 >An executive summary, then the detail</h2>
+    <p class="sub">Severity tiles, an application-first CVE chapter when relevant, and a CVE table with a <b>priority</b> column (KEV / EPSS), CWE &amp; fix versions, EOL / obsolete / outdated / <b>license</b> chapters, and a "likely false positives" appendix — all in a single file you can email.</p>
+    <figure >
+      <img class="shot" src="assets/report.png" alt="VigieVuln HTML report: executive summary with severity tiles and a detailed CVE table with CWE, descriptions and fix versions" loading="lazy">
       <figcaption>cve-report.html — generated by <span class="mono">vigievuln -s ./project</span></figcaption>
     </figure>
-    <div class="sample-links reveal">
+    <div class="sample-links">
       <a class="doc" href="samples/dubbo.html"><div class="t">Explore the Maven report <span class="arr">↗</span></div><div class="d">Apache Dubbo 2.7.8 · 105 Maven descriptors. Explore findings, dependency paths, evidence and fix recommendations.</div></a>
       <a class="doc" href="samples/multi-cms-frameworks.html"><div class="t">Explore the CMS report <span class="arr">↗</span></div><div class="d">WordPress, Drupal, Symfony and Laravel in one audit. Explore per-application inventory, attribution and coverage.</div></a>
     </div>
-    <p class="note reveal">Actual offline scans generated with <b>VigieVuln 1.0.1 on 2026-10-26</b>. These are dated snapshots, not live security assessments. The CMS sample has incomplete WordPress advisory coverage; each report retains its cache gaps and limitations. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/samples/README.md" style="color:var(--amber);text-decoration:underline">Sample scope and reproduction</a>.</p>
+    <p class="note">Actual offline scans generated with <b>VigieVuln 1.0.1 on 2026-10-26</b>. These are dated snapshots, not live security assessments. The CMS sample has incomplete WordPress advisory coverage; each report retains its cache gaps and limitations. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/samples/README.md" style="color:var(--amber);text-decoration:underline">Sample scope and reproduction</a>.</p>
   </div>
 </section>
 
 <!-- AIR-GAPPED -->
-<main class="wrap">
+<div class="wrap">
   <section id="airgap">
     <div class="split">
       <div>
-        <div class="kicker reveal">Confidential by design</div>
-        <h2 class="reveal">Scan online. Never expose the code.</h2>
-        <p class="sub reveal" style="margin-bottom:22px">The vuln databases need the network; your client's code does not. The scan splits in three — only <b>public coordinates</b> ever leave the secure machine. Caches are keyed by coordinate, so warming them online and replaying offline just yields cache hits.</p>
+        <div class="kicker">Confidential by design</div>
+        <h2 >Scan online. Never expose the code.</h2>
+        <p class="sub" style="margin-bottom:22px">The vuln databases need the network; your client's code does not. The scan splits in three — only <b>public coordinates</b> ever leave the secure machine. Caches are keyed by coordinate, so warming them online and replaying offline just yields cache hits.</p>
         <p class="note">Designed for any air-gapped / confidential review. The online box only ever sees <span class="mono">lodash@4.17.21</span> — never your repository.</p>
       </div>
-      <div class="code reveal">
+      <div class="code">
         <div class="top"><i class="r"></i><i class="y"></i><i class="g"></i></div>
 <pre><span class="c"># 1 — OFFLINE (audited machine): export anonymized descriptor</span>
 <span class="p">vigievuln</span> -s ./proj <span class="k">-e</span> "^(client|internal)\." <span class="k">--export-anonymized</span> deps.json
@@ -421,10 +241,10 @@
 
   <!-- COMPARISON -->
   <section id="compare">
-    <div class="kicker reveal">Honest positioning</div>
-    <h2 class="reveal">Where it fits</h2>
-    <p class="sub reveal">Not a Trivy/Grype replacement — those own containers and continuous CI. vigievuln owns the <b>zero-setup source audit</b> with an air-gapped story (and now emits SBOM/VEX, flags licenses and prioritises by EPSS/KEV too).</p>
-    <div class="tablewrap reveal">
+    <div class="kicker">Honest positioning</div>
+    <h2 >Where it fits</h2>
+    <p class="sub">Not a Trivy/Grype replacement — those own containers and continuous CI. VigieVuln owns the <b>zero-setup source audit</b> with an air-gapped story (and now emits SBOM/VEX, flags licenses and prioritises by EPSS/KEV too).</p>
+    <div class="tablewrap">
       <table>
         <thead><tr><th>Capability</th><th class="me">VigieVuln</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
         <tbody>
@@ -441,25 +261,25 @@
         </tbody>
       </table>
     </div>
-    <p class="note reveal">² For <span class="mono">pom.xml</span>, transitives need Maven Central <b>once</b> — after that vigievuln resolves the graph from its cached POMs, which is what makes the air-gapped run work. Snyk needs a real build, Trivy needs the network or a populated <span class="mono">~/.m2</span>. Reach for Trivy or Grype+Syft for continuous CI, containers and SBOM pipelines.</p>
-    <p class="note reveal">³ EOL row is scoped to <b>application</b> frameworks and libraries. Trivy does compute an end-of-service-life status, but only for OS distributions. Snyk's package-health signal exists on its website, not in the CLI or CI output. Cells re-verified against upstream docs on 2026-09-14 (OSV-Scanner 2.6.0, Trivy 0.74.0, Grype 0.118.0 + Syft 1.51.1, Dependency-Check 13.0.0, Snyk CLI 1.1307.2) — detail and sources in <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">COMPARISON.md</a>.</p>
+    <p class="note">² For <span class="mono">pom.xml</span>, transitives need Maven Central <b>once</b> — after that VigieVuln resolves the graph from its cached POMs, which is what makes the air-gapped run work. Snyk needs a real build, Trivy needs the network or a populated <span class="mono">~/.m2</span>. Reach for Trivy or Grype+Syft for continuous CI, containers and SBOM pipelines.</p>
+    <p class="note">³ EOL row is scoped to <b>application</b> frameworks and libraries. Trivy does compute an end-of-service-life status, but only for OS distributions. Snyk's package-health signal exists on its website, not in the CLI or CI output. Cells re-verified against upstream docs on 2026-09-14 (OSV-Scanner 2.6.0, Trivy 0.74.0, Grype 0.118.0 + Syft 1.51.1, Dependency-Check 13.0.0, Snyk CLI 1.1307.2) — detail and sources in <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">COMPARISON.md</a>.</p>
   </section>
 
 
   <!-- BENCHMARK -->
   <section id="benchmark">
-    <div class="kicker reveal">Measured, not asserted</div>
-    <h2 class="reveal">Benchmark: Apache Dubbo 2.7.8</h2>
-    <p class="sub reveal">Five scanners, one public 105-module Maven reactor pinned to a commit, two questions. Every number below is recomputable from the tools' own JSON — the commands are in the benchmark doc.</p>
+    <div class="kicker">Measured, not asserted</div>
+    <h2 >Benchmark: Apache Dubbo 2.7.8</h2>
+    <p class="sub">Five scanners, one public 105-module Maven reactor pinned to a commit, two questions. Every number below is recomputable from the tools' own JSON — the commands are in the benchmark doc.</p>
 
-    <div class="arow reveal" style="margin-top:24px">
+    <div class="arow" style="margin-top:24px">
       <h3>Latest documented re-measurement · 2026-10-02</h3>
       <p>After Maven resolution and version-ordering fixes: <b>834 pairs</b>, including <b>705/705</b> of OSV-Scanner's online pairs, recovered both online and under <span class="mono">unshare -rn --offline</span>. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md" style="color:var(--amber);text-decoration:underline">Method and changes</a>.</p>
       <p style="margin-top:10px">The tables below preserve the <b>earlier five-scanner comparison</b>, measured with the predecessor fad-checker 2.4.6 and the tool versions shown. They are historical results, separate from the VigieVuln 1.0.1 sample reports above; the full comparison has not been rerun for this release.</p>
     </div>
-    <h3 class="reveal" style="margin-top:26px;font-size:17px">1 · At full capability · historical comparison</h3>
-    <p class="sub reveal">Every scanner online, best configuration, populated <span class="mono">~/.m2</span>. Union of all findings: 908 pairs.</p>
-    <div class="tablewrap reveal">
+    <h3  style="margin-top:26px;font-size:17px">1 · At full capability · historical comparison</h3>
+    <p class="sub">Every scanner online, best configuration, populated <span class="mono">~/.m2</span>. Union of all findings: 908 pairs.</p>
+    <div class="tablewrap">
       <table>
         <thead><tr><th>Scanner</th><th class="me">Found</th><th>Unique to it</th><th>Not reported</th></tr></thead>
         <tbody>
@@ -471,28 +291,28 @@
         </tbody>
       </table>
     </div>
-    <p class="note reveal"><b>&ldquo;Not reported&rdquo; is union arithmetic, not a verified recall gap.</b> It counts pairs another tool produced and this one did not — a miss only if the public record actually binds that vulnerability to that coordinate and version. For vigievuln that was checked pair by pair: <b class="yes">0 are recall bugs</b>. The other rows have not been adjudicated, so read their column the same way. Trivy and Grype are container/SBOM scanners; a raw source checkout is not the job they are built for.</p>
+    <p class="note"><b>&ldquo;Not reported&rdquo; is union arithmetic, not a verified recall gap.</b> It counts pairs another tool produced and this one did not — a miss only if the public record actually binds that vulnerability to that coordinate and version. For VigieVuln that was checked pair by pair: <b class="yes">0 are recall bugs</b>. The other rows have not been adjudicated, so read their column the same way. Trivy and Grype are container/SBOM scanners; a raw source checkout is not the job they are built for.</p>
 
-    <h3 class="reveal" style="margin-top:26px;font-size:17px">2 · With no network at all · historical comparison</h3>
-    <p class="sub reveal">Same tree, every scanner under <span class="mono">unshare -rn</span> — a namespace with no network interface, not just an offline flag. Reference: OSV-Scanner's own <b>online</b> output, 657 pairs.</p>
-    <div class="tablewrap reveal">
+    <h3  style="margin-top:26px;font-size:17px">2 · With no network at all · historical comparison</h3>
+    <p class="sub">Same tree, every scanner under <span class="mono">unshare -rn</span> — a namespace with no network interface, not just an offline flag. Reference: OSV-Scanner's own <b>online</b> output, 657 pairs.</p>
+    <div class="tablewrap">
       <table>
         <thead><tr><th>Scanner, no network</th><th class="me">Recovers</th></tr></thead>
         <tbody>
-          <tr><th>vigievuln <span class="mono">--offline</span></th><td class="f me yes">657 · 100%</td></tr>
+          <tr><th>VigieVuln <span class="mono">--offline</span></th><td class="f me yes">657 · 100%</td></tr>
           <tr><th>Grype + Syft</th><td class="f">45 · 6.8%</td></tr>
           <tr><th>Trivy <span class="mono">--offline-scan</span>, cold <span class="mono">~/.m2</span></th><td class="f">40 · 6.1%</td></tr>
           <tr><th>OSV-Scanner <span class="mono">--offline</span></th><td class="f">37 · 5.6%</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="note reveal">100% here means "recovers everything OSV-Scanner finds <i>with</i> network access", not "finds everything that exists" — table 1 is the answer to that. OSV-Scanner returns the identical 37 with and without the namespace: it behaves exactly as documented, its transitive resolution is disabled offline by design.</p>
+    <p class="note">100% here means "recovers everything OSV-Scanner finds <i>with</i> network access", not "finds everything that exists" — table 1 is the answer to that. OSV-Scanner returns the identical 37 with and without the namespace: it behaves exactly as documented, its transitive resolution is disabled offline by design.</p>
 
 
-    <h3 class="reveal" style="margin-top:34px;font-size:17px">3 · Every other ecosystem</h3>
-    <p class="sub reveal">vigievuln claims ten ecosystems, and benchmarking one of them is not an answer. Same method on five more public projects, findings normalised to <span class="mono">(package@version | CVE)</span>. <b>Expect parity — that is the point.</b> Outside Maven the transitive graph is already in the lockfile, so no scanner has a structural advantage and none should.</p>
-    <div class="tabs reveal" role="tablist"><button class="tab" role="tab" aria-selected="true" data-eco="maven">Maven</button><button class="tab" role="tab" aria-selected="false" data-eco="npm">npm</button><button class="tab" role="tab" aria-selected="false" data-eco="ruby">RubyGems</button><button class="tab" role="tab" aria-selected="false" data-eco="composer">Composer</button><button class="tab" role="tab" aria-selected="false" data-eco="go">Go</button><button class="tab" role="tab" aria-selected="false" data-eco="pypi">PyPI</button></div>
-    <div class="reveal">
+    <h3  style="margin-top:34px;font-size:17px">3 · Every other ecosystem</h3>
+    <p class="sub">VigieVuln claims ten ecosystems, and benchmarking one of them is not an answer. Same method on five more public projects, findings normalised to <span class="mono">(package@version | CVE)</span>. <b>Expect parity — that is the point.</b> Outside Maven the transitive graph is already in the lockfile, so no scanner has a structural advantage and none should.</p>
+    <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" data-eco="maven">Maven</button><button class="tab" role="tab" aria-selected="false" data-eco="npm">npm</button><button class="tab" role="tab" aria-selected="false" data-eco="ruby">RubyGems</button><button class="tab" role="tab" aria-selected="false" data-eco="composer">Composer</button><button class="tab" role="tab" aria-selected="false" data-eco="go">Go</button><button class="tab" role="tab" aria-selected="false" data-eco="pypi">PyPI</button></div>
+    <div >
       <div class="panel" data-eco="maven">
         <p class="meta">target <b>apache/dubbo 2.7.8</b> · pinned <b>0be2a1bb</b> · reads <b>105 × pom.xml</b></p>
         <div class="tablewrap"><table><thead><tr><th>Scanner</th><th class="me">Pairs</th></tr></thead><tbody><tr><th>OSV-Scanner</th><td class="f">657</td></tr><tr><th>VigieVuln</th><td class="f me yes">790</td></tr><tr><th>Shared</th><td class="f">657</td></tr><tr><th>VigieVuln only</th><td class="f">133</td></tr><tr><th>OSV only</th><td class="f">0</td></tr></tbody></table></div>
@@ -524,12 +344,12 @@
         <p class="note">The 4 are all setuptools@9.1.0, which OSV picked up from a test fixture inside poetry's own test suite. VigieVuln reads poetry.lock, which is authoritative.</p>
       </div>
     </div>
-    <p class="note reveal">Equal CVE counts do not make two tools equivalent: on these same projects VigieVuln also reported 1 120 outdated dependencies on mastodon, 618 and 2 EOL frameworks on phpMyAdmin, 65 on poetry — questions OSV-Scanner does not attempt. Full per-ecosystem detail, targets and method → <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
+    <p class="note">Equal CVE counts do not make two tools equivalent: on these same projects VigieVuln also reported 1 120 outdated dependencies on mastodon, 618 and 2 EOL frameworks on phpMyAdmin, 65 on poetry — questions OSV-Scanner does not attempt. Full per-ecosystem detail, targets and method → <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
 
-    <h3 class="reveal" style="margin-top:38px;font-size:17px">4 · The Snyk delta, explained</h3>
-    <p class="sub reveal">131 pairs came back from Snyk and not from vigievuln. Adjudicated one by one against OSV, none is a recall bug. Here is what they actually are.</p>
-    <div class="audit reveal">
-      <div class="arow"><h3><span class="ck">01</span>It is one commercial database, not the field</h3><p>Every such pair is Snyk's. <b>OSV-Scanner, Trivy and Grype+Syft each found 0</b> pairs nobody else had, so this was never &ldquo;vigievuln is behind the other scanners&rdquo; — it is <b>every public advisory source, aggregated, against one hand-curated commercial feed</b>.</p></div>
+    <h3  style="margin-top:38px;font-size:17px">4 · The Snyk delta, explained</h3>
+    <p class="sub">131 pairs came back from Snyk and not from VigieVuln. Adjudicated one by one against OSV, none is a recall bug. Here is what they actually are.</p>
+    <div class="audit">
+      <div class="arow"><h3><span class="ck">01</span>It is one commercial database, not the field</h3><p>Every such pair is Snyk's. <b>OSV-Scanner, Trivy and Grype+Syft each found 0</b> pairs nobody else had, so this was never &ldquo;VigieVuln is behind the other scanners&rdquo; — it is <b>every public advisory source, aggregated, against one hand-curated commercial feed</b>.</p></div>
       <div class="arow"><h3><span class="ck">02</span>It is a Maven/Java phenomenon</h3><p>The delta was measured on the Maven target. <b>Outside Maven the resolved graph is already in the lockfile</b>, every scanner reads the same input, and the per-ecosystem tables above measure <b>identical finding sets</b> on npm, RubyGems and Composer. There is no equivalent gap there to explain.</p></div>
       <div class="arow"><h3><span class="ck">03</span>Two thirds contradict the public record</h3><p><b>57</b> name a coordinate the advisory does not bind, <b>31</b> a version outside every declared affected range. Reporting them would mean shipping false positives — which is why every claimed miss is adjudicated before it becomes a ticket.</p></div>
       <div class="arow"><h3><span class="ck">04</span>The verdicts, against OSV</h3><p><b>57</b> wrong artifact · <b>31</b> out of range · <b>23</b> not in OSV (19 proprietary <span class="mono">SNYK-*</span>, 4 NVD-only) · <b>19</b> no Maven binding · <b>1</b> already reported under the CVE alias · <b>0 confirmed</b>. Under NVD's looser CPE ranges 5 would be reported — named, with the tension that creates, in BENCHMARK.md.</p></div>
@@ -537,10 +357,10 @@
       <div class="arow"><h3><span class="ck">06</span>Closing it from public data was tried, and failed</h3><p><span class="mono">--nvd-cpe-match</span> uses NVD's broader CPE ranges to <i>match</i> rather than only to filter. Measured: 76 new findings, <b>12% corroborated</b>. CPE names <b>frameworks</b> (<span class="mono">netty</span>, <span class="mono">spring_framework</span>) while Maven names <b>artifacts</b>, so a spring-web flaw lands on spring-core, spring-beans and spring-context alike. It ships as a triage aid with its 12% stated in its own help text.</p></div>
     </div>
 
-    <div class="split reveal" style="margin-top:26px">
+    <div class="split" style="margin-top:26px">
       <div>
         <h3 style="font-size:17px;margin:0 0 10px">Which is why <span class="mono">--snyk</span> exists</h3>
-        <p class="sub" style="margin:0">Rather than pick a side, vigievuln takes <span class="mono">snyk test</span> output as an <b>input</b> and merges it: <b>union beats either tool alone</b>, and the merge is one flag. On a tree with private modules, extract it with <span class="mono">-t</span> first &mdash; the normalised descriptors it writes have those coordinates stripped, so Snyk gets something it can actually resolve. Merging it is a coverage choice, not a correction: two thirds of what Snyk adds on its own contradicts the public record. The per-pair adjudication is in <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md" style="color:var(--amber);text-decoration:underline">BENCHMARK.md</a>.</p>
+        <p class="sub" style="margin:0">Rather than pick a side, VigieVuln takes <span class="mono">snyk test</span> output as an <b>input</b> and merges it: <b>union beats either tool alone</b>, and the merge is one flag. On a tree with private modules, extract it with <span class="mono">-t</span> first &mdash; the normalised descriptors it writes have those coordinates stripped, so Snyk gets something it can actually resolve. Merging it is a coverage choice, not a correction: two thirds of what Snyk adds on its own contradicts the public record. The per-pair adjudication is in <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md" style="color:var(--amber);text-decoration:underline">BENCHMARK.md</a>.</p>
       </div>
       <div class="code">
         <div class="top"><i class="r"></i><i class="y"></i><i class="g"></i></div>
@@ -549,25 +369,30 @@
       </div>
     </div>
 
-    <p class="note reveal" style="margin-top:22px">Full method, per-tool configuration, the four bugs this benchmark found in vigievuln, and every caveat → <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
+    <p class="note" style="margin-top:22px">Full method, per-tool configuration, the four bugs this benchmark found in VigieVuln, and every caveat → <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a>.</p>
   </section>
 
   <!-- DOCS -->
   <section id="docs">
-    <div class="kicker reveal">Documentation</div>
-    <h2 class="reveal">Everything is documented</h2>
-    <p class="sub reveal">Per-flag usage, internals, and the full source — all in the repo.</p>
+    <div class="kicker">Documentation</div>
+    <h2 >Everything is documented</h2>
+    <p class="sub">Per-flag usage, internals, and the full source — all in the repo.</p>
     <div class="docs">
-      <a class="doc reveal" href="https://github.com/9pings/VigieVuln#readme"><div class="t">▸ README <span class="arr">↗</span></div><div class="d">Quick start, install, every supported manifest, the comparison table.</div></a>
-      <a class="doc reveal" href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md"><div class="t">▸ Usage <span class="arr">↗</span></div><div class="d">Every flag and workflow: ecosystems, offline/cache, NVD key, Snyk, recipes.</div></a>
-      <a class="doc reveal" href="https://github.com/9pings/VigieVuln/blob/main/docs/ARCHITECTURE.md"><div class="t">▸ Architecture <span class="arr">↗</span></div><div class="d">Codecs, the resolved-deps map, matching tiers, the report pipeline.</div></a>
-      <a class="doc reveal" href="https://github.com/9pings/VigieVuln/blob/main/CHANGELOG.md"><div class="t">▸ Changelog <span class="arr">↗</span></div><div class="d">Release history and what changed in each version.</div></a>
+      <a class="doc" href="https://github.com/9pings/VigieVuln#readme"><div class="t">▸ README <span class="arr">↗</span></div><div class="d">Quick start, install, every supported manifest, the comparison table.</div></a>
+      <a class="doc" href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md"><div class="t">▸ Usage <span class="arr">↗</span></div><div class="d">Every flag and workflow: ecosystems, offline/cache, NVD key, Snyk, recipes.</div></a>
+      <a class="doc" href="https://github.com/9pings/VigieVuln/blob/main/docs/ARCHITECTURE.md"><div class="t">▸ Architecture <span class="arr">↗</span></div><div class="d">Codecs, the resolved-deps map, matching tiers, the report pipeline.</div></a>
+      <a class="doc" href="https://github.com/9pings/VigieVuln/blob/main/CHANGELOG.md"><div class="t">▸ Changelog <span class="arr">↗</span></div><div class="d">Release history and what changed in each version.</div></a>
     </div>
+  </section>
+
+  <section style="padding-top:0" aria-label="Terminal demonstration">
+    <details class="demo-details"><summary>Watch the actual CLI terminal demo</summary><figure><img class="shot" src="assets/demo.gif" width="1200" alt="Recorded VigieVuln 1.0.1 offline audit in the terminal" loading="lazy"><figcaption>The recorded demo uses cached vulnerability data. Results and source freshness belong to that run.</figcaption></figure></details>
+    <p class="beta-note">VigieVuln is a young project. Use its findings as a first pass, verify critical decisions, and <a href="https://github.com/9pings/VigieVuln/issues">report issues</a> so the scanner keeps improving.</p>
   </section>
 
   <!-- QUICK COMMANDS -->
   <section style="padding-top:0">
-    <div class="code reveal" style="max-width:760px">
+    <div class="code" style="max-width:760px">
       <div class="top"><i class="r"></i><i class="y"></i><i class="g"></i></div>
 <pre><span class="c"># read-only full scan (default: all sources on)</span>
 <span class="p">vigievuln</span> -s ./proj
@@ -583,44 +408,15 @@
 <span class="p">vigievuln</span> -s ./proj <span class="k">-t</span> ../clean <span class="k">-e</span> "^client\." <span class="k">--snyk</span></pre>
     </div>
   </section>
-</main>
+</div>
 
-<footer>
+</main>
+<footer class="site-footer">
   <div class="wrap foot">
-    <div>
-      <a class="brand" href="#top" style="font-size:16px;margin-bottom:6px"><img src="assets/VigieVuln_Logo_sm.png" alt="" width="300" height="286" loading="lazy">VigieVuln</a>
-      <span class="mono">VigieVuln — autonomous dependency auditor — Apache-2.0</span>
-    </div>
-    <div class="navlinks" style="gap:22px">
-      <a href="https://github.com/9pings/VigieVuln">GitHub</a>
-      <a href="https://www.npmjs.com/package/vigievuln">npm</a>
-      <a href="https://github.com/9pings/VigieVuln/issues">Issues</a>
-      <a href="#top">Top ↑</a>
-    </div>
+    <div><a class="brand" href="#top" aria-label="VigieVuln home"><img src="assets/site-icon.png" alt="" width="329" height="292"><span>Vigie<strong>Vuln</strong></span></a><p class="footer-caption">Autonomous dependency auditor · Apache-2.0</p></div>
+    <nav class="navlinks" aria-label="Footer navigation"><a href="https://github.com/9pings/VigieVuln">GitHub ↗</a><a href="https://www.npmjs.com/package/vigievuln">npm ↗</a><a href="https://github.com/9pings/VigieVuln/issues">Issues ↗</a><a href="#top">Back to top ↑</a></nav>
   </div>
 </footer>
-
-<script>
-  // copy buttons
-  document.querySelectorAll(".copy").forEach(b=>b.addEventListener("click",async()=>{
-    try{await navigator.clipboard.writeText(b.dataset.copy);const t=b.textContent;b.textContent="copied ✓";b.style.color="var(--green)";setTimeout(()=>{b.textContent=t;b.style.color="";},1400);}catch(e){}
-  }));
-  // staggered reveal
-  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.12});
-  document.querySelectorAll(".reveal").forEach((el,i)=>{el.style.transitionDelay=(Math.min(i,6)*60)+"ms";io.observe(el);});
-</script>
-
-<script>
-// Ecosystem tabs: plain buttons + hidden panels, no framework, keyboard-navigable.
-document.querySelectorAll('.tabs').forEach(function (bar) {
-  var tabs = bar.querySelectorAll('.tab');
-  var panels = bar.parentNode.querySelectorAll('.panel');
-  function select(eco) {
-    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.eco === eco)); });
-    panels.forEach(function (p) { p.hidden = p.dataset.eco !== eco; });
-  }
-  tabs.forEach(function (t) { t.addEventListener('click', function () { select(t.dataset.eco); }); });
-});
-</script>
+<div class="copy-status" role="status" aria-live="polite"></div>
 </body>
 </html>
