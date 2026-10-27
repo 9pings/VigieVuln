@@ -2,7 +2,6 @@
 <img src="docs/assets/VigieVuln_Logo_sm.png" alt="VigieVuln" height="200">
 </h1>
 
----
 
 [![npm version](https://img.shields.io/npm/v/vigievuln.svg)](https://www.npmjs.com/package/vigievuln)
 [![npm downloads](https://img.shields.io/npm/dm/vigievuln.svg)](https://www.npmjs.com/package/vigievuln)
