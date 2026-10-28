@@ -50,8 +50,9 @@ The npm package and primary command are now `vigievuln`. Existing `fad` and
 The separate shared proxy cache similarly migrates from `~/.fad-checker-proxy-cache/` to `~/.vigie-vuln-proxy-cache/` without merging or overwriting an existing new directory. If either rename fails, the CLI warns you, preserves the old directory and uses a new one. Existing cache archives made with `.fad-checker` remain importable.
 
 To recover a failed migration, stop the CLI and proxy server, back up and move the new directory out of the way, then rename the old directory to the new name. Remove the corresponding sibling marker, `~/.vigie-vuln.migration-pending` or `~/.vigie-vuln-proxy-cache.migration-pending`, after recovery. Do not overwrite or merge the directories. While both the marker and old directory exist, the warning repeats once per process; if the marker could not be created, only the immediate warning is assured.
-`VIGIEVULN_ENV` and `.vigievuln-env.json` take precedence over their legacy
-`FAD_CHECKER_ENV` / `.fad-env.json` counterparts. Default report output is now
+`VIGIEVULN_ENV` takes precedence over the legacy `FAD_CHECKER_ENV`. Project
+configuration is loaded only when explicitly selected with `--config` and must be trusted.
+Default report output is now
 `./vigievuln-report`; pass `-o` to retain another location.
 
 ## Quick start

@@ -3,6 +3,9 @@
 ## [1.1.2] — Unreleased
 
 - Fix Windows account sessions when the home directory uses an 8.3 short path, including GitHub Actions temporary directories.
+- Require explicit `--config` for repository configuration and bound Composer validation and JAR decompression.
+- Reject cache archives containing links and keep Python requirements includes inside the scan root.
+- Harden local proxy access and surface failed data sources as incomplete coverage.
 
 ## [1.1.1] — 2026-10-28
 

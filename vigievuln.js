@@ -374,7 +374,7 @@ if (process.argv[2] === "serve-cache") {
 	})).then(({ server, url }) => {
 		console.log(chalk.green(`✅  proxy-cache listening on ${url}`));
 		console.log(chalk.gray(`   store:    ${storeDir}  (persists across restarts; separate from the scan's own ~/.vigie-vuln/ caches)`));
-		console.log(chalk.gray(`   upstream: ${upstreamProxy ? `via corporate proxy ${upstreamProxy}` : "direct"}`));
+		console.log(chalk.gray(`   upstream: ${upstreamProxy ? "via corporate proxy" : "direct"}`));
 		console.log(chalk.gray(`   stats:    ${url}/__stats    clear: POST ${url}/__clear`));
 		const active = Object.entries(keys).filter(([, v]) => v).map(([k]) => k);
 		console.log(chalk.gray(`   api keys: ${active.length ? active.join(", ") + " (injected upstream; instances behind --proxy-cache need none)" : "none configured (client-sent credentials are forwarded as-is)"}`));
@@ -409,7 +409,7 @@ program
 	// Not a requiredOption: --import-anonymized scans a descriptor with no source tree.
 	.option("-s, --src <src>", "source directory (legacy alternative to scan <dir>)")
 	.option("--source <src>", "alias of --src")
-	.option("--config <file>", "load default options from JSON (else ./.vigievuln-env.json, then legacy ./.fad-env.json)")
+	.option("--config <file>", "load default options from a trusted JSON file")
 	.option("-d, --disable <list>", "turn features OFF (comma-separated) — see the token list below")
 	.option("-a, --activate <list>", "turn ON what is off by default (comma-separated) — see below")
 	.option("-r, --report <list>", "outputs to write, comma-separated: html,doc,xlsx,sbom,csaf,json,sarif (default: html,json)")
@@ -590,7 +590,7 @@ if (BARE_ARGV) {
 program.parse(process.argv);
 
 const options = program.opts();
-// Layered config: CLI flags > config file (--config / ./.fad-env.json, JSON) >
+// Layered config: CLI flags > explicitly selected config file (--config, JSON) >
 // FAD_CHECKER_ENV (a CLI-flag string) > global ~/.vigie-vuln/config.json >
 // commander defaults. A file/env value fills an option only if the CLI didn't
 // set it. `registries` are unioned separately (below). Source has src/source aliases.
@@ -613,6 +613,15 @@ if (!options.offline && !options.proxyCacheToken && !process.env.VIGIEVULN_PROXY
 }
 try { Object.assign(options, require("./lib/hosted-proxy").resolveHostedProxy({ ...options, allowProxyLogin: !!hostedAccountSession || !!(process.stdin.isTTY && process.stderr.isTTY) })); }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
+// A saved official account key must never follow a changed proxy URL to an
+// unrelated service. Custom proxies require a token supplied for this run.
+if (options.proxyCache && !options.vigievulnProxy && options.proxyCacheToken &&
+    !program.getOptionValueSource('proxyCacheToken')?.match(/^(cli|env)$/) &&
+    !Object.hasOwn(_layers.fileLayer, 'proxyCacheToken') && !Object.hasOwn(_layers.envLayer, 'proxyCacheToken') &&
+    !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN) {
+	console.error(chalk.red('❌  A saved proxy key cannot be sent to a custom proxy. Supply its token explicitly for this run.'));
+	process.exit(2);
+}
 // --source CLI alias → src (applyLayers already maps the file/env JSON 'source' key).
 if (!options.src && options.source) options.src = options.source;
 
@@ -1585,7 +1594,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			st.done(`${cveMatches.length} match(es)${cveDataDate ? ` · ${String(cveDataDate).slice(0, 10)}` : ""}`);
 		} catch (err) {
 			st.fail(err.message);
-			if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`CVEProject: ${err.message}; Maven CVE coverage is incomplete.`});
+			scanWarnings.push({type:"source-unavailable",message:`CVEProject: ${err.message}; Maven CVE coverage is incomplete.`});
 		}
 	}
 
@@ -1827,7 +1836,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				await enrichEpss(cveMatches, { verbose, offline, onProgress: (p, t) => st.tick(p, t) });
 				const scored = cveMatches.filter(m => m.cve?.epssPercentile != null).length;
 				st.done(`${scored} scored`);
-			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`EPSS: ${err.message}; enrichment is incomplete.`}); }
+			} catch (err) { st.fail(err.message); scanWarnings.push({type:"source-unavailable",message:`EPSS: ${err.message}; enrichment is incomplete.`}); }
 		}
 	}
 
@@ -1841,7 +1850,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				await enrichKev(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy });
 				const kevd = cveMatches.filter(m => m.cve?.kev).length;
 				st.done(`${kevd} known-exploited`);
-			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`CISA KEV: ${err.message}; exploitation status is incomplete.`}); }
+			} catch (err) { st.fail(err.message); scanWarnings.push({type:"source-unavailable",message:`CISA KEV: ${err.message}; exploitation status is incomplete.`}); }
 		}
 	}
 
@@ -1862,7 +1871,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				const ids = new Set(cveMatches.filter(m => m.cve?.euvd?.id).map(m => m.cve.id)).size;
 				const exploited = new Set(cveMatches.filter(m => m.cve?.euvd?.exploitedSince != null).map(m => m.cve.id)).size;
 				st.done(`${ids} EUVD id(s) · ${exploited} exploited per ENISA`);
-			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`EUVD: ${err.message}; enrichment is incomplete.`}); }
+			} catch (err) { st.fail(err.message); scanWarnings.push({type:"source-unavailable",message:`EUVD: ${err.message}; enrichment is incomplete.`}); }
 		}
 	}
 	if (willCertFr) {
@@ -1874,7 +1883,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				await enrichCertFr(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy, onProgress: (p, t) => st.tick(p, t) });
 				const cited = new Set(cveMatches.filter(m => m.cve?.certfr?.length).map(m => m.cve.id)).size;
 				st.done(`${cited} CVE(s) cited by CERT-FR`);
-			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`CERT-FR: ${err.message}; enrichment is incomplete.`}); }
+			} catch (err) { st.fail(err.message); scanWarnings.push({type:"source-unavailable",message:`CERT-FR: ${err.message}; enrichment is incomplete.`}); }
 		}
 	}
 
@@ -2444,7 +2453,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 	if (options.failOnIncomplete) {
 		const { requiredCoverageComplete } = require("./lib/scan-coverage");
-		const raw = options.failOnIncomplete === true ? "inventory,advisories" : String(options.failOnIncomplete);
+		const raw = options.failOnIncomplete === true ? "inventory,advisories,sources" : String(options.failOnIncomplete);
 		const required = [...new Set(raw.split(",").map(x => x.trim()).filter(Boolean))];
 		const known = new Set(["inventory", "advisories", "recipes", "sources"]);
 		if (!required.length || required.some(x => !known.has(x))) {

@@ -95,7 +95,7 @@ test("Wordfence server refuses malformed requests, missing keys and oversize res
 	const bounded = await proxy(t, { maxBodyBytes: 100, fetcher });
 	const denied = await bounded.ask([q()]);
 	assert.equal(denied.status, 502);
-	assert.match(await denied.text(), /projection exceeds/);
+	assert.match(await denied.text(), /upstream request failed/);
 });
 
 for (const broken of ["outage", "schema", "empty", "truncated"]) {
@@ -243,7 +243,7 @@ test("Wordfence server transfer limit and admission policy cannot publish a part
 	const bounded = await proxy(t, { maxTransferBytes: 100 });
 	const result = await bounded.ask([q()]);
 	assert.equal(result.status, 502);
-	assert.match(await result.text(), /invalid or incomplete Wordfence catalogue/);
+	assert.match(await result.text(), /upstream request failed/);
 	assert.equal(bounded.store.size(), 0);
 	let upstream = 0;
 	const denied = await proxy(t, { admit: () => ({ retryAfterS: 60 }), fetcher: async () => { upstream++; return Response.json(feed); } });

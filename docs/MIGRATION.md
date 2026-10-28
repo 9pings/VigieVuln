@@ -23,9 +23,9 @@ first avoids competing global bin links. `vigievuln` is the primary command.
 Existing scripts can keep using the aliases. A `fad-checker.js` wrapper is also
 provided for integrations that invoke the JavaScript file directly.
 
-Persistent cache/config paths remain `~/.fad-checker/` and
-`~/.fad-checker-proxy-cache/`: no migration, deletion or network refresh is required
-just because of the rename. Existing API keys, registry settings, warmed caches,
+The CLI migrates `~/.fad-checker/` and `~/.fad-checker-proxy-cache/` to
+`~/.vigie-vuln/` and `~/.vigie-vuln-proxy-cache/` when the destination is absent.
+Existing API keys, registry settings, warmed caches,
 anonymized descriptors and offline transfer archives remain usable.
 
 New configuration names:
@@ -36,7 +36,9 @@ New configuration names:
 | `VIGIEVULN_ENV` | `FAD_CHECKER_ENV` |
 | `VIGIEVULN_PROXY_CACHE_TOKEN` | `FAD_PROXY_CACHE_TOKEN` |
 
-The preferred name wins when both are set; explicit CLI flags still win.
+The preferred environment name wins when both are set; explicit CLI flags still win.
+Repository configuration files are never loaded automatically: pass `--config`
+explicitly only for files you trust.
 The default report directory becomes `vigievuln-report`; use `-o` for a fixed path.
 Human-facing titles/tool metadata identify VigieVuln 1.0.0. The `fad-findings/1`,
 `fad-deps/1`, `fad-diff/1`, `fad-dump/1` schemas, source IDs, SARIF rule IDs and HTTP

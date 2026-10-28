@@ -83,3 +83,15 @@ for (const opts of [{}, {replace:true}]) test(`legacy archive imports into the n
 	assert.equal(fs.readFileSync(path.join(dest,'.vigie-vuln','payload.json'),'utf8'),'legacy');
 	assert.equal(fs.existsSync(path.join(dest,'.fad-checker')),false);
 });
+
+for (const opts of [{}, {replace:true}]) test(`cache import rejects archived links (${opts.replace?'replace':'merge'})`, async t => {
+  if (process.platform === 'win32') return t.skip('archive fixture uses Unix symlinks');
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-link-archive-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const source=path.join(root,'source'), dest=path.join(root,'dest'), archive=path.join(root,'bad.tar.gz');
+  fs.mkdirSync(path.join(source,'.vigie-vuln'),{recursive:true}); fs.mkdirSync(dest);
+  fs.symlinkSync(path.join(root,'outside'),path.join(source,'.vigie-vuln','redirect'));
+  childProcess.execFileSync('tar',['-czf',archive,'.vigie-vuln'],{cwd:source});
+  await assert.rejects(loadCache(dest).importCache(archive,opts),/links or special files/);
+  assert.equal(fs.existsSync(path.join(dest,'.vigie-vuln','redirect')),false);
+});

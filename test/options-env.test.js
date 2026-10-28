@@ -41,13 +41,13 @@ test("normalizeSource maps source/JSON-source to src", () => {
 	assert.strictEqual(OE.normalizeSource({ src: "y", source: "z" }).src, "y");
 });
 
-test("loadLayers: --config path beats ./.fad-env.json; malformed JSON throws", () => {
+test("loadLayers: repository configs are ignored unless explicitly selected; malformed JSON throws", () => {
 	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-env-"));
 	fs.writeFileSync(path.join(tmp, ".fad-env.json"), JSON.stringify({ failOn: "low" }));
 	fs.writeFileSync(path.join(tmp, "alt.json"), JSON.stringify({ failOn: "high" }));
-	assert.strictEqual(OE.loadLayers({ cwd: tmp }).fileLayer.failOn, "low");
+	assert.deepStrictEqual(OE.loadLayers({ cwd: tmp }).fileLayer, {});
 	fs.writeFileSync(path.join(tmp, ".vigievuln-env.json"), JSON.stringify({ failOn: "critical" }));
-	assert.strictEqual(OE.loadLayers({ cwd: tmp }).fileLayer.failOn, "critical", "new configuration wins over the legacy file");
+	assert.deepStrictEqual(OE.loadLayers({ cwd: tmp }).fileLayer, {});
 	assert.strictEqual(OE.loadLayers({ cwd: tmp, configPath: path.join(tmp, "alt.json") }).fileLayer.failOn, "high");
 	fs.writeFileSync(path.join(tmp, "bad.json"), "{ not json");
 	assert.throws(() => OE.loadLayers({ cwd: tmp, configPath: path.join(tmp, "bad.json") }), /JSON|parse/i);
