@@ -252,7 +252,7 @@ if (process.argv.includes("--export-cache") || process.argv.includes("--import-c
 					if (stats.skipped.length) console.log(chalk.gray(`   Left untouched (machine-local): ${stats.skipped.join(", ")}`));
 				} else {
 					console.log(chalk.green(`✅ Cache imported → ${dir}`));
-					console.log(chalk.gray(`   --replace: previous cache ${force ? "removed" : "moved to ~/.fad-checker.bak-<timestamp>"}`));
+					console.log(chalk.gray(`   --replace: previous cache ${force ? "removed" : "moved to ~/.vigie-vuln.bak-<timestamp>"}`));
 				}
 			}
 			process.exit(0);
@@ -339,7 +339,7 @@ if (process.argv[2] === "serve-cache") {
 	const { startProxyCacheServer, DEFAULT_CACHE_DIR, CLIENT_CACHE_DIR, createCacheStore } = require("./lib/proxy-cache");
 	const storeDir = path.resolve(cacheDir || DEFAULT_CACHE_DIR());
 	// The scan's per-pass caches and the shared server base are two different roles:
-	// a store inside ~/.fad-checker/ would be bundled/swapped by --export-cache /
+	// a store inside ~/.vigie-vuln/ would be bundled/swapped by --export-cache /
 	// --import-cache together with the client's own caches. Separate roots, always.
 	const clientRoot = path.resolve(CLIENT_CACHE_DIR());
 	if (storeDir === clientRoot || storeDir.startsWith(clientRoot + path.sep)) {
@@ -373,7 +373,7 @@ if (process.argv[2] === "serve-cache") {
 		token, swr, keys,
 	})).then(({ server, url }) => {
 		console.log(chalk.green(`✅  proxy-cache listening on ${url}`));
-		console.log(chalk.gray(`   store:    ${storeDir}  (persists across restarts; separate from the scan's own ~/.fad-checker/ caches)`));
+		console.log(chalk.gray(`   store:    ${storeDir}  (persists across restarts; separate from the scan's own ~/.vigie-vuln/ caches)`));
 		console.log(chalk.gray(`   upstream: ${upstreamProxy ? `via corporate proxy ${upstreamProxy}` : "direct"}`));
 		console.log(chalk.gray(`   stats:    ${url}/__stats    clear: POST ${url}/__clear`));
 		const active = Object.entries(keys).filter(([, v]) => v).map(([k]) => k);
@@ -460,11 +460,11 @@ program
 	.option("--vigievuln-proxy [domain]", "legacy hosted cache option: fr or com")
 	.option("--proxy-cache-token <token>", "authenticate to a shared proxy-cache server (or set VIGIEVULN_PROXY_CACHE_TOKEN)")
 	.option("--proxy <url>", "corporate proxy for all requests")
-	.option("--set-nvd-key <key>", "save NVD API key to ~/.fad-checker/config.json (10× faster NVD enrichment)")
-	.option("--show-config", "print the persisted ~/.fad-checker/config.json")
-	.option("--export-cache <file>", "tar.gz/zip the ~/.fad-checker/ caches to <file> (excludes config.json by default)")
-	.option("--import-cache <file>", "merge a previously exported archive into ~/.fad-checker/ (keeps the local cache + config.json; newest entry wins)")
-	.option("--replace", "with --import-cache: replace ~/.fad-checker/ wholesale instead of merging (previous dir kept as .bak unless --force)")
+	.option("--set-nvd-key <key>", "save NVD API key to ~/.vigie-vuln/config.json (10× faster NVD enrichment)")
+	.option("--show-config", "print the persisted ~/.vigie-vuln/config.json")
+	.option("--export-cache <file>", "tar.gz/zip the ~/.vigie-vuln/ caches to <file> (excludes config.json by default)")
+	.option("--import-cache <file>", "merge a previously exported archive into ~/.vigie-vuln/ (keeps the local cache + config.json; newest entry wins)")
+	.option("--replace", "with --import-cache: replace ~/.vigie-vuln/ wholesale instead of merging (previous dir kept as .bak unless --force)")
 	.option("--include-config", "with --export-cache: also bundle config.json (contains the NVD API key)")
 	.option("--export-anonymized <file>", "offline: write a path-free dependency descriptor and exit")
 	.option("--prepare-project <file>", "offline: prepare a path-free project descriptor for review")
@@ -591,7 +591,7 @@ program.parse(process.argv);
 
 const options = program.opts();
 // Layered config: CLI flags > config file (--config / ./.fad-env.json, JSON) >
-// FAD_CHECKER_ENV (a CLI-flag string) > global ~/.fad-checker/config.json >
+// FAD_CHECKER_ENV (a CLI-flag string) > global ~/.vigie-vuln/config.json >
 // commander defaults. A file/env value fills an option only if the CLI didn't
 // set it. `registries` are unioned separately (below). Source has src/source aliases.
 const { loadLayers, applyLayers } = require("./lib/options-env");
@@ -657,7 +657,7 @@ if (!options.offline) {
 			configureResourceRoute({ proxyUrl: options.proxyCache, hosted: !!options.vigievulnProxy,
 				token: options.proxyCacheToken || (process.env.VIGIEVULN_PROXY_CACHE_TOKEN ?? process.env.FAD_PROXY_CACHE_TOKEN) || null,
 				health: sourceHealth, fetcher: baseFetch,
-				store: options.vigievulnProxy ? null : createCacheStore(require("node:path").join(require("node:os").homedir(), ".fad-checker", "resource-cache")) });
+				store: options.vigievulnProxy ? null : createCacheStore(require("node:path").join(require("./lib/cache-directory").getCacheDir(), "resource-cache")) });
 		} catch (err) {
 			console.error(chalk.red(`❌  ${err.message}`));
 			process.exit(2);
@@ -845,12 +845,6 @@ async function timedPhase(label, fn) {
 	if (options.vigievulnProxy && !options.offline) {
 		if (!options.proxyCacheToken) {
 			try {
-				if (hostedAccountSession) {
-					options.proxyCacheToken = (await require("./lib/account-client").createAccountClient().createProxyKey()).token;
-					require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
-					require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
-					console.error("Proxy key created from your signed-in account and saved for future scans.");
-				} else {
 				const readline = require("node:readline");
 				const { Writable } = require("node:stream");
 				const ask = (prompt, secret = false) => new Promise(resolve => {
@@ -859,11 +853,20 @@ async function timedPhase(label, fn) {
 					const rl = readline.createInterface({ input: process.stdin, output, terminal: true });
 					rl.question("", answer => { rl.close(); if (secret) process.stderr.write("\n"); resolve(answer); });
 				});
+				if (hostedAccountSession) {
+					const account = require("./lib/account-client").createAccountClient();
+					const current = await account.me();
+					await require("./lib/account-terms").requireTerms({account, terms:current.terms, ask});
+					options.proxyCacheToken = await require("./lib/hosted-proxy").createProxyKey(account);
+					require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
+					require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
+					console.error("Proxy key created from your signed-in account and saved for future scans.");
+				} else {
 				console.error("Sign in to your verified Vigie Vuln account to create a proxy key.");
 				console.error("No account? Register at https://www.vigievuln.fr/account");
 				const email = await ask("Email: ");
 				const password = await ask("Password: ", true);
-				options.proxyCacheToken = await require("./lib/hosted-proxy").loginForProxy({origin:options.proxyCache,email,password});
+				options.proxyCacheToken = await require("./lib/hosted-proxy").loginForProxy({email,password,ask});
 				require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
 				require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
 				console.error("Proxy key saved for future scans.");
@@ -875,7 +878,7 @@ async function timedPhase(label, fn) {
 	}
 	ui.banner(pkg.version);
 
-	// Build the Maven repo list once: persisted repos (from ~/.fad-checker/config.json)
+	// Build the Maven repo list once: persisted repos (from ~/.vigie-vuln/config.json)
 	// + ad-hoc --repo URLs + Maven Central as final fallback. Used by transitive
 	// resolution, outdated-version check, and existence check.
 	const { getRegistryMap } = require("./lib/config");
@@ -970,7 +973,7 @@ async function timedPhase(label, fn) {
 			try {
 				const warmed = await warmCmsAdvisorySnapshots(resolved, {
 					fetchImpl: (...args) => fetch(...args),
-					advisoryCacheDir: path.join(require("os").homedir(), ".fad-checker", "advisory-snapshots"),
+					advisoryCacheDir: path.join(require("./lib/cache-directory").getCacheDir(), "advisory-snapshots"),
 					drupalUrl: typeof options.drupalAdvisoriesLive === "string" ? options.drupalAdvisoriesLive : undefined,
 					prestashopUrl: typeof options.prestashopAdvisoriesLive === "string" ? options.prestashopAdvisoriesLive : undefined,
 					typo3Url: typeof options.typo3AdvisoriesLive === "string" ? options.typo3AdvisoriesLive : undefined,
@@ -1375,7 +1378,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				liveSpipAdvisoriesUrl: spipLiveUrl, spipAdvisoriesApiKey: getNvdApiKey(),
 				wpChecksumsPath: options.wpChecksums || null, liveWpChecksumsUrl: wpChecksumsLiveUrl,
 				wpChecksumsLocale: options.wpChecksumsLocale || "en_US",
-				advisoryCacheDir: path.join(require("os").homedir(), ".fad-checker", "advisory-snapshots"),
+				advisoryCacheDir: path.join(require("./lib/cache-directory").getCacheDir(), "advisory-snapshots"),
 				offline,
 				fetchImpl: (...args) => fetch(...args),
 				maxAdvisoryAgeMs,

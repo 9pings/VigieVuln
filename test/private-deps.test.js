@@ -83,7 +83,7 @@ async function withSeededCache(file, data, fn) {
 		if (had) fs.writeFileSync(file, backup); else { try { fs.unlinkSync(file); } catch { /* ignore */ } }
 	}
 }
-const PACKAGIST_CACHE = path.join(os.homedir(), ".fad-checker", "packagist-cache.json");
+const PACKAGIST_CACHE = path.join(os.homedir(), ".vigie-vuln", "packagist-cache.json");
 
 const dep = (name, version) => ({
 	ecosystem: "composer", namespace: name.split("/")[0], name: name.split("/")[1],

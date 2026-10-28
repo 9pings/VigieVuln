@@ -4,8 +4,8 @@ const path = require("path");
 const os = require("os");
 const R = require("../lib/retire");
 
-test("retire signature cache lives INSIDE ~/.fad-checker/ (so --export-cache carries it)", () => {
-	const fadDir = path.join(os.homedir(), ".fad-checker");
+test("retire signature cache lives INSIDE ~/.vigie-vuln/ (so --export-cache carries it)", () => {
+	const fadDir = path.join(os.homedir(), ".vigie-vuln");
 	assert.ok(R.RETIRE_SIG_DIR.startsWith(fadDir), `${R.RETIRE_SIG_DIR} should be under ${fadDir}`);
 	assert.ok(R.RETIRE_SIG_FILE.startsWith(R.RETIRE_SIG_DIR));
 	assert.ok(R.RETIRE_CACHE_DIR.startsWith(fadDir));

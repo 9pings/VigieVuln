@@ -70,6 +70,6 @@ const fetcher = async () => {
 	assert.equal(fs.existsSync(mod.CACHE_PATH), false, "cold offline reads never create a cache");
 })().catch(error => { console.error(error); process.exitCode = 1; });
 `, kind, root], { cwd: path.resolve(__dirname, ".."), encoding: "utf8" });
-		assert.equal(fs.existsSync(path.join(root, ".fad-checker", `${kind}-cache.json`)), false);
+		assert.equal(fs.existsSync(path.join(root, ".vigie-vuln", `${kind}-cache.json`)), false);
 	});
 }

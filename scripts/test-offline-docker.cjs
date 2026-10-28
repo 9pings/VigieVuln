@@ -64,7 +64,7 @@ write("phase.cjs", `
 const fs = require("node:fs"), assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const phase = process.argv[2], offline = phase !== "warm";
-assert.equal(fs.existsSync("/root/.fad-checker"), false, "each phase starts with no cache");
+assert.equal(fs.existsSync("/root/.vigie-vuln"), false, "each phase starts with no cache");
 function cli(args, status = 0) {
 	const preload = offline ? ["--require", "/audit.cjs"] : [];
 	const r = spawnSync(process.execPath, [...preload, "/app/vigievuln.js", ...args],
@@ -93,7 +93,7 @@ async function main() {
 	} else {
 		cli(["--import-cache", "/out/cache.tar.gz"]);
 		// Exercise the expired-KEV regression with a real fetched catalogue.
-		const kevPath = "/root/.fad-checker/kev-cache.json";
+		const kevPath = "/root/.vigie-vuln/kev-cache.json";
 		const kev = JSON.parse(fs.readFileSync(kevPath));
 		kev._fetchedAt = Date.now() - 72 * 3600e3;
 		fs.writeFileSync(kevPath, JSON.stringify(kev));

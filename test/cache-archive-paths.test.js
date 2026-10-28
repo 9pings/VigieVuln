@@ -29,9 +29,9 @@ for (const [mode, opts] of [["merge", {}], ["replace", { replace: true }], ["for
 		const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad archive paths "));
 		t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 		const online = path.join(root, "online é"), offline = path.join(root, "offline é");
-		fs.mkdirSync(path.join(online, ".fad-checker"), { recursive: true });
-		fs.writeFileSync(path.join(online, ".fad-checker", "payload.json"), '{"id":"imported"}');
-		fs.writeFileSync(path.join(online, ".fad-checker", "config.json"), '{"secret":true}');
+		fs.mkdirSync(path.join(online, ".vigie-vuln"), { recursive: true });
+		fs.writeFileSync(path.join(online, ".vigie-vuln", "payload.json"), '{"id":"imported"}');
+		fs.writeFileSync(path.join(online, ".vigie-vuln", "config.json"), '{"secret":true}');
 		// On POSIX a literal Windows-style name exercises ':' and backslashes too.
 		const archive = path.join(root, process.platform === "win32" ? "cache snapshot.tgz" : "C:\\cache snapshot.tgz");
 		const calls = [];
@@ -46,8 +46,8 @@ for (const [mode, opts] of [["merge", {}], ["replace", { replace: true }], ["for
 		const exported = await loadCache(online, spawn).exportCache(archive);
 		assert.ok(exported.size > 0);
 		await loadCache(offline, spawn).importCache(archive, opts);
-		assert.deepEqual(JSON.parse(fs.readFileSync(path.join(offline, ".fad-checker", "payload.json"))), { id: "imported" });
-		assert.ok(!fs.existsSync(path.join(offline, ".fad-checker", "config.json")));
+		assert.deepEqual(JSON.parse(fs.readFileSync(path.join(offline, ".vigie-vuln", "payload.json"))), { id: "imported" });
+		assert.ok(!fs.existsSync(path.join(offline, ".vigie-vuln", "config.json")));
 		assert.equal(calls.length, 2);
 		assert.equal(calls[0].options.cwd, online);
 		assert.ok(calls[1].args.includes("--no-same-owner"));
@@ -70,4 +70,16 @@ test("failed tar import reports the error, cleans staging and closes the archive
 		assert.throws(() => fs.fstatSync(fd), { code: "EBADF" });
 		assert.ok(!fs.readdirSync(root).some(name => name.includes(".import-")));
 	}
+});
+
+for (const opts of [{}, {replace:true}]) test(`legacy archive imports into the new cache (${opts.replace?'replace':'merge'})`, async t => {
+	const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-legacy-archive-'));
+	t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+	const old=path.join(root,'old'), dest=path.join(root,'new'), archive=path.join(root,'old.tar.gz');
+	fs.mkdirSync(path.join(old,'.fad-checker'),{recursive:true});fs.mkdirSync(dest);
+	fs.writeFileSync(path.join(old,'.fad-checker','payload.json'),'legacy');
+	childProcess.execFileSync('tar',['-czf',archive,'.fad-checker'],{cwd:old});
+	await loadCache(dest).importCache(archive,opts);
+	assert.equal(fs.readFileSync(path.join(dest,'.vigie-vuln','payload.json'),'utf8'),'legacy');
+	assert.equal(fs.existsSync(path.join(dest,'.fad-checker')),false);
 });

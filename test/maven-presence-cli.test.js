@@ -22,7 +22,7 @@ function scenario(t) {
 	const home = path.join(root, "home"), src = path.join(root, "project");
 	const preload = path.join(root, "preload.cjs"), calls = path.join(root, "calls.jsonl");
 	const report = path.join(root, "report.json");
-	const cache = (...parts) => path.join(home, ".fad-checker", ...parts);
+	const cache = (...parts) => path.join(home, ".vigie-vuln", ...parts);
 	write(path.join(src, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>example</groupId>" +
 		"<artifactId>demo</artifactId><version>1.0</version><dependencies><dependency>" +
 		"<groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>2.0.18</version>" +

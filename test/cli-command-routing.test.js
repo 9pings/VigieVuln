@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { routeArguments } = require('../lib/cli-command-routing');
+const { createAccountSessionStore } = require('../lib/account-session');
 const CLI = path.join(__dirname, '../vigievuln.js');
 const ID = '12345678-1234-1234-1234-123456789abc';
 const OTHER = 'aaaaaaaa-1234-1234-1234-123456789abc';
@@ -17,9 +18,9 @@ function fixture(t, settings = {}) {
   const src = path.join(home, 'private source'), capture = path.join(home, 'calls.jsonl');
   fs.mkdirSync(src);
   fs.writeFileSync(path.join(src, 'package.json'), JSON.stringify({ name: 'secret-root', dependencies: { demo: '1.2.3', '@private/hidden': '2.0.0' } }));
-  fs.mkdirSync(path.join(home, '.vigievuln'), { mode: 0o700 });
   const sessionFile = path.join(home, '.vigievuln/account-session.json');
-  if (settings.session !== false) fs.writeFileSync(sessionFile, JSON.stringify({ token: 'account_session', expiresAt: settings.expired ? 1 : Date.now() + 3600000 }), { mode: 0o600 });
+  const store=createAccountSessionStore({homeDir:home,now:()=>settings.expired?0:Date.now()});
+  if (settings.session !== false) store.write({ token: 'account_session', expiresAt: settings.expired ? 1 : Date.now() + 3600000 });
   const hook = path.join(home, 'mock.cjs');
   fs.writeFileSync(hook, `
     const fs=require('node:fs');const settings=${JSON.stringify(settings)};
@@ -27,7 +28,7 @@ function fixture(t, settings = {}) {
     for(const id of ['http','https']){const m=require(id);m.get=m.request=()=>{throw Error('external network forbidden')}}
     if(settings.tty){
       Object.defineProperty(process.stdin,'isTTY',{value:true});Object.defineProperty(process.stderr,'isTTY',{value:true});
-      const answers=['person@example.test','private_password'];
+      const answers=settings.answers||['person@example.test','private_password'];
       require('node:readline').createInterface=()=>({question:(_q,cb)=>cb(answers.shift()),close(){}});
     }
     if(settings.forbidSession){require(${JSON.stringify(path.join(__dirname, '../lib/account-session'))}).createAccountSessionStore=()=>{throw Error('session accessed during local export')};}
@@ -35,8 +36,10 @@ function fixture(t, settings = {}) {
       const request={url,method:init.method,body:init.body?JSON.parse(init.body):null};
       fs.appendFileSync(${JSON.stringify(capture)},JSON.stringify(request)+'\\n');
       if(settings.noNetwork)throw Error('network forbidden');
-      if(url==='https://www.vigievuln.fr/v1/accounts/me')return settings.revoked?new Response('',{status:401}):Response.json({account:{id:'account',email:'person@example.test'}});
-      if(url==='https://www.vigievuln.fr/v1/accounts/login')return Response.json({token:'new_session',tokenType:'Bearer',expiresAt:Date.now()+3600000,account:{id:'account',email:'person@example.test'}});
+      const terms={version:'2026-10-28',url:'/terms',documentUrl:'/terms/2026-10-28',accepted:!settings.terms};
+      if(url==='https://www.vigievuln.fr/v1/accounts/me')return settings.revoked?new Response('',{status:401}):Response.json({account:{id:'account',email:'person@example.test',terms}});
+      if(url==='https://www.vigievuln.fr/v1/accounts/login')return Response.json({token:'new_session',tokenType:'Bearer',expiresAt:Date.now()+3600000,account:{id:'account',email:'person@example.test',terms}});
+      if(url==='https://www.vigievuln.fr/v1/accounts/terms')return Response.json({account:{id:'account',email:'person@example.test',terms:{...terms,accepted:true}}});
       if(url==='https://www.vigievuln.fr/v1/accounts/logout')return Response.json({revoked:1});
       if(url==='https://www.vigievuln.fr/v1/projects' && init.method==='GET')return Response.json({projects:settings.projects||[]});
       if(url==='https://www.vigievuln.fr/v1/projects/${ID}' && init.method==='GET')return Response.json({project:settings.current||${JSON.stringify(PROJECT)}});
@@ -44,13 +47,56 @@ function fixture(t, settings = {}) {
       if(url==='https://www.vigievuln.fr/v1/projects/${ID}' && init.method==='PUT')return settings.conflict?new Response('',{status:409}):Response.json({project:{...${JSON.stringify(PROJECT)},revision:8}});
       throw Error('unexpected endpoint '+url);
     };`);
-  return { home, src, sessionFile,
+  return { home, src, sessionFile, session:()=>store.read(),
     calls: () => fs.existsSync(capture) ? fs.readFileSync(capture, 'utf8').trim().split('\n').map(JSON.parse) : [],
     run: args => spawnSync(process.execPath, [CLI, ...args], { cwd: home, encoding: 'utf8', timeout: 20000,
       env: { ...process.env, HOME: home, USERPROFILE: home, NODE_OPTIONS: `--require=${hook}`, VIGIEVULN_ENV: '', FAD_CHECKER_ENV: '', FORCE_COLOR: '0' } }) };
 }
 function success(run) { assert.equal(run.status, 0, `${run.error || ''}\n${run.stderr}\n${run.stdout}`); }
 const writes = f => f.calls().filter(c => ['POST','PUT'].includes(c.method) && c.url.includes('/projects'));
+
+test('pending terms block noninteractive project access and preserve the stored session', t => {
+  const f=fixture(t,{terms:true}), before=fs.readFileSync(f.sessionFile,'utf8');
+  const run=f.run(['project','status']);
+  assert.equal(run.status,2);assert.match(run.stderr,/terms acceptance required/);
+  assert.match(run.stderr,/https:\/\/www\.vigievuln\.fr\/terms\/2026-10-28/);
+  assert.equal(fs.readFileSync(f.sessionFile,'utf8'),before);
+  assert.deepEqual(f.calls().map(c=>c.url.split('/').pop()),['me']);
+});
+
+test('interactive login explicitly accepts pending terms before succeeding', t => {
+  const f=fixture(t,{session:false,tty:true,terms:true,answers:['person@example.test','private_password','yes']});
+  success(f.run(['login']));
+  assert.deepEqual(f.calls().map(c=>c.url.split('/').pop()),['login','terms']);
+  assert.deepEqual(f.calls()[1].body,{termsVersion:'2026-10-28',accepted:true});
+  assert.equal(f.session().token,'new_session');
+});
+
+test('project push counts the raw UTF-8 file before any network at the 500000-byte boundary', t => {
+  for (const extra of [0,1]) {
+    const f=fixture(t), file=path.join(f.home,'descriptor.json');
+    const prefix='{"schema":"fad-deps/2","deps":[],"padding":"', suffix='"}';
+    const space=500000-Buffer.byteLength(prefix+suffix);
+    const contents=prefix+'é'.repeat(Math.floor(space/2))+'x'.repeat(space%2+extra)+suffix;
+    fs.writeFileSync(file,contents);
+    assert.equal(fs.statSync(file).size,500000+extra);
+    const run=f.run(['project','push','--file',file,'--name','boundary']);
+    if(extra) {
+      assert.equal(run.status,2);assert.match(run.stderr,/500000 UTF-8 bytes/);assert.deepEqual(f.calls(),[]);
+    } else {success(run);assert.equal(f.calls().length,2);}
+  }
+});
+
+test('watch rejects an oversized upload before sign-in but still allows a local export', t => {
+  const f=fixture(t,{noNetwork:true});
+  const dependencies=Object.fromEntries(Array.from({length:3000},(_,i)=>[`pkg-${i}-${'a'.repeat(110)}`,'1.2.3']));
+  fs.writeFileSync(path.join(f.src,'package.json'),JSON.stringify({name:'test',dependencies}));
+  const run=f.run(['watch',f.src,'--name','large']);
+  assert.equal(run.status,2,run.stderr);assert.match(run.stderr,/500000 UTF-8 bytes/);assert.deepEqual(f.calls(),[]);
+  const file=path.join(f.home,'large.json');
+  success(f.run(['watch',f.src,'--export',file]));
+  assert.ok(fs.statSync(file).size>500000);assert.deepEqual(f.calls(),[]);
+});
 
 test('routing preserves old argv and maps scan/config/cache/auth without consuming option values', () => {
   for (const args of [['-s','source','--offline'], ['serve-cache','--port','0'], ['--completion','bash'], ['project','status']])
@@ -160,7 +206,7 @@ for(const command of ['login','whoami','auth status','auth whoami']) test(`${com
   const f=fixture(t);const run=f.run(command.split(' '));success(run);
   assert.match(run.stdout,/Signed in as person@example.test/);assert.doesNotMatch(run.stderr,/Register:/);
   assert.deepEqual(f.calls().map(c=>c.url),['https://www.vigievuln.fr/v1/accounts/me']);
-  assert.equal(fs.existsSync(path.join(f.home,'.fad-checker/config.json')),false);
+  assert.equal(fs.existsSync(path.join(f.home,'.vigie-vuln/config.json')),false);
 });
 
 test('logout and auth logout revoke and clear locally without asking to sign in', t => {
@@ -194,7 +240,7 @@ test('scan positional alias and legacy -s produce identical local project descri
 
 test('config and cache aliases execute existing masked config and archive handlers offline', t => {
   const f=fixture(t,{noNetwork:true});
-  const cache=path.join(f.home,'.fad-checker');fs.mkdirSync(cache);
+  const cache=path.join(f.home,'.vigie-vuln');fs.mkdirSync(cache);
   fs.writeFileSync(path.join(cache,'config.json'),JSON.stringify({proxyCacheToken:'secret-proxy'}));
   fs.writeFileSync(path.join(cache,'sample.json'),JSON.stringify({hello:'world'}));
   const shown=f.run(['config','show']);success(shown);assert.doesNotMatch(shown.stdout,/secret-proxy/);
@@ -219,11 +265,11 @@ for (const expired of [false,true]) test(`account commands require login for ${e
 test('top-level login prompts only when necessary and persists an account session, not a proxy key', t => {
   const f=fixture(t,{session:false,tty:true});
   const first=f.run(['login']);success(first);assert.match(first.stderr,/Register:/);
-  const stored=JSON.parse(fs.readFileSync(f.sessionFile));
+  const stored=f.session();
   assert.deepEqual(Object.keys(stored).sort(),['expiresAt','token']);
   const second=f.run(['login']);success(second);assert.doesNotMatch(second.stderr,/Register:|Email:|Password:/);
   assert.deepEqual(f.calls().map(c=>c.url.split('/').pop()),['login','me']);
-  assert.equal(fs.existsSync(path.join(f.home,'.fad-checker/config.json')),false);
+  assert.equal(fs.existsSync(path.join(f.home,'.vigie-vuln/config.json')),false);
 });
 
 test('legacy auth login and project status also prompt when a terminal needs authentication', t => {

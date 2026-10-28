@@ -34,7 +34,7 @@ test("effectivePom honors injected propertyOverrides for parent-chain managed ve
 		"a child overriding <log4j2.version> must win over the parent's default");
 });
 
-// Per-test cache dir so we don't poison ~/.fad-checker/poms-cache during tests
+// Per-test cache dir so we don't poison ~/.vigie-vuln/poms-cache during tests
 function freshCache() {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-pom-cache-"));
 	return dir;

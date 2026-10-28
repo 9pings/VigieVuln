@@ -24,7 +24,7 @@ const fs = require("node:fs"), path = require("node:path"), assert = require("no
 require("node:os").homedir = () => process.argv[2];
 const [eco, mod, method, filename, key] = JSON.parse(process.argv[1]);
 const check = require(path.resolve(mod))[method];
-const dir = path.join(process.argv[2], ".fad-checker"), file = path.join(dir, filename);
+const dir = path.join(process.argv[2], ".vigie-vuln"), file = path.join(dir, filename);
 fs.mkdirSync(dir, { recursive: true });
 const dep = { ecosystem: eco, name: "demo", artifactId: "demo", version: "1.0.0", scope: "compile",
 	namespace: eco === "maven" ? "org.example" : eco === "composer" ? "acme" : "",

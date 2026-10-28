@@ -31,8 +31,8 @@ test('session path is distinct from proxy config; absent reads/clears do not cre
 
 test('only session and expiry persist, in a 0700 directory and an atomic 0600 file', posix, t => {
   const { homeDir, store, directory } = fixture(t);
-  fs.mkdirSync(path.join(homeDir, '.fad-checker'));
-  const proxyPath = path.join(homeDir, '.fad-checker', 'config.json');
+  fs.mkdirSync(path.join(homeDir, '.vigie-vuln'));
+  const proxyPath = path.join(homeDir, '.vigie-vuln', 'config.json');
   const proxyConfig = '{"proxyCacheToken":"separate-proxy-secret"}';
   fs.writeFileSync(proxyPath, proxyConfig);
   store.write({ ...SESSION, password: 'never-save', email: 'private@example.test', proxyCacheToken: 'never-save', account: {} });
@@ -120,7 +120,7 @@ test('file symlinks, dangling symlinks and hard links cannot be read, replaced o
 
 test('a symlinked storage directory cannot redirect credentials into the proxy cache', posix, t => {
   const { homeDir, store, directory } = fixture(t);
-  const proxy = path.join(homeDir, '.fad-checker');
+  const proxy = path.join(homeDir, '.vigie-vuln');
   fs.mkdirSync(proxy, { mode: 0o700 });
   fs.symlinkSync(proxy, directory);
   for (const action of [() => store.read(), () => store.write(SESSION), () => store.clear()]) {

@@ -107,12 +107,12 @@ test("a valid --fail-on level is accepted", () => {
 
 // --no-report writes NO files, but the scan + CI gate still run.
 // HERMETIC: a temp HOME carries a one-CVE warmed index, so the gate outcome is
-// deterministic — the old version read this machine's real ~/.fad-checker and
+// deterministic — the old version read this machine's real ~/.vigie-vuln and
 // failed on any box whose cache was cold or stale (it did catch the amputated
 // 2026-06 index that way, but a fixture keeps the signal without the flake).
 test("--no-report still runs the gate (and fails on a high finding)", () => {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "fad-home-"));
-	const cveDir = path.join(home, ".fad-checker", "cve-data");
+	const cveDir = path.join(home, ".vigie-vuln", "cve-data");
 	fs.mkdirSync(cveDir, { recursive: true });
 	const entry = {
 		id: "CVE-2099-0001", severity: "HIGH", score: 8.8, description: "gate sentinel",

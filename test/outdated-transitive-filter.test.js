@@ -6,7 +6,7 @@
  * of the pass's wall-clock went.
  *
  * HOME is redirected to a temp dir BEFORE requiring lib/outdated so the
- * version-cache reads/writes land in an isolated ~/.fad-checker, never the
+ * version-cache reads/writes land in an isolated ~/.vigie-vuln, never the
  * developer's real one.
  */
 const os = require("os");

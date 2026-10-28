@@ -1,6 +1,6 @@
 /**
  * NVD → fkie-cad/nvd-json-data-feeds fallback (lib/nvd.js#fetchOne). Fake fetcher, fake
- * CVE ids in the year 2099 so the real ~/.fad-checker/nvd-cache is never shadowed; every
+ * CVE ids in the year 2099 so the real ~/.vigie-vuln/nvd-cache is never shadowed; every
  * test removes what it wrote.
  */
 const { test, afterEach } = require("node:test");

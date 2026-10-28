@@ -1,7 +1,32 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {sanitizeDescriptor,createProject,updateProject,projectRequest,MAX_RESPONSE_BYTES}=require('../lib/project-client');
+const {sanitizeDescriptor,checkDescriptorSize,createProject,updateProject,projectRequest,MAX_RESPONSE_BYTES,MAX_DESCRIPTOR_BYTES}=require('../lib/project-client');
 const sample={schema:'fad-deps/2',privatePath:'/secret',deps:[{ecosystem:'npm',ecosystemType:'npm',name:'demo',namespace:'',version:'1.0.0',scope:'prod',relation:'direct',manifestPath:'/secret'}]};
+test('descriptor limit counts UTF-8 bytes and applies before either upload',async()=>{
+ const base={...sample,padding:''};
+ const remaining=MAX_DESCRIPTOR_BYTES-Buffer.byteLength(JSON.stringify(base));
+ const exact={...base,padding:'é'.repeat(Math.floor(remaining/2))+'x'.repeat(remaining%2)};
+ assert.equal(Buffer.byteLength(JSON.stringify(exact)),MAX_DESCRIPTOR_BYTES);
+ checkDescriptorSize(exact);
+ const oversized={...exact,padding:exact.padding+'x'};
+ assert.throws(()=>checkDescriptorSize(oversized),/500000 UTF-8 bytes/);
+ let calls=0; const fetcher=async()=>{calls++;return Response.json({project:{id:'ok'}})};
+ await createProject({session:'s',name:'test',descriptor:exact,fetcher});
+ for(const upload of [()=>createProject({session:'s',name:'test',descriptor:oversized,fetcher}),
+   ()=>updateProject({session:'s',id:'12345678-1234-1234-1234-123456789abc',revision:1,descriptor:oversized,fetcher})])
+   await assert.rejects(upload(),/500000 UTF-8 bytes/);
+ assert.equal(calls,1);
+});
+
+test('101 direct coordinates reach the server quota without a fixed local account limit',async()=>{
+ const descriptor={schema:'fad-deps/2',deps:Array.from({length:101},(_,i)=>({...sample.deps[0],name:`package-${i}`}))};
+ let count=0;
+ await assert.rejects(createProject({session:'s',name:'test',descriptor,fetcher:async(_url,opts)=>{
+  count=JSON.parse(opts.body).descriptor.deps.length;
+  return Response.json({error:'direct_dependency_quota_exceeded'},{status:403});
+ }}),{code:'FORBIDDEN',status:403});
+ assert.equal(count,101);
+});
 test('project uploads rebuild a path-free descriptor and reject redirects',async()=>{
  let got;
  const fetcher=async(url,opts)=>{got={url,opts};return Response.json({project:{id:'ok'}})};
@@ -87,11 +112,10 @@ test('CLI project push uses the saved account session and never forwards descrip
  const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-project-cli-'));
  try {
-  fs.mkdirSync(path.join(home,'.vigievuln'),{mode:0o700});
-  fs.writeFileSync(path.join(home,'.vigievuln','account-session.json'),JSON.stringify({token:'test_session_123',expiresAt:Date.now()+3600000}),{mode:0o600});
+  require('../lib/account-session').createAccountSessionStore({homeDir:home}).write({token:'test_session_123',expiresAt:Date.now()+3600000});
   const descriptor=path.join(home,'deps.json'),preload=path.join(home,'fake.cjs'),capture=path.join(home,'request.json');
   fs.writeFileSync(descriptor,JSON.stringify(sample));
-  fs.writeFileSync(preload,`globalThis.fetch=async (url,opts)=>{ if(url.endsWith('/v1/accounts/me'))return Response.json({account:{id:'account',email:'test@example.test'}}); require('node:fs').writeFileSync(process.env.VV_CAPTURE,JSON.stringify({url,method:opts.method,body:opts.body})); return Response.json({project:{id:'12345678-1234-1234-1234-123456789abc',revision:1}}) }`);
+  fs.writeFileSync(preload,`globalThis.fetch=async (url,opts)=>{ if(url.endsWith('/v1/accounts/me'))return Response.json({account:{id:'account',email:'test@example.test',terms:{version:'v1',documentUrl:'/terms/v1',accepted:true}}}); require('node:fs').writeFileSync(process.env.VV_CAPTURE,JSON.stringify({url,method:opts.method,body:opts.body})); return Response.json({project:{id:'12345678-1234-1234-1234-123456789abc',revision:1}}) }`);
   const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'project','push','--file',descriptor,'--name','demo'],
    {env:{...process.env,HOME:home,USERPROFILE:home,NODE_OPTIONS:`--require=${preload}`,VV_CAPTURE:capture},encoding:'utf8',timeout:15000});
   assert.equal(r.status,0,r.stderr);const req=JSON.parse(fs.readFileSync(capture,'utf8'));

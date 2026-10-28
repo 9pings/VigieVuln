@@ -94,35 +94,13 @@
     <div class="start-copy"><h2 id="start-title">Your next audit starts here.</h2><p>Install once. Point it at a checkout. Get the full picture.</p></div>
     <div>
       <div class="install"><span class="pr">$</span><code>npm i -g vigievuln &amp;&amp; vigievuln scan ./code</code><button class="copy" type="button" data-copy="npm i -g vigievuln &amp;&amp; vigievuln scan ./code" aria-label="Copy the install and scan command"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg><span>copy</span></button></div>
-      <p class="release"><a href="https://www.npmjs.com/package/vigievuln">Latest release: 1.0.1 ↗</a><span>Node.js 20+</span><a href="https://github.com/9pings/VigieVuln/releases">Standalone binaries ↗</a></p>
+      <p class="release"><a href="https://www.npmjs.com/package/vigievuln">CLI version: 1.1.1 ↗</a><span>Node.js 20+</span><a href="https://github.com/9pings/VigieVuln/releases">Standalone binaries ↗</a></p>
+      <p class="note">The CLI uses <code>~/.vigie-vuln/</code> for its cache and configuration. If absent, it automatically renames an existing <code>~/.fad-checker/</code>; an existing new directory is kept. The separate shared proxy cache similarly migrates from <code>~/.fad-checker-proxy-cache/</code> to <code>~/.vigie-vuln-proxy-cache/</code>, without merging or overwriting. If either rename fails, the CLI warns you, preserves the old directory and continues with a new one. Existing cache archives remain importable.</p>
+      <p class="note">To recover a failed migration, stop the CLI and proxy server, back up and move the new directory aside, then rename the old directory to the new name. Remove the corresponding sibling marker <code>~/.vigie-vuln.migration-pending</code> or <code>~/.vigie-vuln-proxy-cache.migration-pending</code> after recovery. Do not overwrite or merge the directories. The warning repeats once per process while the marker and old directory exist; if the marker cannot be created, later reminders are not guaranteed.</p>
     </div>
   </div>
 </section>
 <div class="wrap">
-  <section id="monitoring" aria-labelledby="monitoring-title">
-    <div class="kicker">Project monitoring</div>
-    <h2 id="monitoring-title">Watch your direct dependencies.</h2>
-    <p class="sub">One free project with up to <b>100 distinct direct dependency coordinates</b>. Multiple versions of the same coordinate count once. Unknown relationships are excluded from monitoring and reported as incomplete coverage. Local scans are not subject to this monitoring quota.</p>
-    <div class="split">
-      <div>
-        <h3>Sign in and watch</h3>
-        <p>Create and verify your <a href="https://www.vigievuln.fr/account">Vigie Vuln account</a>, then register your project. Enable alerts in your account for new high or critical vulnerabilities (CVSS ≥ 7) and known exploited vulnerabilities affecting direct dependencies.</p>
-        <div class="code"><pre>vigievuln login
-vigievuln whoami
-vigievuln watch ./project --name 'My Project'
-vigievuln project status
-vigievuln logout</pre></div>
-        <p><code>watch</code> collects locally and uploads once; it is not a background watcher. Repeat it with the same unique project name to update the inventory. The first inventory establishes a silent baseline.</p>
-      </div>
-      <div>
-        <h3>Review an offline export</h3>
-        <div class="code"><pre>vigievuln watch ./project --export fichier.json</pre></div>
-        <p><b>Export only:</b> writes a local descriptor offline, with no login and no upload. Review package names and versions before sending them; source code, paths and registry URLs are omitted. Without <code>--export</code>, invoking <code>watch</code> authorises upload.</p>
-        <p>Upload the reviewed file explicitly with <code>vigievuln project push --file fichier.json --name 'My Project'</code> after signing in.</p>
-      </div>
-    </div>
-    <p class="note">Existing commands remain supported: <code>vigievuln -s ./code</code>, <code>auth login|status|logout</code>, <code>--prepare-project</code> and <code>project push</code>. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#project-monitoring">Monitoring guide and update workflow ↗</a>.</p>
-  </section>
   <!-- ECOSYSTEMS -->
   <section>
     <div class="kicker">One tool, one pass</div>
@@ -227,6 +205,32 @@ vigievuln logout</pre></div>
       dependency graph, and the report says exactly that in Methodology instead of guessing at call
       paths. Whether the vulnerable code is reachable in <i>this</i> application is the auditor's
       call, made with application context no scanner has.</p>
+  </section>
+  <section id="monitoring" aria-labelledby="monitoring-title">
+    <div class="kicker">Project monitoring</div>
+    <h2 id="monitoring-title">Watch your direct dependencies.</h2>
+    <p class="sub">One free project with up to <b>100 distinct direct dependency coordinates</b>. Multiple versions of the same coordinate count once. Uploaded descriptors are limited to <b>500,000 bytes (0.5 MB decimal)</b>; exceeding that size or 100 distinct direct coordinates rejects the upload with an error. Unknown relationships are excluded from monitoring and reported as incomplete coverage. Local scans are not subject to these monitoring limits.</p>
+    <div class="split">
+      <div>
+        <h3>Sign in and watch</h3>
+        <p>Create and verify your <a href="https://www.vigievuln.fr/account">Vigie Vuln account</a>, explicitly accept the <a href="https://www.vigievuln.fr/terms">terms of service dated 2026-10-28</a>, then register your project. Enable alerts in your account for new high or critical vulnerabilities (CVSS ≥ 7) and known exploited vulnerabilities affecting direct dependencies.</p>
+        <div class="code"><pre>vigievuln login
+vigievuln whoami
+vigievuln watch ./project --name 'My Project'
+vigievuln project status
+vigievuln logout</pre></div>
+        <p><code>watch</code> collects locally and uploads once; it is not a background watcher. Repeat it with the same unique project name to update the inventory. The first inventory establishes a silent baseline.</p>
+        <p>Free monitoring expires one calendar month (UTC) after a successful upload. Each successful upload, including a project API push, renews it for one calendar month (UTC). At expiry, the project and monitoring data are purged and an expiry email is sent; the account remains. Backup copies are not deleted immediately.</p>
+        <p>If the current terms are pending, the CLI displays their link and asks for explicit acceptance. Non-interactive use never accepts them automatically: run <code>vigievuln login</code> interactively first.</p>
+      </div>
+      <div>
+        <h3>Review an offline export</h3>
+        <div class="code"><pre>vigievuln watch ./project --export fichier.json</pre></div>
+        <p><b>Export only:</b> writes a local descriptor offline, with no login and no upload; it does not renew monitoring. Review package names and versions before sending them; source code, paths and registry URLs are omitted. Without <code>--export</code>, invoking <code>watch</code> authorises upload.</p>
+        <p>Upload the reviewed file explicitly with <code>vigievuln project push --file fichier.json --name 'My Project'</code> after signing in.</p>
+      </div>
+    </div>
+    <p class="note">Existing commands remain supported: <code>vigievuln -s ./code</code>, <code>auth login|status|logout</code>, <code>--prepare-project</code> and <code>project push</code>. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#project-monitoring">Monitoring guide and update workflow ↗</a>.</p>
   </section>
 </div>
 

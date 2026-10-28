@@ -1,5 +1,11 @@
 # Changelog — VigieVuln
 
+## [1.1.1] — Unreleased
+
+- Review and explicitly accept the current service terms when a hosted account requires it.
+- Refuse project descriptors larger than 500,000 UTF-8 bytes before upload.
+- Document the renewable one-month free project watch and its expiry.
+
 ## [1.1.0] — 2026-10-28
 
 - Hosted proxy scans query CVE, KEV, EUVD and CERT-FR records by dependency or CVE instead of downloading bulk catalogues.

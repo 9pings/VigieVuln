@@ -216,7 +216,7 @@ test('automatic legacy cache stays usable offline with warning and zero network'
 
 test('legacy false-clean reproduction produces stale warnings in actual CLI JSON and HTML without external network', t => {
 	const f = legacyFixture(t);
-	const cache = path.join(f.dir, '.fad-checker', 'advisory-snapshots');
+	const cache = path.join(f.dir, '.vigie-vuln', 'advisory-snapshots');
 	fs.mkdirSync(cache, { recursive: true });
 	fs.copyFileSync(f.file, path.join(cache, 'wordfence-v3.json'));
 	const callsFile = path.join(f.dir, 'calls.jsonl');

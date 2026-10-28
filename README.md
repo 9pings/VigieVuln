@@ -46,8 +46,10 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 ## Migration from fad-checker
 
 The npm package and primary command are now `vigievuln`. Existing `fad` and
-`fad-checker` commands remain aliases. The cache stays in `~/.fad-checker/` so
-existing credentials, warmed data and air-gapped workflows keep working.
+`fad-checker` commands remain aliases. The default cache and configuration directory is `~/.vigie-vuln/`. If it does not exist, an existing `~/.fad-checker/` is automatically renamed to it. If the new directory already exists, it is kept. If the rename fails, a new directory is created and execution continues; the old directory is not merged.
+The separate shared proxy cache similarly migrates from `~/.fad-checker-proxy-cache/` to `~/.vigie-vuln-proxy-cache/` without merging or overwriting an existing new directory. If either rename fails, the CLI warns you, preserves the old directory and uses a new one. Existing cache archives made with `.fad-checker` remain importable.
+
+To recover a failed migration, stop the CLI and proxy server, back up and move the new directory out of the way, then rename the old directory to the new name. Remove the corresponding sibling marker, `~/.vigie-vuln.migration-pending` or `~/.vigie-vuln-proxy-cache.migration-pending`, after recovery. Do not overwrite or merge the directories. While both the marker and old directory exist, the warning repeats once per process; if the marker could not be created, only the immediate warning is assured.
 `VIGIEVULN_ENV` and `.vigievuln-env.json` take precedence over their legacy
 `FAD_CHECKER_ENV` / `.fad-env.json` counterparts. Default report output is now
 `./vigievuln-report`; pass `-o` to retain another location.
@@ -63,7 +65,7 @@ A free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) (instan
 
 ### Monitor a project
 
-Create and verify your [account](https://www.vigievuln.fr/account), then:
+Create and verify your [account](https://www.vigievuln.fr/account), then sign in and explicitly accept the [terms of service dated 2026-10-28](https://www.vigievuln.fr/terms) when prompted:
 
 ```bash
 vigievuln login
@@ -75,7 +77,11 @@ vigievuln logout
 
 `watch` collects the inventory locally and uploads it once. Run it again with the same unique project name to update that project's inventory; it does not run a background watcher. `login` creates an account session and does not configure the proxy cache.
 
-The free tier includes **one project and up to 100 distinct direct dependency coordinates per project**. Multiple versions of the same coordinate count once. Dependencies whose direct relationship cannot be established are excluded from monitoring and reported as incomplete coverage. This quota applies to hosted monitoring, not local scans.
+The free tier includes **one project and up to 100 distinct direct dependency coordinates per project**. Multiple versions of the same coordinate count once. An uploaded descriptor may be at most **500,000 bytes (0.5 MB decimal)**; an upload exceeding this size or 100 distinct direct coordinates is rejected with an error. Dependencies whose direct relationship cannot be established are excluded from monitoring and reported as incomplete coverage. These limits apply to hosted monitoring, not local scans.
+
+Free monitoring expires **one calendar month (UTC)** after a successful `watch` upload. Each successful upload, including a project API push, renews the period for one calendar month (UTC). At expiry, the hosted project and its monitoring data are purged and an expiry email is sent; the account remains. Copies in backups are not deleted immediately.
+
+If the current terms have not been accepted, the CLI displays their link and asks for explicit acceptance in an interactive terminal. For non-interactive use, run `vigievuln login` interactively and accept the terms first.
 
 To review the inventory before uploading, export it locally:
 
@@ -83,7 +89,7 @@ To review the inventory before uploading, export it locally:
 vigievuln watch ./project --export fichier.json
 ```
 
-`--export` only writes the descriptor: it runs offline, requires no login and sends nothing to the service. Review package names and versions, including private packages, before uploading. Source code, paths and registry URLs are omitted from the descriptor.
+`--export` only writes the descriptor: it runs offline, requires no login, sends nothing to the service and does not renew monitoring. Review package names and versions, including private packages, before uploading. Source code, paths and registry URLs are omitted from the descriptor.
 
 Monitoring establishes a silent initial baseline, then reports new high or critical vulnerabilities (CVSS ≥ 7) and known exploited vulnerabilities affecting direct dependencies. Enable alerts in your account and refresh the inventory when dependencies change. [Monitoring workflow and compatibility commands](docs/USAGE.md#project-monitoring).
 
@@ -98,7 +104,7 @@ vigievuln --set-proxy-cache vigievuln  # `default` selects the same official pro
 vigievuln scan ./code
 ```
 
-The selection and the proxy key created during proxy sign-in are saved in `~/.fad-checker/config.json` and reused on subsequent scans. This proxy key is separate from the account session used by `watch`. Alternatively, save an existing key with `vigievuln --set-proxy-cache-token <key>`, or provide it via `VIGIEVULN_PROXY_CACHE_TOKEN` (useful in CI). Remove the selection or key with `--unset-proxy-cache` or `--unset-proxy-cache-token`. `--proxy-cache <url>` overrides the saved selection for one scan. The hosted proxy receives requested package coordinates and CVE identifiers; it does not receive your source code. [Proxy documentation](docs/USAGE.md#hosted-vigievuln-proxy).
+The selection and the proxy key created during proxy sign-in are saved in `~/.vigie-vuln/config.json` and reused on subsequent scans. This proxy key is separate from the account session used by `watch`. Alternatively, save an existing key with `vigievuln --set-proxy-cache-token <key>`, or provide it via `VIGIEVULN_PROXY_CACHE_TOKEN` (useful in CI). Remove the selection or key with `--unset-proxy-cache` or `--unset-proxy-cache-token`. `--proxy-cache <url>` overrides the saved selection for one scan. The hosted proxy receives requested package coordinates and CVE identifiers; it does not receive your source code. [Proxy documentation](docs/USAGE.md#hosted-vigievuln-proxy).
 
 ### Interactive HTML samples
 
@@ -200,12 +206,12 @@ vigievuln doesn't just read the `composer.json` under a WordPress or Drupal site
 | **SPIP** | core (`$spip_version_branche` in `ecrire/inc_version.php`), dist plugins (`paquet.xml`), user plugins (`paquet.xml`/legacy `plugin.xml`) | **NVD product CVEs** (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source; plugins stay honestly not-qualified |
 | **Joomla / Magento (Adobe Commerce)** | core, extensions/modules, themes | no machine-readable publisher feed exists; components locked as Composer packages read as covered by the **dependency lanes**, the rest stays honestly **not qualified**. A Magento source distribution reports its exact version from the root `composer.json` |
 
-Every advisory snapshot a live lane fetches is stamped and cached in `~/.fad-checker/advisory-snapshots/`, carried by `--export-cache`/`--import-cache`, **warmed from the air-gapped descriptor itself** by `--import-anonymized`, and reused automatically offline — the Wordfence API key never travels to the enclave. Private/custom components are inventoried separately and never sent to any publisher. → **[the dedicated guide](docs/CMS-FRAMEWORKS.md)** · [application usage](docs/USAGE.md#application-inventory-experimental)
+Every advisory snapshot a live lane fetches is stamped and cached in `~/.vigie-vuln/advisory-snapshots/`, carried by `--export-cache`/`--import-cache`, **warmed from the air-gapped descriptor itself** by `--import-anonymized`, and reused automatically offline — the Wordfence API key never travels to the enclave. Private/custom components are inventoried separately and never sent to any publisher. → **[the dedicated guide](docs/CMS-FRAMEWORKS.md)** · [application usage](docs/USAGE.md#application-inventory-experimental)
 
 ## Air-gapped audits
 
 > **Zero-data-sent guarantee.** Under `--offline`, vigievuln makes **no network calls
-> whatsoever**; it reads only the warmed `~/.fad-checker/` caches and never transmits a
+> whatsoever**; it reads only the warmed `~/.vigie-vuln/` caches and never transmits a
 > dependency, path or finding off the machine. It is regression-tested
 > (`test/offline-guarantee.test.js`, a tripwire fetcher that throws if touched) and
 > auditor-reproducible: `unshare -rn node vigievuln.js -s ./proj --offline …` runs it in a
@@ -235,7 +241,7 @@ vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
 vigievuln --import-anonymized deps.json     # scans coordinates → OSV/NVD/CVE/registry/EOL + retire signatures
                                               #   + warms the CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds,
                                               #   WP checksums per core version, Wordfence when a key is set)
-vigievuln --export-cache fad-cache.tar.gz   # bundle the warmed ~/.fad-checker/
+vigievuln --export-cache fad-cache.tar.gz   # bundle the warmed ~/.vigie-vuln/
 
 # ── Phase 3; OFFLINE (audited machine): full report, all local context ──
 vigievuln --import-cache fad-cache.tar.gz   # merged into the enclave's own cache

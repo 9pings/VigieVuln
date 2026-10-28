@@ -10,7 +10,8 @@ const { createAccountSessionStore } = require('../lib/account-session');
 
 const NOW = 1800000000000;
 const SESSION = { token: 'fad_account-session', expiresAt: NOW + 60000 };
-const ACCOUNT = { id: 'account-id', email: 'alice@example.test', projectLimit: 10 };
+const ACCOUNT = { id: 'account-id', email: 'alice@example.test', projectLimit: 10, terms:{version:'v1',url:'/terms',documentUrl:'/terms/v1',accepted:true} };
+const ACCEPTED_TERMS = {version:'v1',url:ACCOUNT_ORIGIN+'/terms/v1',accepted:true};
 const LOGIN = { ...SESSION, tokenType: 'Bearer', account: ACCOUNT };
 const CREDENTIALS = { email: ACCOUNT.email, password: 'never-store-this-password' };
 
@@ -34,9 +35,9 @@ test('login/me/logout use only the fixed account API and never create proxy keys
   }, store, { origin: 'https://evil.invalid', proxyCacheToken: 'proxy-secret' });
   assert.equal(ACCOUNT_ORIGIN, 'https://www.vigievuln.fr');
   assert.equal(DEFAULT_TIMEOUT_MS, 15000);
-  assert.deepEqual(await api.login({ ...CREDENTIALS, proxyCacheToken: 'proxy-secret' }), { account: ACCOUNT, expiresAt: SESSION.expiresAt });
+  assert.deepEqual(await api.login({ ...CREDENTIALS, proxyCacheToken: 'proxy-secret' }), { account: ACCOUNT, expiresAt: SESSION.expiresAt, terms:ACCEPTED_TERMS });
   assert.deepEqual(store.read(), SESSION);
-  assert.deepEqual(await api.me(), { account: ACCOUNT });
+  assert.deepEqual(await api.me(), { account: ACCOUNT, terms:ACCEPTED_TERMS });
   assert.deepEqual(await api.logout(), { revoked: 1 });
   assert.equal(store.read(), null);
   assert.deepEqual(calls.map(c => [c.url, c.init.method]), [
@@ -66,6 +67,41 @@ test('a signed-in account can explicitly create a separate proxy key', async () 
   assert.equal(call.init.headers.authorization,'Bearer '+SESSION.token);
 });
 
+test('terms status is read from the account and acceptance is a separate authenticated request', async () => {
+  const terms = { version: '2026-10-28', url: '/terms', documentUrl:'/terms/2026-10-28', accepted: false };
+  const calls = [], store = memoryStore();
+  const api = client(async (url, init) => {
+    calls.push({url, init});
+    if (url.endsWith('/login')) return Response.json({...LOGIN, account: {...ACCOUNT, terms}});
+    if (url.endsWith('/me')) return Response.json({account: {...ACCOUNT, terms}});
+    return Response.json({account: {...ACCOUNT, terms: {...terms, accepted:true}}});
+  }, store);
+  const expected = {version:terms.version, accepted:false, url: ACCOUNT_ORIGIN + terms.documentUrl};
+  assert.deepEqual((await api.login(CREDENTIALS)).terms, expected);
+  assert.deepEqual((await api.me()).terms, expected);
+  assert.deepEqual(await api.acceptTerms(terms.version), {terms: {...expected, accepted:true}});
+  assert.deepEqual(JSON.parse(calls[2].init.body), {termsVersion:terms.version, accepted:true});
+  assert.equal(calls[2].init.headers.authorization, 'Bearer ' + SESSION.token);
+  assert.deepEqual(store.read(), SESSION);
+});
+
+test('invalid terms metadata and failed acceptance preserve the session', async () => {
+  for (const terms of [undefined, {version:'v1',url:'/terms',accepted:false},
+    {version:'v1',documentUrl:'https://evil.invalid/terms/v1',accepted:false},
+    {version:'v1',documentUrl:'/terms/old',accepted:false}, {version:'v1',documentUrl:'/terms/v1?x=1',accepted:false},
+    {version:'v1\n',documentUrl:'/terms/v1',accepted:false}, {version:'v1',documentUrl:'/terms/v1',accepted:'yes'}]) {
+    const store = memoryStore(SESSION);
+    await assert.rejects(client(async () => Response.json({account:{...ACCOUNT,terms}}), store).me(), {code:'INVALID_RESPONSE'});
+    assert.deepEqual(store.read(),SESSION);
+  }
+  for (const response of [Response.json({error:'stale'}, {status:400}),
+    Response.json({account:{...ACCOUNT,terms:{version:'v2',documentUrl:'/terms/v2',accepted:true}}})]) {
+    const store = memoryStore(SESSION);
+    await assert.rejects(client(async () => response,store).acceptTerms('v1'));
+    assert.deepEqual(store.read(), SESSION);
+  }
+});
+
 test('real private store survives client recreation without retaining a password', { skip: typeof process.getuid !== 'function' }, async t => {
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-account-client-'));
   t.after(() => fs.rmSync(homeDir, { recursive: true, force: true }));
@@ -81,7 +117,7 @@ test('real private store survives client recreation without retaining a password
     assert.equal(error.code, 'NETWORK_ERROR');
   });
   assert.equal(fs.existsSync(store.filePath), false);
-  assert.equal(fs.existsSync(path.join(homeDir, '.fad-checker')), false);
+  assert.equal(fs.existsSync(path.join(homeDir, '.vigie-vuln')), false);
 });
 
 test('missing, expired and unsafe sessions never reach the transport', async () => {

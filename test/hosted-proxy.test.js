@@ -27,7 +27,7 @@ test('proxy cache setting persists across CLI invocations and can be removed', (
   const run=(...args)=>spawnSync(process.execPath,[cli,...args],{env,encoding:'utf8'});
   try {
     assert.equal(run('--set-proxy-cache','vigievuln').status,0);
-    const config=JSON.parse(fs.readFileSync(path.join(home,'.fad-checker','config.json'),'utf8'));
+    const config=JSON.parse(fs.readFileSync(path.join(home,'.vigie-vuln','config.json'),'utf8'));
     assert.equal(config.proxyCache,'vigievuln');
     assert.match(run('--show-config').stdout,/"proxyCache": "vigievuln"/);
     const scan=run('-s',home);
@@ -40,7 +40,7 @@ test('proxy cache setting persists across CLI invocations and can be removed', (
     assert.equal(run('--unset-proxy-cache-token').status,0);
     assert.equal(run('--set-proxy-cache','not-a-proxy').status,1);
     assert.equal(run('--unset-proxy-cache').status,0);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(home,'.fad-checker','config.json'),'utf8')).proxyCache,undefined);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(home,'.vigie-vuln','config.json'),'utf8')).proxyCache,undefined);
   } finally {fs.rmSync(home,{recursive:true,force:true})}
 });
 
@@ -48,7 +48,7 @@ test('account login creates a dedicated proxy key and logs out the session', asy
   const calls=[];
   const fetcher=async (url,opts)=>{
     calls.push({url,opts});
-    if(url.endsWith('/login')) return Response.json({token:'session'});
+    if(url.endsWith('/login')) return Response.json({token:'session',tokenType:'Bearer',expiresAt:Date.now()+60000,account:{id:'id',email:'a@example.test',terms:{version:'v1',documentUrl:'/terms/v1',accepted:true}}});
     if(url.endsWith('/proxy-keys')) return Response.json({key:{token:'proxy-key'}},{status:201});
     return Response.json({revoked:1});
   };
@@ -56,6 +56,80 @@ test('account login creates a dedicated proxy key and logs out the session', asy
   assert.deepEqual(calls.map(c=>new URL(c.url).pathname),['/v1/accounts/login','/v1/accounts/proxy-keys','/v1/accounts/logout']);
   assert.equal(calls[1].opts.headers.authorization,'Bearer session');
   assert.ok(calls.every(c=>c.opts.redirect==='error'));
+});
+
+test('proxy login requires explicit consent before creating a key and revokes its temporary session', async () => {
+  for (const mode of ['yes','no','noninteractive']) {
+    const calls=[], messages=[];
+    const terms={version:'2026-10-28',url:'/terms',documentUrl:'/terms/2026-10-28',accepted:false};
+    const account={id:'id',email:'a@example.test',terms};
+    const fetcher=async(url,opts)=>{
+      calls.push({url,opts});
+      if(url.endsWith('/login')) return Response.json({token:'session',tokenType:'Bearer',expiresAt:Date.now()+60000,account});
+      if(url.endsWith('/terms')) return Response.json({account:{...account,terms:{...terms,accepted:true}}});
+      if(url.endsWith('/proxy-keys')) return Response.json({key:{token:'proxy-key'}});
+      return Response.json({revoked:1});
+    };
+    const request=loginForProxy({email:account.email,password:'secret',fetcher,interactive:mode!=='noninteractive',
+      ask:async()=>mode,warn:message=>messages.push(message)});
+    if(mode==='yes') assert.equal(await request,'proxy-key');
+    else await assert.rejects(request,mode==='no'?/terms not accepted/:/terms acceptance required/);
+    assert.match(messages.join('\n'),/2026-10-28.*https:\/\/www\.vigievuln\.fr\/terms\/2026-10-28/);
+    assert.deepEqual(calls.map(c=>c.url.split('/').pop()),mode==='yes'?['login','terms','proxy-keys','logout']:['login','logout']);
+    if(mode==='yes') assert.deepEqual(JSON.parse(calls[1].opts.body),{termsVersion:'2026-10-28',accepted:true});
+  }
+});
+
+test('a forbidden key creation points to account and terms review', async () => {
+  const {createProxyKey}=require('../lib/hosted-proxy');
+  await assert.rejects(createProxyKey({createProxyKey:async()=>{throw Object.assign(new Error('forbidden'),{code:'FORBIDDEN'});}}),
+    /current terms.*vigievuln login/);
+});
+
+test('scan proxy login and stored account sessions enforce terms before key creation', () => {
+  const fs=require('node:fs'),os=require('node:os');
+  for(const [stored,mode] of [[false,'yes'],[false,'no'],[true,'yes'],[true,'noninteractive']]) {
+    const home=fs.mkdtempSync(path.join(os.tmpdir(),'vv-proxy-terms-'));
+    try {
+      const calls=path.join(home,'calls'), hook=path.join(home,'hook.cjs');
+      if(stored) {
+        require('../lib/account-session').createAccountSessionStore({homeDir:home}).write({token:'stored_session',expiresAt:Date.now()+60000});
+      }
+      fs.writeFileSync(hook,`
+        const fs=require('node:fs');require('node:os').homedir=()=>${JSON.stringify(home)};
+        if(${JSON.stringify(mode)}!=='noninteractive') {
+          Object.defineProperty(process.stdin,'isTTY',{value:true});Object.defineProperty(process.stderr,'isTTY',{value:true});
+          const answers=${JSON.stringify(stored?[mode]:['a@example.test','secret',mode])};
+          require('node:readline').createInterface=()=>({question:(_q,cb)=>cb(answers.shift()),close(){}});
+        }
+        globalThis.fetch=async(url,opts={})=>{
+          fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify({url,method:opts.method,body:opts.body})+'\\n');
+          const terms={version:'2026-10-28',url:'/terms',documentUrl:'/terms/2026-10-28',accepted:false}, account={id:'id',email:'a@example.test',terms};
+          if(url.endsWith('/login'))return Response.json({token:'temporary',tokenType:'Bearer',expiresAt:Date.now()+60000,account});
+          if(url.endsWith('/me'))return Response.json({account});
+          if(url.endsWith('/terms'))return Response.json({account:{...account,terms:{...terms,accepted:true}}});
+          if(url.endsWith('/proxy-keys'))return Response.json({key:{token:'proxy_key'}});
+          if(url.endsWith('/logout'))return Response.json({revoked:1});
+          return new Response('',{status:503});
+        };`);
+      const env={...process.env,HOME:home,USERPROFILE:home,NODE_OPTIONS:`--require=${hook}`,FORCE_COLOR:'0',VIGIEVULN_PROXY_CACHE_TOKEN:'',FAD_PROXY_CACHE_TOKEN:'',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''};
+      const result=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',home,'--proxy-cache','default'],{env,encoding:'utf8',timeout:15000});
+      assert.equal(result.status,2,result.stderr); // Successful consent reaches the deliberately failing proxy preflight.
+      assert.match(result.stderr,/2026-10-28.*https:\/\/www\.vigievuln\.fr\/terms\/2026-10-28/);
+      const recorded=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);
+      const names=recorded.map(c=>c.url.split('/').pop());
+      if(mode==='yes') {
+        assert.deepEqual(names,stored?['me','terms','proxy-keys','status']:['login','terms','proxy-keys','logout','status']);
+        assert.deepEqual(JSON.parse(recorded.find(c=>c.url.endsWith('/terms')).body),{termsVersion:'2026-10-28',accepted:true});
+      } else {
+        assert.match(result.stderr,mode==='no'?/terms not accepted/:/terms acceptance required/);
+        assert.deepEqual(names,stored?['me']:['login','logout']);
+        assert.equal(fs.existsSync(path.join(home,'.vigie-vuln','config.json')),false);
+      }
+      if(stored) assert.equal(require('../lib/account-session').createAccountSessionStore({homeDir:home}).read().token,'stored_session');
+      else assert.equal(fs.existsSync(path.join(home,'.vigievuln','account-session.json')),false);
+    } finally {fs.rmSync(home,{recursive:true,force:true});}
+  }
 });
 
 test('anonymized export works offline even with the official proxy configured and no key', () => {

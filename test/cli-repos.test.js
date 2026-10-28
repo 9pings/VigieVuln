@@ -14,7 +14,7 @@ test("add-repo + list-repos + remove-repo round-trip (temp HOME)", () => {
 	run(["--add-repo", "npm", "verda", "https://npm.acme/", "--token", "T"], env);
 	const list = run(["--list-repos"], env);
 	assert.match(list, /npm/); assert.match(list, /verda/); assert.match(list, /\[auth\]/);
-	const cfg = JSON.parse(fs.readFileSync(path.join(home, ".fad-checker", "config.json"), "utf8"));
+	const cfg = JSON.parse(fs.readFileSync(path.join(home, ".vigie-vuln", "config.json"), "utf8"));
 	assert.strictEqual(cfg.registries.npm[0].token, "T");
 	run(["--remove-repo", "npm", "verda"], env);
 	assert.match(run(["--list-repos"], env), /No custom registries/);

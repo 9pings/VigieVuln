@@ -16,8 +16,8 @@ const { makeDepRecord } = require("../lib/dep-record");
 const outdated = require("../lib/outdated");
 const { findEolProduct, findCycleForVersion, isEol, checkEolDeps, EOL_MAPPING, EOL_CACHE_PATH } = outdated;
 
-const CACHE_DIR = path.join(os.homedir(), ".fad-checker");
-// Seeds a REAL cache file under ~/.fad-checker for the duration of `fn`, then restores the
+const CACHE_DIR = path.join(os.homedir(), ".vigie-vuln");
+// Seeds a REAL cache file under ~/.vigie-vuln for the duration of `fn`, then restores the
 // user's file. `fn` is async (checkEolDeps saves the cache at its END), so it MUST be awaited
 // here — restoring before it finishes lets its final save overwrite the user's real cache.
 async function withSeededCache(file, data, fn) {

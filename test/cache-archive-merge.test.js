@@ -6,7 +6,7 @@
  * which --export-cache deliberately never bundles). A wholesale replace silently threw
  * both away: the next `--offline` run then reports 0 CVE / 0 EOL on a cold cache, which
  * reads exactly like a clean project. It also left a full copy of the cache behind as
- * .fad-checker.bak-<ts> on every import.
+ * .vigie-vuln.bak-<ts> on every import.
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
@@ -26,16 +26,16 @@ function run(args, home) {
 
 function home(tag) {
 	const h = fs.mkdtempSync(path.join(os.tmpdir(), `fad-${tag}-`));
-	fs.mkdirSync(path.join(h, ".fad-checker"), { recursive: true });
+	fs.mkdirSync(path.join(h, ".vigie-vuln"), { recursive: true });
 	return h;
 }
-const fad = (h, ...p) => path.join(h, ".fad-checker", ...p);
+const fad = (h, ...p) => path.join(h, ".vigie-vuln", ...p);
 function w(p, body) {
 	fs.mkdirSync(path.dirname(p), { recursive: true });
 	fs.writeFileSync(p, typeof body === "string" ? body : JSON.stringify(body));
 }
 const read = p => JSON.parse(fs.readFileSync(p, "utf8"));
-const baks = h => fs.readdirSync(h).filter(n => n.startsWith(".fad-checker.bak-"));
+const baks = h => fs.readdirSync(h).filter(n => n.startsWith(".vigie-vuln.bak-"));
 const clean = (...dirs) => dirs.forEach(d => { try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* best effort */ } });
 
 const DAY = 24 * 3600 * 1000;
@@ -73,7 +73,7 @@ test("import MERGES: the enclave's own warm cache and config survive the importe
 		assert.ok(read(fad(offline, "config.json")).registries, "the enclave's private registries must not be lost");
 
 		// No 123 MB copy left behind in $HOME on every sneakernet refresh.
-		assert.deepEqual(baks(offline), [], "a merging import must not leave a .fad-checker.bak-* copy");
+		assert.deepEqual(baks(offline), [], "a merging import must not leave a .vigie-vuln.bak-* copy");
 	} finally { clean(online, offline); }
 });
 
@@ -161,7 +161,7 @@ test("--replace keeps the old wholesale behaviour, backup and all", () => {
 
 		assert.ok(fs.existsSync(fad(offline, "osv-cache", "dep-ONLINE.json")), "the archive must land");
 		assert.ok(!fs.existsSync(fad(offline, "osv-cache", "dep-ENCLAVE.json")), "--replace is wholesale: the local cache is gone from the active dir");
-		assert.equal(baks(offline).length, 1, "--replace moves the previous cache aside as .fad-checker.bak-*");
+		assert.equal(baks(offline).length, 1, "--replace moves the previous cache aside as .vigie-vuln.bak-*");
 		assert.ok(fs.existsSync(path.join(offline, baks(offline)[0], "osv-cache", "dep-ENCLAVE.json")), "and the backup holds it");
 	} finally { clean(online, offline); }
 });
@@ -217,7 +217,7 @@ test("import works when the enclave unpacks the archive as root", () => {
 		run(["--export-cache", archive], online);
 
 		// The enclave starts with NO cache, and imports as (mapped) root.
-		fs.rmSync(path.join(enclave, ".fad-checker"), { recursive: true, force: true });
+		fs.rmSync(path.join(enclave, ".vigie-vuln"), { recursive: true, force: true });
 		execFileSync("unshare", ["-r", "node", CLI, "--import-cache", archive], {
 			env: { ...process.env, HOME: enclave, USERPROFILE: enclave, FORCE_COLOR: "0" },
 			encoding: "utf8",

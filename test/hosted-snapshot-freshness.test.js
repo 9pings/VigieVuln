@@ -197,7 +197,7 @@ test('hosted Drupal/Retire stale warnings reach HTML/JSON and the strict sources
 		fs.mkdirSync(src);
 		fs.writeFileSync(path.join(src, 'webform.info.yml'), 'name: Webform\ntype: module\nproject: webform\nversion: 1.0.0\ncore_version_requirement: ^10\n');
 		fs.writeFileSync(path.join(src, 'widget-1.0.0.js'), '// fixture');
-		const cacheRoot = path.join(home, '.fad-checker');
+		const cacheRoot = path.join(home, '.vigie-vuln');
 		for (const directory of ['advisory-snapshots', 'retire-signatures', 'retire-cache']) fs.mkdirSync(path.join(cacheRoot, directory), { recursive: true });
 		fs.writeFileSync(path.join(cacheRoot, 'advisory-snapshots/drupal-security-advisories.json'), JSON.stringify(SNAPSHOT));
 		fs.writeFileSync(path.join(cacheRoot, 'retire-signatures/jsrepository-v5.json'), '{}');
