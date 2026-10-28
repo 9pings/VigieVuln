@@ -5,10 +5,20 @@ Every flag, every common workflow, with copy-pasteable commands.
 ## Synopsis
 
 ```text
+vigievuln scan <src> [scan options]
+vigievuln login
+vigievuln whoami
+vigievuln watch <src> --name 'My Project'
+vigievuln watch <src> --export fichier.json
+vigievuln logout
+
+# Compatible flag-based scan syntax:
 vigievuln -s <src> [-t <target>] [-e <regex>] [other options]
 ```
 
-- `-s, --src <src>` — **required**. Root of the source tree to scan. Contains `pom.xml` and/or `package(-lock).json` / `yarn.lock`.
+`vigievuln scan ./code` scans a source tree and writes the usual reports. It accepts the existing scan options. `vigievuln -s ./code` remains supported; the examples below using `-s` continue to work.
+
+- `-s, --src <src>` — source tree in the flag-based syntax; `scan <src>` supplies it positionally. Contains `pom.xml` and/or `package(-lock).json` / `yarn.lock` or other supported manifests.
 - `-t, --target <dir>` — optional. **Extraction mode.** Write a parallel directory of "cleaned" POMs (private/excluded deps stripped, reactor modules linked to each other) to `<dir>` **and mirror every non-Maven lockfile/manifest** (`package-lock.json`/`yarn.lock`/`pnpm-lock.yaml`, `composer.lock`/`symfony.lock`, `poetry.lock`/`Pipfile.lock`/…, `*.csproj`/`packages.lock.json`, `go.mod`/`go.sum`, `Gemfile.lock`, …) into it — so **any** scanner pointed at `<dir>` (`snyk test --all-projects` among them) sees **every** ecosystem, not just Maven. Each POM is reduced to the dependency-relevant nodes (coordinates, `properties`, `dependencyManagement`, `dependencies`, `modules`), reactor parents are rewired to their real in-tree `relativePath`, and `${…}` is resolved in coordinates. The run then **stops**: the only network action is the Maven-repository *existence* check, which is also what **identifies your private/internal modules** (coordinates that exist in no configured repository) — skipped under `--offline`, or when no repository answers a 5 s preflight. No CVE/EOL/outdated pass, no report — add `--snyk`, a `--report-<type>`, `--fail-on`/`--fail-on-new` or `--baseline` to also run the scan. A non-empty target requires `--force` because its contents are replaced. Without `-t`, the run is read-only and produces the full report.
 
 ## Output
@@ -126,8 +136,8 @@ Each data source can be disabled independently:
 | `--no-nvd` | Skip NVD enrichment (no full CVSS, no CPE refinement) |
 | `--no-epss` | Skip EPSS (FIRST.org) exploit-prediction enrichment |
 | `--no-kev` | Skip CISA KEV (known-exploited) enrichment |
-| `--no-euvd` | Skip ENISA EUVD (EUVD id + ENISA exploited flag). Two bulk reads (mapping dump + exploited catalogue), 24h cache, no CVE id sent. The exploited flag is reported in the detail panel and every export; it does not move the priority band or the `--fail-on kev` gate |
-| `--no-certfr` | Skip CERT-FR (ANSSI) advisory references. fad keeps a local CVE → advisory index: the first run reads every advisory once (~18 000 small JSON, ~75 s), later runs only the new or revised ones; no CVE id sent. GCVE ids need no source (`GCVE-0-…` is the CVE id by the GCVE rules) |
+| `--no-euvd` | Skip ENISA EUVD (EUVD id + ENISA exploited flag). Direct mode uses bulk reads and a 24h cache without sending CVE ids; hosted proxy mode sends matched CVE ids to the proxy for targeted lookup. The exploited flag is reported in the detail panel and every export; it does not move the priority band or the `--fail-on kev` gate |
+| `--no-certfr` | Skip CERT-FR (ANSSI) advisory references. fad keeps a local CVE → advisory index: direct mode builds a local index without sending CVE ids; hosted proxy mode sends matched CVE ids to the proxy and receives only their advisory references. GCVE ids need no source (`GCVE-0-…` is the CVE id by the GCVE rules) |
 | `--licenses` | Run license detection + the copyleft-policy chapter (**off by default**; legacy `--no-licenses` is a no-op) |
 | `--no-retire` | Skip retire.js vendored-JS scan |
 | `--no-vendored-js-inventory` | Keep only **vulnerable** vendored JS (the CVE chapter); skip the full **inventory** of all identified standalone JS libs (under unmanaged components). The inventory is a cyber-hygiene constat — unmanaged third-party JS regardless of CVEs — on by default. |
@@ -142,20 +152,21 @@ Each data source can be disabled independently:
 | `--help-all` | Every option, including the individual flags `-d`/`-a`/`-r` replace and the cache / registry / config commands |
 | `--lang <en\|fr>` | Language of the HTML / Word report (default `en`). Translates the report's own chrome — **all of it**: chapter titles and their counts, table headers, scope chips, every intro paragraph, every status pill, the warning headings, the licence categories, the methodology limitations, the per-ecosystem fix recipes, the empty states, and the executive summary both on screen and as the 📋 button pastes it — plus the CWE titles. **Not** the evidence: CVE descriptions, advisory text and registry reasons stay as published, and a CVSS severity keeps NVD's own wording where it is a finding's value. French CWE titles are fad's own (MITRE publishes English only) and carry MITRE's original with them |
 | `--no-eol` | Skip the end-of-life check (endoflife.date) — the flag the run suggests when that source is unreachable |
-| `--no-nvd-mirror` | NVD only. By default, **without an NVD API key** the CVE records are read FIRST from the mirror below (in parallel — NVD without a key allows 5 requests / 30 s) and only the CVEs it does not hold yet are asked of NVD, which must then answer (full retry schedule; the run stops otherwise); **with a key**, NVD stays first and, when it does not answer (throttled 403/429, 5xx, network), the CVE record is read from the [fkie-cad/nvd-json-data-feeds](https://github.com/fkie-cad/nvd-json-data-feeds) mirror (daily copy of the NVD API 2.0, same JSON, no key, no rate limit — records fetched there carry `via: "fkie-cad/nvd-json-data-feeds"` in the NVD cache) and the run aborts only if both fail; a cached record past its TTL is served rather than dropped. This flag (or `-d nvd-mirror`) disables the fallback and restores NVD's own retry schedule |
-| `--retries <n>` | Retries before a data source that does not answer stops the run (default `5`, waiting 5+n s each: 6, 7, 8, 9, 10 s). `0` = no retry — the first failed answer declares the source down. Shared per source, so one dead host runs ONE schedule however many lookups hit it. Requests whose caller rotates across mirrors/registries are not retried (the rotation moves on). Also settable as `"retries"` in `.fad-env.json` |
-| *(exit code 2)* | **A data source was unreachable (after `--retries` attempts) and the cache didn't cover it.** Not a findings failure: nothing was written, because the report would have been incomplete. The message names the domain, the codes, the failing URL and the flag that skips that source. Only online; `--offline` never aborts. |
+| `--no-nvd-mirror` | NVD only. By default, **without an NVD API key** the CVE records are read FIRST from the mirror below (in parallel — NVD without a key allows 5 requests / 30 s) and only the CVEs it does not hold yet are asked of NVD, which must then answer (full retry schedule; an outage becomes a coverage warning); **with a key**, NVD stays first and, when it does not answer (throttled 403/429, 5xx, network), the CVE record is read from the [fkie-cad/nvd-json-data-feeds](https://github.com/fkie-cad/nvd-json-data-feeds) mirror (daily copy of the NVD API 2.0, same JSON, no key, no rate limit — records fetched there carry `via: "fkie-cad/nvd-json-data-feeds"` in the NVD cache) and coverage is marked incomplete if both fail; a cached record past its TTL is served rather than dropped. This flag (or `-d nvd-mirror`) disables the fallback and restores NVD's own retry schedule |
+| `--retries <n>` | Retries before a data source is marked unavailable (default `5`, waiting 5+n s each: 6, 7, 8, 9, 10 s). `0` = no retry — the first failed answer declares the source down. Shared per source, so one dead host runs ONE schedule however many lookups hit it. Requests whose caller rotates across mirrors/registries are not retried (the rotation moves on). Also settable as `"retries"` in `.fad-env.json` |
+| *(source unavailable)* | **By default, provider failures produce partial reports with explicit warnings and incomplete coverage, without failing the scan.** Use `--fail-on-incomplete sources` (or `advisories` for application checks) to return code 2 **after** writing the reports. Invalid configuration and unusable explicitly supplied local snapshots still fail. |
 | *(EOL + paid support)* | When endoflife.date lists **paid** support past the open-source end of life (`extendedSupport` — e.g. Broadcom for Spring 5.3/6.x), the EOL row stays an EOL finding (those fixes are builds from the vendor's private repository, for subscribers) and states: the support end date, the build of the dependency's own branch that fixes the CVEs found (`A 5.3 build > 5.3.40 fixes 7 of the 9 CVEs found`), and — when the vendor repository is configured with `--add-repo maven <name> <url> --token <TOKEN>` — the newest vendor build of the branch. A project already on a vendor build (newer than the branch's last public release and absent from Maven Central) is not reported as EOL; chapter 0 notes it. |
 | `--eol-support` | Also report frameworks/runtimes whose **active (bug-fix) support has ended** while security fixes are still provided (endoflife.date `support` field) — rendered as an "Out of active support" band under the maintenance chapter, status `unsupported` in the JSON. Off by default: the default EOL set is unchanged. |
 | `--ignore-test` | Drop test-scoped Maven deps and dev npm deps from the scan entirely (the dev-CVE section will be absent) |
-| `--vigievuln-proxy [fr\|com]` | Use the hosted VigieVuln proxy with an individual key from a verified account; defaults to `fr`. Set `VIGIEVULN_PROXY_CACHE_TOKEN`. |
-| `--proxy-cache <url>` | Route every public data-source request through a shared `vigievuln serve-cache` server — one upstream call per requested resource for all instances, persisted across restarts. Private registries always go direct. See **Shared proxy-cache server** |
+| `--proxy-cache <url\|vigievuln\|default>` | Use a shared cache URL or the official VigieVuln proxy for this scan. |
+| `--set-proxy-cache <url\|vigievuln\|default>` | Save the proxy cache for future scans. Use `--unset-proxy-cache` to remove it. |
 | `--proxy <url>` | Route ALL outbound requests through a corporate forward proxy (`http://host:port`; Node >= 24 or bun). See **Corporate forward proxy** |
 
 If Packagist answers successfully but omits a package from its advisory data, the scan
 continues and names that package in a report warning; omission is never treated as a
-clean result. An unreachable Packagist endpoint or malformed response still stops an
-online scan before writing a report when this lane is enabled.
+clean result. An unreachable Packagist endpoint or malformed response produces a
+source-unavailable warning. An explicit `--fail-on-incomplete sources` gate returns
+code 2 after the partial report is written.
 
 ## Application inventory (experimental)
 
@@ -206,9 +217,11 @@ An explicitly configured advisory file requires its corresponding `--app-plugins
 
 `--max-advisory-age <duration>` (e.g. `72h`, `30d`) bounds the age of every configured advisory snapshot. A snapshot's file modification time proves nothing about when it was collected, so the date must be declared **inside the snapshot file**: a top-level `collectedAt` or `generatedAt` ISO 8601 string, or a reserved `_fadSnapshot: { "collectedAt": "..." }` object (the Wordfence v3 feed is a flat UUID-keyed map, so the reserved key is the only metadata it tolerates). A snapshot without a declared date, a malformed date, or one older than the limit exits with code `2` before any report is written. A declared date also travels with the coverage provenance (`sourceSnapshot.collectedAt`) whether or not the limit is set.
 
-Live sources are the alternative to operator-supplied files. `--spip-advisories-live` queries NVD's SPIP product CVEs (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source that exists (no publisher API, no Packagist package); an NVD API key is optional and only lifts the rate limit. `--drupal-advisories-live` queries the official `https://packages.drupal.org/8/security-advisories` endpoint (announced by the packages.drupal.org Composer descriptor; no authentication) for exactly the inventoried public `drupal/*` identities — private components are never sent. `--prestashop-advisories-live` and `--typo3-advisories-live` page the publishers' GitHub advisory feeds (unauthenticated, subject to GitHub's rate limits), and `--wp-checksums-live` fetches the official api.wordpress.org checksums reference; each can take an optional URL override for a mirror of the same API. Wordfence publishes a [free production feed with bearer authentication](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/). Set `WORDFENCE_API_KEY` (recommended, to keep it out of the process command line) or pass `--wordfence-api-key <key>`; the key alone selects the official production endpoint, or `--wordfence-feed-url <url>` can override its URL. A live Wordfence request without a key stops with code `2` and an explanatory warning. A WordPress instance without either a local feed or a live key gets an explicit warning and incomplete advisory coverage. A fetched snapshot is stamped `_fadSnapshot.collectedAt` at collection time (so `--max-advisory-age` accepts it by construction), written atomically to `~/.fad-checker/advisory-snapshots/<provider>.json` for offline reuse, and recorded in coverage with `completeness: "tool-fetched"`. Those cached snapshots are consumed **automatically — in every mode**: the lanes a scan runs are a function of the cache state, not of online/offline, so `vigievuln -s <proj>` online and `vigievuln -s <proj> --offline` in the air-gapped enclave (same command, same options, warmed by the same phase 2) produce identical reports — no `--drupal-advisories` / `--prestashop-advisories` / `--typo3-advisories` / `--wp-checksums` flag needed. The files travel with `--export-cache` / `--import-cache`; `--import-anonymized` **warms them from the descriptor alone** (its `applications` section carries the public product identities — type, core version, inventoried public components — the phase-1 export emits): the Drupal feed for the union of the lock's `drupal/*` coordinates and the inventoried public identities, the PrestaShop/TYPO3 repository feeds, one WordPress checksums reference per declared core version (pinned by the warming run's `--wp-checksums-locale`, so both phases must agree on it), and the Wordfence catalogue when the warming machine holds an API key (the key itself never travels — the enclave reads the snapshot back without one). An explicit flag or live URL always wins, the fallback only engages when the source's application plugin is selected, and the file goes through the same schema and `--max-advisory-age` validation as an operator-supplied one. The WordPress checksums reference is pinned by version and locale, so its fallback resolves per instance. Live sources refuse to run under `--offline` (exit `2`); an air-gapped scan supplies a local feed snapshot — the tool's own cache counts as one. A failed or invalid live response stops the scan before any report, and a live source still requires its `--app-plugins` selection.
+Live sources are the alternative to operator-supplied files. `--spip-advisories-live` queries NVD's SPIP product CVEs (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source that exists (no publisher API, no Packagist package); an NVD API key is optional and only lifts the rate limit. `--drupal-advisories-live` queries the official `https://packages.drupal.org/8/security-advisories` endpoint (announced by the packages.drupal.org Composer descriptor; no authentication) for exactly the inventoried public `drupal/*` identities — private components are never sent. `--prestashop-advisories-live` and `--typo3-advisories-live` page the publishers' GitHub advisory feeds (unauthenticated, subject to GitHub's rate limits), and `--wp-checksums-live` fetches the official api.wordpress.org checksums reference; each can take an optional URL override for a mirror of the same API. Wordfence publishes a [free production feed with bearer authentication](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/). Set `WORDFENCE_API_KEY` (recommended, to keep it out of the process command line) or pass `--wordfence-api-key <key>`; the key alone selects the official production endpoint, or `--wordfence-feed-url <url>` can override its URL. In direct mode, a live Wordfence request without a client key stops with code `2`. With `--proxy-cache --wordfence-live`, the server key is sufficient and only targeted advisory projections reach the client (see the proxy section below). A WordPress instance without either a local feed or a live key gets an explicit warning and incomplete advisory coverage. A fetched snapshot is stamped `_fadSnapshot.collectedAt` at collection time (so `--max-advisory-age` accepts it by construction), written atomically to `~/.fad-checker/advisory-snapshots/<provider>.json` for offline reuse, and recorded in coverage with `completeness: "tool-fetched"`. Those cached snapshots are consumed **automatically — in every mode**: the lanes a scan runs are a function of the cache state, not of online/offline, so `vigievuln -s <proj>` online and `vigievuln -s <proj> --offline` in the air-gapped enclave (same command, same options, warmed by the same phase 2) produce identical reports — no `--drupal-advisories` / `--prestashop-advisories` / `--typo3-advisories` / `--wp-checksums` flag needed. The files travel with `--export-cache` / `--import-cache`; `--import-anonymized` **warms them from the descriptor alone** (its `applications` section carries the public product identities — type, core version, inventoried public components — the phase-1 export emits): the Drupal feed for the union of the lock's `drupal/*` coordinates and the inventoried public identities, the PrestaShop/TYPO3 repository feeds, one WordPress checksums reference per declared core version (pinned by the warming run's `--wp-checksums-locale`, so both phases must agree on it), and the Wordfence catalogue when the warming machine holds an API key (the key itself never travels — the enclave reads the snapshot back without one). An explicit flag or live URL always wins, the fallback only engages when the source's application plugin is selected, and the file goes through the same schema and `--max-advisory-age` validation as an operator-supplied one. The WordPress checksums reference is pinned by version and locale, so its fallback resolves per instance. Live sources refuse to run under `--offline` (exit `2`); an air-gapped scan supplies a local feed snapshot — the tool's own cache counts as one. A failed or invalid live response produces an explicit warning and indeterminate coverage in the reports. A live source still requires its `--app-plugins` selection. An explicitly requested completeness or freshness gate remains enforced.
 
 Symfony Flex `symfony.lock` recipes and `extra.symfony.require` are context. Installed package versions come from `composer.lock`. Extraction with `-t` also mirrors `symfony.lock`. The Symfony and Laravel application-advisory capabilities are currently recorded as `not-run (CMS_ADVISORY_NOT_QUALIFIED)`: their CVEs come from the standard Composer lane (OSV/Packagist), and a capability that never ran never becomes a clean result. WordPress and Drupal advisories run through the Wordfence and Drupal sources configured above. `--fail-on-incomplete` exits with code 2 after writing the partial report when a requested capability is incomplete. The default capability set is `inventory,advisories`.
+
+For CI, `--fail-on-incomplete sources` exits with code 2 after writing the report if a source used stale data or was unavailable, in hosted and direct mode.
 
 Report subsections with no results are omitted, and the remaining ones are numbered in order. CMS/framework CVEs appear first under CVE when present; application inventory and coverage remain in scan context even when no advisory matches. The six root chapters remain visible.
 
@@ -394,30 +407,97 @@ an individual proxy key. Set `VIGIEVULN_PROXY_CACHE_TOKEN` in your environment
 (or your CI secret store) and run:
 
 ```bash
-# Bash: enter the token without putting it in command history.
-read -rs -p 'Proxy token: ' VIGIEVULN_PROXY_CACHE_TOKEN; echo
-export VIGIEVULN_PROXY_CACHE_TOKEN
-vigievuln -s ./project --vigievuln-proxy
-vigievuln -s ./project --vigievuln-proxy com
+vigievuln --set-proxy-cache vigievuln
+vigievuln -s ./project  # sign in interactively if no proxy key is configured
+# Or for just one scan:
+vigievuln -s ./project --proxy-cache default
 ```
 
-The default endpoint is `https://api.vigievuln.fr`; `com` selects
-`https://api.vigievuln.com`. Authentication is checked before scanning. Invalid,
-expired or revoked keys stop the scan with exit code 2. The option cannot be
-combined with a custom `--proxy-cache` URL. `--offline` makes no network request,
+Both `vigievuln` and `default` select `https://api.vigievuln.fr`. Authentication is checked before scanning. Invalid,
+expired or revoked keys stop the scan with exit code 2. `--offline` makes no network request,
 including no authentication preflight, and does not require a token.
 
 This routes supported public provider requests through the shared cache. Private
 registries still use their configured direct connections. The proxy sees requested
 package coordinates and vulnerability identifiers; this option does not upload
 your source code or create a monitored project. A failed proxy request does not
-silently switch to direct upstream access (an existing local cached answer may
-still be used after the initial authentication check succeeds).
+silently switch to direct upstream access.
 
-The option also works in layered JSON configuration as `"vigievulnProxy": "fr"`
-or `"vigievulnProxy": "com"`. Keep the token in the environment, outside checked-in
-configuration. See the server's deployment instructions when running your own
+The setting also works in layered JSON configuration as `"proxyCache": "vigievuln"`.
+The older `--vigievuln-proxy [fr|com]` remains available for compatibility.
+Hosted online mode refuses `--osv-db` / `--osv-db-refresh`, which download a bulk archive; per-package OSV queries remain available.
+Proxy sign-in creates a dedicated proxy key and stores it in `~/.fad-checker/config.json` (mode 0600). The standalone `vigievuln login` command creates an account session; it does not select or configure the proxy.
+An existing key can be saved with `--set-proxy-cache-token <key>` and removed with
+`--unset-proxy-cache-token`. Non-interactive runs require a saved key or the
+`VIGIEVULN_PROXY_CACHE_TOKEN` environment variable; no password prompt is attempted.
+Keep credentials outside checked-in configuration. See the server's deployment instructions when running your own
 instance; the following section covers a custom cache URL.
+
+## Project monitoring
+
+Create and verify your account at `https://www.vigievuln.fr/account`. Use the short commands to sign in and register a project:
+
+```bash
+vigievuln login
+vigievuln whoami
+vigievuln watch ./project --name 'My Project'
+vigievuln project status
+vigievuln logout
+```
+
+`watch` collects dependencies locally, then uploads the inventory once. It does not run a vulnerability scan, resolve dependencies over the network or start a background watcher. Running it again with the same unique project name updates that project using its current revision. To select an existing project explicitly, use its ID from `project status`:
+
+```bash
+vigievuln watch ./project --id <project-id>
+```
+
+`--id` updates the inventory without renaming the project. If the account already contains a differently named project, `watch --name` refuses to replace it implicitly: choose the intended ID explicitly. Upload requires an account session; when needed, an interactive terminal prompts for login. Non-interactive use requires signing in beforehand. Invoking `watch` without `--export` authorises upload; there is no separate `--yes` flag or upload confirmation.
+
+The free tier includes **one project with up to 100 distinct direct dependency coordinates**. Several versions of the same coordinate count once. Unknown relationships are excluded from direct-dependency monitoring and explicitly reported as incomplete coverage. This hosted monitoring quota does not limit local `scan` audits.
+
+### Export locally before uploading
+
+```bash
+vigievuln watch ./project --export fichier.json
+```
+
+`--export` is **export only**: it prepares the descriptor locally and offline, without login, account access or upload. It writes `fichier.json` for review. Paths, source code and registry URLs are omitted, but package coordinates and versions remain visible in the file and can identify private packages. Review and exclude private dependencies before any upload.
+
+`--name` is optional for export; `--id` cannot be combined with `--export`. Both export and upload accept dependency filters:
+
+```bash
+vigievuln watch ./project --export fichier.json -e '^@acme/' --exclude-path '**/fixtures/**'
+vigievuln watch ./project --name 'My Project' --ecosystem maven,npm
+```
+
+Use `-e` / `--exclude` for a coordinate regex, `--exclude-path` for source paths, and `--ecosystem` to select ecosystems. Review the export before using the upload command with the same filters.
+
+After reviewing the file, upload it explicitly with the compatible command:
+
+```bash
+vigievuln login
+vigievuln project push --file fichier.json --name 'My Project'
+```
+
+### Compatible commands
+
+The existing authentication and two-step preparation/upload workflow remains supported:
+
+```bash
+vigievuln auth login
+vigievuln -s ./project --prepare-project ./project-deps.json
+vigievuln project push --file ./project-deps.json --name "My project"
+vigievuln project status
+# For an existing project, use the id from `project status`:
+vigievuln project push --file ./project-deps.json --id <project-id>
+vigievuln auth logout
+```
+
+`login`, `whoami` and `logout` correspond to `auth login`, `auth status` and `auth logout`. Preparation is offline; use `-e` where applicable to exclude private coordinates. The CLI counts versions whose direct relationship is unknown. Account sessions are stored separately from proxy keys; no password is stored.
+
+Directness is determined from supported project and lockfile evidence, including Maven, npm, Composer, Go, NuGet and Bundler. Some inventories, including Python and Gradle, cannot yet establish directness reliably and therefore have incomplete monitoring coverage.
+
+Monitoring reports newly appearing high or critical vulnerabilities affecting direct dependencies (CVSS 7 or above), and known exploited vulnerabilities; alerts can be enabled in the account. The initial inventory establishes a baseline, and later changes are reported. Update the descriptor when your dependencies change.
 
 ## Shared proxy-cache server (`serve-cache` / `--proxy-cache`)
 
@@ -453,7 +533,7 @@ FAD_PROXY_CACHE_TOKEN=s3cret vigievuln -s ./proj --proxy-cache http://cache-host
 | `--max-entries <n>` | Persistent entry limit (default 10000) |
 | `--upstream-timeout <seconds>` | Deadline covering upstream headers and body, including background and batch requests (default 120 s) |
 | `--max-concurrent <n>` | Maximum active upstream transfers (default 16); excess distinct requests fail, cached readers continue |
-| `--nvd-key` / `--wordfence-key` / `--github-token` | API keys the **server** injects upstream (flags > `NVD_API_KEY` / `WORDFENCE_API_KEY` / `GITHUB_TOKEN` env > `--set-nvd-key` config). NVD/GitHub clients can use the server credentials. `--wordfence-live` activates the official feed using the server key alone, including `--import-anonymized` warming. Custom feed URLs still require a client key. Without a server key, a client-sent credential is forwarded as-is |
+| `--nvd-key` / `--wordfence-key` / `--github-token` | API keys the **server** injects upstream (flags > `NVD_API_KEY` / `WORDFENCE_API_KEY` / `GITHUB_TOKEN` env > `--set-nvd-key` config). NVD/GitHub clients can use the server credentials. `--wordfence-live` activates targeted Wordfence queries using the server key alone, including `--import-anonymized` warming. Custom Wordfence feed URLs require direct mode and a client key. Without a server key, a client-sent credential is forwarded as-is |
 | `--upstream-proxy <url>` | Route the server's own upstream fetches through a corporate forward proxy |
 | `--token <t>` | Require a token on every endpoint except `__health`; scans send it via `FAD_PROXY_CACHE_TOKEN` or `--proxy-cache-token` without replacing source credentials |
 
@@ -470,7 +550,7 @@ Behaviour worth knowing:
 - The scanner sends `POST /v1/resource` with a provider, data type and subject. The server builds the upstream request and caches by resource identity. OSV, Packagist and EPSS batches are split into individual cache entries; custom/private registry URLs go direct through the same router.
 - Resource responses carry `x-fad-proxy` (including `pass`/`error` for failures); `GET /__stats`
   shows the counters, `POST /__clear` wipes the base.
-- A dead proxy-cache server uses the local resource cache when that cache covers the request. Otherwise the source-health retry schedule runs and the scan aborts with exit 2 for a required source.
+- A dead proxy-cache server uses the local resource cache when that cache covers the request. Otherwise the source-health retry schedule runs and the scan writes a coverage warning. `--fail-on-incomplete sources` opts into exit 2 after report generation.
 - `--proxy-cache` and `--offline` are exclusive (offline makes no requests at all).
 
 GitHub pagination links are retained in both caches. Entries created before this
@@ -506,6 +586,33 @@ vigievuln --import-anonymized deps.json --proxy-cache http://127.0.0.1:8321 --wo
 
 When neither client nor server has a Wordfence key, the server refuses the request
 before contacting Wordfence. The key is never exported with snapshots.
+
+Wordfence proxy mode uses `wordfence/software`: at most 100 public `(type, slug)`
+identities per request, without local paths or installed versions. The server fetches
+and validates the production catalogue once per credential scope and TTL, retaining
+it compressed in its own cache. The client receives only the requested software's
+advisories, plus explicit queried identities and the original collection date. It
+never retries a failed projection as a bulk or direct feed download. Custom feed
+URLs cannot bypass this policy while a proxy is configured.
+
+The targeted snapshot is stored separately as `wordfence-v3-targeted.json` and is
+reused offline. An identity absent from its query list remains indeterminate.
+On refresh failure, the server can serve its last validated catalogue with `stale`
+metadata: positive findings remain visible, but advisory coverage is partial and
+indeterminate. The collection date is never advanced; `--max-advisory-age` and
+`--fail-on-incomplete advisories` apply. Merging snapshots keeps the oldest retained
+collection date and conservatively retains a stale flag until that coverage is refreshed.
+Bounds are 128 MiB for the upstream catalogue, the store's compressed-entry limit,
+and 8 MiB for a client projection including merged batches; exceeding a limit fails
+explicitly. An empty, malformed or truncated upstream catalogue cannot establish
+negative coverage.
+
+Deployment requires updating the shared `vigievuln` package used by the server as
+well as the CLI. The hosted server keeps refusing `wordfence/production-feed`;
+the targeted operation is handled by the shared resource engine, with no route,
+authentication, monitoring or scheduled-job patch required. Older servers reject
+the new operation rather than triggering a client bulk fallback.
+
 CMS snapshot imports compare the declared collection date, even if a copy has a
 newer filesystem date. Semantic cache imports publish each body/metadata pair
 atomically; interruption preserves the previous committed entry. This is a

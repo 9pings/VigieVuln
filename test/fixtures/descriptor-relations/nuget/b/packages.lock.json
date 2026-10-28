@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "shared": {
+        "type": "Transitive",
+        "resolved": "2.0.0"
+      }
+    }
+  }
+}

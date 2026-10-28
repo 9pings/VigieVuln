@@ -7,6 +7,9 @@ const { configureResourceRoute, getResource, providerKey } = require("../lib/pro
 const { createCacheStore, startProxyCacheServer } = require("../lib/proxy-cache");
 
 const nvdId = "CVE-2024-31210";
+const nvdResponse = { totalResults: 1, vulnerabilities: [{ cve: { id: nvdId,
+	published: '2024-01-01T00:00:00.000', lastModified: '2024-01-02T00:00:00.000',
+	descriptions: [{ lang: 'en', value: 'Test CVE' }], references: [] } }] };
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "fad-provider-"));
 
 test("the router builds a provider request for direct access", async () => {
@@ -28,14 +31,14 @@ test("the server receives provider parameters, deduplicates concurrent requests 
 		if (!online) throw new Error("upstream offline");
 		assert.match(url, /services\.nvd\.nist\.gov\/rest\/json\/cves\/2\.0\?cveId=CVE-2024-31210/);
 		await new Promise(ok => setTimeout(ok, 30));
-		return new Response(JSON.stringify({ id: nvdId }), { status: 200,
+		return new Response(JSON.stringify(nvdResponse), { status: 200,
 			headers: { "content-type": "application/json" } });
 	};
 	const first = await startProxyCacheServer({ port: 0, host: "127.0.0.1", store: createCacheStore(dir), fetcher });
 	try {
 		configureResourceRoute({ proxyUrl: first.url, store: null, health: null, fetcher: globalThis.fetch });
 		const results = await Promise.all(Array.from({ length: 12 }, () => getResource("nvd", "cve", { id: nvdId })));
-		assert.deepEqual(await Promise.all(results.map(r => r.json())), Array(12).fill({ id: nvdId }));
+		assert.deepEqual(await Promise.all(results.map(r => r.json())), Array(12).fill(nvdResponse));
 		assert.equal(hits, 1);
 		assert.equal(first.server.fadStore.size(), 1);
 		assert.equal(first.server.fadStore.get(providerKey("nvd", "cve", { id: nvdId })).bytes > 0, true);
@@ -47,7 +50,7 @@ test("the server receives provider parameters, deduplicates concurrent requests 
 		configureResourceRoute({ proxyUrl: second.url, store: null, health: null, fetcher: globalThis.fetch });
 		const response = await getResource("nvd", "cve", { id: nvdId });
 		assert.equal(response.status, 200);
-		assert.equal((await response.json()).id, nvdId);
+		assert.equal((await response.json()).vulnerabilities[0].cve.id, nvdId);
 		const cold = await getResource("nvd", "cve", { id: "CVE-2024-99999" });
 		assert.equal(cold.status, 502);
 	} finally {
@@ -138,10 +141,10 @@ test("Packagist and EPSS batches deduplicate by package and CVE identity", async
 test("the client keeps its semantic entry if the proxy is unreachable and fails a cold lookup", async () => {
 	const serverDir = tmp(), clientDir = tmp(), local = createCacheStore(clientDir);
 	const running = await startProxyCacheServer({ port: 0, host: "127.0.0.1", store: createCacheStore(serverDir),
-		fetcher: async () => new Response(JSON.stringify({ id: nvdId }), { headers: { "content-type": "application/json" } }) });
+		fetcher: async () => Response.json(nvdResponse) });
 	try {
 		configureResourceRoute({ proxyUrl: running.url, store: local, health: null, fetcher: globalThis.fetch });
-		assert.equal((await (await getResource("nvd", "cve", { id: nvdId })).json()).id, nvdId);
+		assert.equal((await (await getResource("nvd", "cve", { id: nvdId })).json()).vulnerabilities[0].cve.id, nvdId);
 		const key = providerKey("nvd", "cve", { id: nvdId });
 		const metaPath = local.metaPath(local.hash(key));
 		const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
@@ -150,7 +153,7 @@ test("the client keeps its semantic entry if the proxy is unreachable and fails 
 		await new Promise(ok => running.server.close(ok));
 		const stale = await getResource("nvd", "cve", { id: nvdId });
 		assert.equal(stale.headers.get("x-fad-proxy"), "stale");
-		assert.equal((await stale.json()).id, nvdId);
+		assert.equal((await stale.json()).vulnerabilities[0].cve.id, nvdId);
 		await assert.rejects(getResource("nvd", "cve", { id: "CVE-2024-99999" }));
 		assert.ok(local.get(key), "an outage never deletes the local entry");
 	} finally {
@@ -263,6 +266,13 @@ test("a stale proxy snapshot keeps its original collection date through local ca
 	}
 });
 
+const wordfenceFixture = () => {
+	const id = "123e4567-e89b-12d3-a456-426614174000";
+	return { [id]: { id, software: [{ type: "core", slug: "wordpress", affected_versions: {
+		old: { from_version: "1", from_inclusive: true, to_version: "2", to_inclusive: true },
+	} }] } };
+};
+
 test("Wordfence live scan and anonymized warming accept only the server key", async () => {
 	const { fetchWordfenceFeed, WORDFENCE_PRODUCTION_URL } = require("../lib/application-providers/live-snapshot");
 	const { warmCmsAdvisorySnapshots } = require("../lib/cms-snapshot-warm");
@@ -271,17 +281,19 @@ test("Wordfence live scan and anonymized warming accept only the server key", as
 	const running = await startProxyCacheServer({ port: 0, store: createCacheStore(dir), keys: { wordfence: "server-secret" },
 		fetcher: async (url, init) => {
 			assert.equal(init.headers.authorization, "Bearer server-secret"); calls++;
-			return new Response("{}");
+			return Response.json(wordfenceFixture());
 		} });
 	try {
 		configureResourceRoute({ proxyUrl: running.url, store: null, health: null, fetcher: null });
-		await fetchWordfenceFeed(WORDFENCE_PRODUCTION_URL);
+		await fetchWordfenceFeed(WORDFENCE_PRODUCTION_URL, { components: [{ kind: "core", version: "6.4.2" }] });
 		const warmed = await warmCmsAdvisorySnapshots([], { advisoryCacheDir: snapshots,
 			applications: [{ type: "wordpress" }], wordfenceLive: true });
 		assert.equal(warmed.wordfence, true);
 		assert.equal(calls, 1);
-		assert.equal(fs.readFileSync(path.join(snapshots, "wordfence-v3.json"), "utf8").includes("server-secret"), false);
-		await assert.rejects(fetchWordfenceFeed("https://custom.invalid/feed"), /requires an API key/);
+		const snapshot = JSON.parse(fs.readFileSync(path.join(snapshots, "wordfence-v3-targeted.json"), "utf8"));
+		assert.deepEqual(snapshot.queriedSoftware, [{ type: "core", slug: "wordpress" }]);
+		assert.equal(JSON.stringify(snapshot).includes("server-secret"), false);
+		await assert.rejects(fetchWordfenceFeed("https://custom.invalid/feed"), /require the official source/);
 	} finally {
 		await new Promise(ok => running.server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
@@ -312,7 +324,7 @@ test("CLI --wordfence-live works without a client key through the shared server"
 	const running = await startProxyCacheServer({ port: 0, store: createCacheStore(dir), keys: { wordfence: "server-secret" },
 		fetcher: async (url, init) => {
 			assert.match(url, /wordfence.com/); assert.equal(init.headers.authorization, "Bearer server-secret");
-			return new Response("{}");
+			return Response.json(wordfenceFixture());
 		} });
 	const isolate = path.join(source, "isolate.cjs");
 	fs.writeFileSync(isolate, 'require("node:os").homedir = () => __dirname;');

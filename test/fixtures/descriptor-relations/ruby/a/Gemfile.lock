@@ -1,0 +1,19 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    shared (1.0.0)
+      child (~> 1.0)
+    child (1.0.0)
+    orphan (1.0.0)
+
+PATH
+  remote: ../local
+  specs:
+    local (1.0.0)
+
+DEPENDENCIES
+  shared (~> 1.0)
+  local!
+
+BUNDLED WITH
+   2.5.0

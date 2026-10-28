@@ -105,3 +105,12 @@ test("with an NVD key: NVD first, the mirror is never asked when NVD answers", a
 	await N.enrichMatches([{ cve: { id: a } }], { fetcher: f, hasKey: true, onProgress: () => {} });
 	assert.equal(f.calls.length, 1);
 });
+
+test('hosted mode checks the NVD primary before its secondary mirror',async()=>{
+	const c=id('0000225'), calls=[];
+	const {configureResourceRoute}=require('../lib/providers');
+	const fetcher=async (_url,init)=>{const body=JSON.parse(init.body);calls.push(body.type);return Response.json({vulnerabilities:[{cve:record(c)}]});};
+	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher});
+	try {await N.enrichMatches([{cve:{id:c}}],{fetcher,hasKey:false,onProgress:()=>{}});assert.deepEqual(calls,['cve']);}
+	finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
+});

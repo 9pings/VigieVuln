@@ -1,5 +1,15 @@
 # Changelog — VigieVuln
 
+## [1.1.0] — 2026-10-28
+
+- Hosted proxy scans query CVE, KEV, EUVD and CERT-FR records by dependency or CVE instead of downloading bulk catalogues.
+- Configure the official proxy persistently, sign in to create a proxy key, and reuse it for later scans.
+- Preserve OSV pagination tokens through the proxy and identify stale responses in batches.
+- Sign in and upload a reviewed project descriptor to monitor direct dependencies for high or critical vulnerabilities.
+- Use `watch`, `scan`, `login`, `logout` and `whoami` as direct commands; `watch --export` prepares a local descriptor.
+- Use targeted Wordfence results through the hosted proxy, with explicit warnings when cached data is stale.
+- Limit GitHub release notes to the changelog section for the release version.
+
 ## [1.0.1] — 2026-10-26
 
 - Regenerated the HTML sample reports, terminal demo and report screenshot with VigieVuln branding.

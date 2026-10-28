@@ -17,7 +17,10 @@ function run(args) {
 test("no arguments prints a mini help carrying the current version, and exits non-zero", () => {
 	const { out, code } = run([]);
 	assert.match(out, new RegExp(`VigieVuln v${pkg.version.replace(/\./g, "\\.")}\\b`), "banner names the running version");
-	assert.match(out, /-s <dir>/, "shows the one option the tool cannot run without");
+	assert.match(out, /vigievuln scan <dir>/, "leads users to the positional scan command");
+	assert.match(out, /vigievuln watch <dir>/);
+	assert.match(out, /vigievuln login/);
+	assert.match(out, /-s <dir>/, "retains a legacy invocation example");
 	assert.match(out, /--help/, "points at the full help");
 	assert.ok(out.length < 2000, "mini help stays mini (full --help is far longer)");
 	assert.notEqual(code, 0, "a bare invocation scanned nothing — it must not read as success");
@@ -56,6 +59,25 @@ test("--help carries the current version too", () => {
 	// --help is one screen now; --help-all is where everything lives.
 	assert.ok(out.length > 1200, "--help lists the scan options");
 	assert.ok(run(["--help-all"]).out.length > out.length, "--help-all is longer");
+});
+
+test("main and scan help put scan/watch/login before the legacy options", () => {
+	for (const args of [["--help"], ["scan", "--help"], ["--help-all"]]) {
+		const { out, code } = run(args);
+		assert.equal(code, 0);
+		const optionsStart = out.indexOf("Options:");
+		assert.ok(optionsStart > 0);
+		const introduction = out.slice(0, optionsStart);
+		assert.match(introduction, /Usage: vigievuln scan <dir> \[options\]/);
+		assert.match(introduction, /vigievuln watch <dir>/);
+		assert.match(introduction, /vigievuln login \| logout \| whoami/);
+		assert.ok(introduction.indexOf("scan <dir>") < introduction.indexOf("watch <dir>"));
+		assert.ok(introduction.indexOf("watch <dir>") < introduction.indexOf("login | logout"));
+		assert.doesNotMatch(introduction, /vigievuln -s/);
+		assert.match(out.slice(optionsStart), /-s, --src <src>/);
+		assert.match(out.slice(optionsStart), /-t, --target <target>/);
+	}
+	assert.equal(run(["scan", "--help"]).out, run(["--help"]).out);
 });
 
 test("the mini help and the full help agree on the version, and it is package.json's", () => {

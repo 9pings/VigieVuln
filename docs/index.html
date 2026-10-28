@@ -93,12 +93,36 @@
   <div class="wrap start-layout">
     <div class="start-copy"><h2 id="start-title">Your next audit starts here.</h2><p>Install once. Point it at a checkout. Get the full picture.</p></div>
     <div>
-      <div class="install"><span class="pr">$</span><code>npm i -g vigievuln &amp;&amp; vigievuln -s ./your-project</code><button class="copy" type="button" data-copy="npm i -g vigievuln &amp;&amp; vigievuln -s ./your-project" aria-label="Copy the install and scan command"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg><span>copy</span></button></div>
+      <div class="install"><span class="pr">$</span><code>npm i -g vigievuln &amp;&amp; vigievuln scan ./code</code><button class="copy" type="button" data-copy="npm i -g vigievuln &amp;&amp; vigievuln scan ./code" aria-label="Copy the install and scan command"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg><span>copy</span></button></div>
       <p class="release"><a href="https://www.npmjs.com/package/vigievuln">Latest release: 1.0.1 ↗</a><span>Node.js 20+</span><a href="https://github.com/9pings/VigieVuln/releases">Standalone binaries ↗</a></p>
     </div>
   </div>
 </section>
 <div class="wrap">
+  <section id="monitoring" aria-labelledby="monitoring-title">
+    <div class="kicker">Project monitoring</div>
+    <h2 id="monitoring-title">Watch your direct dependencies.</h2>
+    <p class="sub">One free project with up to <b>100 distinct direct dependency coordinates</b>. Multiple versions of the same coordinate count once. Unknown relationships are excluded from monitoring and reported as incomplete coverage. Local scans are not subject to this monitoring quota.</p>
+    <div class="split">
+      <div>
+        <h3>Sign in and watch</h3>
+        <p>Create and verify your <a href="https://www.vigievuln.fr/account">Vigie Vuln account</a>, then register your project. Enable alerts in your account for new high or critical vulnerabilities (CVSS ≥ 7) and known exploited vulnerabilities affecting direct dependencies.</p>
+        <div class="code"><pre>vigievuln login
+vigievuln whoami
+vigievuln watch ./project --name 'My Project'
+vigievuln project status
+vigievuln logout</pre></div>
+        <p><code>watch</code> collects locally and uploads once; it is not a background watcher. Repeat it with the same unique project name to update the inventory. The first inventory establishes a silent baseline.</p>
+      </div>
+      <div>
+        <h3>Review an offline export</h3>
+        <div class="code"><pre>vigievuln watch ./project --export fichier.json</pre></div>
+        <p><b>Export only:</b> writes a local descriptor offline, with no login and no upload. Review package names and versions before sending them; source code, paths and registry URLs are omitted. Without <code>--export</code>, invoking <code>watch</code> authorises upload.</p>
+        <p>Upload the reviewed file explicitly with <code>vigievuln project push --file fichier.json --name 'My Project'</code> after signing in.</p>
+      </div>
+    </div>
+    <p class="note">Existing commands remain supported: <code>vigievuln -s ./code</code>, <code>auth login|status|logout</code>, <code>--prepare-project</code> and <code>project push</code>. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#project-monitoring">Monitoring guide and update workflow ↗</a>.</p>
+  </section>
   <!-- ECOSYSTEMS -->
   <section>
     <div class="kicker">One tool, one pass</div>
@@ -130,6 +154,7 @@
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-key"></use></svg></div><h3>Certificates &amp; keys</h3><p>Inventory committed certificates, public and private keys, and keystores. Flag <b>expiry, weak keys and signatures</b> using offline parsing.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-network"></use></svg></div><h3>CMS &amp; frameworks audited as instances</h3><p>Inventory <b>nine CMS and frameworks</b> as applications, with component ownership and explicit advisory coverage. <a href="#cms" style="color:var(--amber);text-decoration:underline">Explore supported applications</a>.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-network"></use></svg></div><h3>Shared cache for a scanner fleet</h3><p>Use the CLI’s <span class="mono">serve-cache</span> and <span class="mono">--proxy-cache</span> to share public provider responses across scanners. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache" style="color:var(--amber);text-decoration:underline">Cache configuration</a>.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-globe"></use></svg></div><h3>Vigie Vuln DB · hosted in Europe</h3><p>Explore vulnerability data and use the hosted proxy cache with VigieVuln for dependency audits. <a href="https://www.vigievuln.fr/" style="color:var(--amber);text-decoration:underline">Discover Vigie Vuln DB ↗</a></p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-shield"></use></svg></div><h3>Supply-chain risk</h3><p>Flag advisories on <b>known-malicious packages</b> and optionally surface suspected typosquats. Malicious findings block the CI gate regardless of severity.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-globe"></use></svg></div><h3>European vulnerability references</h3><p>Add <b>ENISA EUVD, GCVE and CERT-FR</b> context to matched CVEs. References travel with the report and exports, and cached data remains usable offline. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/DATA-SOURCES.md" style="color:var(--amber);text-decoration:underline">Explore the data sources</a>.</p></div>
     </div>

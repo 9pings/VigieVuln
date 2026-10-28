@@ -191,7 +191,9 @@ test("a cached Wordfence catalogue is consumed without a flag and without an API
 		assert.equal(result.findings.length, 1, "the cached catalogue assesses the public plugin");
 		assert.equal(result.findings[0].cve.id, "CVE-2099-12345");
 		const advisory = result.coverage.find(c => c.sourceId === "wordfence-v3");
-		assert.equal(advisory.execution, "completed");
+		assert.equal(advisory.execution, "partial", "aged automatic cache retains findings but cannot establish complete coverage");
+		assert.equal(advisory.result, "indeterminate");
+		assert.equal(advisory.sourceSnapshot.stale, true);
 		assert.equal(advisory.sourceSnapshot.completeness, "tool-fetched",
 			"the warmed catalogue reports its fetch stamp — the air-gapped side never saw the key");
 		assert.match(advisory.sourceSnapshot.sourceUrl, /wordfence\.com/);

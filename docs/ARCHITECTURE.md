@@ -298,3 +298,58 @@ Test fixtures live in `test/fixtures/`:
 - `monorepo-mixed/` — combined Maven (4 POMs: parent + BOM + 2 modules) + JS (npm package-lock v3 + yarn.lock v1 + a no-lockfile package.json to test the warning)
 - `gradle-kotlin-catalog/`, `gradle-groovy-lockfile/`, `gradle-hybrid/` — Gradle: Kotlin DSL + version catalog + `buildSrc/` `platform()` BOM; Groovy DSL + `gradle.lockfile`; and a `pom.xml`+`build.gradle` hybrid (Maven/Gradle keyspace coexistence)
 - `cve-samples/` — small CVE / NVD JSON files to exercise the matchers without the 500 MB real bundle
+
+## Project descriptor relationship evidence (targeted audit, 2026-10-28)
+
+`--prepare-project` exports `fad-deps/2` through `lib/project-descriptor.js`.
+Its direct/transitive evidence is **per package version**, independent of `scope` and
+`isDev`. A direct occurrence proves that this version is direct somewhere in the scanned
+tree; it does not classify another version of that package. Empty or invalid evidence
+stays `unknown`. The CLI never executes a package manager to obtain this evidence.
+
+| Collector | Evidence now exported | Deliberately unknown |
+|---|---|---|
+| npm/yarn/pnpm | Existing resolved root/graph occurrence evidence | Unresolved or ambiguous selectors and graph orphans |
+| Composer | Existing root requirements joined to locked versions | Missing/unreadable root manifest |
+| Maven | Existing concrete direct POM declarations | Versionless declarations awaiting BOM resolution; managed-only pins |
+| NuGet | `packages.lock.json` explicit `Direct`, `Transitive`, `CentralTransitive`, unioned across TFMs and projects | Unknown types, `packages.config`, un-restored project references; `Project` entries are excluded |
+| Go | Simple `go.mod` require lines; `// indirect` marks transitivity | `go.sum` alone, module replacements, detected workspaces, excludes or ambiguous syntax |
+| Ruby/Bundler | `Gemfile.lock` `DEPENDENCIES` roots and reachable spec edges, with a unique registry version per name | Git/path sources, absent/malformed roots, orphans and multiple distinct versions within one lock |
+| Python / Gradle | No relationship evidence yet | All entries remain unknown; production scope is not root evidence |
+
+Go and Ruby previously overwrote one project's version with another project's version.
+Their collectors now merge versions, paths and relationship evidence. NuGet also retains
+per-version paths when merging TFMs/projects. The shared merge is in
+`lib/codecs/version-evidence.js`; Ruby's conservative graph reader is in
+`lib/codecs/ruby/relations.js`.
+
+Important remaining coverage losses:
+
+- Python is a large gap. A future implementation can join `Pipfile` packages/dev-packages
+  to `Pipfile.lock`, or join each uv workspace root's dependency edges to unambiguous locked
+  entries. A lock's default/develop group or a requirements freeze alone does not prove
+  directness. Source, extras and environment ambiguities must remain unknown.
+- Gradle's lock lists resolved versions but does not identify roots. A reliable extension
+  needs a project-local join with proven dependency declarations, excluding constraints,
+  BOMs and dynamic build logic; a coordinate-only or scope-only join is insufficient.
+- Maven project preparation occurs before later external BOM resolution. The existing
+  direct marker is attached to concrete declarations; many versionless managed declarations
+  therefore cannot be exported as qualified direct versions at this stage. No online
+  resolution or speculative version inference was added.
+- Legacy `fad-deps/1` serialization does not carry `versionRelations`; a round trip through
+  it cannot preserve these proofs. No v1 migration or policy was changed.
+- Go requirements describe the supplied manifest, not a build executed by the scanner.
+  The existing go.sum fallback can include downloaded candidates; those remain unknown.
+  Workspaces and external replacements require a resolved build list for stronger claims.
+
+The fixture-backed regression suite is `test/descriptor-manager-relations.test.js`, with
+multi-project fixtures in `test/fixtures/descriptor-relations/`. It checks descriptor output,
+per-version isolation, preserved paths, unknown cases, malformed evidence and graph cycles.
+The initial three ecosystem tests failed before implementation. The combined targeted run
+passed 167 tests (Go, NuGet, Ruby, project/anonymized descriptors, npm, Composer, Python and
+Gradle) with network and subprocess calls blocked. This is not a full CLI-suite validation.
+
+Format references: [Go module requirements](https://go.dev/ref/mod#go-mod-file-require),
+[NuGet lock builder](https://github.com/NuGet/NuGet.Client/blob/dev/src/NuGet.Core/NuGet.Commands/PackagesLockFileBuilder.cs),
+[NuGet version semantics](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#controlling-dependency-version),
+[Bundler lockfile parser](https://docs.ruby-lang.org/en/2.6.0/Bundler/LockfileParser.html).

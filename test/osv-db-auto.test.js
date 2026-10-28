@@ -19,6 +19,8 @@ test("a Java scan never pulls the 9 MB import on its own", () => {
 
 test("but an index already on disk is used, online or off — it is free recall", () => {
 	assert.strictEqual(autoEnableOsvDb({}, { runMaven: true, hasIndex: true }), true);
+	assert.strictEqual(autoEnableOsvDb({ vigievulnProxy: true }, { runMaven: true, hasIndex: true }), false);
+	assert.strictEqual(autoEnableOsvDb({ vigievulnProxy: true, offline: true }, { runMaven: true, hasIndex: true }), true);
 	assert.strictEqual(autoEnableOsvDb({ offline: true }, { runMaven: true, hasIndex: true }), true);
 });
 

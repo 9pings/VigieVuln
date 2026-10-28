@@ -1,0 +1,12 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    root (1.0.0)
+      shared (~> 2.0)
+    shared (2.0.0)
+
+DEPENDENCIES
+  root
+
+BUNDLED WITH
+   2.5.0

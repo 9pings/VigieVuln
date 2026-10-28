@@ -24,7 +24,7 @@ const stalled = (url, { signal }) => new Promise((resolve, reject) => {
 test("proxy deadline cancels cold and stalled-body fetches and releases upstream slots", async () => {
 	let mode = "headers";
 	const h = await harness({ upstreamTimeoutMs: 50, maxConcurrent: 1, fetcher: (url, init) => mode === "headers"
-		? stalled(url, init) : mode === "body" ? Promise.resolve(new Response(new ReadableStream({ pull() {} }))) : Promise.resolve(new Response("ok")) });
+		? stalled(url, init) : mode === "body" ? Promise.resolve(new Response(new ReadableStream({ pull() {} }))) : Promise.resolve(Response.json("ok")) });
 	try {
 		for (mode of ["headers", "body"]) {
 			const response = await call(h, mode);
@@ -32,7 +32,7 @@ test("proxy deadline cancels cold and stalled-body fetches and releases upstream
 			assert.equal(h.store.bodyBytes(), 0);
 		}
 		mode = "ok";
-		assert.equal(await (await call(h, "healthy")).text(), "ok");
+		assert.equal(await (await call(h, "healthy")).json(), "ok");
 		assert.equal(fs.readdirSync(h.store.entriesDir).some(f => f.startsWith(".tmp-")), false);
 	} finally { await h.close(); }
 });
@@ -40,15 +40,45 @@ test("proxy deadline cancels cold and stalled-body fetches and releases upstream
 test("deadline on a stale refresh retains the previous body", async () => {
 	let slow = false;
 	const h = await harness({ upstreamTimeoutMs: 50, overrideTtlMs: 1, swr: false,
-		fetcher: (url, init) => slow ? stalled(url, init) : Promise.resolve(new Response("old")) });
+		fetcher: (url, init) => slow ? stalled(url, init) : Promise.resolve(Response.json("old")) });
 	try {
 		await (await call(h, "a")).text(); slow = true;
 		await new Promise(ok => setTimeout(ok, 5));
 		const response = await call(h, "a");
 		assert.equal(response.headers.get("x-fad-proxy"), "stale");
-		assert.equal(await response.text(), "old");
-		assert.equal(fs.readFileSync(h.store.get(key("a")).bodyPath, "utf8"), "old");
+		assert.equal(await response.json(), "old");
+		assert.equal(JSON.parse(fs.readFileSync(h.store.get(key("a")).bodyPath, "utf8")), "old");
 	} finally { await h.close(); }
+});
+
+test("batch stale fallback identifies the old data and its date", async () => {
+	let broken = false;
+	const h = await harness({ overrideTtlMs: 1, swr: false, fetcher: async () => broken
+		? new Response('unavailable', {status:503}) : Response.json({results:[{vulns:[]}]}) });
+	const request = () => fetch(h.url + '/v1/resource', {method:'POST',headers:{'content-type':'application/json'},
+		body:JSON.stringify({provider:'osv',type:'packages',params:{queries:[{ecosystem:'npm',name:'example',version:'1'}]}})});
+	try {
+		assert.equal((await request()).status,200); broken=true;
+		await new Promise(ok=>setTimeout(ok,5));
+		const result=await request();
+		assert.equal(result.status,200); assert.equal(result.headers.get('x-fad-proxy'),'stale');
+		assert.ok(Number.isFinite(Date.parse(result.headers.get('x-fad-proxy-fetched-at'))));
+		assert.deepEqual(await result.json(),{results:[{vulns:[]}]});
+	} finally {await h.close()}
+});
+
+test("concurrent readers both see stale when the shared refresh fails", async () => {
+	let broken=false;
+	const h=await harness({overrideTtlMs:1,swr:false,fetcher:async()=>{
+		if (broken) { await new Promise(ok=>setTimeout(ok,25)); return new Response('',{status:503}); }
+		return Response.json('previous');
+	}});
+	try {
+		await (await call(h,'shared')).text(); broken=true;
+		await new Promise(ok=>setTimeout(ok,5));
+		const responses=await Promise.all([call(h,'shared'),call(h,'shared')]);
+		for(const r of responses) {assert.equal(r.headers.get('x-fad-proxy'),'stale'); assert.equal(await r.json(),'previous');}
+	} finally {await h.close()}
 });
 
 test("chunked transfers exceeding the hard cap leave no temporary or cache entry", async () => {
@@ -104,15 +134,15 @@ test("batch responses obey deadlines and size limits", async () => {
 
 test("disk publication failure retains the old body and removes the staged file", async () => {
 	let body = "old";
-	const h = await harness({ overrideTtlMs: 1, swr: false, fetcher: async () => new Response(body) });
+	const h = await harness({ overrideTtlMs: 1, swr: false, fetcher: async () => Response.json(body) });
 	try {
 		await (await call(h, "a")).text(); body = "new";
 		await new Promise(ok => setTimeout(ok, 5));
 		const commit = h.store.commit;
 		h.store.commit = () => { throw Object.assign(new Error("disk full"), { code: "ENOSPC" }); };
-		try { assert.equal(await (await call(h, "a")).text(), "old"); }
+		try { assert.equal(await (await call(h, "a")).json(), "old"); }
 		finally { h.store.commit = commit; }
-		assert.equal(h.store.bodyBytes(), 3);
+		assert.equal(h.store.bodyBytes(), 5);
 		assert.equal(fs.readdirSync(h.store.entriesDir).some(f => f.startsWith(".tmp-")), false);
 	} finally { await h.close(); }
 });
@@ -121,7 +151,11 @@ test("a slow disk applies backpressure to upstream production", async () => {
 	let produced = 0, written = 0, ahead = 0;
 	const h = await harness({ fetcher: async () => new Response(new ReadableStream({ pull(controller) {
 		if (produced === 32) { controller.close(); return; }
-		produced++; ahead = Math.max(ahead, produced - written); controller.enqueue(Buffer.alloc(65536));
+		produced++; ahead = Math.max(ahead, produced - written);
+		const chunk = Buffer.alloc(65536, 32); // one large JSON object, same chunk sizes/backpressure
+		if (produced === 1) chunk[0] = 123;
+		if (produced === 32) chunk[chunk.length - 1] = 125;
+		controller.enqueue(chunk);
 	} })) });
 	const create = fs.createWriteStream;
 	fs.createWriteStream = (...args) => {
@@ -143,13 +177,13 @@ test("a disconnected initiator does not cancel another reader's shared fetch", a
 	const started = new Promise(ok => { announce = ok; });
 	let finish;
 	const ready = new Promise(ok => { finish = ok; });
-	const h = await harness({ fetcher: async () => { announce(); await ready; return new Response("shared"); } });
+	const h = await harness({ fetcher: async () => { announce(); await ready; return Response.json("shared"); } });
 	try {
 		const controller = new AbortController();
 		const first = call(h, "same", controller.signal).catch(() => null);
 		await started;
 		const second = call(h, "same"); controller.abort(); finish();
-		await first; assert.equal(await (await second).text(), "shared");
+		await first; assert.equal(await (await second).json(), "shared");
 		assert.equal(h.server.fadStats.upstream, 1);
 	} finally { finish(); await h.close(); }
 });
@@ -159,14 +193,27 @@ test("concurrent distinct upstream fetches are capped without blocking a cached 
 	const started = new Promise(ok => { begin = ok; }), ready = new Promise(ok => { finish = ok; });
 	const h = await harness({ maxConcurrent: 1, fetcher: async url => {
 		if (url.endsWith("/slow")) { begin(); await ready; }
-		return new Response("ok");
+		return Response.json("ok");
 	} });
 	try {
 		await (await call(h, "cached")).text();
 		const slow = call(h, "slow"); await started;
 		const overloaded = await call(h, "other"); assert.equal(overloaded.status, 502);
 		assert.match(await overloaded.text(), /concurrency limit/);
-		assert.equal(await (await call(h, "cached")).text(), "ok");
-		finish(); assert.equal(await (await slow).text(), "ok");
+		assert.equal(await (await call(h, "cached")).json(), "ok");
+		finish(); assert.equal(await (await slow).json(), "ok");
 	} finally { finish(); await h.close(); }
+});
+
+test('strict freshness refuses an expired response when its source fails', async () => {
+ let fail=false;
+ const h=await harness({overrideTtlMs:40,allowStale:false,swr:false,fetcher:async()=>{
+  if(fail)throw Error('source unavailable');
+  return new Response(JSON.stringify({name:'freshness-test'}),{status:200,headers:{'content-type':'application/json'}});
+ }});
+ try {
+  assert.equal((await call(h,'freshness-test')).status,200);
+  await new Promise(r=>setTimeout(r,60)); fail=true;
+  const r=await call(h,'freshness-test');assert.equal(r.status,502);assert.notEqual(r.headers.get('x-fad-proxy'),'stale');
+ } finally {await h.close()}
 });

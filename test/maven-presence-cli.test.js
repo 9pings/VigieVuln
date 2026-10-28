@@ -70,7 +70,8 @@ for (const mode of ["unreachable", "503", "mixed"]) {
 	test(`CLI: ${mode} cannot poison the next offline scan with false private packages`, t => {
 		const s = scenario(t);
 		const online = s.scan(mode);
-		assert.equal(online.status, mode === "mixed" ? 0 : 2, online.stdout + online.stderr);
+		assert.equal(online.status, 0, online.stdout + online.stderr);
+		if (mode !== "mixed") assert.ok(read(s.report).warnings.some(w => w.type === "source-unavailable"));
 		const presence = s.cache("maven-exists-cache.json");
 		if (fs.existsSync(presence)) assert.equal(read(presence).entries[key], undefined);
 		const offline = s.scan();
@@ -135,7 +136,7 @@ test("CLI: an absence warning does not suppress OSV findings or the fail-on gate
 });
 
 for (const mode of ["osv-503", "osv-truncated"]) {
-	test(`CLI: ${mode} stops the online report and preserves cached findings for the next offline scan`, t => {
+	test(`CLI: ${mode} warns in the online report and preserves cached findings for the next offline scan`, t => {
 		const s = scenario(t), id = "FAD-TEST-SENTINEL";
 		const stamp = Date.now() - 48 * 3600e3;
 		const cacheFile = s.cache("osv-cache", "maven__org.slf4j__slf4j-api__2.0.18.json");
@@ -146,8 +147,11 @@ for (const mode of ["osv-503", "osv-truncated"]) {
 		const before = fs.readFileSync(cacheFile, "utf8");
 		const osvFlags = flags.filter(f => f !== "--no-osv");
 		const online = s.scan(mode, [], osvFlags);
-		assert.equal(online.status, 2, online.stdout + online.stderr);
-		assert.equal(fs.existsSync(s.report), false);
+		assert.equal(online.status, 0, online.stdout + online.stderr);
+		assert.ok(read(s.report).warnings.some(w => w.type === "source-unavailable"));
+		const strict = s.scan(mode, ["--fail-on-incomplete", "sources"], osvFlags);
+		assert.equal(strict.status, 2, strict.stdout + strict.stderr);
+		assert.ok(read(s.report).warnings.some(w => w.type === "source-unavailable"));
 		assert.equal(fs.readFileSync(cacheFile, "utf8"), before);
 		const offline = s.scan("offline", ["--fail-on", "high"], osvFlags);
 		assert.equal(offline.status, 1, offline.stdout + offline.stderr);

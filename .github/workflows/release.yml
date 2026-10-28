@@ -56,11 +56,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
+          node scripts/release-notes.js "$VERSION" CHANGELOG.md dist/RELEASE_NOTES.md
           if gh release view "$VERSION" > /dev/null 2>&1; then
-            gh release upload "$VERSION" dist/* --clobber
-            gh release edit "$VERSION" --draft=false
+            gh release upload "$VERSION" dist/*.tgz dist/*.tar.gz dist/*.zip dist/SHA256SUMS --clobber
+            gh release edit "$VERSION" --draft=false --notes-file dist/RELEASE_NOTES.md
           else
-            gh release create "$VERSION" dist/* \
+            gh release create "$VERSION" dist/*.tgz dist/*.tar.gz dist/*.zip dist/SHA256SUMS \
               --verify-tag --title "VigieVuln ${VERSION}" \
-              --notes-file CHANGELOG.md
+              --notes-file dist/RELEASE_NOTES.md
           fi

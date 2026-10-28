@@ -364,7 +364,7 @@ test("server: rejects URL-level forwarding", async () => {
 test("server: bodies over maxBodyBytes stream through uncached", async () => {
 	const p = await startProxy({ maxBodyBytes: 512 });
 	try {
-		p.up.state.body = Buffer.alloc(1024); // above the cap
+		p.up.state.body = Buffer.from(JSON.stringify({ data: "x".repeat(1013) })); // valid JSON above the cap
 		const r = await get(p.url + "/" + URL_NPM);
 		assert.equal(r.status, 200);
 		assert.equal(r.body.length, 1024); // streamed to the client in full
@@ -379,11 +379,11 @@ test("server: oversized concurrent responses share one upstream stream", async (
 	const p = await startProxy({ maxBodyBytes: 512, fetcher: async () => {
 		calls++;
 		await new Promise(ok => setTimeout(ok, 40));
-		return new Response(Buffer.alloc(2048, "x"), { headers: { "content-type": "text/plain" } });
+		return new Response(JSON.stringify("x".repeat(2046)), { headers: { "content-type": "text/plain" } });
 	} });
 	try {
 		const responses = await Promise.all(Array.from({ length: 20 }, () => get(p.url + "/" + URL_NPM)));
-		assert.ok(responses.every(r => r.status === 200 && r.body === "x".repeat(2048)));
+		assert.ok(responses.every(r => r.status === 200 && r.body === JSON.stringify("x".repeat(2046))));
 		assert.equal(calls, 1);
 		assert.equal(p.server.fadStore.size(), 0, "oversized body is not persisted");
 	} finally { await p.close(); }
@@ -462,6 +462,7 @@ test("upstreamHeadersFor: injects the right credential per host, client headers 
 test("server: a keyless instance is served by the server's NVD key (shared quota)", async () => {
 	const p = await startProxy({ keys: { nvd: "NVD-KEY" }, rewrite: t => t.replace(/^https:\/\/services\.nvd\.nist\.gov/, p.up.url()) });
 	try {
+		p.up.state.body = Buffer.from(JSON.stringify({ totalResults: 0, vulnerabilities: [] }));
 		// the client sends NO apiKey header at all
 		const r = await get(p.url + "/" + URL_NVD);
 		assert.equal(r.status, 200);

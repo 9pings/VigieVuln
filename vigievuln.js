@@ -17,7 +17,7 @@ const chalk = require("chalk");
 const pLimit = require("p-limit");
 const { program } = require("commander");
 const ui = require("./lib/ui");
-const { createSourceHealth, guardedFetch, formatAbort, setActiveLedger, setRetryAttempts } = require("./lib/source-health");
+const { createSourceHealth, guardedFetch, setActiveLedger, setRetryAttempts } = require("./lib/source-health");
 
 const core = require("./lib/core");
 
@@ -38,6 +38,18 @@ if (process.env.__FAD_RETIRE__) {
 	require("retire/lib/cli.js");
 } else {
 
+try {
+	const routed = require("./lib/cli-command-routing").routeArguments(process.argv.slice(2));
+	if (routed.help) { console.log(routed.help); process.exit(0); }
+	process.argv = [...process.argv.slice(0, 2), ...routed.args];
+} catch (error) { console.error(`❌  ${error.message}`); process.exit(2); }
+
+if (["auth", "project", "watch"].includes(process.argv[2])) {
+	require("./lib/cli-project-commands").run(process.argv.slice(2)).catch(err=>{
+		console.error(`❌  ${err.message}`); process.exitCode=2;
+	}).finally(()=>process.exit(process.exitCode || 0));
+} else {
+
 // -------- bash/zsh completion shortcut (must run before required-options parse) --------
 if (process.argv.includes("--completion")) {
 	const shellIdx = process.argv.indexOf("--completion") + 1;
@@ -55,6 +67,33 @@ if (process.argv.includes("--completion")) {
 }
 
 // -------- --set-nvd-key shortcut (must run before required-options parse) --------
+if (process.argv.includes("--set-proxy-cache-token") || process.argv.includes("--unset-proxy-cache-token")) {
+	const config = require("./lib/config");
+	if (process.argv.includes("--unset-proxy-cache-token")) config.set("proxyCacheToken", null);
+	else {
+		const token = process.argv[process.argv.indexOf("--set-proxy-cache-token") + 1];
+		if (!token || token.startsWith("-")) { console.error("--set-proxy-cache-token requires a key"); process.exit(1); }
+		config.set("proxyCacheToken", token);
+	}
+	console.log("Proxy key configuration updated in " + config.CONFIG_PATH);
+	process.exit(0);
+}
+if (process.argv.includes("--set-proxy-cache") || process.argv.includes("--unset-proxy-cache")) {
+	const config = require("./lib/config");
+	if (process.argv.includes("--unset-proxy-cache")) {
+		config.set("proxyCache", null);
+		console.log("Proxy cache removed from " + config.CONFIG_PATH);
+	} else {
+		const value = process.argv[process.argv.indexOf("--set-proxy-cache") + 1];
+		if (!value || !(/^(vigievuln|default)$/i.test(value) || /^https?:\/\/[^\s]+$/i.test(value))) {
+			console.error("--set-proxy-cache requires vigievuln, default, or an http(s) URL");
+			process.exit(1);
+		}
+		config.set("proxyCache", value);
+		console.log("Proxy cache saved to " + config.CONFIG_PATH);
+	}
+	process.exit(0);
+}
 if (process.argv.includes("--set-nvd-key")) {
 	const config = require("./lib/config");
 	const idx = process.argv.indexOf("--set-nvd-key");
@@ -74,6 +113,7 @@ if (process.argv.includes("--show-config")) {
 	const cfg = config.load();
 	const masked = { ...cfg };
 	if (masked.nvd_api_key) masked.nvd_api_key = masked.nvd_api_key.slice(0, 8) + "…" + masked.nvd_api_key.slice(-4);
+	if (masked.proxyCacheToken) masked.proxyCacheToken = "***";
 	if (masked.registries && typeof masked.registries === "object") {
 		masked.registries = Object.fromEntries(Object.entries(masked.registries).map(([eco, list]) =>
 			[eco, (list || []).map(r => ({ ...r, auth: r.auth ? "***" : undefined, token: r.token ? "***" : undefined }))]));
@@ -350,13 +390,9 @@ if (process.argv[2] === "serve-cache") {
 	return;
 }
 
-const USAGE = `
-(1) vigievuln -s ./proj                                              # read-only: full report (CVE + EOL + obsolete + outdated + transitive)
-(2) vigievuln -s ./proj -e "^(org.private|client)"                   # same, with regex exclusion of private deps
-(3) vigievuln -s ./proj -t ../pom-clean -e "^(org.private|client)"   # EXTRACT: cleaned POM tree + mirrored manifests, no scan
-(4) vigievuln -s ./proj --no-transitive --no-all-libs                # faster, only direct deps, no Maven Central queries
-(5) vigievuln -s ./proj -t ../pom-clean -e "^..." --snyk             # extract + scan + run snyk and merge findings
-`;
+const USAGE = `scan <dir> [options]
+       vigievuln watch <dir> (--name <name> | --id <id> | --export <file>) [options]
+       vigievuln login | logout | whoami`;
 
 // Every help surface names the running build: a user reading `--help` (or a bare
 // invocation) is often checking WHICH version they have before reporting something.
@@ -368,9 +404,10 @@ program
 	.showHelpAfterError()
 	.addHelpText("beforeAll", () => chalk.cyan(TITLE_LINE) + "\n")
 	.usage(USAGE)
+	.description(require("./lib/cli-command-routing").COMMAND_HELP.trim())
 	.option("-t, --target <target>", "EXTRACTION mode: write the cleaned tree to <dir>; non-empty dir requires --force")
 	// Not a requiredOption: --import-anonymized scans a descriptor with no source tree.
-	.option("-s, --src <src>", "root directory containing pom.xml files")
+	.option("-s, --src <src>", "source directory (legacy alternative to scan <dir>)")
 	.option("--source <src>", "alias of --src")
 	.option("--config <file>", "load default options from JSON (else ./.vigievuln-env.json, then legacy ./.fad-env.json)")
 	.option("-d, --disable <list>", "turn features OFF (comma-separated) — see the token list below")
@@ -407,16 +444,20 @@ program
 	.option("--fail-on <level>", "exit non-zero if a production finding meets <level>: low|medium|high|critical|kev|none", "none")
 	.option("--baseline <file>", "diff this scan against a prior findings.json (adds a Δ chapter)")
 	.option("--fail-on-new", "also fail on any NEW production CVE vs --baseline")
-	.option("--fail-on-incomplete [capabilities]", "exit 2 if required application capabilities are incomplete (default: inventory,advisories)")
+	.option("--fail-on-incomplete [capabilities]", "exit 2 for incomplete checks (inventory,advisories,recipes,sources)")
 	.option("--no-checksums", "don't write a SHA256SUMS integrity manifest alongside the report files")
 	.option("--ignore <file>", "triage file: CVE ids / coord globs to suppress")
 	.option("--vex <file>", "ingest a CSAF VEX and suppress what it marks not-affected/fixed")
 	.option("--licenses", "run license detection + copyleft policy check (off by default)")
 	.option("--offline", "no network: use cached CVE/OSV/NVD/EPSS/KEV/POM data only")
 	.option("--no-nvd-mirror", "NVD only: don't fall back to the fkie-cad/nvd-json-data-feeds mirror when NVD does not answer")
-	.option("--retries <n>", "retries (waiting 5+n s each) before a data source that does not answer stops the run; 0 = none", "5")
-	.option("--proxy-cache <url>", "shared data-source cache (`serve-cache`)")
-	.option("--vigievuln-proxy [domain]", "hosted cache: fr (default) or com; key required")
+	.option("--retries <n>", "retries (waiting 5+n s each) before a data source is marked unavailable; 0 = none", "5")
+	.option("--proxy-cache <url|vigievuln|default>", "shared data-source cache or official VigieVuln proxy")
+	.option("--set-proxy-cache <url|vigievuln|default>", "save the proxy cache for future scans")
+	.option("--unset-proxy-cache", "remove the saved proxy cache")
+	.option("--set-proxy-cache-token <token>", "save a proxy key for future scans")
+	.option("--unset-proxy-cache-token", "remove the saved proxy key")
+	.option("--vigievuln-proxy [domain]", "legacy hosted cache option: fr or com")
 	.option("--proxy-cache-token <token>", "authenticate to a shared proxy-cache server (or set VIGIEVULN_PROXY_CACHE_TOKEN)")
 	.option("--proxy <url>", "corporate proxy for all requests")
 	.option("--set-nvd-key <key>", "save NVD API key to ~/.fad-checker/config.json (10× faster NVD enrichment)")
@@ -426,6 +467,7 @@ program
 	.option("--replace", "with --import-cache: replace ~/.fad-checker/ wholesale instead of merging (previous dir kept as .bak unless --force)")
 	.option("--include-config", "with --export-cache: also bundle config.json (contains the NVD API key)")
 	.option("--export-anonymized <file>", "offline: write a path-free dependency descriptor and exit")
+	.option("--prepare-project <file>", "offline: prepare a path-free project descriptor for review")
 	.option("--import-anonymized <file>", "online, no --src: scan a descriptor to warm the caches")
 	.option("--force", "allow replacing a non-empty --target directory; with --import-cache --replace, skip backup")
 	.option("-o, --report-output <dir>", "report output directory", "./vigievuln-report")
@@ -449,7 +491,7 @@ program
 	.option("--public-component <path=slug>", "verify a public WordPress plugin/theme catalogue slug; repeatable", (value, list) => [...list, value], [])
 	.option("--wordfence-feed <file>", "local Wordfence v3 vulnerability feed JSON snapshot for WordPress advisories")
 	.option("--drupal-advisories <file>", "local packages.drupal.org security-advisories JSON snapshot")
-	.option("--wordfence-live", "fetch the official Wordfence feed with a client key or a shared proxy server key")
+	.option("--wordfence-live", "query Wordfence advisories (targeted software projection through a proxy; direct feed requires a client key)")
 	.option("--wordfence-feed-url <url>", "override the official Wordfence v3 production-feed URL for a live scan; custom URLs require a client API key")
 	.option("--wordfence-api-key <key>", "Wordfence v3 bearer key for a live feed (or set WORDFENCE_API_KEY)")
 	.option("--drupal-advisories-live [url]", "query the official packages.drupal.org security-advisories API live for the inventoried Drupal packages")
@@ -496,7 +538,7 @@ program.addHelpText("after", `
   -a  licenses eol-support typosquat snyk osv-db nvd-cpe-match cve-refresh
       cve-offline osv-db-refresh retire-refresh
 
-  e.g.  vigievuln -s . -d nvd,epss,certs -a licenses,typosquat -o ./audit
+  e.g.  vigievuln scan . -d nvd,epss,certs -a licenses,typosquat -o ./audit
   --help-all lists the individual flags these replace.  Full guide: docs/USAGE.md`);
 // -d / -a fold thirty-six boolean flags into two lists. The flags still WORK — hiding them
 // costs nothing and breaks no existing script, whereas removing them would break every one
@@ -532,9 +574,13 @@ if (BARE_ARGV) {
   Audit a source tree for ${chalk.bold("vulnerable")}, ${chalk.bold("end-of-life")}, ${chalk.bold("obsolete")} and ${chalk.bold("outdated")} dependencies.
   Maven · Gradle · npm · Yarn · pnpm · Composer · PyPI · NuGet · Go · Ruby — no build tool needed.
 
-  ${chalk.cyan("vigievuln -s <dir>")}                   full report: CVE + EOL + obsolete + outdated + licenses
+  ${chalk.cyan("vigievuln scan <dir>")}                 full report: CVE + EOL + obsolete + outdated + licenses
   ${chalk.cyan("vigievuln -s <dir> --offline")}         air-gapped: warmed cache only, zero network
   ${chalk.cyan("vigievuln -s <dir> --fail-on high")}    CI gate: exit 1 on a high+ production CVE
+  ${chalk.cyan("vigievuln watch <dir> --name <name>")}    upload local dependencies for project monitoring
+  ${chalk.cyan("vigievuln watch <dir> --export <file>")}  local descriptor only, no login or upload
+  ${chalk.cyan("vigievuln login | logout | whoami")}     account session (legacy auth commands still work)
+  ${chalk.cyan("vigievuln project status")}              list your monitored projects
 
   ${chalk.dim("-h, --help")} for every option · ${chalk.dim("-v, --version")} · ${chalk.dim("docs/USAGE.md")} for the full guide
 `);
@@ -557,7 +603,15 @@ try {
 	process.exit(1);
 }
 Object.assign(options, applyLayers(program, _layers, require("./lib/config").load()));
-try { Object.assign(options, require("./lib/hosted-proxy").resolveHostedProxy(options)); }
+// An anonymized export is strictly local, including proxy resolution and preflight.
+if (options.exportAnonymized || options.prepareProject) options.offline = true;
+let hostedAccountSession = null;
+if (!options.offline && !options.proxyCacheToken && !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN &&
+	(options.vigievulnProxy || /^(default|vigievuln|https:\/\/api\.vigievuln\.(fr|com)\/?$)$/i.test(String(options.proxyCache || "")))) {
+	try { hostedAccountSession = require("./lib/account-session").createAccountSessionStore().read(); }
+	catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
+}
+try { Object.assign(options, require("./lib/hosted-proxy").resolveHostedProxy({ ...options, allowProxyLogin: !!hostedAccountSession || !!(process.stdin.isTTY && process.stderr.isTTY) })); }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 // --source CLI alias → src (applyLayers already maps the file/env JSON 'source' key).
 if (!options.src && options.source) options.src = options.source;
@@ -575,6 +629,10 @@ if (!options.src && options.source) options.src = options.source;
 	}
 }
 const deps2Exclude = options.exclude ? new RegExp(options.exclude) : null;
+if (options.vigievulnProxy && !options.offline && (options.osvDb === true || options.osvDbRefresh)) {
+	console.error(chalk.red("❌  --osv-db and --osv-db-refresh download a bulk archive and cannot be used with the hosted proxy online."));
+	process.exit(2);
+}
 const verbose = !!options.verbose;
 
 // ---- Source health: a remote source that goes dark must not produce a quiet hole ----
@@ -596,10 +654,10 @@ if (!options.offline) {
 		const { configureResourceRoute } = require("./lib/providers");
 		const { createCacheStore } = require("./lib/proxy-cache");
 		try {
-			configureResourceRoute({ proxyUrl: options.proxyCache,
+			configureResourceRoute({ proxyUrl: options.proxyCache, hosted: !!options.vigievulnProxy,
 				token: options.proxyCacheToken || (process.env.VIGIEVULN_PROXY_CACHE_TOKEN ?? process.env.FAD_PROXY_CACHE_TOKEN) || null,
 				health: sourceHealth, fetcher: baseFetch,
-				store: createCacheStore(require("node:path").join(require("node:os").homedir(), ".fad-checker", "resource-cache")) });
+				store: options.vigievulnProxy ? null : createCacheStore(require("node:path").join(require("node:os").homedir(), ".fad-checker", "resource-cache")) });
 		} catch (err) {
 			console.error(chalk.red(`❌  ${err.message}`));
 			process.exit(2);
@@ -615,16 +673,13 @@ if (!options.offline) {
 	console.warn(chalk.yellow("⚠️  --proxy-cache ignored (--offline makes no requests at all)"));
 }
 /**
- * Stop the run the moment a source is declared unreachable — before the remaining steps and
- * before anything is written. Exit 2, distinct from the 1 that --fail-on uses for findings:
- * a CI job has to be able to tell "vulnerabilities found" from "this scan is not trustworthy".
+ * Provider outages are coverage warnings by default. Write the partial reports before
+ * evaluating an explicitly requested --fail-on-incomplete gate.
  */
-function abortIfDegraded() {
+function warnIfDegraded() {
 	const bad = sourceHealth.degraded();
 	if (!bad.length) return;
-	console.log();
-	console.log(chalk.red("❌  " + formatAbort(bad)));
-	process.exit(2);
+	ui.warn(`Sources unavailable: ${bad.map(s => s.id).join(", ")}; report coverage is incomplete.`);
 }
 
 // Validate --fail-on early: an unrecognised value (typo like "hgih", wrong case)
@@ -788,6 +843,33 @@ async function timedPhase(label, fn) {
 
 (async function main() {
 	if (options.vigievulnProxy && !options.offline) {
+		if (!options.proxyCacheToken) {
+			try {
+				if (hostedAccountSession) {
+					options.proxyCacheToken = (await require("./lib/account-client").createAccountClient().createProxyKey()).token;
+					require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
+					require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
+					console.error("Proxy key created from your signed-in account and saved for future scans.");
+				} else {
+				const readline = require("node:readline");
+				const { Writable } = require("node:stream");
+				const ask = (prompt, secret = false) => new Promise(resolve => {
+					process.stderr.write(prompt);
+					const output = secret ? new Writable({ write(_chunk, _encoding, done) { done(); } }) : process.stderr;
+					const rl = readline.createInterface({ input: process.stdin, output, terminal: true });
+					rl.question("", answer => { rl.close(); if (secret) process.stderr.write("\n"); resolve(answer); });
+				});
+				console.error("Sign in to your verified Vigie Vuln account to create a proxy key.");
+				console.error("No account? Register at https://www.vigievuln.fr/account");
+				const email = await ask("Email: ");
+				const password = await ask("Password: ", true);
+				options.proxyCacheToken = await require("./lib/hosted-proxy").loginForProxy({origin:options.proxyCache,email,password});
+				require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
+				require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
+				console.error("Proxy key saved for future scans.");
+				}
+			} catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exitCode = 2; return; }
+		}
 		try { await require("./lib/hosted-proxy").checkHostedProxy(options.proxyCache, options.proxyCacheToken); }
 		catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exitCode = 2; return; }
 	}
@@ -829,8 +911,8 @@ async function timedPhase(label, fn) {
 	const walkOpts = { excludePath, defaultExcludes };
 	// Anonymized export (phase 1, --export-anonymized) is a purely local operation — parse the tree,
 	// emit public coordinates, exit. Force offline so no source ever touches the network.
-	if (options.exportAnonymized) options.offline = true;
-	const runMode = options.exportAnonymized ? "offline (anonymized export · phase 1)"
+	if (options.exportAnonymized || options.prepareProject) options.offline = true;
+	const runMode = options.prepareProject ? "offline (project descriptor preparation)" : options.exportAnonymized ? "offline (anonymized export · phase 1)"
 		: options.importAnonymized ? "import descriptor"
 		: (options.offline ? "offline" : "online");
 	if (options.src) ui.kv("source", chalk.white(options.src));
@@ -905,7 +987,7 @@ async function timedPhase(label, fn) {
 				if (warmed.typo3) ui.ok("TYPO3 advisory snapshot warmed → advisory-snapshots/ — carried by --export-cache, reused offline");
 				if (warmed.spip) ui.ok("SPIP advisory snapshot warmed (NVD product CVEs) → advisory-snapshots/ — carried by --export-cache, reused offline");
 				for (const version of warmed.wpChecksums) ui.ok(`WordPress checksums reference warmed (${version}) → advisory-snapshots/ — carried by --export-cache, reused offline`);
-				if (warmed.wordfence) ui.ok("Wordfence catalogue warmed (client or proxy credentials) → advisory-snapshots/ — carried by --export-cache, reused offline without a key");
+				if (warmed.wordfence) ui.ok("Wordfence advisories warmed (targeted identities in proxy mode) → advisory-snapshots/ — carried by --export-cache, reused offline without a key");
 			}
 			catch (error) {
 				console.error(chalk.red(`❌  CMS advisory snapshot warming failed: ${error.message}`));
@@ -1019,6 +1101,15 @@ async function timedPhase(label, fn) {
 	}
 
 	// --- Anonymized phase 1: export a descriptor and exit (no network, no report) ---
+	if (options.prepareProject) {
+		const descriptor = require("./lib/project-descriptor").buildProjectDescriptor(resolved, {generator:`vigievuln ${pkg.version}`});
+		try { fs.writeFileSync(options.prepareProject, JSON.stringify(descriptor, null, 2) + "\n", {mode:0o600}); fs.chmodSync(options.prepareProject,0o600); }
+		catch (e) { console.error(chalk.red(`❌  could not write project descriptor: ${e.message}`)); process.exitCode=1; return; }
+		const counts = Object.fromEntries(["direct","transitive","unknown"].map(k=>[k,descriptor.deps.filter(d=>d.relation===k).length]));
+		ui.ok(`Project descriptor saved: ${counts.direct} direct, ${counts.transitive} transitive, ${counts.unknown} unknown.`);
+		ui.warn("Review coordinates before sharing: private package names and versions can identify your project.");
+		return;
+	}
 	if (options.exportAnonymized) {
 		const { serializeDeps } = require("./lib/deps-descriptor");
 		const { collectExternalParents, collectImportBoms, collectPropertyOverrides, collectVersionPropertyNames } = require("./lib/maven-bom");
@@ -1039,12 +1130,16 @@ async function timedPhase(label, fn) {
 				const { allApplicationPlugins } = require("./lib/application-plugins");
 				const { runApplicationPlugins } = require("./lib/application-plugins/runner");
 				const appState = await runApplicationPlugins(options.src, { plugins: allApplicationPlugins(),
-					selection: options.appPlugins, resolvedDeps: resolved, activeCodecIds: activeIds, offline: true });
+					selection: options.appPlugins, resolvedDeps: resolved, activeCodecIds: activeIds, offline: true,
+					publicComponents: options.publicComponent, privateComponentPaths: options.privateComponent });
 				applications = appState.applications.map(app => {
 					const core = appState.inventory.find(c => c.applicationId === app.id && c.kind === "core");
 					// Public catalogue identities only — private/custom components never
 					// leave the enclave, exactly like the live query that filters them out.
-					const components = [...new Set(appState.inventory
+					const components = app.type === "wordpress"
+						? require("./lib/application-providers/wordfence-projection").componentQueries(
+							appState.inventory.filter(c => c.applicationId === app.id)).map(q => `wordpress:${q.type}:${q.slug}`)
+						: [...new Set(appState.inventory
 						.filter(c => c.applicationId === app.id && c.visibility !== "private"
 							&& typeof c.coord === "string" && c.coord)
 						.map(c => c.coord.toLowerCase()))].sort();
@@ -1269,6 +1364,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			const { runApplicationPlugins } = require("./lib/application-plugins/runner");
 			const { buildApplicationRelations } = require("./lib/application-inventory");
 			appState = await runApplicationPlugins(options.src, { plugins: allApplicationPlugins(), selection: options.appPlugins,
+				reportProviderFailures: true,
 				resolvedDeps: resolved, activeCodecIds: activeIds, excludePath, defaultExcludes, scanContext: options.scanContext,
 				privateComponentPaths: options.privateComponent || [], publicComponents: options.publicComponent || [],
 				wordfenceFeedPath: options.wordfenceFeed || null, drupalAdvisoriesPath: options.drupalAdvisories || null,
@@ -1395,7 +1491,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const totalSteps = [willBom, willReactor, willTransitive, willCve, willEol, willEol && composerPlatforms.length > 0,
 		willOutdated, /*npm reg*/ true, ...otherRegistryIds.map(() => true), willOsv, willPackagistAudit, willOsvDb,
 		willNvd, willEpss, willKev, willEuvd, willCertFr, willRetire, willCerts, willBinaryId].filter(Boolean).length;
-	const progress = new ui.Progress(totalSteps, { onStepEnd: abortIfDegraded });
+	const progress = new ui.Progress(totalSteps);
 
 	// The external import-BOM + <parent> managed table, kept for the transitive pass: Maven
 	// pins transitive versions with it too, not only versionless declarations.
@@ -1480,12 +1576,13 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (willCve) {
 		const st = progress.start("CVE index (CVEProject)");
 		try {
-			const r = await cveScanner.scan(resolved, { cveRefresh: !!options.cveRefresh, cveOffline: !!options.cveOffline, offline, verbose });
+			const r = await cveScanner.scan(resolved, { cveRefresh: !!options.cveRefresh, cveOffline: !!options.cveOffline, offline, verbose, hostedProxy: !!options.vigievulnProxy });
 			cveMatches = r.matches || [];
 			cveDataDate = r.meta?.cveDataDate || null;
 			st.done(`${cveMatches.length} match(es)${cveDataDate ? ` · ${String(cveDataDate).slice(0, 10)}` : ""}`);
 		} catch (err) {
 			st.fail(err.message);
+			if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`CVEProject: ${err.message}; Maven CVE coverage is incomplete.`});
 		}
 	}
 
@@ -1609,8 +1706,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		} catch (err) {
 			st.fail(err.message);
 			if (err.code === "OSV_INCOMPLETE") {
-				console.error(chalk.red(`❌  ${err.message}. Existing package caches were preserved. No report was written.`));
-				process.exit(2);
+				scanWarnings.push({type:"source-unavailable",message:`OSV: ${err.message}; advisory coverage is incomplete. Existing package caches were preserved.`});
 			}
 		}
 	}
@@ -1638,8 +1734,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				message: `Packagist returned no advisory data for ${unknownPackages.length} Composer package(s): ${unknownPackages.join(", ")}. Their Packagist advisory coverage is unknown.` });
 		} catch (err) {
 			st.fail(err.message);
-			console.error(chalk.red(`❌  ${err.message}; Packagist advisory coverage is incomplete. No report was written.`));
-			process.exit(2);
+			scanWarnings.push({type:"source-unavailable",message:`Packagist: ${err.message}; advisory coverage is incomplete.`});
 		}
 	}
 
@@ -1651,7 +1746,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		try {
 			const { ensureOsvDb, matchOsvDbDeps } = require("./lib/osv-db");
 			if (!offline && !hasOsvDbIndex("maven")) st.tick("first run — importing the OSV Maven database (~9 MB)");
-			const index = await ensureOsvDb({ offline, refresh: !!options.osvDbRefresh, verbose, ecosystem: "maven" });
+			const index = await ensureOsvDb({ offline: offline || (!!options.vigievulnProxy && options.osvDb !== true && !options.osvDbRefresh), refresh: !!options.osvDbRefresh, verbose, ecosystem: "maven" });
 			if (!index) {
 				st.done(offline ? "no local OSV DB (run once online with --osv-db)" : "unavailable");
 			} else {
@@ -1729,7 +1824,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				await enrichEpss(cveMatches, { verbose, offline, onProgress: (p, t) => st.tick(p, t) });
 				const scored = cveMatches.filter(m => m.cve?.epssPercentile != null).length;
 				st.done(`${scored} scored`);
-			} catch (err) { st.fail(err.message); }
+			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`EPSS: ${err.message}; enrichment is incomplete.`}); }
 		}
 	}
 
@@ -1740,16 +1835,16 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		else {
 			try {
 				const { enrichKev } = require("./lib/kev");
-				await enrichKev(cveMatches, { verbose, offline });
+				await enrichKev(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy });
 				const kevd = cveMatches.filter(m => m.cve?.kev).length;
 				st.done(`${kevd} known-exploited`);
-			} catch (err) { st.fail(err.message); }
+			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`CISA KEV: ${err.message}; exploitation status is incomplete.`}); }
 		}
 	}
 
 	// 4f-bis. European references — GCVE id (defined by the GCVE rules, no request), the
 	// ENISA EUVD id + exploited flag, and the CERT-FR advisories citing the CVE. All three
-	// are bulk/incremental reads: no CVE id of the project is sent anywhere.
+	// are bulk/incremental reads directly, or targeted CVE lookups in hosted proxy mode.
 	if (cveMatches.length) {
 		try { require("./lib/gcve").enrichGcve(cveMatches); }
 		catch (err) { ui.warn(`GCVE ids skipped: ${err.message}`); }
@@ -1760,11 +1855,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		else {
 			try {
 				const { enrichEuvd } = require("./lib/euvd");
-				await enrichEuvd(cveMatches, { verbose, offline });
+				await enrichEuvd(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy });
 				const ids = new Set(cveMatches.filter(m => m.cve?.euvd?.id).map(m => m.cve.id)).size;
 				const exploited = new Set(cveMatches.filter(m => m.cve?.euvd?.exploitedSince != null).map(m => m.cve.id)).size;
 				st.done(`${ids} EUVD id(s) · ${exploited} exploited per ENISA`);
-			} catch (err) { st.fail(err.message); }
+			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`EUVD: ${err.message}; enrichment is incomplete.`}); }
 		}
 	}
 	if (willCertFr) {
@@ -1773,10 +1868,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		else {
 			try {
 				const { enrichCertFr } = require("./lib/certfr");
-				await enrichCertFr(cveMatches, { verbose, offline, onProgress: (p, t) => st.tick(p, t) });
+				await enrichCertFr(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy, onProgress: (p, t) => st.tick(p, t) });
 				const cited = new Set(cveMatches.filter(m => m.cve?.certfr?.length).map(m => m.cve.id)).size;
 				st.done(`${cited} CVE(s) cited by CERT-FR`);
-			} catch (err) { st.fail(err.message); }
+			} catch (err) { st.fail(err.message); if (options.vigievulnProxy) scanWarnings.push({type:"source-unavailable",message:`CERT-FR: ${err.message}; enrichment is incomplete.`}); }
 		}
 	}
 
@@ -2127,6 +2222,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 
 	const reportWarnings = [
+		...sourceHealth.degraded().map(s => ({type:"source-unavailable",count:1,
+			message:`${s.id}: source unavailable (${s.codes.join(", ") || "no response"}); coverage may be incomplete.`})),
+		...sourceHealth.stale().map(s => ({ type:"source-stale", count:1,
+			message:`${s.id}: the source could not be refreshed; cached data${s.at ? ` from ${new Date(s.at).toISOString()}` : " of unknown age"} was used. Coverage may be incomplete.` })),
 		// A project already on a vendor build of an open-source-EOL cycle: covered by the paid
 		// support that build comes from, so it is a note, not an EOL finding.
 		...commercialBuildNotes.map(e => ({ type: "commercial-build",
@@ -2134,7 +2233,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			version: e.commercialBuild.version, lastPublic: e.commercialBuild.lastPublic, until: e.extendedSupport,
 			...(e.dep.manifestPaths?.[0] ? { manifestPath: e.dep.manifestPaths[0] } : {}),
 			message: `${e.dep.groupId}:${e.dep.artifactId} ${e.commercialBuild.version} is not on Maven Central and is newer than the last public ${e.product} ${e.cycle} release (${e.commercialBuild.lastPublic}): a vendor build under paid support${e.extendedSupport && e.extendedSupport !== "true" ? ` (until ${e.extendedSupport})` : ""}, not reported as end-of-life.` })),
-		...appState.diagnostics.map(d => ({ type: "cms-coverage", code: d.code,
+		...appState.diagnostics.map(d => ({ type: d.sourceIds?.length ? "source-unavailable" : "cms-coverage", code: d.code,
 			applicationId: d.applicationId || null, ...(d.path ? { path: d.path } : {}),
 			message: `${d.applicationId || d.pluginId || "application"}: ${d.message}` })),
 		// CMS coverage gaps are grouped per (application, capability, source, diagnostic)
@@ -2219,12 +2318,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 
 	const wrote = [];
 	let xlsxFailed = false;
-	// Apply the source-health gate for every output combination, including JSON-only.
-	abortIfDegraded();
+	// Announce coverage gaps for every output combination, including JSON-only.
+	warnIfDegraded();
 	if (out.html || out.doc) {
 		await ensureDir(out.html); await ensureDir(out.doc);
-		// Last gate: the collection + Maven existence phases run before the step progress
-		// exists, so their outages are only seen here. Nothing has been written yet.
+		// Include collection/registry outages even when they preceded step progress.
 		const { htmlPath, docPath } = await writeReports({
 			cveMatches: prodMatches, devCveMatches: devMatches, embeddedMatches, retireMatches, vendoredJsInventory, certFindings,
 			eolResults, obsoleteResults, outdatedResults, licenseResults, excludedDirs,
@@ -2345,11 +2443,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		const { requiredCoverageComplete } = require("./lib/scan-coverage");
 		const raw = options.failOnIncomplete === true ? "inventory,advisories" : String(options.failOnIncomplete);
 		const required = [...new Set(raw.split(",").map(x => x.trim()).filter(Boolean))];
-		const known = new Set(["inventory", "advisories", "recipes"]);
+		const known = new Set(["inventory", "advisories", "recipes", "sources"]);
 		if (!required.length || required.some(x => !known.has(x))) {
 			console.error(chalk.red(`❌  invalid --fail-on-incomplete capabilities: ${raw}`));
 			process.exitCode = 2;
-		} else if (!requiredCoverageComplete(appState.coverage, required)) {
+		} else if ((required.includes("sources") && (sourceHealth.degraded().length || sourceHealth.stale().length || reportWarnings.some(w => w.type === "source-unavailable" || w.type === "source-stale"))) || !requiredCoverageComplete(appState.coverage, required.filter(x => x !== "sources"))) {
 			ui.section("Coverage gate");
 			console.log(chalk.red(`✗ required application checks incomplete: ${required.join(", ")}`));
 			process.exitCode = 2;
@@ -2363,4 +2461,5 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 // and by its GHSA remoteId from another — see that module's header).
 const { mergeBySource } = require("./lib/merge-sources");
 
+} // end: regular scan / dedicated CLI commands
 } // end: compiled-binary retire-mode guard (see top of file)

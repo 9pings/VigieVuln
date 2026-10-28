@@ -507,6 +507,37 @@ test("collectNpmDeps (yarn v1 / Berry / pnpm): record shape matches the package-
 	}
 });
 
+test("collectNpmDeps: per-version graph relations are independent of dev flags; orphans stay unknown", t => {
+	for (const [lockName, body] of [
+		["yarn.lock", YARN_V1], ["yarn.lock", YARN_BERRY],
+		["pnpm-lock.yaml", PNPM_V5], ["pnpm-lock.yaml", PNPM_V6], ["pnpm-lock.yaml", PNPM_V9],
+	]) {
+		const dir = project(lockName, body);
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		const map = collectNpmDeps(dir);
+		assert.deepEqual(map.get("npm:app-prod").versionRelations, { "1.2.0": ["direct"] });
+		assert.deepEqual(map.get("npm:jest-fake").versionRelations, { "1.0.0": ["direct"] });
+		assert.deepEqual(map.get("npm:lodash").versionRelations, { "4.17.15": ["transitive"] });
+		assert.deepEqual(map.get("npm:ms").versionRelations, { "1.0.0": ["transitive"], "2.1.3": ["transitive"] });
+		assert.deepEqual(map.get("npm:orphan-pkg").versionRelations, { "1.0.0": ["unknown"] });
+	}
+});
+
+test("collectNpmDeps: an ambiguous yarn root cannot assign a relation by name", t => {
+	const dir = project("yarn.lock", `# yarn lockfile v1
+
+target@1.0.0:
+  version "1.0.0"
+
+target@2.0.0:
+  version "2.0.0"
+`, { dependencies: { target: "^3.0.0" } });
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	assert.deepEqual(collectNpmDeps(dir).get("npm:target").versionRelations, {
+		"1.0.0": ["unknown"], "2.0.0": ["unknown"],
+	});
+});
+
 test("per-version classification reaches the match: ms@1.0.0 (dev-only) is dev, ms@2.1.3 is prod", () => {
 	const dir = project("yarn.lock", YARN_V1);
 	const map = collectNpmDeps(dir);

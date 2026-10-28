@@ -26,12 +26,13 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 - **10 ecosystems in one pass**; Maven, Gradle, npm/Yarn/pnpm, Composer, PyPI, NuGet, Go, Ruby — plus **vendored JS**, committed **native binaries** (identified by checksum) and **embedded JARs** (fat-jars/war/ear, opened in-memory).
 - **No build tools**; No `mvn`/`gradle`/`npm`/`pip`/`dotnet`/`go`, no `node_modules/` → [how](docs/COMPARISON.md#how-its-autonomous-no-build-tools)
 - **CVE from multiple sources, merged & prioritised**; CVEProject + OSV.dev + Packagist security advisories + NVD, ranked **CISA KEV → EPSS → CVSS**.
-- **European references on every CVE**: ENISA **EUVD** id + ENISA's exploited flag, **GCVE** id, and the **CERT-FR** advisories citing it — bulk/incremental reads, no CVE id of your project is sent.
+- **European references on every CVE**: ENISA **EUVD** id + ENISA's exploited flag, **GCVE** id, and the **CERT-FR** advisories citing it. Hosted proxy lookups send relevant CVE identifiers to the proxy.
 - **Beyond CVEs**; Report **EOL and out-of-active-support** frameworks, deprecated/abandoned/yanked, outdated, SPDX **licenses**, and **private/internal packages**
 - **CMS & frameworks audited as instances**; Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP with per-instance inventory (core, plugins, themes, bundles, components) → [the dedicated guide](docs/CMS-FRAMEWORKS.md)
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
 - **Air-gapped flow**; **zero network under `--offline`** → [Benchmark](docs/BENCHMARK.md) · [Air-gapped](#air-gapped-audits)
-- **Hosted proxy with a verified account**; `--vigievuln-proxy [fr|com]` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
+- **Hosted proxy with a verified account**; `--set-proxy-cache vigievuln` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
+- **Project monitoring**; `vigievuln watch ./project --name 'My Project'` — one free project with up to **100 distinct direct dependency coordinates** → [monitoring guide](docs/USAGE.md#project-monitoring)
 - **Shared cache for a scanner fleet**; `vigievuln serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
 - **Supply-chain risk**; known-**malicious** advisories and suspected **typosquats** (`--typosquat`).
 - **Audit-grade**; every report carries a **provenance manifest** and a **Methodology & limitations** chapter; a `SHA256SUMS`;
@@ -55,10 +56,49 @@ existing credentials, warmed data and air-gapped workflows keep working.
 
 ```bash
 npm install -g vigievuln
-vigievuln -s ./my-project          # → ./vigievuln-report/cve-report.html
+vigievuln scan ./code             # → ./vigievuln-report/cve-report.html
 ```
 
 A free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) (instant) gives 10× faster enrichment: `vigievuln --set-nvd-key YOUR_KEY`. A few common runs; full list via `vigievuln --help` or [docs/USAGE.md](docs/USAGE.md)
+
+### Monitor a project
+
+Create and verify your [account](https://www.vigievuln.fr/account), then:
+
+```bash
+vigievuln login
+vigievuln whoami
+vigievuln watch ./project --name 'My Project'
+vigievuln project status
+vigievuln logout
+```
+
+`watch` collects the inventory locally and uploads it once. Run it again with the same unique project name to update that project's inventory; it does not run a background watcher. `login` creates an account session and does not configure the proxy cache.
+
+The free tier includes **one project and up to 100 distinct direct dependency coordinates per project**. Multiple versions of the same coordinate count once. Dependencies whose direct relationship cannot be established are excluded from monitoring and reported as incomplete coverage. This quota applies to hosted monitoring, not local scans.
+
+To review the inventory before uploading, export it locally:
+
+```bash
+vigievuln watch ./project --export fichier.json
+```
+
+`--export` only writes the descriptor: it runs offline, requires no login and sends nothing to the service. Review package names and versions, including private packages, before uploading. Source code, paths and registry URLs are omitted from the descriptor.
+
+Monitoring establishes a silent initial baseline, then reports new high or critical vulnerabilities (CVSS ≥ 7) and known exploited vulnerabilities affecting direct dependencies. Enable alerts in your account and refresh the inventory when dependencies change. [Monitoring workflow and compatibility commands](docs/USAGE.md#project-monitoring).
+
+Existing commands remain supported: `vigievuln -s ./code`, `auth login|status|logout`, `--prepare-project` and `project push`.
+
+### Official Vigie Vuln proxy cache
+
+Configure the proxy once, then sign in with your verified [Vigie Vuln account](https://www.vigievuln.fr/account) when prompted:
+
+```bash
+vigievuln --set-proxy-cache vigievuln  # `default` selects the same official proxy
+vigievuln scan ./code
+```
+
+The selection and the proxy key created during proxy sign-in are saved in `~/.fad-checker/config.json` and reused on subsequent scans. This proxy key is separate from the account session used by `watch`. Alternatively, save an existing key with `vigievuln --set-proxy-cache-token <key>`, or provide it via `VIGIEVULN_PROXY_CACHE_TOKEN` (useful in CI). Remove the selection or key with `--unset-proxy-cache` or `--unset-proxy-cache-token`. `--proxy-cache <url>` overrides the saved selection for one scan. The hosted proxy receives requested package coordinates and CVE identifiers; it does not receive your source code. [Proxy documentation](docs/USAGE.md#hosted-vigievuln-proxy).
 
 ### Interactive HTML samples
 
