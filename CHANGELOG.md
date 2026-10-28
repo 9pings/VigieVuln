@@ -1,6 +1,10 @@
 # Changelog — VigieVuln
 
-## [1.1.1] — Unreleased
+## [1.1.2] — Unreleased
+
+- Fix Windows account sessions when the home directory uses an 8.3 short path, including GitHub Actions temporary directories.
+
+## [1.1.1] — 2026-10-28
 
 - Review and explicitly accept the current service terms when a hosted account requires it.
 - Refuse project descriptors larger than 500,000 UTF-8 bytes before upload.

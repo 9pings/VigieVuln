@@ -333,6 +333,25 @@ function nativeFixture(t, suffix = '') {
   } };
 }
 
+test('native Windows accepts an 8.3 short home path without weakening ACL checks', native, t => {
+  const { options, edit } = nativeFixture(t, 'long-home-directory-');
+  const shortHome = edit(`
+    Add-Type -TypeDefinition 'using System.Runtime.InteropServices; using System.Text; public static class ShortHome { [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern uint GetShortPathName(string path, StringBuilder result, uint length); }'
+    $result = New-Object System.Text.StringBuilder 32768
+    if ([ShortHome]::GetShortPathName($homePath, $result, $result.Capacity) -eq 0) { throw 'GetShortPathName failed' }
+    [Console]::Write($result.ToString())
+  `);
+  if (shortHome.toLowerCase() === options.homeDir.toLowerCase()) {
+    t.skip('8.3 short names are disabled on this volume');
+    return;
+  }
+  const store = createAccountSessionStore({ ...options, homeDir: shortHome });
+  store.write(SESSION);
+  assert.deepEqual(store.read(), SESSION);
+  store.clear();
+  assert.equal(store.read(), null);
+});
+
 test('native Windows Unicode home works even when the process starts with code page 850', native, t => {
   const { options, edit } = nativeFixture(t, 'é-漢字-😀-');
   const unicodeOptions = { ...options, spawnSyncImpl(executable, args, settings) {
