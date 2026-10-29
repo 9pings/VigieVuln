@@ -37,6 +37,8 @@ function fixture(t, settings = {}) {
       fs.appendFileSync(${JSON.stringify(capture)},JSON.stringify(request)+'\\n');
       if(settings.noNetwork)throw Error('network forbidden');
       const terms={version:'2026-10-28',url:'/terms',documentUrl:'/terms/2026-10-28',accepted:!settings.terms};
+      if(settings.customOrigin && url===settings.customOrigin+'/v1/accounts/login')return Response.json({token:'custom_session',tokenType:'Bearer',expiresAt:Date.now()+3600000,account:{id:'account',email:'person@example.test',terms}});
+      if(settings.customOrigin && url===settings.customOrigin+'/v1/accounts/proxy-keys')return Response.json({key:{token:'custom_proxy_key'}});
       if(url==='https://www.vigievuln.fr/v1/accounts/me')return settings.revoked?new Response('',{status:401}):Response.json({account:{id:'account',email:'person@example.test',terms}});
       if(url==='https://www.vigievuln.fr/v1/accounts/login')return Response.json({token:'new_session',tokenType:'Bearer',expiresAt:Date.now()+3600000,account:{id:'account',email:'person@example.test',terms}});
       if(url==='https://www.vigievuln.fr/v1/accounts/terms')return Response.json({account:{id:'account',email:'person@example.test',terms:{...terms,accepted:true}}});
@@ -202,11 +204,13 @@ test('watch rejects conflicting options and empty inventories without account tr
   assert.equal(run.status,2);assert.match(run.stderr,/empty project inventory/);assert.equal(f.calls().length,0);
 });
 
-for(const command of ['login','whoami','auth status','auth whoami']) test(`${command} checks an existing session without login/registration or proxy mutation`, t => {
+for(const command of ['login','whoami','auth status','auth whoami']) test(`${command} checks an existing session without prompting`, t => {
   const f=fixture(t);const run=f.run(command.split(' '));success(run);
   assert.match(run.stdout,/Signed in as person@example.test/);assert.doesNotMatch(run.stderr,/Register:/);
   assert.deepEqual(f.calls().map(c=>c.url),['https://www.vigievuln.fr/v1/accounts/me']);
-  assert.equal(fs.existsSync(path.join(f.home,'.vigie-vuln/config.json')),false);
+  const cfg=path.join(f.home,'.vigie-vuln/config.json');
+  if(command==='login') assert.equal(JSON.parse(fs.readFileSync(cfg)).proxyCache,'vigievuln');
+  else assert.equal(fs.existsSync(cfg),false);
 });
 
 test('logout and auth logout revoke and clear locally without asking to sign in', t => {
@@ -269,7 +273,19 @@ test('top-level login prompts only when necessary and persists an account sessio
   assert.deepEqual(Object.keys(stored).sort(),['expiresAt','token']);
   const second=f.run(['login']);success(second);assert.doesNotMatch(second.stderr,/Register:|Email:|Password:/);
   assert.deepEqual(f.calls().map(c=>c.url.split('/').pop()),['login','me']);
-  assert.equal(fs.existsSync(path.join(f.home,'.vigie-vuln/config.json')),false);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(f.home,'.vigie-vuln/config.json'))).proxyCache,'vigievuln');
+});
+
+test('login uses the configured custom proxy and binds its session and proxy key to that origin', t => {
+  const f=fixture(t,{session:false,tty:true,customOrigin:'https://proxy.example.test'});
+  const dir=path.join(f.home,'.vigie-vuln');fs.mkdirSync(dir);
+  fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({proxyCache:'https://proxy.example.test'}));
+  success(f.run(['login']));
+  assert.deepEqual(f.calls().map(c=>c.url),['https://proxy.example.test/v1/accounts/login','https://proxy.example.test/v1/accounts/proxy-keys']);
+  const config=JSON.parse(fs.readFileSync(path.join(dir,'config.json')));
+  assert.equal(config.proxyCacheTokenOrigin,'https://proxy.example.test');
+  assert.equal(config.proxyCacheToken,'custom_proxy_key');
+  assert.equal(f.session().origin,'https://proxy.example.test');
 });
 
 test('legacy auth login and project status also prompt when a terminal needs authentication', t => {

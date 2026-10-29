@@ -1,10 +1,10 @@
 # HTML report samples
 
-Generated with **VigieVuln 1.0.1** on **2026-10-26**, using the local warmed cache in `--offline` mode. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
+Generated with **VigieVuln 1.1.3** on **2026-10-29**, using the official hosted proxy and local caches. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
 
 | Sample | Source and scope | What to explore |
 | --- | --- | --- |
-| [Dubbo](dubbo.html) | Apache Dubbo **2.7.8**, commit `0be2a1bbbf9168490acecaf1eed1bd16cb8db402`; **105 Maven descriptors**, **400 dependencies** | 735 production findings (220 direct, 515 transitive), 139 dev findings, 8 KEV matches, 4 EOL frameworks; per-POM ownership, evidence, priority and remediation |
+| [Dubbo](dubbo.html) | Apache Dubbo **2.7.8**, commit `0be2a1bbbf9168490acecaf1eed1bd16cb8db402`; **105 Maven descriptors**, **400 dependencies** | 739 production findings, 140 dev findings, 8 KEV matches, 4 EOL frameworks; per-POM ownership, evidence, priority and remediation |
 | [Multi-instance CMS/frameworks](multi-cms-frameworks.html) | **4 applications**, **270 application components**, **251 Composer dependencies** | Per-instance CVEs and ownership; application inventory and coverage; 5 EOL results; vendored JavaScript, certificate inventory, licenses and fix recommendations |
 
 ## Source corpus
@@ -25,16 +25,16 @@ The CMS corpus contains source trees and their existing lockfiles, without insta
 - The 146 certificates belong to WordPress's bundled CA trust store. They are public certificates, not 146 leaked private keys.
 - Drupal uses a cached publisher advisory snapshot. Symfony and Laravel findings come from the dependency advisory lanes and are attributed to their application components.
 - Cache gaps, missing lockfiles and unknown licenses are retained in the output. These samples do not claim complete runtime reachability or current security status.
-- The Dubbo scan retains unresolved parent POMs and unknown registry presence from the offline cache. EPSS scores and Maven outdated-version results were unavailable in this run; their absence does not imply that dependencies are current or low risk.
+- Both scans report an NVD stale-data warning: some retained NVD records could not be refreshed during these runs. The Dubbo scan also reports unresolved parent POMs; absence of findings does not establish that a dependency is safe.
 
 ## Reproduce
 
-Arrange the CMS directories above under `multi-cms-frameworks/`. Use the existing upstream lockfiles. Warm or import the required caches first; a fresh empty offline cache will not reproduce these results.
+Arrange the CMS directories above under `multi-cms-frameworks/`. Use the existing upstream lockfiles. Create and verify a Vigie Vuln account, then run `vigievuln login` to configure the official proxy. Results may change as source data is updated.
 
 ```sh
-vigievuln -s ./dubbo --offline -a licenses -r html,json -o ./sample-dubbo
+vigievuln -s ./dubbo --proxy-cache vigievuln -a licenses -r html,json -o ./sample-dubbo
 
-vigievuln -s ./multi-cms-frameworks --offline --ecosystem composer \
+vigievuln -s ./multi-cms-frameworks --proxy-cache vigievuln --ecosystem composer \
   -a licenses --exclude-path '**/tests/**' '**/test/**' '**/Tests/**' '**/Test/**' \
   -r html,json -o ./sample-cms
 ```

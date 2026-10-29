@@ -402,13 +402,12 @@ is enforced two ways:
 
 ## Hosted VigieVuln proxy
 
-Create and verify your account at `https://www.vigievuln.fr/account`, then create
-an individual proxy key. Set `VIGIEVULN_PROXY_CACHE_TOKEN` in your environment
-(or your CI secret store) and run:
+Create and verify your account at `https://www.vigievuln.fr/account`, then sign in
+and run:
 
 ```bash
-vigievuln --set-proxy-cache vigievuln
-vigievuln -s ./project  # sign in interactively if no proxy key is configured
+vigievuln login             # selects the official proxy if none is configured
+vigievuln scan ./project    # creates a proxy key interactively when needed
 # Or for just one scan:
 vigievuln -s ./project --proxy-cache default
 ```
@@ -417,16 +416,32 @@ Both `vigievuln` and `default` select `https://api.vigievuln.fr`. Authentication
 expired or revoked keys stop the scan with exit code 2. `--offline` makes no network request,
 including no authentication preflight, and does not require a token.
 
+The proxy may require a minimum CLI version. If yours is too old, the scan stops
+before collection with update instructions; upgrade the npm package or your standalone binary.
+
 This routes supported public provider requests through the shared cache. Private
 registries still use their configured direct connections. The proxy sees requested
 package coordinates and vulnerability identifiers; this option does not upload
 your source code or create a monitored project. A failed proxy request does not
 silently switch to direct upstream access.
 
+The CLI paces requests to the hosted proxy. When it receives HTTP 429 or a proxy
+upstream-budget denial, it reports the wait and retries according to `Retry-After`
+(up to three retries). If the requested delay exceeds one minute or a request's
+deadline expires, the request stops and the report may indicate incomplete coverage.
+The server's retained mirror can supply older NVD data when the primary source is
+unavailable or rate-limited; the report marks that data as stale.
+
+Proxy-confirmed responses are cached locally per proxy origin for at most one hour
+from the source fetch time. Repeated scans reuse fresh entries without a request;
+expired entries are revalidated through the proxy. If a source cannot be refreshed,
+the last available data may be used with a stale-data warning. A cold scan can still
+make many individual requests, and custom/private registries use their own routes.
+
 The setting also works in layered JSON configuration as `"proxyCache": "vigievuln"`.
 The older `--vigievuln-proxy [fr|com]` remains available for compatibility.
 Hosted online mode refuses `--osv-db` / `--osv-db-refresh`, which download a bulk archive; per-package OSV queries remain available.
-Proxy sign-in creates a dedicated proxy key and stores it in `~/.vigie-vuln/config.json` (mode 0600). The standalone `vigievuln login` command creates an account session; it does not select or configure the proxy.
+`vigievuln login` selects the official proxy when none is configured. If a custom proxy is already configured, login uses its account API and saves a key tied to that server; the server must support the VigieVuln account API and use HTTPS (HTTP is allowed for localhost). For the official proxy, a dedicated key is created on the first scan when needed. Keys are stored in `~/.vigie-vuln/config.json` (mode 0600), separately from the account session.
 An existing key can be saved with `--set-proxy-cache-token <key>` and removed with
 `--unset-proxy-cache-token`. Non-interactive runs require a saved key or the
 `VIGIEVULN_PROXY_CACHE_TOKEN` environment variable; no password prompt is attempted.
@@ -453,9 +468,7 @@ vigievuln watch ./project --id <project-id>
 
 `--id` updates the inventory without renaming the project. If the account already contains a differently named project, `watch --name` refuses to replace it implicitly: choose the intended ID explicitly. Upload requires an account session; when needed, an interactive terminal prompts for login. Non-interactive use requires signing in beforehand. Invoking `watch` without `--export` authorises upload; there is no separate `--yes` flag or upload confirmation.
 
-The free tier includes **one project with up to 100 distinct direct dependency coordinates**. Several versions of the same coordinate count once. An uploaded descriptor may be at most **500,000 bytes (0.5 MB decimal)**; an upload exceeding this size or 100 distinct direct coordinates is rejected with an error. Unknown relationships are excluded from direct-dependency monitoring and explicitly reported as incomplete coverage. These hosted monitoring limits do not apply to local `scan` audits.
-
-Free monitoring expires **one calendar month (UTC)** after a successful `watch` upload. Each successful upload, including a project API push, renews the period for one calendar month (UTC). At expiry, the hosted project and its monitoring data are purged and an expiry email is sent; the account remains. Backup copies are not deleted immediately. The offline `--export` does not upload or renew monitoring.
+The free tier watches **one project, up to 100 distinct direct dependency coordinates and a 0.5 MB descriptor**, for **one calendar month renewed by each upload**; expiry deletes the monitoring data and triggers an email.
 
 When acceptance of the current terms is pending, the CLI displays their link and requests explicit acceptance in an interactive terminal. Non-interactive use requires accepting them first with an interactive `vigievuln login`.
 
@@ -512,9 +525,6 @@ persistent on-disk base that survives restarts. The server's store lives in its 
 root** (`~/.vigie-vuln-proxy-cache/`), deliberately outside the scan's `~/.vigie-vuln/`
 cache dir — the client caches and the shared base are two different roles and are never
 bundled, swapped or merged together by `--export-cache` / `--import-cache`.
-If the new proxy cache directory is absent, the old `~/.fad-checker-proxy-cache/`
-is migrated by rename; an existing new directory is preserved without merging or overwriting.
-If the rename fails, the CLI warns you, preserves the old directory and uses a new one.
 
 ```bash
 # Terminal 1 — start the server (default 127.0.0.1:8321, store ~/.vigie-vuln-proxy-cache/)
@@ -725,10 +735,7 @@ Registries are tried **in declared order, the public registry last** (first 2xx 
 
 ## Configuration file & environment
 
-The default cache and configuration directory is `~/.vigie-vuln/`. If it is absent, an existing `~/.fad-checker/` is automatically renamed to it; if the new directory already exists, it is kept. If the rename fails, the CLI warns you, preserves the old directory and continues using a new one; the old directory is not merged.
-Existing cache archives made with `.fad-checker` remain importable.
-
-To recover a failed migration, stop the CLI and proxy server, back up and move the new directory out of the way, then rename the old directory to the new name. After recovery, remove the sibling marker `~/.vigie-vuln.migration-pending` for the main cache or `~/.vigie-vuln-proxy-cache.migration-pending` for the proxy cache. Do not overwrite or merge the directories. The warning repeats once per process while the marker and old directory both exist. If the marker cannot be created, the immediate warning is still shown but later reminders are not guaranteed.
+The default cache and configuration directory is `~/.vigie-vuln/`.
 
 Reusable defaults come from (lowest priority first): **`~/.vigie-vuln/config.json`** (global) → **`VIGIEVULN_ENV`** (a CLI-flag string; legacy `FAD_CHECKER_ENV` as fallback) → **config file** explicitly selected with `--config <file.json>` → **CLI flags** (always win). Files in the scanned repository are never loaded automatically: only select configuration you trust. A file/env value only fills an option you did not pass on the CLI; `registries` are unioned across all layers.
 

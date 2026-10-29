@@ -156,6 +156,7 @@ test('preflight authenticates without redirects and fails clearly on expired key
   await checkHostedProxy('https://api.vigievuln.fr', 'secret', async (url, options) => {
     assert.equal(url, 'https://api.vigievuln.fr/v1/proxy/status');
     assert.equal(options.headers.authorization, 'Bearer secret');
+    assert.equal(options.headers['x-vigievuln-client-version'], require('../package.json').version);
     assert.equal(options.redirect, 'error');
     assert.ok(options.signal);
     return Response.json({ok:true,service:'vigievuln-proxy'});
@@ -164,10 +165,20 @@ test('preflight authenticates without redirects and fails clearly on expired key
   await assert.rejects(checkHostedProxy('https://api.vigievuln.fr','secret',async()=>Response.json({ok:true})), /unexpected/);
 });
 
+test('proxy minimum version gives clear update instructions', async () => {
+  await assert.rejects(checkHostedProxy('https://api.vigievuln.fr', 'secret', async () =>
+    Response.json({code:'CLI_UPGRADE_REQUIRED',minimumCliVersion:'1.2.0'}, {status:426})),
+  /1\.2\.0 or newer.*npm install -g vigievuln@latest/);
+});
+
 test('CLI rejects missing hosted credentials before starting a scan', () => {
-  const env = {...process.env, VIGIEVULN_PROXY_CACHE_TOKEN:'', FAD_PROXY_CACHE_TOKEN:'', VIGIEVULN_ENV:'', FAD_CHECKER_ENV:'', FORCE_COLOR:'0'};
-  const result=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',__dirname,'--vigievuln-proxy'],{env,encoding:'utf8'});
-  assert.equal(result.status,2);assert.match(result.stderr,/requires a proxy key/);assert.doesNotMatch(result.stdout,/Collection/);
+  const fs=require('node:fs'), os=require('node:os');
+  const home=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-no-session-'));
+  try {
+    const env = {...process.env, HOME:home, USERPROFILE:home, VIGIEVULN_PROXY_CACHE_TOKEN:'', FAD_PROXY_CACHE_TOKEN:'', VIGIEVULN_ENV:'', FAD_CHECKER_ENV:'', FORCE_COLOR:'0'};
+    const result=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',__dirname,'--vigievuln-proxy'],{env,encoding:'utf8'});
+    assert.equal(result.status,2);assert.match(result.stderr,/requires a proxy key/);assert.doesNotMatch(result.stdout,/Collection/);
+  } finally { fs.rmSync(home,{recursive:true,force:true}); }
 });
 
 test('hosted mode refuses explicitly requested bulk OSV imports',()=>{
@@ -188,6 +199,35 @@ test('hosted online lookups cannot be bypassed by an explicitly supplied local s
     const result=await getResource('epss','scores',{ids:['CVE-2021-44228']},{store});
     assert.equal(result.status,200);assert.equal(calls,1);
   } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null});}
+});
+
+test('hosted cache reuses only proxy-confirmed data for at most one hour and warns on stale fallback', async () => {
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+  const {configureResourceRoute,getResource}=require('../lib/providers');
+  const {createCacheStore}=require('../lib/proxy-cache');
+  const {createSourceHealth}=require('../lib/source-health');
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-hosted-cache-'));
+  const health=createSourceHealth(), store=createCacheStore(dir);
+  let calls=0, stamp=Date.now(), fail=false;
+  configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,token:'test',store:null,hostedStore:store,health,
+    fetcher:async()=>{ calls++; return fail ? new Response('',{status:503}) : Response.json({data:[]},{headers:{'x-fad-proxy':'hit','x-fad-proxy-fetched-at':new Date(stamp).toISOString()}}); }});
+  const params={ids:['CVE-2021-44228']};
+  try {
+    await (await getResource('epss','scores',params)).json();
+    await (await getResource('epss','scores',params)).json();
+    assert.equal(calls,1);
+    const key=require('../lib/providers').providerKey('epss','scores',params,{});
+    const entry=store.get(key);
+    assert.ok(entry.ttlMs<=3600000);
+    const meta=store.metaPath(store.hash(key)), saved=JSON.parse(fs.readFileSync(meta,'utf8'));
+    saved.fetchedAt=Date.now()-3600001; fs.writeFileSync(meta,JSON.stringify(saved));
+    fail=true;
+    // Avoid delayed production retry behavior in this deterministic test.
+    const result=await getResource('epss','scores',params,{noSourceRetry:true,retryProxyDenied:false});
+    assert.equal(result.headers.get('x-fad-proxy'),'stale');
+    assert.equal(calls,2);
+    assert.equal(health.stale()[0].id,'epss');
+  } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,hostedStore:null,health:null});fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('hosted stale responses record the source and oldest cache date', async () => {
@@ -216,12 +256,15 @@ test('hosted Maven scanner requests only dependency keys and matches the returne
       const body = JSON.parse(init.body); calls.push(body);
       assert.equal(body.type, 'cve-maven');
       assert.ok(body.params.keys.includes('p:org.apache.logging.log4j:log4j-core'));
+      assert.ok(body.params.keys.every(key => !key.includes('/') && !key.includes('nuget-only')));
       return new Response(JSON.stringify({cves: [cve], builtAt: '2026-10-28'}), {status: 200});
     }});
   try {
     const dep = {groupId:'org.apache.logging.log4j', artifactId:'log4j-core', version:'2.14.1', ecosystem:'maven', coordKey:'org.apache.logging.log4j:log4j-core'};
     const scanner = require('../lib/codecs/maven.codec').nativeScanners[0];
-    const result = await scanner.scan(new Map([['log4j', dep]]), {hostedProxy:true});
+    const go = {ecosystem:'go',groupId:'',artifactId:'github.com/example/module',version:'1.0'};
+    const nuget = {ecosystem:'nuget',groupId:'',artifactId:'nuget-only',version:'1.0'};
+    const result = await scanner.scan(new Map([['log4j', dep],['go',go],['nuget',nuget]]), {hostedProxy:true});
     assert.ok(result.matches.some(m => m.cve.id === 'CVE-2021-44228'));
     assert.equal(calls.length, 1);
   } finally { configureResourceRoute({proxyUrl:null, token:null, fetcher:null}); }
@@ -239,6 +282,7 @@ test('a hosted scan writes stale source warnings in HTML and JSON and supports a
     const args=[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default','--retries','0','--no-transitive','--no-all-libs','--no-osv','--no-nvd','--no-epss','--no-kev','--no-euvd','--no-certfr','--no-eol','--no-binaries','--no-jars','--no-certs','--report-html','--report-json','-o',out,'--fail-on-incomplete','sources'];
     const r=spawnSync(process.execPath,args,{env,encoding:'utf8',timeout:20000});
     assert.equal(r.status,2,r.stderr+'\n'+r.stdout);
+    assert.match(r.stdout,/proxy\s+https:\/\/api\.vigievuln\.fr/);
     const html=fs.readFileSync(path.join(out,'cve-report.html'),'utf8');
     const files=fs.readdirSync(out).filter(x=>x.endsWith('.json'));assert.ok(files.length);
     const report=JSON.parse(fs.readFileSync(path.join(out,files[0]),'utf8'));

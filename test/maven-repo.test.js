@@ -10,6 +10,23 @@ const {
 	MAVEN_CENTRAL,
 } = require("../lib/maven-repo");
 
+test('hosted Maven Central uses the proxy for preflight and artifact requests; private repos stay direct', async () => {
+	const {configureResourceRoute}=require('../lib/providers');
+	const {reachableRepos}=require('../lib/maven-repo');
+	const calls=[];
+	const fetcher=async (url,init)=>{calls.push({url:String(url),body:init?.body ? JSON.parse(init.body) : null});return new Response('ok',{status:200});};
+	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher});
+	try {
+		const repos=buildRepoList([{name:'private',url:'https://private.invalid/'}]);
+		assert.equal(repos.length,2);
+		await reachableRepos(repos,{fetcher});
+		await tryRepos([repos[1]],'org/example/demo/maven-metadata.xml',{fetcher,readBody:true});
+		assert.ok(calls.some(c=>c.url==='https://private.invalid/'));
+		assert.deepEqual(calls.filter(c=>c.url==='https://proxy.invalid/v1/resource').map(c=>c.body.type),['preflight','artifact']);
+		assert.equal(calls.some(c=>c.url.includes('repo1.maven.org') || c.url.includes('storage-download.googleapis.com')),false);
+	} finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
+});
+
 test("splitUrlAuth pulls user:pass out of a URL", () => {
 	const { url, auth } = splitUrlAuth("https://alice:s3cr3t@nexus.acme.com/repository/maven-public/");
 	assert.equal(auth, "alice:s3cr3t");

@@ -24,6 +24,22 @@ function client(fetcher, sessionStore = memoryStore(), options = {}) {
   return createAccountClient({ fetcher, sessionStore, now: () => NOW, ...options });
 }
 
+test('custom account sessions are bound to their server and never sent to the official API', async () => {
+  const store=memoryStore();
+  const custom=client(async url => {
+    assert.equal(url,'https://proxy.example.test/v1/accounts/login');
+    return Response.json(LOGIN);
+  },store,{accountOrigin:'https://proxy.example.test'});
+  await custom.login(CREDENTIALS);
+  assert.equal(store.read().origin,'https://proxy.example.test');
+  let calls=0;
+  const official=client(async () => { calls++; throw Error('unexpected network'); },store);
+  await assert.rejects(official.me(), {code:'NOT_AUTHENTICATED'});
+  await assert.rejects(official.logout(), {code:'NOT_AUTHENTICATED'});
+  assert.equal(calls,0);
+  assert.equal(store.read().origin,'https://proxy.example.test');
+});
+
 test('login/me/logout use only the fixed account API and never create proxy keys', async () => {
   const calls = [];
   const store = memoryStore();

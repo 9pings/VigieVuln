@@ -33,10 +33,10 @@
 | [Snyk](https://snyk.io/) (optional) | Additional CVE source via `snyk test --all-projects --json` | Per Snyk EULA; needs a Snyk account | Local CLI `snyk` |
 | [MITRE CWE](https://cwe.mitre.org/) | Weakness category links in the report | Free public reference | Linked by URL only, no API call |
 
-Persistent caches (`~/.fad-checker/`) mean each source is hit at most once per its TTL (full
-table → [`USAGE.md`](USAGE.md)). **No telemetry, no third-party analytics** — every request
-above targets the named endpoint, optionally through the configured shared proxy with a `User-Agent: vigievuln-*` header, and
-`--offline` makes none at all.
+Persistent caches (`~/.vigie-vuln/`) reduce source requests according to their TTL (full
+table → [`USAGE.md`](USAGE.md)). Requests use the named source or the configured proxy;
+the hosted proxy receives the requested package coordinates and vulnerability identifiers.
+`--offline` makes no network requests.
 
 Application inventory reads local files. Configured PrestaShop and TYPO3 advisory
 lanes also query the GitHub repository feeds listed above. SPIP core advisories use

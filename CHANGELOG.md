@@ -1,5 +1,15 @@
 # Changelog — VigieVuln
 
+## [1.1.3] — 2026-10-29
+
+- Reuse fresh proxy-confirmed responses locally for up to one hour, and preserve stale-source warnings when refresh fails.
+- Allow up to 100 hosted proxy requests per second, respecting server rate limits and retry delays.
+- Select the official proxy on login when no proxy is configured; retain an existing proxy selection.
+- Improve hosted scans, report links, account and cache handling, and Maven presence validation.
+- Trim whitespace around Maven versions before OSV lookups so one malformed value cannot reject a whole batch.
+- Refresh the example audit reports and their screenshot.
+- Send the CLI version to the hosted proxy and explain how to update when the server requires a newer version.
+
 ## [1.1.2] — Unreleased
 
 - Fix Windows account sessions when the home directory uses an 8.3 short path, including GitHub Actions temporary directories.

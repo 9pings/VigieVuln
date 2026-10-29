@@ -114,3 +114,21 @@ test('hosted mode checks the NVD primary before its secondary mirror',async()=>{
 	try {await N.enrichMatches([{cve:{id:c}}],{fetcher,hasKey:false,onProgress:()=>{}});assert.deepEqual(calls,['cve']);}
 	finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
 });
+
+test('hosted NVD enrichment does not apply the direct NVD thirty-second window', {timeout: 8000}, async()=>{
+	const ids=Array.from({length:12},(_,i)=>id(String(300+i).padStart(7,'0'))), calls=[];
+	const {configureResourceRoute}=require('../lib/providers');
+	const fetcher=async (_url,init)=>{const body=JSON.parse(init.body);calls.push(body.params.id);return Response.json({vulnerabilities:[{cve:record(body.params.id)}]});};
+	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher});
+	try {await N.enrichMatches(ids.map(c=>({cve:{id:c}})),{fetcher,hasKey:false,onProgress:()=>{}});assert.equal(calls.length,12);}
+	finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
+});
+
+test('a hosted NVD budget refusal proceeds to the targeted mirror without waiting for the primary budget', {timeout:3000}, async()=>{
+	const c=id('0000320'), calls=[];
+	const {configureResourceRoute}=require('../lib/providers');
+	const fetcher=async (_url,init)=>{const body=JSON.parse(init.body);calls.push(body.type);return body.type==='cve' ? new Response('',{status:503,headers:{'x-fad-proxy':'denied','retry-after':'30'}}) : Response.json(record(c));};
+	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher});
+	try {const result=await N.fetchOne(c,{fetcher});assert.equal(result.score,9.8);assert.deepEqual(calls,['cve','cve-mirror']);}
+	finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
+});

@@ -104,7 +104,7 @@ for (const failure of ['http', 'network', 'malformed', 'incomplete']) test(`Word
 		return Response.json(projectFeed(new Map(), [QUERIES[0]], NOW));
 	};
 	const result = await f.run();
-	assert.equal(f.calls.length, 1);
+	assert.equal(f.calls.length, failure === 'http' ? 3 : 1);
 	assert.equal(result.findings.length, 1);
 	assertStale(result);
 	assert.match(result.diagnostics.find(d => d.code === 'CMS_ADVISORY_STALE').message, /revalidation failed/);
@@ -179,7 +179,7 @@ for (const positive of [false, true]) test(`legacy automatic refresh failure is 
 	const f = legacyFixture(t, { positive });
 	f.respond = () => new Response('', { status: 503 });
 	const result = await f.run();
-	assert.equal(f.calls.length, 1);
+	assert.equal(f.calls.length, 3, 'transient proxy errors are retried twice before retaining the stale snapshot');
 	assert.equal(result.findings.length, positive ? 1 : 0);
 	assertStale(result);
 	assert.ok(covered(result).every(c => c.sourceSnapshot.collectedAt === f.snapshot._fadSnapshot.collectedAt));

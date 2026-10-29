@@ -69,6 +69,7 @@ if (process.argv.includes("--completion")) {
 // -------- --set-nvd-key shortcut (must run before required-options parse) --------
 if (process.argv.includes("--set-proxy-cache-token") || process.argv.includes("--unset-proxy-cache-token")) {
 	const config = require("./lib/config");
+	config.set("proxyCacheTokenOrigin", null);
 	if (process.argv.includes("--unset-proxy-cache-token")) config.set("proxyCacheToken", null);
 	else {
 		const token = process.argv[process.argv.indexOf("--set-proxy-cache-token") + 1];
@@ -613,12 +614,22 @@ if (!options.offline && !options.proxyCacheToken && !process.env.VIGIEVULN_PROXY
 }
 try { Object.assign(options, require("./lib/hosted-proxy").resolveHostedProxy({ ...options, allowProxyLogin: !!hostedAccountSession || !!(process.stdin.isTTY && process.stderr.isTTY) })); }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
+const savedProxyTokenOrigin = require('./lib/config').get('proxyCacheTokenOrigin');
+if (options.proxyCache && options.proxyCacheToken && savedProxyTokenOrigin &&
+    !program.getOptionValueSource('proxyCacheToken')?.match(/^(cli|env)$/) &&
+    !Object.hasOwn(_layers.fileLayer, 'proxyCacheToken') && !Object.hasOwn(_layers.envLayer, 'proxyCacheToken') &&
+    !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN &&
+    savedProxyTokenOrigin !== String(options.proxyCache).replace(/\/+$/, '')) {
+	console.error(chalk.red('❌  The saved proxy key belongs to another server. Sign in to the configured proxy or provide its key explicitly.'));
+	process.exit(2);
+}
 // A saved official account key must never follow a changed proxy URL to an
 // unrelated service. Custom proxies require a token supplied for this run.
 if (options.proxyCache && !options.vigievulnProxy && options.proxyCacheToken &&
     !program.getOptionValueSource('proxyCacheToken')?.match(/^(cli|env)$/) &&
     !Object.hasOwn(_layers.fileLayer, 'proxyCacheToken') && !Object.hasOwn(_layers.envLayer, 'proxyCacheToken') &&
-    !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN) {
+    !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN &&
+    require('./lib/config').get('proxyCacheTokenOrigin') !== String(options.proxyCache).replace(/\/+$/, '')) {
 	console.error(chalk.red('❌  A saved proxy key cannot be sent to a custom proxy. Supply its token explicitly for this run.'));
 	process.exit(2);
 }
@@ -666,7 +677,8 @@ if (!options.offline) {
 			configureResourceRoute({ proxyUrl: options.proxyCache, hosted: !!options.vigievulnProxy,
 				token: options.proxyCacheToken || (process.env.VIGIEVULN_PROXY_CACHE_TOKEN ?? process.env.FAD_PROXY_CACHE_TOKEN) || null,
 				health: sourceHealth, fetcher: baseFetch,
-				store: options.vigievulnProxy ? null : createCacheStore(require("node:path").join(require("./lib/cache-directory").getCacheDir(), "resource-cache")) });
+				store: options.vigievulnProxy ? null : createCacheStore(require("node:path").join(require("./lib/cache-directory").getCacheDir(), "resource-cache")),
+				hostedStore: options.vigievulnProxy ? createCacheStore(require("node:path").join(require("./lib/cache-directory").getCacheDir(), "hosted-resources", require("node:crypto").createHash("sha256").update(options.proxyCache).digest("hex"))) : null });
 		} catch (err) {
 			console.error(chalk.red(`❌  ${err.message}`));
 			process.exit(2);
@@ -868,6 +880,7 @@ async function timedPhase(label, fn) {
 					await require("./lib/account-terms").requireTerms({account, terms:current.terms, ask});
 					options.proxyCacheToken = await require("./lib/hosted-proxy").createProxyKey(account);
 					require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
+					require("./lib/config").set("proxyCacheTokenOrigin", null);
 					require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
 					console.error("Proxy key created from your signed-in account and saved for future scans.");
 				} else {
@@ -877,6 +890,7 @@ async function timedPhase(label, fn) {
 				const password = await ask("Password: ", true);
 				options.proxyCacheToken = await require("./lib/hosted-proxy").loginForProxy({email,password,ask});
 				require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
+				require("./lib/config").set("proxyCacheTokenOrigin", null);
 				require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
 				console.error("Proxy key saved for future scans.");
 				}
@@ -934,6 +948,11 @@ async function timedPhase(label, fn) {
 	if (excludePath.length) ui.kv("exclude-path", chalk.white(excludePath.join(chalk.dim(", "))));
 	if (!defaultExcludes) ui.kv("default-excludes", chalk.yellow("off (walking node_modules/vendor/.git/…)"));
 	ui.kv("mode", chalk.white(runMode));
+	if (options.proxyCache && !options.offline) {
+		let proxyDisplay = 'configured';
+		try { const url = new URL(options.proxyCache); url.username = ''; url.password = ''; url.search = ''; url.hash = ''; proxyDisplay = url.toString(); } catch { /* do not print malformed credentials */ }
+		ui.kv("proxy", chalk.white(proxyDisplay));
+	}
 
 	let wrotePom = 0;
 
@@ -1430,7 +1449,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	else ui.info(chalk.dim("First scans may take longer while caches fill."));
 
 	const hasNvdKey = !!getNvdApiKey();
-	if (options.nvd && !offline && !hasNvdKey) {
+	if (options.nvd && !offline && !hasNvdKey && !options.vigievulnProxy) {
 		ui.warn(chalk.yellow("No NVD API key — enrichment throttled to 5 req/30s (slow)."));
 		ui.info(chalk.dim("Free & instant key: https://nvd.nist.gov/developers/request-an-api-key"));
 		ui.info(chalk.dim("then: vigievuln --set-nvd-key <KEY>"));
@@ -1821,7 +1840,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 					filtered = cveMatches.filter(m => m.cpeFiltered).length;
 				} catch (err) { ui.warn(`CPE refinement skipped: ${err.message}`); }
 				const uniqueCves = new Set(cveMatches.map(m => m.cve?.id)).size;
-				st.done(`${uniqueCves} CVE${nvdAdded ? ` · +${nvdAdded} via CPE ranges` : ""}${filtered ? ` · ${filtered} false-positive(s) filtered` : ""}${hasNvdKey ? "" : " · no key (slow)"}`);
+				st.done(`${uniqueCves} CVE${nvdAdded ? ` · +${nvdAdded} via CPE ranges` : ""}${filtered ? ` · ${filtered} false-positive(s) filtered` : ""}${hasNvdKey || options.vigievulnProxy ? "" : " · no key (slow)"}`);
 			} catch (err) { st.fail(err.message); }
 		}
 	}

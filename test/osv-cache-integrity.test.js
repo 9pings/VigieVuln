@@ -14,6 +14,15 @@ function fixture(t) {
 		fs.writeFileSync(path.join(cacheDir, name), JSON.stringify({ _fetchedAt: stamp, body }));
 	return { cacheDir, write, read: name => fs.readFileSync(path.join(cacheDir, name), "utf8") };
 }
+test("OSV trims Maven property whitespace before sending a batch", async t => {
+	const f = fixture(t), d = { ...dep("demo"), version: "1.0.0.Final\r\n        " };
+	let sent;
+	await queryBatch([d], { cacheDir: f.cacheDir, fetcher: async (_url, opts) => {
+		sent = JSON.parse(opts.body).queries;
+		return response({ results: [{}] });
+	} });
+	assert.equal(sent[0].version, "1.0.0.Final");
+});
 for (const failure of ["503", "network", "json", "truncated", "null", "bad-id"]) {
 	test(`OSV ${failure}: failed refresh preserves the previous package snapshot byte for byte`, async t => {
 		const f = fixture(t), d = dep("demo"), ck = cacheKey(d.groupId, d.name, d.version);

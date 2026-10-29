@@ -40,6 +40,18 @@ const clean = (...dirs) => dirs.forEach(d => { try { fs.rmSync(d, { recursive: t
 
 const DAY = 24 * 3600 * 1000;
 
+test("Maven merge ignores legacy negatives even when their cache is newer", () => {
+	const online = home("maven-online"), offline = home("maven-offline");
+	const archive = path.join(offline, "maven.tar.gz"), now = Date.now();
+	try {
+		w(fad(online, "maven-exists-cache.json"), { meta: { fetchedAt: now - DAY }, entries: { "g:archive-positive": true, "g:local-positive": false, "g:legacy": false } });
+		w(fad(offline, "maven-exists-cache.json"), { meta: { fetchedAt: now }, entries: { "g:archive-positive": false, "g:local-positive": true } });
+		run(["--export-cache", archive], online);
+		run(["--import-cache", archive], offline);
+		assert.deepEqual(read(fad(offline, "maven-exists-cache.json")).entries, { "g:archive-positive": true, "g:local-positive": true });
+	} finally { clean(online, offline); }
+});
+
 test("import MERGES: the enclave's own warm cache and config survive the imported one", () => {
 	const online = home("online"), offline = home("offline");
 	const archive = path.join(offline, "fad-cache.tar.gz");

@@ -94,9 +94,7 @@
     <div class="start-copy"><h2 id="start-title">Your next audit starts here.</h2><p>Install once. Point it at a checkout. Get the full picture.</p></div>
     <div>
       <div class="install"><span class="pr">$</span><code>npm i -g vigievuln &amp;&amp; vigievuln scan ./code</code><button class="copy" type="button" data-copy="npm i -g vigievuln &amp;&amp; vigievuln scan ./code" aria-label="Copy the install and scan command"><svg class="icon " aria-hidden="true"><use href="#i-copy"></use></svg><span>copy</span></button></div>
-      <p class="release"><a href="https://www.npmjs.com/package/vigievuln">CLI version: 1.1.1 ↗</a><span>Node.js 20+</span><a href="https://github.com/9pings/VigieVuln/releases">Standalone binaries ↗</a></p>
-      <p class="note">The CLI uses <code>~/.vigie-vuln/</code> for its cache and configuration. If absent, it automatically renames an existing <code>~/.fad-checker/</code>; an existing new directory is kept. The separate shared proxy cache similarly migrates from <code>~/.fad-checker-proxy-cache/</code> to <code>~/.vigie-vuln-proxy-cache/</code>, without merging or overwriting. If either rename fails, the CLI warns you, preserves the old directory and continues with a new one. Existing cache archives remain importable.</p>
-      <p class="note">To recover a failed migration, stop the CLI and proxy server, back up and move the new directory aside, then rename the old directory to the new name. Remove the corresponding sibling marker <code>~/.vigie-vuln.migration-pending</code> or <code>~/.vigie-vuln-proxy-cache.migration-pending</code> after recovery. Do not overwrite or merge the directories. The warning repeats once per process while the marker and old directory exist; if the marker cannot be created, later reminders are not guaranteed.</p>
+      <p class="release"><a href="https://www.npmjs.com/package/vigievuln">npm package ↗</a><span>Node.js 20+</span><a href="https://github.com/9pings/VigieVuln/releases">Standalone binaries ↗</a></p>
     </div>
   </div>
 </section>
@@ -132,7 +130,7 @@
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-key"></use></svg></div><h3>Certificates &amp; keys</h3><p>Inventory committed certificates, public and private keys, and keystores. Flag <b>expiry, weak keys and signatures</b> using offline parsing.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-network"></use></svg></div><h3>CMS &amp; frameworks audited as instances</h3><p>Inventory <b>nine CMS and frameworks</b> as applications, with component ownership and explicit advisory coverage. <a href="#cms" style="color:var(--amber);text-decoration:underline">Explore supported applications</a>.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-network"></use></svg></div><h3>Shared cache for a scanner fleet</h3><p>Use the CLI’s <span class="mono">serve-cache</span> and <span class="mono">--proxy-cache</span> to share public provider responses across scanners. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache" style="color:var(--amber);text-decoration:underline">Cache configuration</a>.</p></div>
-      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-globe"></use></svg></div><h3>Vigie Vuln DB · hosted in Europe</h3><p>Explore vulnerability data and use the hosted proxy cache with VigieVuln for dependency audits. <a href="https://www.vigievuln.fr/" style="color:var(--amber);text-decoration:underline">Discover Vigie Vuln DB ↗</a></p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-globe"></use></svg></div><h3>Vigie Vuln DB · hosted in Europe</h3><p><a href="https://www.vigievuln.fr/" style="color:var(--amber);text-decoration:underline">Vigie Vuln DB</a> hosts vulnerability data and the official proxy cache in Europe.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-shield"></use></svg></div><h3>Supply-chain risk</h3><p>Flag advisories on <b>known-malicious packages</b> and optionally surface suspected typosquats. Malicious findings block the CI gate regardless of severity.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-globe"></use></svg></div><h3>European vulnerability references</h3><p>Add <b>ENISA EUVD, GCVE and CERT-FR</b> context to matched CVEs. References travel with the report and exports, and cached data remains usable offline. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/DATA-SOURCES.md" style="color:var(--amber);text-decoration:underline">Explore the data sources</a>.</p></div>
     </div>
@@ -209,7 +207,7 @@
   <section id="monitoring" aria-labelledby="monitoring-title">
     <div class="kicker">Project monitoring</div>
     <h2 id="monitoring-title">Watch your direct dependencies.</h2>
-    <p class="sub">One free project with up to <b>100 distinct direct dependency coordinates</b>. Multiple versions of the same coordinate count once. Uploaded descriptors are limited to <b>500,000 bytes (0.5 MB decimal)</b>; exceeding that size or 100 distinct direct coordinates rejects the upload with an error. Unknown relationships are excluded from monitoring and reported as incomplete coverage. Local scans are not subject to these monitoring limits.</p>
+    <p class="sub">The free tier watches <b>one project, up to 100 direct dependencies and a 0.5 MB descriptor</b>, for <b>one month renewed by each upload</b>; expiry deletes the monitoring data and triggers an email.</p>
     <div class="split">
       <div>
         <h3>Sign in and watch</h3>
@@ -220,13 +218,12 @@ vigievuln watch ./project --name 'My Project'
 vigievuln project status
 vigievuln logout</pre></div>
         <p><code>watch</code> collects locally and uploads once; it is not a background watcher. Repeat it with the same unique project name to update the inventory. The first inventory establishes a silent baseline.</p>
-        <p>Free monitoring expires one calendar month (UTC) after a successful upload. Each successful upload, including a project API push, renews it for one calendar month (UTC). At expiry, the project and monitoring data are purged and an expiry email is sent; the account remains. Backup copies are not deleted immediately.</p>
         <p>If the current terms are pending, the CLI displays their link and asks for explicit acceptance. Non-interactive use never accepts them automatically: run <code>vigievuln login</code> interactively first.</p>
       </div>
       <div>
         <h3>Review an offline export</h3>
         <div class="code"><pre>vigievuln watch ./project --export fichier.json</pre></div>
-        <p><b>Export only:</b> writes a local descriptor offline, with no login and no upload; it does not renew monitoring. Review package names and versions before sending them; source code, paths and registry URLs are omitted. Without <code>--export</code>, invoking <code>watch</code> authorises upload.</p>
+        <p><code>--export</code> writes an offline descriptor without uploading; review package names and versions, including private packages, before sharing it.</p>
         <p>Upload the reviewed file explicitly with <code>vigievuln project push --file fichier.json --name 'My Project'</code> after signing in.</p>
       </div>
     </div>
@@ -248,7 +245,7 @@ vigievuln logout</pre></div>
       <a class="doc" href="samples/dubbo.html"><div class="t">Explore the Maven report <span class="arr">↗</span></div><div class="d">Apache Dubbo 2.7.8 · 105 Maven descriptors. Explore findings, dependency paths, evidence and fix recommendations.</div></a>
       <a class="doc" href="samples/multi-cms-frameworks.html"><div class="t">Explore the CMS report <span class="arr">↗</span></div><div class="d">WordPress, Drupal, Symfony and Laravel in one audit. Explore per-application inventory, attribution and coverage.</div></a>
     </div>
-    <p class="note">Actual offline scans generated with <b>VigieVuln 1.0.1 on 2026-10-26</b>. These are dated snapshots, not live security assessments. The CMS sample has incomplete WordPress advisory coverage; each report retains its cache gaps and limitations. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/samples/README.md" style="color:var(--amber);text-decoration:underline">Sample scope and reproduction</a>.</p>
+    <p class="note">Actual scans generated with <b>VigieVuln 1.1.3 on 2026-10-29</b>. These are dated snapshots, not live security assessments. The CMS sample has incomplete WordPress advisory coverage; each report retains its cache gaps and limitations. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/samples/README.md" style="color:var(--amber);text-decoration:underline">Sample scope and reproduction</a>.</p>
   </div>
 </section>
 
@@ -314,7 +311,7 @@ vigievuln logout</pre></div>
     <div class="arow" style="margin-top:24px">
       <h3>Latest documented re-measurement · 2026-10-02</h3>
       <p>After Maven resolution and version-ordering fixes: <b>834 pairs</b>, including <b>705/705</b> of OSV-Scanner's online pairs, recovered both online and under <span class="mono">unshare -rn --offline</span>. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md" style="color:var(--amber);text-decoration:underline">Method and changes</a>.</p>
-      <p style="margin-top:10px">The tables below preserve the <b>earlier five-scanner comparison</b>, measured with the predecessor fad-checker 2.4.6 and the tool versions shown. They are historical results, separate from the VigieVuln 1.0.1 sample reports above; the full comparison has not been rerun for this release.</p>
+      <p style="margin-top:10px">The tables below preserve the <b>earlier five-scanner comparison</b>, measured with the predecessor fad-checker 2.4.6 and the tool versions shown. They are historical results, separate from the current sample reports above; the full comparison has not been rerun for this release.</p>
     </div>
     <h3  style="margin-top:26px;font-size:17px">1 · At full capability · historical comparison</h3>
     <p class="sub">Every scanner online, best configuration, populated <span class="mono">~/.m2</span>. Union of all findings: 908 pairs.</p>

@@ -10,14 +10,14 @@
 [![CI](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml)
 
 
-**VigieVuln** (formerly `fad-checker`) is a polyglot dependency auditor built for **professional code audits**.
+**VigieVuln** is a polyglot dependency auditor built for **professional code audits**.
 
 It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Laravel…) in one pass, with **no build tools**, support **air-gapped** workflows using transferred caches, private package detection, committed binaries & certificates, then produces clean **HTML reports + json baseline + (DOC/XLSX/SARIF/CycloneDX/etc)** .
 
 
 🌐 **[Project site & docs →](https://9pings.github.io/VigieVuln/)**
 
-*Demo and sample reports generated with VigieVuln 1.0.1.*
+*Terminal demo recorded with VigieVuln 1.0.1.*
 
 <p align="center"><img src="docs/assets/demo.gif" alt="vigievuln animated terminal demo: an offline Maven audit — dependencies absent from Maven Central flagged as private/internal, the compact single-line vulnerability-database progress, then findings coloured by severity" height="500"></p>
 
@@ -43,18 +43,6 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 
 📖 **[Usage & all flags](docs/USAGE.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Comparison vs other tools](docs/COMPARISON.md)** · **[Data sources](docs/DATA-SOURCES.md)**
 
-## Migration from fad-checker
-
-The npm package and primary command are now `vigievuln`. Existing `fad` and
-`fad-checker` commands remain aliases. The default cache and configuration directory is `~/.vigie-vuln/`. If it does not exist, an existing `~/.fad-checker/` is automatically renamed to it. If the new directory already exists, it is kept. If the rename fails, a new directory is created and execution continues; the old directory is not merged.
-The separate shared proxy cache similarly migrates from `~/.fad-checker-proxy-cache/` to `~/.vigie-vuln-proxy-cache/` without merging or overwriting an existing new directory. If either rename fails, the CLI warns you, preserves the old directory and uses a new one. Existing cache archives made with `.fad-checker` remain importable.
-
-To recover a failed migration, stop the CLI and proxy server, back up and move the new directory out of the way, then rename the old directory to the new name. Remove the corresponding sibling marker, `~/.vigie-vuln.migration-pending` or `~/.vigie-vuln-proxy-cache.migration-pending`, after recovery. Do not overwrite or merge the directories. While both the marker and old directory exist, the warning repeats once per process; if the marker could not be created, only the immediate warning is assured.
-`VIGIEVULN_ENV` takes precedence over the legacy `FAD_CHECKER_ENV`. Project
-configuration is loaded only when explicitly selected with `--config` and must be trusted.
-Default report output is now
-`./vigievuln-report`; pass `-o` to retain another location.
-
 ## Quick start
 
 ```bash
@@ -76,11 +64,9 @@ vigievuln project status
 vigievuln logout
 ```
 
-`watch` collects the inventory locally and uploads it once. Run it again with the same unique project name to update that project's inventory; it does not run a background watcher. `login` creates an account session and does not configure the proxy cache.
+`watch` collects the inventory locally and uploads it once. Run it again with the same unique project name to update that project's inventory; it does not run a background watcher. `login` selects the official proxy if none is configured; an existing proxy remains selected.
 
-The free tier includes **one project and up to 100 distinct direct dependency coordinates per project**. Multiple versions of the same coordinate count once. An uploaded descriptor may be at most **500,000 bytes (0.5 MB decimal)**; an upload exceeding this size or 100 distinct direct coordinates is rejected with an error. Dependencies whose direct relationship cannot be established are excluded from monitoring and reported as incomplete coverage. These limits apply to hosted monitoring, not local scans.
-
-Free monitoring expires **one calendar month (UTC)** after a successful `watch` upload. Each successful upload, including a project API push, renews the period for one calendar month (UTC). At expiry, the hosted project and its monitoring data are purged and an expiry email is sent; the account remains. Copies in backups are not deleted immediately.
+The free tier watches **one project, up to 100 direct dependencies and a 0.5 MB descriptor**, for **one month renewed by each upload**; expiry deletes the monitoring data and triggers an email.
 
 If the current terms have not been accepted, the CLI displays their link and asks for explicit acceptance in an interactive terminal. For non-interactive use, run `vigievuln login` interactively and accept the terms first.
 
@@ -90,18 +76,20 @@ To review the inventory before uploading, export it locally:
 vigievuln watch ./project --export fichier.json
 ```
 
-`--export` only writes the descriptor: it runs offline, requires no login, sends nothing to the service and does not renew monitoring. Review package names and versions, including private packages, before uploading. Source code, paths and registry URLs are omitted from the descriptor.
+`--export` writes an offline descriptor without uploading; review package names and versions, including private packages, before sharing it.
 
-Monitoring establishes a silent initial baseline, then reports new high or critical vulnerabilities (CVSS ≥ 7) and known exploited vulnerabilities affecting direct dependencies. Enable alerts in your account and refresh the inventory when dependencies change. [Monitoring workflow and compatibility commands](docs/USAGE.md#project-monitoring).
+Enable alerts in your account to receive new high, critical or known exploited vulnerabilities affecting your direct dependencies; refresh the inventory when dependencies change. [Monitoring guide](docs/USAGE.md#project-monitoring).
 
 Existing commands remain supported: `vigievuln -s ./code`, `auth login|status|logout`, `--prepare-project` and `project push`.
 
 ### Official Vigie Vuln proxy cache
 
+[Vigie Vuln DB](https://www.vigievuln.fr/) hosts vulnerability data and the official proxy cache in Europe.
+
 Configure the proxy once, then sign in with your verified [Vigie Vuln account](https://www.vigievuln.fr/account) when prompted:
 
 ```bash
-vigievuln --set-proxy-cache vigievuln  # `default` selects the same official proxy
+vigievuln login  # selects the official proxy if none is configured
 vigievuln scan ./code
 ```
 
@@ -109,10 +97,10 @@ The selection and the proxy key created during proxy sign-in are saved in `~/.vi
 
 ### Interactive HTML samples
 
-- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the report screenshot below, rescanned with VigieVuln 1.0.1; 105 Maven descriptors, direct/transitive CVEs, KEV matches, EOL and fix recommendations.
+- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the report screenshot below, rescanned with VigieVuln 1.1.3; 105 Maven descriptors, direct/transitive CVEs, KEV matches, EOL and fix recommendations.
 - **[Multi-instance CMS & frameworks — open the report](https://9pings.github.io/VigieVuln/samples/multi-cms-frameworks.html)**: WordPress 6.4.2, Drupal 8.5.0, Symfony Demo (Symfony 7.1.1) and BookStack v24.10 (Laravel 10.48.22), with findings attributed to each instance.
 
-These are standalone reports from real source scans, generated offline on **2026-10-26** using the local cache. The CMS sample focuses on PHP dependencies; WordPress advisory coverage is explicitly incomplete without a Wordfence feed. [Sample scope, sources and reproduction commands](docs/samples/README.md).
+These are standalone reports from real source scans, generated on **2026-10-29** using the hosted proxy and local caches. The CMS sample focuses on PHP dependencies; WordPress advisory coverage is explicitly incomplete without a Wordfence feed. [Sample scope, sources and reproduction commands](docs/samples/README.md).
 
 > [!WARNING]
 > vigievuln is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, **double-check anything critical**, and please [report issues](https://github.com/9pings/VigieVuln/issues); they get fixed fast.
@@ -252,15 +240,14 @@ vigievuln -s ./proj --offline               # re-collect locally (real paths) + 
 #   the online phase ride the same archive and are consumed automatically — no flags.
 ```
 
-Since **fad-checker 2.7.4** (included in VigieVuln 1.0.0), descriptor imports also warm Maven registry presence (unless
+Descriptor imports also warm Maven registry presence (unless
 `--no-all-libs` is set). Legacy negative presence entries are discarded automatically:
 older versions could confuse network errors with missing packages. Until verified
 online, those entries remain **unknown**, including after a cache merge. Other warmed
 analysis data is retained.
 
-The inherited **fad-checker 2.7.4** release also stops trusting legacy empty OSV cache entries, because an older
-failed request could have been stored as “no vulnerabilities”. Re-warm and export the
-cache with VigieVuln 1.0.0 to verify these entries; until then offline reports warn about incomplete
+Unverified empty OSV cache entries are not trusted, because a failed request may have
+been stored as “no vulnerabilities”. Re-warm and export the cache to verify these entries; until then offline reports warn about incomplete
 OSV coverage. Existing cached advisory IDs remain usable. Offline KEV and binary identity
 lookups reuse the last available snapshot even after 24 hours, without changing its date.
 
