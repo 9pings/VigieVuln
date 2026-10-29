@@ -36,9 +36,9 @@ of thing a security consultant or a regulated / air-gapped engagement needs.
 approximate this elsewhere by generating an SBOM on the isolated machine and scanning it online
 (`grype sbom:./sbom.json`, `trivy sbom`). The difference is that a Syft SBOM is **not
 anonymized**: its CycloneDX encoder stamps every component with `syft:location` file paths, so
-the SBOM carries your internal tree layout off the machine. fad's `fad-deps/1` descriptor drops
+the SBOM carries your internal tree layout off the machine. VigieVuln's `fad-deps/1` descriptor drops
 paths, registry URLs, integrity hashes and parent chains by construction.
-**(b)** The direction differs: in the SBOM route the *report* is produced online; fad brings a
+**(b)** The direction differs: in the SBOM route the *report* is produced online; VigieVuln brings a
 cache back and produces the report, with real paths and manifests, **inside** the enclave.
 Sources: [Syft CycloneDX encoder](https://github.com/anchore/syft/blob/main/syft/format/internal/cyclonedxutil/helpers/component.go),
 [Grype README](https://github.com/anchore/grype/blob/main/README.md).
@@ -65,7 +65,7 @@ against OSV: **0 are recall bugs**, and roughly two thirds are Snyk contradictin
 record — wrong artifact, or a version outside every declared affected range
 ([method and caveats](BENCHMARK.md#what-vigievuln-misses-and-why), reproduce with
 `scripts/adjudicate-gap.js`). The other rows have **not** been adjudicated, so read their column
-the same way. Snyk and Trivy at full capability both assume a real Maven build has happened; fad
+the same way. Snyk and Trivy at full capability both assume a real Maven build has happened; VigieVuln
 and OSV-Scanner read the tree without one.
 
 **With no network at all** (every tool under `unshare -rn`, against OSV-Scanner's *online* output
@@ -134,11 +134,11 @@ reason each one is or isn't in the table.
 | --- | --- | --- | --- |
 | [OSV-SCALIBR](https://github.com/google/osv-scalibr) v0.5.2 (2026-08) | Google's extraction engine; OSV-Scanner 2.5+ runs on it end-to-end. Build-free `pom.xml` transitive resolver, deps.dev deprecation + license, 70+ secret detectors, Go/Java reachability, OS-only EOL ([inventory](https://github.com/google/osv-scalibr/blob/main/docs/supported_inventory_types.md)) | Direct — it is now the OSV-Scanner column. No EPSS/KEV, no framework EOL, no offline Maven graph | Via OSV-Scanner |
 | [OWASP dep-scan](https://github.com/owasp-dep-scan/dep-scan) v6.3.0 (2026-07) + [cdxgen](https://github.com/CycloneDX/cdxgen) v13 | Reachability across 7 languages, CSAF 2.1 VEX/VDR, air-gapped vulnerability DB (`vdb --download-image`). cdxgen still states "Apache maven 3.x is required for parsing pom.xml", with a degraded pom fallback flagged by its own build-fidelity rule ([project types](https://github.com/CycloneDX/cdxgen/blob/master/docs/PROJECT_TYPES.md)) | Closest in spirit for air-gapped audits; Maven needs a build for the full graph, no EPSS/KEV, no EOL/outdated | Not yet — candidate for a 7th column |
-| [OWASP cve-lite-cli](https://github.com/OWASP/cve-lite-cli) v1.34 (2026-09, [Lab project since 2026-07](https://owasp.org/blog/2026/07/06/cve-lite-cli-lab.html)) | New: JS/TS lockfiles only, OSV with offline sync, EPSS-tiered priority, parent-aware `--fix`, HTML/SARIF/CycloneDX/SPDX | npm slice of fad only; no Maven, no KEV, no EOL | No (single ecosystem) |
+| [OWASP cve-lite-cli](https://github.com/OWASP/cve-lite-cli) v1.34 (2026-09, [Lab project since 2026-07](https://owasp.org/blog/2026/07/06/cve-lite-cli-lab.html)) | New: JS/TS lockfiles only, OSV with offline sync, EPSS-tiered priority, parent-aware `--fix`, HTML/SARIF/CycloneDX/SPDX | npm slice of VigieVuln only; no Maven, no KEV, no EOL | No (single ecosystem) |
 | [safedep vet](https://github.com/safedep/vet) v1.19 (2026-08) | Malicious-package analysis + CEL policy-as-code over npm/PyPI/Maven/Go/Ruby/Rust/PHP lockfiles, OpenSSF Scorecard, SARIF/HTML | Supply-chain policy rather than audit report; malware verdicts come from the SafeDep cloud | No (cloud-backed) |
-| [GuardDog](https://github.com/DataDog/guarddog) v3.2 (2026-08) | Sandboxed malware heuristics (YARA + metadata) for PyPI/npm/Go/Rust/Ruby; no CVEs, no Maven | Complements fad's `MAL-` gate + typosquat heuristic; a different question | No (malware only) |
-| [Dependency-Track](https://dependencytrack.org/news/dependency-track-5-1/) 5.1 (2026-08) | Platform rewrite; v4 EOL December 2026. Ingests SBOMs, adds EPSS + CISA/ENISA KEV, outdated-component and license policy | Not a scanner: fad's CycloneDX export is an input for it | No (SBOM-ingest platform) |
-| [HeroDevs CLI](https://github.com/herodevs/cli) 2.0 (2026-07) | Package-level EOL/abandonment over a proprietary 12M-version dataset, cdxgen-based, login required | The only other CLI that answers fad's EOL question, on paid data | No (proprietary data) |
+| [GuardDog](https://github.com/DataDog/guarddog) v3.2 (2026-08) | Sandboxed malware heuristics (YARA + metadata) for PyPI/npm/Go/Rust/Ruby; no CVEs, no Maven | Complements VigieVuln's `MAL-` gate + typosquat heuristic; a different question | No (malware only) |
+| [Dependency-Track](https://dependencytrack.org/news/dependency-track-5-1/) 5.1 (2026-08) | Platform rewrite; v4 EOL December 2026. Ingests SBOMs, adds EPSS + CISA/ENISA KEV, outdated-component and license policy | Not a scanner: VigieVuln's CycloneDX export is an input for it | No (SBOM-ingest platform) |
+| [HeroDevs CLI](https://github.com/herodevs/cli) 2.0 (2026-07) | Package-level EOL/abandonment over a proprietary 12M-version dataset, cdxgen-based, login required | The only other CLI that answers VigieVuln's EOL question, on paid data | No (proprietary data) |
 | [xeol](https://github.com/xeol-io/xeol) | Open-source EOL scanner over Syft: no release since v0.10.8 (2025-03), no commit since 2025-03 | Was the obvious EOL peer; dormant for 18 months | No (dormant) |
 | Snyk CLI 1.1307 (2026-08/09) | `snyk agent` (experimental, token-optimised output for AI coding agents), Remediation Agent in early access, .NET scans fully offline, reachability without a build (source is uploaded) | Snyk column updated above | Yes |
 | Trivy 0.73–0.74 (2026-08) | User-defined Maven mirrors in `trivy.yaml`, JAR licence URLs → SPDX ids. Still no EPSS/KEV in the CLI, malware out of scope | Trivy column updated above | Yes |

@@ -12,7 +12,7 @@
 
 **VigieVuln** is a polyglot dependency auditor built for **professional code audits**.
 
-It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Laravel…) in one pass, with **no build tools**, support **air-gapped** workflows using transferred caches, private package detection, committed binaries & certificates, then produces clean **HTML reports + json baseline + (DOC/XLSX/SARIF/CycloneDX/etc)** .
+It scans dependencies and **9 CMS/frameworks** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
 
 
 🌐 **[Project site & docs →](https://9pings.github.io/VigieVuln/)**
@@ -23,7 +23,7 @@ It scans **10 ecosystems + 9 CMS/Frameworks** (WordPress, Drupal, Symfony, Larav
 
 ## Features
 
-- **10 ecosystems in one pass**; Maven, Gradle, npm/Yarn/pnpm, Composer, PyPI, NuGet, Go, Ruby — plus **vendored JS**, committed **native binaries** (identified by checksum) and **embedded JARs** (fat-jars/war/ear, opened in-memory).
+- **Multiple ecosystems in one pass**: Maven and Gradle, npm/Yarn/pnpm, Composer, PyPI, NuGet, Go and Ruby — plus **vendored JS**, committed **native binaries** and **embedded JARs**.
 - **No build tools**; No `mvn`/`gradle`/`npm`/`pip`/`dotnet`/`go`, no `node_modules/` → [how](docs/COMPARISON.md#how-its-autonomous-no-build-tools)
 - **CVE from multiple sources, merged & prioritised**; CVEProject + OSV.dev + Packagist security advisories + NVD, ranked **CISA KEV → EPSS → CVSS**.
 - **European references on every CVE**: ENISA **EUVD** id + ENISA's exploited flag, **GCVE** id, and the **CERT-FR** advisories citing it. Hosted proxy lookups send relevant CVE identifiers to the proxy.
@@ -107,11 +107,10 @@ These are standalone reports from real source scans, generated on **2026-10-29**
 
 ## Why use vigievuln for code audits?
 
-What it does for an audit that the others don't. Same column set and sourcing discipline as
-[`docs/COMPARISON.md`](docs/COMPARISON.md) — `⚠️` is *partial* and says how, cells are meant to be
-checkable.
+An author-maintained comparison of audit workflows; see [`docs/COMPARISON.md`](docs/COMPARISON.md)
+for versions, sources and limitations. `⚠️` indicates partial or conditional support.
 
-| What an auditor actually needs to do                                                       | **fad** | OSV | Trivy | Grype+Syft | OWASP DC | Snyk |
+| What an auditor actually needs to do                                                       | **VigieVuln** | OSV | Trivy | Grype+Syft | OWASP DC | Snyk |
 | ------------------------------------------------------------------------------------------ | :-: | :-: | :-: | :-: | :-: | :-: |
 | Audit a **100-module polyglot monorepo in one command**, with **no toolchain installed**  | ✅ 105 modules | ⚠️ reactor skipped | ⚠️ needs `~/.m2` | ⚠️ opt-in | ⚠️ Java build | ⚠️ `mvn` build |
 | **Scan offline / air-gapped without dropping transitive deps**                            | ✅ 657/657 | ❌ | ⚠️ `~/.m2` | ⚠️ opt-in | ⚠️ mirror | ❌ |
@@ -134,7 +133,7 @@ graph, and the report says exactly that (in Methodology) instead of guessing at 
 whether the vulnerable code is reachable in *this* application is the auditor's call, made with
 application context no scanner has.
 
-## More basic exemples :
+## More examples
 
 ```bash
 vigievuln -s ./proj -e "^com\.acme\."                        # exclude private libs (coord regex)
@@ -204,9 +203,8 @@ Every advisory snapshot a live lane fetches is stamped and cached in `~/.vigie-v
 > dependency, path or finding off the machine. It is regression-tested
 > (`test/offline-guarantee.test.js`, a tripwire fetcher that throws if touched) and
 > auditor-reproducible: `unshare -rn node vigievuln.js -s ./proj --offline …` runs it in a
-> namespace with **no network interface** and yields byte-identical findings. Unlike the
-> mainstream OSS scanners, fad also resolves the **Maven transitive graph** offline; so on
-> an air-gapped multi-module project it finds the transitive CVEs they can't.
+> namespace with **no network interface** and yields byte-identical findings. With warmed
+> POM caches, VigieVuln can also resolve the **Maven transitive graph** offline.
 
 When the audited system is **offline / confidential** (typical of a regulated or air-gapped audit) it
 can't reach OSV / NVD / Maven Central / npm. Split the work across machines using a
@@ -230,10 +228,10 @@ vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
 vigievuln --import-anonymized deps.json     # scans coordinates → OSV/NVD/CVE/registry/EOL + retire signatures
                                               #   + warms the CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds,
                                               #   WP checksums per core version, Wordfence when a key is set)
-vigievuln --export-cache fad-cache.tar.gz   # bundle the warmed ~/.vigie-vuln/
+vigievuln --export-cache vigievuln-cache.tar.gz   # bundle the warmed ~/.vigie-vuln/
 
 # ── Phase 3; OFFLINE (audited machine): full report, all local context ──
-vigievuln --import-cache fad-cache.tar.gz   # merged into the enclave's own cache
+vigievuln --import-cache vigievuln-cache.tar.gz   # merged into the enclave's own cache
 vigievuln -s ./proj --offline               # re-collect locally (real paths) + cache hits
 #   → full HTML/.doc report with manifests & structure, generated inside the enclave.
 #   CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds, WP checksums) fetched live by
@@ -251,14 +249,7 @@ been stored as “no vulnerabilities”. Re-warm and export the cache to verify 
 OSV coverage. Existing cached advisory IDs remain usable. Offline KEV and binary identity
 lookups reuse the last available snapshot even after 24 hours, without changing its date.
 
-To reproduce the Docker integration check, run `node scripts/test-offline-docker.cjs`
-with dependencies installed and the `node:22-bookworm` image available locally
-(`FAD_DOCKER_IMAGE` overrides it). It exports a small public Maven fixture offline,
-warms real registries/OSV/NVD/EPSS/KEV online, then imports the archive and scans the
-source in a fresh container with `--network none`. It checks direct/transitive findings,
-all seven report formats, the expired-KEV gate and zero attempted offline network calls.
-No host cache is mounted. The full CVE index, EUVD and CERT-FR downloads are excluded
-from this focused check; logs and reports are retained in the printed temporary directory.
+The [offline Docker integration check](docs/USAGE.md#offline-docker-integration-check) exercises this workflow in an isolated container.
 
 What the descriptor (`fad-deps/1`) contains vs. drops:
 
@@ -283,25 +274,25 @@ DB is warmed online (phase 2) and carried by `--export-cache`. Full offline/cach
 - [`docs/COMPARISON.md`](docs/COMPARISON.md); vs OSV-Scanner / Trivy / Grype / OWASP DC / Snyk, and how it stays build-free.
 - [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — reproducible air-gapped recall benchmark vs OSV-Scanner on a public 105-module project.
 - [`docs/DATA-SOURCES.md`](docs/DATA-SOURCES.md); the public datasets vigievuln uses + their licenses.
-- [`CHANGELOG.md`](CHANGELOG.md) · [`CLAUDE.md`](../CLAUDE.md); release history · code-level orientation for contributors.
+- [`CHANGELOG.md`](CHANGELOG.md) · [`CLAUDE.md`](CLAUDE.md); release history · code-level orientation for contributors.
 
 ## Contributing
 
 The most useful contribution to a young scanner is **telling it where it's wrong**: run it on a
 real project and file a [false positive / false negative report](https://github.com/9pings/VigieVuln/issues/new?template=false_positive.yml)
 with the coordinate and the manifest snippet that produced it. Dev setup, ground rules and the
-codec extension point → [`CONTRIBUTING.md`](../CONTRIBUTING.md). Vulnerabilities in vigievuln
-itself → [`SECURITY.md`](../SECURITY.md) (please report privately).
+codec extension point → [`CONTRIBUTING.md`](CONTRIBUTING.md). Vulnerabilities in vigievuln
+itself → [`SECURITY.md`](SECURITY.md) (please report privately).
 
-**On AI assistance:** this codebase is written with heavy use of Claude Code; [`CLAUDE.md`](../CLAUDE.md)
+**On AI assistance:** this codebase is written with heavy use of Claude Code; [`CLAUDE.md`](CLAUDE.md)
 in the repo root is exactly what it looks like. The bar it's held to is the one you can check
-yourself: **847 tests** (`npm test`), the zero-network guarantee enforced by a tripwire test and
+yourself: the test suite (`npm test`), the zero-network guarantee enforced by a tripwire test and
 reproducible under `unshare -rn`, and coverage numbers measured against a Snyk baseline rather
 than asserted. `vigievuln` itself uses **no LLM at runtime**; findings come from public
 vulnerability databases and deterministic parsers, and no report text is generated. Full
 statement, including where review actually caught a bad finding →
-[`AI_POLICY.md`](../AI_POLICY.md). Where the code doesn't meet that bar, that's a bug report I want.
+[`AI_POLICY.md`](AI_POLICY.md). Where the code doesn't meet that bar, that's a bug report I want.
 
 ## License
 
-MIT; see [`LICENSE`](LICENSE).
+Apache-2.0; see [`LICENSE`](LICENSE).

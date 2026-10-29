@@ -10,7 +10,7 @@ const { spawnSync } = require("node:child_process");
 const assert = require("node:assert/strict");
 
 const repo = path.resolve(__dirname, "..");
-const image = process.env.FAD_DOCKER_IMAGE || "node:22-bookworm";
+const image = process.env.VIGIEVULN_DOCKER_IMAGE || process.env.FAD_DOCKER_IMAGE || "node:22-bookworm";
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-docker-cycle-"));
 fs.chmodSync(root, 0o755);
 const write = (name, text) => fs.writeFileSync(path.join(root, name), text);

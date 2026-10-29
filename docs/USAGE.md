@@ -664,10 +664,10 @@ vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
 
 # Phase 2 — ONLINE (any machine, NO --src): warm the coordinate-keyed caches.
 vigievuln --import-anonymized deps.json     # OSV/NVD/CVE/registry/EOL + retire signatures
-vigievuln --export-cache fad-cache.tar.gz   # carry the warmed caches back
+vigievuln --export-cache vigievuln-cache.tar.gz   # carry the warmed caches back
 
 # Phase 3 — OFFLINE (audited machine): full report with real paths/manifests.
-vigievuln --import-cache fad-cache.tar.gz   # merged into the enclave's own cache
+vigievuln --import-cache vigievuln-cache.tar.gz   # merged into the enclave's own cache
 vigievuln -s ./proj --offline               # re-collect locally + cache hits → full report
 ```
 
@@ -677,6 +677,17 @@ so warming them online and replaying offline yields cache hits. The descriptor k
 drops manifest paths, registry URLs, integrity hashes and parent chains. The phase-2
 report is itself path-free; vendored-JS (retire.js) findings come from phase 3 (retire
 needs the actual `.js` files), using the signature DB warmed in phase 2.
+
+### Offline Docker integration check
+
+Run `node scripts/test-offline-docker.cjs` with dependencies installed and the
+`node:22-bookworm` image available locally. Set `VIGIEVULN_DOCKER_IMAGE` to use a
+different image; `FAD_DOCKER_IMAGE` remains supported. The check exports a public
+Maven fixture offline, warms its caches online, then scans it in a fresh container
+with `--network none`. It verifies direct and transitive findings, report formats,
+the expired-KEV gate and the absence of offline network attempts. It mounts no host
+cache and excludes the full CVE index, EUVD and CERT-FR downloads; logs and reports
+are retained in the printed temporary directory.
 
 ### Versionless Spring Boot deps across the enclave
 

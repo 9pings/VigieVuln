@@ -84,7 +84,7 @@
 <div class="benefit-strip">
   <ul class="wrap benefits">
 <li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-shield"></use></svg><div><strong>CVE, EOL &amp; advisories</strong><span>Multiple sources, one view</span></div></li>
-<li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-layers"></use></svg><div><strong>Multi-ecosystem</strong><span>10 ecosystems · 9 CMS</span></div></li>
+<li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-layers"></use></svg><div><strong>Multi-ecosystem</strong><span>Dependencies · 9 CMS/frameworks</span></div></li>
 <li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-bolt"></use></svg><div><strong>Fast &amp; zero build</strong><span>No install, no Docker</span></div></li>
 <li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-lock"></use></svg><div><strong>Air-gapped ready</strong><span>Offline, with warmed caches</span></div></li>
 <li class="benefit"><svg class="icon " aria-hidden="true"><use href="#i-report"></use></svg><div><strong>Audit-ready reports</strong><span>HTML, JSON, Word, SBOM, VEX</span></div></li>
@@ -267,10 +267,10 @@ vigievuln logout</pre></div>
 
 <span class="c"># 2 — ONLINE (any box, no source): warm the caches</span>
 <span class="p">vigievuln</span> <span class="k">--import-anonymized</span> deps.json
-<span class="p">vigievuln</span> <span class="k">--export-cache</span> fad-cache.tar.gz
+<span class="p">vigievuln</span> <span class="k">--export-cache</span> vigievuln-cache.tar.gz
 
 <span class="c"># 3 — OFFLINE again: full report, real paths</span>
-<span class="p">vigievuln</span> <span class="k">--import-cache</span> fad-cache.tar.gz
+<span class="p">vigievuln</span> <span class="k">--import-cache</span> vigievuln-cache.tar.gz
 <span class="p">vigievuln</span> -s ./proj <span class="k">--offline</span></pre>
       </div>
     </div>
