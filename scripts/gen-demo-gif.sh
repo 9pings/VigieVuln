@@ -6,7 +6,8 @@
 #    under WSL, exiting 0 with an empty temp dir. This path has no browser.)
 #
 # Requires: util-linux `script`, `agg` (https://github.com/asciinema/agg),
-#           JetBrains Mono installed, and a warm ~/.fad-checker cache.
+#           JetBrains Mono installed, and a warm ~/.vigie-vuln cache.
+# Set DEMO_CACHE_DIR to reuse a specific local snapshot without changing settings.
 #
 # The run is --offline on purpose: deterministic (no network timing in the
 # recording) and it is the headline capability — a full audit, zero packets.
@@ -23,16 +24,23 @@ cd "$(dirname "$0")/.."
 FIXTURE=test/fixtures/private-lib-detection
 OUT=docs/assets/demo.gif
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+CACHE_ARGS=()
+if [[ -n "${DEMO_CACHE_DIR:-}" ]]; then
+  export VIGIEVULN_DEMO_CACHE_MODULE="$PWD/lib/cache-directory.js"
+  printf '%s\n' 'require(process.env.VIGIEVULN_DEMO_CACHE_MODULE).setActiveCacheDir(process.env.DEMO_CACHE_DIR);' > "$TMP/cache.cjs"
+  CACHE_ARGS=(--require "$TMP/cache.cjs")
+fi
 
 # 0. optionally warm the cache online before recording
 if [[ "${1:-}" == "--warm" ]]; then
-  node vigievuln.js -s "$FIXTURE" --no-report >/dev/null
+  node "${CACHE_ARGS[@]}" vigievuln.js -s "$FIXTURE" --no-report >/dev/null
 fi
 
 # 1. capture real CLI output in a PTY, preserving ANSI colour
+printf -v RUN '%q ' node --disable-warning=ExperimentalWarning "${CACHE_ARGS[@]}" vigievuln.js -s "$FIXTURE" --offline --no-report
 TERM=xterm-256color script -q -e \
   --log-out "$TMP/raw" \
-  -c "stty cols 120 rows 54; node vigievuln.js -s $FIXTURE --offline --no-report" >/dev/null
+  -c "stty cols 120 rows 54; $RUN" >/dev/null
 
 # 2. -> asciicast v2 (adds the typed prompt line and the Tokyo Night palette)
 node scripts/asciicast-from-script.js "$TMP/raw" "$TMP/demo.cast" 120 54
@@ -42,3 +50,8 @@ node scripts/asciicast-from-script.js "$TMP/raw" "$TMP/demo.cast" 120 54
     --last-frame-duration 5 --idle-time-limit 1 "$TMP/demo.cast" "$OUT"
 
 echo "wrote $OUT ($(identify -format '%wx%h' "$OUT[0]" 2>/dev/null || echo '?'), $(( $(stat -c%s "$OUT") / 1024 )) KB)"
+
+# The still screenshot is the actual final terminal frame of this recording.
+if command -v convert >/dev/null; then
+  convert "$OUT" -coalesce -delete 0--2 docs/assets/cli.png
+fi

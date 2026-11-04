@@ -276,7 +276,7 @@ All honour `--offline` (they render from whatever the scan already resolved).
 | `--ignore <file>` | Suppress findings. One rule per line: `CVE-2021-44228` (anywhere), `CVE-… org.apache.*` (coord/purl glob), `* npm:lodash` (any CVE for a coord); text after `#` is the reason. |
 | `--vex <file>` | Ingest a **CSAF VEX**: CVEs marked `known_not_affected` / `fixed` are suppressed (products mapped back to coords by purl — round-trips fad's own `--report-csaf`). |
 
-Suppressed findings are dropped from the report chapters and from `--fail-on`, but kept (flagged `suppressed`) in the JSON/XLSX/SBOM/CSAF/SARIF exports, and the count is noted in chapter 0.
+Suppressed findings are dropped from the report chapters, SARIF and `--fail-on`, but retained with triage metadata in JSON/XLSX/SBOM/CSAF, and the count is noted in chapter 0. SBOM carries component-scoped `vigievuln:triage` properties; CSAF carries triage notes and preserves explicit VEX `fixed` / `known_not_affected` assertions. An ignore rule accepts or hides a finding; it does not assert that the product is unaffected. A VEX without explicit, mapped clearance never suppresses a finding.
 
 ```bash
 # Fail the pipeline only on exploited-in-the-wild vulns, minus accepted risks
@@ -297,7 +297,7 @@ chapter, the JSON export gains a `diff` block, and CI can gate on *new* findings
 
 A finding's identity is `CVE id + ecosystem + coordinate + version`, so a version bump
 shows the old finding *resolved* and the new one *added*. Suppressed / CPE-filtered CVEs
-are diffed but excluded from the `--fail-on-new` signal.
+and development findings are diffed but excluded from the `--fail-on-new` signal (embedded binaries still count). A missing or invalid baseline, including `--fail-on-new` without `--baseline`, returns code 2. Findings absent during a source outage or incomplete inventory are marked unassessed rather than fixed. Any failed requested machine-readable export also returns code 2.
 
 ```bash
 # CI: fail only when this build introduces NEW vulnerabilities vs main's last report
@@ -871,14 +871,13 @@ vigievuln --help
 
 ### CI gate: fail the build on any CRITICAL prod CVE
 
-`vigievuln` exits 0 even when CVEs are found (it's a reporter, not a gate). Wire your own:
+Use the severity gate; reports are written before the exit status is set:
 
 ```bash
-vigievuln -s . --no-nvd > /dev/null
-# Then grep the report or parse the structured output (planned).
+vigievuln scan . --fail-on critical
 ```
 
-(A `--fail-on critical` flag is a planned addition — track it in issues.)
+Exit 1 means a blocking production or embedded-binary finding. Use `--fail-on-incomplete sources` as well to return code 2 when source coverage is incomplete.
 
 ### Diff two runs
 

@@ -298,7 +298,7 @@ if (process.argv.includes("--export-cache") || process.argv.includes("--import-c
 // Standalone differential audit between two findings JSON exports. Mirrors the other
 // pre-parse intercepts so it never collides with the main option set (which requires -s).
 if (process.argv[2] === "diff") {
-	const { diffFindings, summarizeDiff, newProductionCveCount } = require("./lib/diff");
+	const { diffFindings, summarizeDiff, newProductionCveCount, isProductionCve, validateFindingsDocument } = require("./lib/diff");
 	const rest = process.argv.slice(3);
 	const positionals = rest.filter(a => !a.startsWith("-"));
 	const [basePath, curPath] = positionals;
@@ -310,9 +310,9 @@ if (process.argv[2] === "diff") {
 		process.exit(2);
 	}
 	let baseDoc, curDoc;
-	try { baseDoc = JSON.parse(fs.readFileSync(basePath, "utf8")); }
+	try { baseDoc = validateFindingsDocument(JSON.parse(fs.readFileSync(basePath, "utf8"))); }
 	catch (e) { console.error(chalk.red(`❌  cannot read baseline ${basePath}: ${e.message}`)); process.exit(2); }
-	try { curDoc = JSON.parse(fs.readFileSync(curPath, "utf8")); }
+	try { curDoc = validateFindingsDocument(JSON.parse(fs.readFileSync(curPath, "utf8"))); }
 	catch (e) { console.error(chalk.red(`❌  cannot read current ${curPath}: ${e.message}`)); process.exit(2); }
 	const d = diffFindings(baseDoc, curDoc);
 	const s = summarizeDiff(d);
@@ -323,7 +323,7 @@ if (process.argv[2] === "diff") {
 	console.log();
 	const sev = Object.entries(s.cve.addedBySeverity).filter(([, n]) => n).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(", ") || "none";
 	console.log(`  ${chalk.bold("New production CVE findings:")} ${newProd ? chalk.red.bold(newProd) : chalk.green("0")}  ${chalk.dim(`(${sev})`)}`);
-	const newCves = (d.cve.added || []).filter(f => !f.suppressed && !f.cpeFiltered);
+	const newCves = (d.cve.added || []).filter(isProductionCve);
 	for (const f of newCves.slice(0, 25)) console.log(`    ${chalk.red("•")} ${f.id}  ${chalk.dim((f.severity || "") + " · " + ((f.dep && f.dep.coord) || "") + "@" + ((f.dep && f.dep.version) || ""))}`);
 	if (newCves.length > 25) console.log(chalk.dim(`    …and ${newCves.length - 25} more`));
 	if (jsonOut) {
@@ -811,6 +811,19 @@ if (options.failOn) {
 		process.exit(2);
 	}
 	options.failOn = lvl;
+}
+let baselineDoc = null;
+if (options.failOnNew && !options.baseline) {
+	console.error(chalk.red("❌  --fail-on-new requires --baseline <findings.json>"));
+	process.exit(2);
+}
+if (options.baseline) {
+	try {
+		baselineDoc = require("./lib/diff").validateFindingsDocument(JSON.parse(fs.readFileSync(options.baseline, "utf8")));
+	} catch (err) {
+		console.error(chalk.red(`❌  cannot read baseline ${options.baseline}: ${err.message}`));
+		process.exit(2);
+	}
 }
 // Read-only when no target is given. No need for an explicit --test flag.
 const readOnly = !options.target;
@@ -1453,6 +1466,10 @@ async function timedPhase(label, fn) {
 })();
 
 async function runReportFlow(resolved, ecoFlags = {}) {
+	if (!options.proxyCache && !options.importAnonymized) {
+		const t = require("./lib/i18n").makeT(options.lang);
+		console.error("\n  " + chalk.yellow("⚠") + " " + chalk.yellow(t("For faster scans with the VigieVuln DB or a seed → vigievuln setup")));
+	}
 	const { activeIds = [], runMaven = true, runGradle = false, runNpm = false, privateLibIds = [], mavenRepos = [], regMap = {}, collectWarnings = [], mavenPropsByPom = null, mavenStore = null, gradlePlatformBoms = [], parsedManifests = [], composerPlatforms = [], walkOpts = {} } = ecoFlags;
 	const { excludePath = [], defaultExcludes = true } = walkOpts;
 	const registriesFor = eco => regMap[eco] || [];
@@ -2583,11 +2600,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 
 	// Differential audit vs --baseline: build the current findings doc once, diff it
 	// against the prior export → a `diff` block for the report + JSON export, and a
-	// `--fail-on-new` gate signal. Best-effort: a missing/unreadable baseline warns.
+	// `--fail-on-new` gate signal. The baseline is validated before scanning.
 	let diff = null, jsonDiff = null;
 	if (options.baseline) {
 		try {
-			const baseDoc = JSON.parse(fs.readFileSync(options.baseline, "utf8"));
+			const baseDoc = baselineDoc;
 			const { buildFindings } = require("./lib/json-export");
 			const curDoc = buildFindings({ cveMatches, retireMatches, vendoredJsInventory, eolResults, obsoleteResults, outdatedResults, licenseResults,
 				excludedDirs, resolvedDeps: resolved, projectInfo, toolVersion: pkg.version, typosquats,
@@ -2597,11 +2614,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			const dd = diffFindings(baseDoc, curDoc);
 			diff = { ...dd, summary: summarizeDiff(dd) };
 			jsonDiff = { summary: diff.summary, cve: { added: dd.cve.added, removed: dd.cve.removed, unassessed: dd.cve.unassessed } };
-		} catch (err) { ui.warn(`baseline diff skipped (${options.baseline}): ${err.message}`); }
+		} catch (err) { throw new Error(`baseline diff failed (${options.baseline}): ${err.message}`); }
 	}
 
 	const wrote = [];
-	let xlsxFailed = false;
+	let exportFailed = false;
 	// Announce coverage gaps for every output combination, including JSON-only.
 	warnIfDegraded();
 	if (out.html || out.doc) {
@@ -2626,7 +2643,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			await ensureDir(out.sbom);
 			writeCycloneDx(resolved, cveMatches, out.sbom, { projectInfo, toolVersion: pkg.version, timestamp: projectInfo.generatedAt, licenseResults });
 			wrote.push(["CycloneDX SBOM", out.sbom]);
-		} catch (err) { ui.warn(`SBOM export failed: ${err.message}`); }
+		} catch (err) { exportFailed = true; ui.warn(`SBOM export failed: ${err.message}`); }
 	}
 	if (out.csaf) {
 		try {
@@ -2634,7 +2651,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			await ensureDir(out.csaf);
 			writeCsaf(resolved, cveMatches, out.csaf, { projectInfo, toolVersion: pkg.version, timestamp: projectInfo.generatedAt });
 			wrote.push(["CSAF 2.0 VEX", out.csaf]);
-		} catch (err) { ui.warn(`CSAF export failed: ${err.message}`); }
+		} catch (err) { exportFailed = true; ui.warn(`CSAF export failed: ${err.message}`); }
 	}
 	if (out.json) {
 		try {
@@ -2645,7 +2662,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				typosquats, diff: jsonDiff, applications: appState.applications, applicationInventory: appState.inventory,
 				applicationRelations, coverage: appState.coverage, warnings: reportWarnings }, out.json);
 			wrote.push(["Findings JSON", out.json]);
-		} catch (err) { ui.warn(`JSON export failed: ${err.message}`); }
+		} catch (err) { exportFailed = true; ui.warn(`JSON export failed: ${err.message}`); }
 	}
 	if (out.xlsx) {
 		try {
@@ -2656,7 +2673,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				typosquats, diff: jsonDiff, applications: appState.applications, applicationInventory: appState.inventory,
 				applicationRelations, coverage: appState.coverage, warnings: reportWarnings }, out.xlsx);
 			wrote.push(["Excel workbook", out.xlsx]);
-		} catch (err) { xlsxFailed = true; ui.warn(`XLSX export failed: ${err.message}`); }
+		} catch (err) { exportFailed = true; ui.warn(`XLSX export failed: ${err.message}`); }
 	}
 	if (out.sarif) {
 		try {
@@ -2664,7 +2681,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			await ensureDir(out.sarif);
 			writeSarif(cveMatches.filter(m => !m.suppressed), out.sarif, { projectInfo, toolVersion: pkg.version, certFindings });
 			wrote.push(["SARIF", out.sarif]);
-		} catch (err) { ui.warn(`SARIF export failed: ${err.message}`); }
+		} catch (err) { exportFailed = true; ui.warn(`SARIF export failed: ${err.message}`); }
 	}
 
 	// Integrity manifest: a standard SHA256SUMS over every artifact written this run,
@@ -2737,7 +2754,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			process.exitCode = 2;
 		}
 	}
-	if (xlsxFailed) process.exitCode = 2;
+	if (exportFailed) process.exitCode = 2;
 	return {cveIds:[...new Set(cveMatches.map(m=>m.cve?.id).filter(id=>/^CVE-\d{4}-\d{4,7}$/.test(id||'')))]};
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "vigievuln",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Polyglot dependency auditor for Maven, Gradle, JavaScript, Composer, PyPI, NuGet, Go, Ruby and 9 CMS/frameworks, with offline scans and audit reports.",
   "keywords": [
     "sca",

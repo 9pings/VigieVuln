@@ -66,8 +66,8 @@ test("Word column widths survive translation", () => {
 	assert.equal(counts[0], counts[1], `en ${counts[0]} vs fr ${counts[1]}`);
 });
 
-// Every file that renders report chrome. A key lives in exactly one of them.
-const CHROME_SOURCES = ["lib/cve-report.js", "lib/charts.js", "lib/codecs/recipes.js"];
+// Every file using the shared report/CLI translator.
+const CHROME_SOURCES = ["lib/cve-report.js", "lib/charts.js", "lib/codecs/recipes.js", "vigievuln.js"];
 function chromeSource() {
 	const fs = require("fs"), path = require("path");
 	return CHROME_SOURCES.map(f => fs.readFileSync(path.join(__dirname, "..", f), "utf8")).join("\n");

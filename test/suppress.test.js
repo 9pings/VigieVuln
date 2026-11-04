@@ -64,12 +64,12 @@ test("parseVex suppresses CVEs marked not_affected/fixed, mapped by purl", () =>
 	const matches = [
 		{ dep: log4j, cve: { id: "CVE-2021-44228" } },
 		{ dep: lodash, cve: { id: "CVE-2021-44228" } }, // different coord → not suppressed
-		{ dep: lodash, cve: { id: "CVE-GLOBAL" } },     // global rule → suppressed
+		{ dep: lodash, cve: { id: "CVE-GLOBAL" } },     // empty clearance → not suppressed
 	];
 	applySuppressions(matches, rules);
 	assert.equal(matches[0].suppressed, true);
 	assert.equal(matches[1].suppressed, undefined);
-	assert.equal(matches[2].suppressed, true);
+	assert.equal(matches[2].suppressed, undefined);
 });
 
 // Regression: a VEX product_id with no purl in the product_tree must NOT become a
@@ -83,4 +83,68 @@ test("VEX with an unmappable product_id does not suppress unrelated deps", () =>
 	const unrelated = makeDepRecord({ ecosystem: "maven", namespace: "org.unrelated", name: "thing", version: "1.0.0", manifestPath: "pom.xml" });
 	const matches = [{ cve: { id: "CVE-2021-44228" }, dep: unrelated }];
 	assert.equal(applySuppressions(matches, rules), 0);
+});
+
+test("affected, investigating, absent or empty VEX statuses never grant global clearance", () => {
+	for (const product_status of [{ known_affected: ['P'] }, { under_investigation: ['P'] }, {}, { fixed: [] }, undefined]) {
+		assert.deepEqual(parseVex({ vulnerabilities: [{ cve: 'CVE-1', product_status }] }), []);
+	}
+});
+
+test("own CSAF affected export remains blocking when reimported as VEX", () => {
+	const { buildCsaf } = require('../lib/csaf-export');
+	const { evaluateGate } = require('../lib/gate');
+	const matches = [{ dep: log4j, cve: { id: 'CVE-2021-44228', severity: 'CRITICAL' } }];
+	const vex = buildCsaf(new Map([[log4j.coordKey, log4j]]), matches);
+	assert.equal(applySuppressions(matches, parseVex(vex)), 0);
+	assert.equal(evaluateGate(matches, 'critical').failed, true);
+});
+
+test("explicit VEX exemptions preserve status and scope; contradictions do not clear", () => {
+	const { purlFor } = require('../lib/purl');
+	for (const status of ['fixed', 'known_not_affected']) {
+		const vex = { product_tree: { full_product_names: [{ product_id: 'P', product_identification_helper: { purl: purlFor(log4j) } }] },
+			vulnerabilities: [{ cve: 'CVE-1', product_status: { [status]: ['P'] } }] };
+		const matches = [{ dep: log4j, cve: { id: 'CVE-1' } }, { dep: lodash, cve: { id: 'CVE-1' } }];
+		assert.equal(applySuppressions(matches, parseVex(vex)), 1);
+		assert.equal(matches[0].suppressionStatus, status);
+		assert.equal(matches[1].suppressed, undefined);
+		vex.vulnerabilities[0].product_status.known_affected = ['P'];
+		assert.deepEqual(parseVex(vex), []);
+	}
+});
+
+test('VEX clearance never extends to affected, investigating or unknown copies sharing one PURL', () => {
+	const { purlFor } = require('../lib/purl');
+	const { evaluateGate } = require('../lib/gate');
+	for (const siblingStatus of ['known_affected', 'under_investigation', null]) {
+		for (const order of [['A', 'B'], ['B', 'A']]) {
+			const vex = { product_tree: { full_product_names: order.map(product_id => ({ product_id,
+				product_identification_helper: { purl: purlFor(log4j) } })) }, vulnerabilities: [{
+				cve: 'CVE-2021-44228', product_status: { known_not_affected: ['A'], ...(siblingStatus ? { [siblingStatus]: ['B'] } : {}) },
+			}] };
+			const matches = ['site-a/pom.xml', 'site-b/pom.xml'].map(file => ({ dep: { ...log4j, manifestPaths: [file] },
+				cve: { id: 'CVE-2021-44228', severity: 'HIGH' } }));
+			assert.deepEqual(parseVex(vex), []);
+			assert.equal(applySuppressions(matches, parseVex(vex)), 0);
+			assert.equal(evaluateGate(matches, 'high').failed, true);
+		}
+	}
+});
+
+test('VEX PURLs are exact identities, not ignore-file globs', () => {
+	const vex = { product_tree: { full_product_names: [{ product_id: 'P',
+		product_identification_helper: { purl: 'pkg:npm/*@*' } }] },
+		vulnerabilities: [{ cve: 'CVE-1', product_status: { fixed: ['P'] } }] };
+	assert.equal(applySuppressions([{ dep: lodash, cve: { id: 'CVE-1' } }], parseVex(vex)), 0);
+});
+
+test('VEX contradictory assertions in separate vulnerability entries do not clear the same PURL', () => {
+	const { purlFor } = require('../lib/purl');
+	const clear = { cve: 'CVE-1', product_status: { fixed: ['P'] } };
+	const affected = { cve: 'CVE-1', product_status: { known_affected: ['P'] } };
+	for (const vulnerabilities of [[clear, affected], [affected, clear]]) {
+		const vex = { product_tree: { full_product_names: [{ product_id: 'P', product_identification_helper: { purl: purlFor(log4j) } }] }, vulnerabilities };
+		assert.deepEqual(parseVex(vex), []);
+	}
 });

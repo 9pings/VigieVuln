@@ -61,20 +61,22 @@
         <div class="terminal-top"><span class="terminal-lights" aria-hidden="true"><i></i><i></i><i></i></span><span>bash — monorepo-mixed</span><span class="terminal-shell" aria-hidden="true">~/projects</span></div>
 <pre tabindex="0" aria-label="Scan command and output"><code><span class="prompt">$</span> <b>vigievuln</b> -s test/fixtures/monorepo-mixed \
     --offline --no-report
-<b>VigieVuln v1.0.1</b> <span class="muted">· Autonomous Dependency Checker</span>
+<b>VigieVuln v1.2.1</b> <span class="muted">· Autonomous Dependency Checker</span>
 <span class="info">▸ Collection</span>
   <span class="ok">✓</span> Maven    4 module(s) · 7 direct dep(s)
   <span class="ok">✓</span> npm/yarn 9 dep(s)
   <span class="ok">✓</span> Yarn     7 dep(s)
   <span class="muted">…</span>
+
+<span class="warn">⚠ For faster scans with the VigieVuln DB or a seed → vigievuln setup</span>
 <span class="info">▸ Vulnerability database update</span>
   · --offline: cached data only, no network
   <span class="muted">…</span>
 <span class="info">▸ Results</span>
-  CVE · production <b>(135)</b> <span class="critical">12 critical</span> <span class="warn">66 high</span> 50 medium 7 low <span class="critical">2 KEV</span>
+  CVE · production <b>(117)</b> <span class="critical">12 critical</span> <span class="warn">62 high</span> 40 medium 3 low <span class="critical">2 KEV</span>
   <span class="critical">CRITICAL CVE-2021-44228</span> log4j-core:2.14.0 <span class="critical">KEV</span>
   <span class="muted">…</span>
-  <span class="warn">⚠ Offline OSV cache incomplete: 10 lookups unavailable.</span>
+  <span class="warn">⚠ 7 Maven POM(s) could not be resolved; transitive dependency coverage may be incomplete.</span>
   · --no-report: no files written (scan + gate only)
 <span class="prompt">$</span> <span class="terminal-cursor" aria-hidden="true">▍</span></code></pre>
         <p class="terminal-note" id="terminal-caption"><span>Real scan · excerpt</span><a href="#reports">Sample reports ↗</a></p>
@@ -246,7 +248,7 @@ vigievuln logout</pre></div>
       <a class="doc" href="samples/dubbo.html"><div class="t">Explore the Maven report <span class="arr">↗</span></div><div class="d">Apache Dubbo 2.7.8 · 105 Maven descriptors. Explore findings, dependency paths, evidence and fix recommendations.</div></a>
       <a class="doc" href="samples/multi-cms-frameworks.html"><div class="t">Explore the CMS report <span class="arr">↗</span></div><div class="d">WordPress, Drupal, Symfony and Laravel in one audit. Explore per-application inventory, attribution and coverage.</div></a>
     </div>
-    <p class="note">Actual scans generated with <b>VigieVuln 1.1.3 on 2026-10-29</b>. These are dated snapshots, not live security assessments. The CMS sample has incomplete WordPress advisory coverage; each report retains its cache gaps and limitations. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/samples/README.md" style="color:var(--amber);text-decoration:underline">Sample scope and reproduction</a>.</p>
+    <p class="note">Actual scans generated with <b>VigieVuln 1.2.1 on 2026-11-04</b>. These are dated snapshots, not live security assessments. The CMS sample has incomplete WordPress advisory coverage; each report retains its cache gaps and limitations. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/samples/README.md" style="color:var(--amber);text-decoration:underline">Sample scope and reproduction</a>.</p>
   </div>
 </section>
 
@@ -330,7 +332,7 @@ vigievuln logout</pre></div>
   </section>
 
   <section style="padding-top:0" aria-label="Terminal demonstration">
-    <details class="demo-details"><summary>Watch the actual CLI terminal demo</summary><figure><img class="shot" src="assets/demo.gif" width="1200" alt="Recorded VigieVuln 1.0.1 offline audit in the terminal" loading="lazy"><figcaption>The recorded demo uses cached vulnerability data. Results and source freshness belong to that run.</figcaption></figure></details>
+    <details class="demo-details"><summary>Watch the actual CLI terminal demo</summary><figure><img class="shot" src="assets/demo.gif" width="1200" alt="Recorded VigieVuln 1.2.1 offline audit in the terminal" loading="lazy"><figcaption>The recorded demo uses cached vulnerability data. Results and source freshness belong to that run.</figcaption></figure></details>
     <p class="beta-note">VigieVuln is a young project. Use its findings as a first pass, verify critical decisions, and <a href="https://github.com/9pings/VigieVuln/issues">report issues</a> so the scanner keeps improving.</p>
   </section>
 

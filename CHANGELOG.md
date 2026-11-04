@@ -1,5 +1,12 @@
 # Changelog — VigieVuln
 
+## [1.2.1] — 2026-11-04
+
+- Require explicit, unambiguous product exemptions in VEX; preserve scoped triage in CSAF and SBOM exports.
+- Fail CI when its baseline cannot be read or a requested report cannot be written; distinguish incomplete reassessment from resolved findings and exclude development dependencies from production-only diffs.
+- Apply Go workspace replacements, preserve conditional Python and NuGet versions, and collect Python dependency groups with explicit coverage warnings.
+- Suggest `vigievuln setup` during direct scans and refresh the committed report samples, terminal demo and screenshots.
+
 ## [1.2.0] — Unreleased
 
 - Match VigieVuln Maven/npm advisories through the configured official proxy and offline cache, including partial ranges and `VV:CVE-…` identifiers.

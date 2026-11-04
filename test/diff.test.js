@@ -96,3 +96,57 @@ test("missing advisory coverage marks an absent application finding unassessed, 
 	assert.deepStrictEqual(d.cve.unassessed, [old]);
 	assert.strictEqual(summarizeDiff(d).cve.unassessed, 1);
 });
+
+test("ordinary findings remain unassessed when advisory or inventory coverage is incomplete", () => {
+	const old = cve('CVE-1', 'lodash', '1.0', { ecosystem: 'npm' });
+	for (const type of ['source-unavailable', 'source-stale', 'osv-coverage', 'parse-error', 'dependency-coverage', 'no-lockfile']) {
+		const d = diffFindings(doc([old]), { ...doc([]), warnings: [{ type, message: 'gap' }] });
+		assert.deepStrictEqual(d.cve.removed, []);
+		assert.deepStrictEqual(d.cve.unassessed, [old]);
+	}
+	assert.equal(diffFindings(doc([old]), { ...doc([]), warnings: [{ type: 'suppressed' }] }).cve.removed.length, 1);
+});
+
+test("new production gate excludes dev/test/provided but includes embedded findings", () => {
+	const findings = [
+		{ ...cve('DEV', 'dev', '1'), dep: { isDev: true } },
+		{ ...cve('TEST', 'test', '1'), dep: { scope: 'test' } },
+		{ ...cve('PROVIDED', 'provided', '1'), dep: { scope: 'provided' } },
+		{ ...cve('EMBEDDED', 'binary', '1'), dep: { isDev: true, provenance: 'embedded' } },
+		cve('PROD', 'prod', '1'),
+	];
+	const s = summarizeDiff(diffFindings(doc([]), doc(findings)));
+	assert.equal(s.cve.added, 5);
+	assert.equal(s.cve.addedProduction, 2);
+	assert.equal(s.cve.addedBySeverity.HIGH, 2);
+});
+
+test("baseline validation rejects unrelated JSON and malformed findings but permits legacy exports", () => {
+	const { validateFindingsDocument } = require('../lib/diff');
+	for (const invalid of [null, [], {}, { schema: 'other', cve: [] }, { cve: {} }, { cve: [null] }, { cve: [{ id: 'CVE-1' }] }])
+		assert.throws(() => validateFindingsDocument(invalid));
+	assert.deepStrictEqual(validateFindingsDocument({ cve: [] }), { cve: [] });
+	assert.equal(validateFindingsDocument({ schema: 'fad-findings/1', cve: [cve('CVE-1', 'g:a', '1')] }).cve.length, 1);
+});
+
+test('provenance freshness and source limits survive JSON export and prevent false remediation', () => {
+	const { buildFindings } = require('../lib/json-export');
+	const { freshnessNotice } = require('../lib/cve-report');
+	const old = cve('CVE-1', 'lodash', '1.0', { ecosystem: 'npm' });
+	const notice = freshnessNotice({ type: 'source-stale', message: 'osv: cached data from 2026-01-01T00:00:00Z was used and may be outdated.' });
+	assert.ok(notice);
+	for (const provenance of [
+		{ freshnessNotices: [notice] },
+		{ sourceLimitations: [{ source: 'CVEProject', message: 'partial projection' }] },
+		{ mavenDepthLimitReached: true },
+	]) {
+		const current = buildFindings({ cveMatches: [], projectInfo: { provenance }, warnings: [] });
+		const d = diffFindings(doc([old]), current);
+		assert.deepStrictEqual(d.cve.removed, []);
+		assert.deepStrictEqual(d.cve.unassessed, [old]);
+	}
+	const healthy = buildFindings({ cveMatches: [], projectInfo: { provenance: {
+		freshnessNotices: [], sourceLimitations: [], dataSources: [{ id: 'osv', status: 'cached', asOf: '2026-11-04T00:00:00Z' }],
+	} } });
+	assert.equal(diffFindings(doc([old]), healthy).cve.removed.length, 1);
+});
