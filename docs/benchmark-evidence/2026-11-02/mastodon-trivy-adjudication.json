@@ -1,0 +1,752 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-11-02T14:00:09.151711+00:00",
+  "project": "mastodon/mastodon",
+  "projectCommit": "fbcbf7898f000d9d1a21d52e8a8d3ed4602aa7db",
+  "scope": "22 Trivy-only Ruby package/advisory observations versus the OSV-only VV scan. Confirmed missing is an advisory/source-coverage verdict, not exploitability, uniqueness of underlying incident, or a matcher-defect verdict.",
+  "counts": {
+    "confirmed_missing": 18,
+    "indeterminate": 2,
+    "false_alert": 1,
+    "already_reported_alias": 1
+  },
+  "rawInputSha256": "0d665c27070910bf42762d3c4b906c0f728ad1b9a64d8425bd1b850fa355abad",
+  "vvOutput": {
+    "filename": "mastodon-vv-cold-rubyfix.json",
+    "sha256": "a30027d81585581b05474a25ec0476ab3266feed85fa9a3dfe6593bf4cc96f09",
+    "findingCount": 158
+  },
+  "nokogiriArchiveCheck": {
+    "url": "https://codeload.github.com/sparklemotion/nokogiri/tar.gz/refs/tags/v1.13.6",
+    "sha256": "5b0d8a383ee7a2a5d364de105004758069d6110e8396e22de5af2e57813b34c9",
+    "files_searched": 489,
+    "initialize_copy_with_args_hits": []
+  },
+  "nokogiriHistory": [
+    {
+      "url": "https://github.com/sparklemotion/nokogiri/commit/1e7d38affc10917f12372fab97a505e6dbb8368b",
+      "apiResponseSha256": "b2ae9462f832cfb156b8704bf0c11cc3a2096171d23b67f6a54f0a8e77eb05b8"
+    },
+    {
+      "url": "https://github.com/sparklemotion/nokogiri/commit/630f07344149e596de1d04c9d7a80533abc055f7",
+      "apiResponseSha256": "879772a78a5af07e04dcd3075a1e5ee5f8984f36b29068409d9633a2177cf8bb"
+    }
+  ],
+  "records": [
+    {
+      "package": "addressable",
+      "version": "2.8.0",
+      "trivyId": "GHSA-4w5q-wg7v-w6gp",
+      "verdict": "confirmed_missing",
+      "reason": "The explicit interval includes 2.8.0. URI-template matching/extraction is required; the declared Ruby 3.0.3 runtime is among the affected engines. Parsing or expansion alone is insufficient.",
+      "primary": {
+        "url": "https://github.com/sporkmonger/addressable/security/advisories/GHSA-4w5q-wg7v-w6gp",
+        "apiUrl": "https://api.github.com/repos/sporkmonger/addressable/security-advisories/GHSA-4w5q-wg7v-w6gp",
+        "httpStatus": 200,
+        "responseSha256": "e51edf1875c575309f74775b0dc97e8d6f36c77d76c0a50a6872a43618acf471",
+        "ghsaId": "GHSA-4w5q-wg7v-w6gp",
+        "cveId": null,
+        "publishedAt": "2026-10-30T08:13:28Z",
+        "updatedAt": "2026-10-30T08:13:29Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 2.3.0, < 2.9.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-4w5q-wg7v-w6gp",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-4w5q-wg7v-w6gp",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.101143+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "addressable",
+      "version": "2.8.0",
+      "trivyId": "GHSA-8gmh-2hhj-2hv9",
+      "verdict": "confirmed_missing",
+      "reason": "The maintainer identifies 2.2.5 as the introduction. Version 2.8.0 is included; exploitation requires inconsistent path normalization across an application boundary.",
+      "primary": {
+        "url": "https://github.com/sporkmonger/addressable/security/advisories/GHSA-8gmh-2hhj-2hv9",
+        "apiUrl": "https://api.github.com/repos/sporkmonger/addressable/security-advisories/GHSA-8gmh-2hhj-2hv9",
+        "httpStatus": 200,
+        "responseSha256": "4e32b8f97853530ff10102f2492ad63863c90a7c2e9a2d3637a0a959e23bd8d9",
+        "ghsaId": "GHSA-8gmh-2hhj-2hv9",
+        "cveId": null,
+        "publishedAt": "2026-10-30T08:13:09Z",
+        "updatedAt": "2026-10-30T08:13:09Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 2.2.5, < 2.9.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-8gmh-2hhj-2hv9",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-8gmh-2hhj-2hv9",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.101698+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "addressable",
+      "version": "2.8.0",
+      "trivyId": "GHSA-9crm-g4mf-wc5j",
+      "verdict": "indeterminate",
+      "reason": "The package interval includes 2.8.0, but only the pure-Ruby IDNA implementation is affected. Mastodon declares idn-ruby with require: idn; Addressable prefers that unaffected native implementation and falls back on LoadError. The actual loaded backend was not measured.",
+      "primary": {
+        "url": "https://github.com/sporkmonger/addressable/security/advisories/GHSA-9crm-g4mf-wc5j",
+        "apiUrl": "https://api.github.com/repos/sporkmonger/addressable/security-advisories/GHSA-9crm-g4mf-wc5j",
+        "httpStatus": 200,
+        "responseSha256": "512f89ebe42f8b4d9efcf05d5c9e5b8550bad94fc1ff4b3b2a6e75b575a65987",
+        "ghsaId": "GHSA-9crm-g4mf-wc5j",
+        "cveId": null,
+        "publishedAt": "2026-10-30T08:14:30Z",
+        "updatedAt": "2026-10-30T08:14:31Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 2.0.0, < 2.9.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-9crm-g4mf-wc5j",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-9crm-g4mf-wc5j",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.102071+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "addressable",
+      "version": "2.8.0",
+      "trivyId": "GHSA-9f42-57jx-vpp3",
+      "verdict": "confirmed_missing",
+      "reason": "The explicit interval includes 2.8.0. Multiple URI-template variables are involved; the declared Ruby 3.0.3 runtime is affected. Application use of matching/extraction was not established.",
+      "primary": {
+        "url": "https://github.com/sporkmonger/addressable/security/advisories/GHSA-9f42-57jx-vpp3",
+        "apiUrl": "https://api.github.com/repos/sporkmonger/addressable/security-advisories/GHSA-9f42-57jx-vpp3",
+        "httpStatus": 200,
+        "responseSha256": "cfbd0a9a8c425e4d3246babc3f4169a01394b8254e1b334e12c9b54448910f7d",
+        "ghsaId": "GHSA-9f42-57jx-vpp3",
+        "cveId": null,
+        "publishedAt": "2026-10-30T08:13:42Z",
+        "updatedAt": "2026-10-30T08:13:42Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 2.3.0, < 2.9.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-9f42-57jx-vpp3",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-9f42-57jx-vpp3",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.102480+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "addressable",
+      "version": "2.8.0",
+      "trivyId": "GHSA-j82w-28jv-3pmj",
+      "verdict": "confirmed_missing",
+      "reason": "The explicit interval includes 2.8.0 and the declared Ruby 3.0.3 runtime is affected. A template-expression denial of service is reported; this review does not merge it with an earlier advisory solely because the report describes an incomplete fix.",
+      "primary": {
+        "url": "https://github.com/sporkmonger/addressable/security/advisories/GHSA-j82w-28jv-3pmj",
+        "apiUrl": "https://api.github.com/repos/sporkmonger/addressable/security-advisories/GHSA-j82w-28jv-3pmj",
+        "httpStatus": 200,
+        "responseSha256": "688dddab4978afa2fd6fc43d7acd90ca1777d86904b9b9c2c1ba8f047cb0d8a3",
+        "ghsaId": "GHSA-j82w-28jv-3pmj",
+        "cveId": null,
+        "publishedAt": "2026-10-30T08:14:07Z",
+        "updatedAt": "2026-10-30T08:14:07Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 2.3.0, < 2.9.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-j82w-28jv-3pmj",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-j82w-28jv-3pmj",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.102846+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "addressable",
+      "version": "2.8.0",
+      "trivyId": "GHSA-qq38-m9mg-xjj5",
+      "verdict": "confirmed_missing",
+      "reason": "The maintainer explicitly includes all releases before 2.9.1, covering 2.8.0. URI normalization can take quadratic time. No reachability assessment was performed.",
+      "primary": {
+        "url": "https://github.com/sporkmonger/addressable/security/advisories/GHSA-qq38-m9mg-xjj5",
+        "apiUrl": "https://api.github.com/repos/sporkmonger/addressable/security-advisories/GHSA-qq38-m9mg-xjj5",
+        "httpStatus": 200,
+        "responseSha256": "5ed7b966c3b9dcca861c7fd0405db81a23b399bbe7acdd43a2d45c1508e039c6",
+        "ghsaId": "GHSA-qq38-m9mg-xjj5",
+        "cveId": null,
+        "publishedAt": "2026-10-30T08:13:55Z",
+        "updatedAt": "2026-10-30T08:13:55Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 2.9.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-qq38-m9mg-xjj5",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-qq38-m9mg-xjj5",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.103214+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "addressable",
+      "version": "2.8.0",
+      "trivyId": "GHSA-539f-xcgw-2gjg",
+      "verdict": "confirmed_missing",
+      "reason": "Version 2.8.0 is inside both implementation-specific intervals described by the maintainer: pure Ruby from 2.0.0, native IDNA from 2.5.2. This concerns misleading display, not altered network resolution.",
+      "primary": {
+        "url": "https://github.com/sporkmonger/addressable/security/advisories/GHSA-539f-xcgw-2gjg",
+        "apiUrl": "https://api.github.com/repos/sporkmonger/addressable/security-advisories/GHSA-539f-xcgw-2gjg",
+        "httpStatus": 200,
+        "responseSha256": "58a218e672a491383aa38ab2c624ba6a32493d1407f9c087dc06c788a0833282",
+        "ghsaId": "GHSA-539f-xcgw-2gjg",
+        "cveId": null,
+        "publishedAt": "2026-10-30T08:14:19Z",
+        "updatedAt": "2026-10-30T08:14:20Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 2.0.0, < 2.9.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-539f-xcgw-2gjg",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-539f-xcgw-2gjg",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.386854+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "css_parser",
+      "version": "1.7.1",
+      "trivyId": "GHSA-w3mx-4vv9-hjpg",
+      "verdict": "confirmed_missing",
+      "reason": "The maintainer explicitly includes every release through 3.2.0. Local imports require base_dir without base_uri; the bare default parser is not affected. Application configuration was not established.",
+      "primary": {
+        "url": "https://github.com/premailer/css_parser/security/advisories/GHSA-w3mx-4vv9-hjpg",
+        "apiUrl": "https://api.github.com/repos/premailer/css_parser/security-advisories/GHSA-w3mx-4vv9-hjpg",
+        "httpStatus": 200,
+        "responseSha256": "a839e1096bc758045976ebd00084f2e01ccd45082912021a2e60dd8c921bea19",
+        "ghsaId": "GHSA-w3mx-4vv9-hjpg",
+        "cveId": null,
+        "publishedAt": "2026-10-07T21:02:38Z",
+        "updatedAt": "2026-10-07T21:02:38Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "<= 3.2.0"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-w3mx-4vv9-hjpg",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-w3mx-4vv9-hjpg",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.387239+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "net-ssh",
+      "version": "6.1.0",
+      "trivyId": "GHSA-qpg5-fx6p-8cq3",
+      "verdict": "confirmed_missing",
+      "reason": "The original report tested 7.3.0/8 beta only. Review of exact v6.1.0 independently confirms unconditional auth-agent channel registration and an unguarded connection to the local agent. This requires use of forwarding plus a reachable agent; no end-to-end exploit was run.",
+      "primary": {
+        "url": "https://github.com/net-ssh/net-ssh/security/advisories/GHSA-qpg5-fx6p-8cq3",
+        "apiUrl": "https://api.github.com/repos/net-ssh/net-ssh/security-advisories/GHSA-qpg5-fx6p-8cq3",
+        "httpStatus": 200,
+        "responseSha256": "ff1b477e818ab8563292b97a92ca5c4e037732faf69dc2d9e6a6185c2102d14a",
+        "ghsaId": "GHSA-qpg5-fx6p-8cq3",
+        "cveId": null,
+        "publishedAt": "2026-10-05T03:06:11Z",
+        "updatedAt": "2026-10-05T03:06:11Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 7.3.5",
+          ">= 8.0.0.beta1, < 8.0.0.rc2"
+        ]
+      },
+      "codeEvidence": [
+        {
+          "url": "https://github.com/net-ssh/net-ssh/blob/74919ef69344164bd55e2dfc7ee2a360b6c718c6/lib/net/ssh/service/forward.rb",
+          "sha256": "def95964cdf3e69393ebf81d96ecdf5a171a26a115338a68b5e5349624d5aade"
+        }
+      ],
+      "osvLookup": {
+        "id": "GHSA-qpg5-fx6p-8cq3",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-qpg5-fx6p-8cq3",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.396417+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "net-ssh",
+      "version": "6.1.0",
+      "trivyId": "GHSA-3x7f-q7wf-fp73",
+      "verdict": "confirmed_missing",
+      "reason": "Exact v6.1.0 code substitutes host/port/user into a string passed to IO.popen without shell escaping. The primary interval includes 6.1.0. A configured proxy and untrusted connection parameters are prerequisites.",
+      "primary": {
+        "url": "https://github.com/net-ssh/net-ssh/security/advisories/GHSA-3x7f-q7wf-fp73",
+        "apiUrl": "https://api.github.com/repos/net-ssh/net-ssh/security-advisories/GHSA-3x7f-q7wf-fp73",
+        "httpStatus": 200,
+        "responseSha256": "9325b2cfa7468587de51cccdbaa1b1f9a45828af5a40d9212d193ea870d022bd",
+        "ghsaId": "GHSA-3x7f-q7wf-fp73",
+        "cveId": null,
+        "publishedAt": "2026-10-05T03:06:12Z",
+        "updatedAt": "2026-10-05T03:06:13Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 7.3.5",
+          ">= 8.0.0.beta1, < 8.0.0.rc2"
+        ]
+      },
+      "codeEvidence": [
+        {
+          "url": "https://github.com/net-ssh/net-ssh/blob/74919ef69344164bd55e2dfc7ee2a360b6c718c6/lib/net/ssh/proxy/command.rb",
+          "sha256": "abbe0ee303cb622f94eef6bf8480aae016ac20529adf2f3d660ce023e761848c"
+        },
+        {
+          "url": "https://github.com/net-ssh/net-ssh/blob/74919ef69344164bd55e2dfc7ee2a360b6c718c6/lib/net/ssh/proxy/jump.rb",
+          "sha256": "ae26ca6dee1514901084c861ff1a0ff504a9962c65286685496b2a649340601f"
+        }
+      ],
+      "osvLookup": {
+        "id": "GHSA-3x7f-q7wf-fp73",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-3x7f-q7wf-fp73",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.433882+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "net-ssh",
+      "version": "6.1.0",
+      "trivyId": "GHSA-ggxh-cfwq-5xqc",
+      "verdict": "confirmed_missing",
+      "reason": "Exact v6.1.0 poll_message queues packets rejected during KEX through an uncapped Array push. This corroborates the primary interval for 6.1.0; application connectivity and exploitation were not tested.",
+      "primary": {
+        "url": "https://github.com/net-ssh/net-ssh/security/advisories/GHSA-ggxh-cfwq-5xqc",
+        "apiUrl": "https://api.github.com/repos/net-ssh/net-ssh/security-advisories/GHSA-ggxh-cfwq-5xqc",
+        "httpStatus": 200,
+        "responseSha256": "a4732e2834e6169616cb030d22fc5a7afac26f32a24a6a3578e0140586ea6f58",
+        "ghsaId": "GHSA-ggxh-cfwq-5xqc",
+        "cveId": null,
+        "publishedAt": "2026-10-05T03:06:16Z",
+        "updatedAt": "2026-10-05T03:06:17Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 7.3.5",
+          ">= 8.0.0.beta1, < 8.0.0.rc2"
+        ]
+      },
+      "codeEvidence": [
+        {
+          "url": "https://github.com/net-ssh/net-ssh/blob/74919ef69344164bd55e2dfc7ee2a360b6c718c6/lib/net/ssh/transport/session.rb",
+          "sha256": "efe23da5a9d013f2ba6ff41d37da9404d24f21a5ac4f7d1872395ffff6d8010f"
+        }
+      ],
+      "osvLookup": {
+        "id": "GHSA-ggxh-cfwq-5xqc",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-ggxh-cfwq-5xqc",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.437183+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "net-ssh",
+      "version": "6.1.0",
+      "trivyId": "GHSA-pfqh-p9vh-wx4p",
+      "verdict": "confirmed_missing",
+      "reason": "Exact v6.1.0 reads a wire packet length and waits for that many buffered bytes without an upper bound. The alignment check does not cap size. This corroborates the primary interval; no memory-exhaustion run was performed.",
+      "primary": {
+        "url": "https://github.com/net-ssh/net-ssh/security/advisories/GHSA-pfqh-p9vh-wx4p",
+        "apiUrl": "https://api.github.com/repos/net-ssh/net-ssh/security-advisories/GHSA-pfqh-p9vh-wx4p",
+        "httpStatus": 200,
+        "responseSha256": "c70ab78099112bb76b51fb1b09a220dc2fd6794a41b77f661a685798f4d772f7",
+        "ghsaId": "GHSA-pfqh-p9vh-wx4p",
+        "cveId": null,
+        "publishedAt": "2026-10-05T03:06:15Z",
+        "updatedAt": "2026-10-05T03:06:16Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 7.3.5",
+          ">= 8.0.0.beta1, < 8.0.0.rc2"
+        ]
+      },
+      "codeEvidence": [
+        {
+          "url": "https://github.com/net-ssh/net-ssh/blob/74919ef69344164bd55e2dfc7ee2a360b6c718c6/lib/net/ssh/transport/packet_stream.rb",
+          "sha256": "5c78f8aaf6975b7f48f748ab216c52acacf9ce75a7072356fd76a182673d8c40"
+        }
+      ],
+      "osvLookup": {
+        "id": "GHSA-pfqh-p9vh-wx4p",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-pfqh-p9vh-wx4p",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.480477+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "net-ssh",
+      "version": "6.1.0",
+      "trivyId": "GHSA-r75w-7fhp-84w8",
+      "verdict": "confirmed_missing",
+      "reason": "Exact v6.1.0 appends banner bytes until newline with no line-length or aggregate cap. This corroborates the primary interval; no memory-exhaustion run was performed.",
+      "primary": {
+        "url": "https://github.com/net-ssh/net-ssh/security/advisories/GHSA-r75w-7fhp-84w8",
+        "apiUrl": "https://api.github.com/repos/net-ssh/net-ssh/security-advisories/GHSA-r75w-7fhp-84w8",
+        "httpStatus": 200,
+        "responseSha256": "85b13fa6c0c0bcbb895470d46f9b2c97cd69b44a8c9b4cb79e6a17a2393496dd",
+        "ghsaId": "GHSA-r75w-7fhp-84w8",
+        "cveId": null,
+        "publishedAt": "2026-10-05T03:06:14Z",
+        "updatedAt": "2026-10-05T03:06:15Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 7.3.5",
+          ">= 8.0.0.beta1, < 8.0.0.rc2"
+        ]
+      },
+      "codeEvidence": [
+        {
+          "url": "https://github.com/net-ssh/net-ssh/blob/74919ef69344164bd55e2dfc7ee2a360b6c718c6/lib/net/ssh/transport/server_version.rb",
+          "sha256": "b4ee51217bffe228139d718333f74c7a966f1f67929114152576130259dbd334"
+        }
+      ],
+      "osvLookup": {
+        "id": "GHSA-r75w-7fhp-84w8",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-r75w-7fhp-84w8",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.677789+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "net-ssh",
+      "version": "6.1.0",
+      "trivyId": "GHSA-rpq3-v334-f5pm",
+      "verdict": "confirmed_missing",
+      "reason": "Exact v6.1.0 reads the key-provided bcrypt rounds and passes it to BCryptPbkdf without a maximum. The installed version is inside the primary interval. Loading attacker-controlled encrypted keys is required; no expensive key derivation was executed.",
+      "primary": {
+        "url": "https://github.com/net-ssh/net-ssh/security/advisories/GHSA-rpq3-v334-f5pm",
+        "apiUrl": "https://api.github.com/repos/net-ssh/net-ssh/security-advisories/GHSA-rpq3-v334-f5pm",
+        "httpStatus": 200,
+        "responseSha256": "ab429989707197901f57560e6662079200ad637a8fba0853ccdbbf351fb7a400",
+        "ghsaId": "GHSA-rpq3-v334-f5pm",
+        "cveId": null,
+        "publishedAt": "2026-10-05T03:06:13Z",
+        "updatedAt": "2026-10-05T03:06:14Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 7.3.5",
+          ">= 8.0.0.beta1, < 8.0.0.rc2"
+        ]
+      },
+      "codeEvidence": [
+        {
+          "url": "https://github.com/net-ssh/net-ssh/blob/74919ef69344164bd55e2dfc7ee2a360b6c718c6/lib/net/ssh/authentication/ed25519.rb",
+          "sha256": "9e36cd88c2396c4804d8c03528926dcb05445ed25a54492e858c215f43edd233"
+        }
+      ],
+      "osvLookup": {
+        "id": "GHSA-rpq3-v334-f5pm",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-rpq3-v334-f5pm",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.685724+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "nokogiri",
+      "version": "1.13.6",
+      "trivyId": "GHSA-g9g8-vgvw-g3vf",
+      "verdict": "false_alert",
+      "reason": "The named initialize_copy_with_args method does not exist in v1.13.6: zero occurrences across all 489 files of its official source archive. It was introduced by commit 1e7d38affc10917f12372fab97a505e6dbb8368b in January 2024. The broad primary interval conflicts with the exact-version code; this specific advisory does not apply to 1.13.6.",
+      "primary": {
+        "url": "https://github.com/sparklemotion/nokogiri/security/advisories/GHSA-g9g8-vgvw-g3vf",
+        "apiUrl": "https://api.github.com/repos/sparklemotion/nokogiri/security-advisories/GHSA-g9g8-vgvw-g3vf",
+        "httpStatus": 200,
+        "responseSha256": "fb3c286434bc685b9eecf00a478b1738b86b505a93e564e7a5bda144c71965c6",
+        "ghsaId": "GHSA-g9g8-vgvw-g3vf",
+        "cveId": null,
+        "publishedAt": "2026-06-18T15:27:33Z",
+        "updatedAt": "2026-06-18T15:27:33Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 1.19.4"
+        ]
+      },
+      "codeEvidence": [
+        {
+          "url": "https://github.com/sparklemotion/nokogiri/blob/b7817b6a62ac210203a451d1a691a824288e9eab/ext/nokogiri/xml_node.c",
+          "sha256": "297cb64b6a8c346987e275bacd6039c114d0ea5bc266e24cec287b046d7d4955"
+        }
+      ],
+      "osvLookup": {
+        "id": "GHSA-g9g8-vgvw-g3vf",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-g9g8-vgvw-g3vf",
+        "status": 404,
+        "sha256": "acdeedb45eb6a5645c4668ae2d7fdedf73aac829c2642c6abe0edaa6b530c699",
+        "observedAt": "2026-11-02T13:55:51.744822+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "omniauth-saml",
+      "version": "1.10.3",
+      "trivyId": "CVE-2024-45409",
+      "verdict": "already_reported_alias",
+      "reason": "The maintainer explicitly maps CVE-2024-45409 to GHSA-cvp8-5r8g-fhvq for omniauth-saml. VV already emits that GHSA for the same 1.10.3 package. Its empty OSV aliases array caused the comparison difference; there is no missing package finding.",
+      "primary": {
+        "url": "https://github.com/omniauth/omniauth-saml/security/advisories/GHSA-cvp8-5r8g-fhvq",
+        "apiUrl": "https://api.github.com/repos/omniauth/omniauth-saml/security-advisories/GHSA-cvp8-5r8g-fhvq",
+        "httpStatus": 200,
+        "responseSha256": "3e6d2214d67293f57a32a1c3247e52c67ff0db5fc8eb43bf9ece6c2ed124be66",
+        "ghsaId": "GHSA-cvp8-5r8g-fhvq",
+        "cveId": "CVE-2024-45409",
+        "publishedAt": "2024-09-11T20:36:13Z",
+        "updatedAt": "2024-09-12T11:06:55Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "<= 2.1.0",
+          "<= 2.1.0",
+          "<= 1.10.3"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "CVE-2024-45409",
+        "url": "https://api.osv.dev/v1/vulns/CVE-2024-45409",
+        "status": 200,
+        "sha256": "31e3dbf87f6f31c5afd40b49d5e495a51345905f3ee73ce77e0ad06082179841",
+        "observedAt": "2026-11-02T13:55:51.762953+00:00"
+      },
+      "existingVVIds": [
+        "GHSA-cvp8-5r8g-fhvq"
+      ]
+    },
+    {
+      "package": "pghero",
+      "version": "2.8.3",
+      "trivyId": "GHSA-5287-hmjh-qmqq",
+      "verdict": "confirmed_missing",
+      "reason": "The maintainer interval includes 2.8.3. An authenticated user with suitable database privileges can terminate connections to other databases. Actual privileges were not assessed.",
+      "primary": {
+        "url": "https://github.com/ankane/pghero/security/advisories/GHSA-5287-hmjh-qmqq",
+        "apiUrl": "https://api.github.com/repos/ankane/pghero/security-advisories/GHSA-5287-hmjh-qmqq",
+        "httpStatus": 200,
+        "responseSha256": "17baacc9e93edfd467883374e8dfefbbc6e832175c4bfe2609892032f51d1f15",
+        "ghsaId": "GHSA-5287-hmjh-qmqq",
+        "cveId": null,
+        "publishedAt": "2026-10-21T03:11:31Z",
+        "updatedAt": "2026-10-21T03:11:31Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 4.1.0"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-5287-hmjh-qmqq",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-5287-hmjh-qmqq",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.772961+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "rack",
+      "version": "2.2.3",
+      "trivyId": "GHSA-5v64-555j-wjxm",
+      "verdict": "confirmed_missing",
+      "reason": "The maintainer interval for the 2.2 branch includes 2.2.3. The report concerns multipart buffering. The package-level advisory is missing; exploitability in Mastodon was not tested.",
+      "primary": {
+        "url": "https://github.com/rack/rack/security/advisories/GHSA-5v64-555j-wjxm",
+        "apiUrl": "https://api.github.com/repos/rack/rack/security-advisories/GHSA-5v64-555j-wjxm",
+        "httpStatus": 200,
+        "responseSha256": "bb93076b697d62aabdfc39c01b4f516e442aeb3c342d04b3af5d14231327955e",
+        "ghsaId": "GHSA-5v64-555j-wjxm",
+        "cveId": null,
+        "publishedAt": "2026-10-30T02:18:55Z",
+        "updatedAt": "2026-10-30T02:18:55Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 2.2.25",
+          ">= 3.0, < 3.1.23",
+          ">= 3.2, < 3.2.8"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-5v64-555j-wjxm",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-5v64-555j-wjxm",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.911527+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "rack",
+      "version": "2.2.3",
+      "trivyId": "GHSA-wvg4-6p58-3gh3",
+      "verdict": "confirmed_missing",
+      "reason": "The maintainer interval includes 2.2.3. The affected use is Rack::Static with path-specific header rules. The application configuration was not established.",
+      "primary": {
+        "url": "https://github.com/rack/rack/security/advisories/GHSA-wvg4-6p58-3gh3",
+        "apiUrl": "https://api.github.com/repos/rack/rack/security-advisories/GHSA-wvg4-6p58-3gh3",
+        "httpStatus": 200,
+        "responseSha256": "14e505c9c73ad7bbe2c73c7910f9af5adc1bd916ce51a6913a04882cf816620b",
+        "ghsaId": "GHSA-wvg4-6p58-3gh3",
+        "cveId": null,
+        "publishedAt": "2026-10-30T02:18:56Z",
+        "updatedAt": "2026-10-30T02:18:57Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 2.2.25",
+          ">= 3.0, < 3.1.23",
+          ">= 3.2, < 3.2.8"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-wvg4-6p58-3gh3",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-wvg4-6p58-3gh3",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.955226+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "rack",
+      "version": "2.2.3",
+      "trivyId": "GHSA-p8x9-v4hv-2w4g",
+      "verdict": "confirmed_missing",
+      "reason": "The maintainer interval includes 2.2.3. Multipart boundary handling can exhaust resources. A relationship to an earlier incomplete fix is not treated as an explicit alias or proof that the two advisory records are identical.",
+      "primary": {
+        "url": "https://github.com/rack/rack/security/advisories/GHSA-p8x9-v4hv-2w4g",
+        "apiUrl": "https://api.github.com/repos/rack/rack/security-advisories/GHSA-p8x9-v4hv-2w4g",
+        "httpStatus": 200,
+        "responseSha256": "a431bc4aeb8e912883fdc773f2c88132fb40c6ced49bcaa7a0ad3db92154a31a",
+        "ghsaId": "GHSA-p8x9-v4hv-2w4g",
+        "cveId": null,
+        "publishedAt": "2026-10-30T02:19:00Z",
+        "updatedAt": "2026-10-30T02:19:00Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          "< 2.2.25",
+          ">= 3.0, < 3.1.23",
+          ">= 3.2, < 3.2.8"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-p8x9-v4hv-2w4g",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-p8x9-v4hv-2w4g",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:51.962172+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "rack-proxy",
+      "version": "0.7.0",
+      "trivyId": "GHSA-42qh-8mx8-7wqm",
+      "verdict": "indeterminate",
+      "reason": "The primary evaluated interval is >=1.0.0,<1.0.3, excluding 0.7.0. The maintainer explicitly says earlier versions were not assessed, rather than asserting they are unaffected. Neither a true missing finding nor a false alert is established for 0.7.0.",
+      "primary": {
+        "url": "https://github.com/ncr/rack-proxy/security/advisories/GHSA-42qh-8mx8-7wqm",
+        "apiUrl": "https://api.github.com/repos/ncr/rack-proxy/security-advisories/GHSA-42qh-8mx8-7wqm",
+        "httpStatus": 200,
+        "responseSha256": "e8f00a3838d4d480fb8a499a504d4c4fb3ada6cb9ade22ef8a950ad283bbd65e",
+        "ghsaId": "GHSA-42qh-8mx8-7wqm",
+        "cveId": null,
+        "publishedAt": "2026-09-25T12:54:18Z",
+        "updatedAt": "2026-09-25T12:54:18Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 1.0.0, < 1.0.3"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-42qh-8mx8-7wqm",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-42qh-8mx8-7wqm",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:52.025606+00:00"
+      },
+      "existingVVIds": []
+    },
+    {
+      "package": "sanitize",
+      "version": "6.0.0",
+      "trivyId": "GHSA-wgw9-qhqg-8hv5",
+      "verdict": "confirmed_missing",
+      "reason": "The explicit interval includes 6.0.0. The issue concerns CSS stylesheet/style-element sanitization with relevant allowlists, not style attributes alone. Application configuration was not established.",
+      "primary": {
+        "url": "https://github.com/rgrove/sanitize/security/advisories/GHSA-wgw9-qhqg-8hv5",
+        "apiUrl": "https://api.github.com/repos/rgrove/sanitize/security-advisories/GHSA-wgw9-qhqg-8hv5",
+        "httpStatus": 200,
+        "responseSha256": "521a88f87d13b748ecbcc874ce47f9508340f93c7965f6152398c00862c9f359",
+        "ghsaId": "GHSA-wgw9-qhqg-8hv5",
+        "cveId": null,
+        "publishedAt": "2026-10-21T23:34:49Z",
+        "updatedAt": "2026-10-21T23:34:49Z",
+        "withdrawnAt": null,
+        "affectedRanges": [
+          ">= 3.0.0, < 7.0.1"
+        ]
+      },
+      "codeEvidence": [],
+      "osvLookup": {
+        "id": "GHSA-wgw9-qhqg-8hv5",
+        "url": "https://api.osv.dev/v1/vulns/GHSA-wgw9-qhqg-8hv5",
+        "status": 404,
+        "sha256": "eff9d6063693b72bd0cbba8a64cbc29e0d38b4fb05e86450909fe741c83f9253",
+        "observedAt": "2026-11-02T13:55:52.030346+00:00"
+      },
+      "existingVVIds": []
+    }
+  ]
+}

@@ -43,7 +43,7 @@ for (const lockfileVersion of [1, 2, 3]) {
 		assert.equal(dep.isDev, false);
 		assert.equal(dep.version, "2.0.0");
 		assert.deepEqual(dep.versions, ["2.0.0", "1.0.0"]);
-		assert.deepEqual(dep.versionScopes["2.0.0"], lockfileVersion === 1 ? ["dev"] : ["dev", "transitive"]);
+		assert.deepEqual(dep.versionScopes["2.0.0"], ["dev", "transitive"]);
 		// Filtering still operates on the original occurrence scopes/dev flags.
 		const filtered = collectNpmDeps(dir, { ignoreTest: true }).get("npm:target");
 		assert.deepEqual(filtered.versionRelations, { "1.0.0": ["transitive"], "2.0.0": ["transitive"] });
@@ -106,6 +106,41 @@ test("npm: pinned manifest dependencies are direct for every scope; ranges stay 
 	assert.equal(deps.size, 4);
 	for (const dep of deps.values()) assert.deepEqual(dep.versionRelations, { "1.0.0": ["direct"] });
 	assert.equal(deps.warnings[0].type, "no-lockfile");
+});
+
+test('npm optional and devOptional packages can run in production', t => {
+	const root={dependencies:{prod:'1.0.0'},optionalDependencies:{optional:'1.0.0'},devDependencies:{devonly:'1.0.0'}};
+	const dir=project(t,{'package.json':root,'package-lock.json':{lockfileVersion:3,packages:{
+		'':root,
+		'node_modules/prod':{version:'1.0.0'},
+		'node_modules/optional':{version:'1.0.0',optional:true},
+		'node_modules/mixed':{version:'1.0.0',devOptional:true},
+		'node_modules/devonly':{version:'1.0.0',dev:true},
+		'node_modules/devoptional':{version:'1.0.0',dev:true,optional:true},
+	}}});
+	const all=collectNpmDeps(dir),prod=collectNpmDeps(dir,{ignoreTest:true});
+	assert.equal(all.get('npm:optional').isDev,false);
+	assert.equal(all.get('npm:mixed').isDev,false);
+	assert.equal(all.get('npm:mixed').scope,'transitive');
+	assert.equal(all.get('npm:devoptional').isDev,true);
+	assert.ok(prod.has('npm:optional'));assert.ok(prod.has('npm:mixed'));
+	assert.ok(!prod.has('npm:devonly'));assert.ok(!prod.has('npm:devoptional'));
+});
+
+test('npm devOptional production evidence survives per-version attribution', t => {
+	const root={dependencies:{parent:'1.0.0'},devDependencies:{mixed:'1.0.0'}};
+	const dir=project(t,{'package.json':root,'package-lock.json':{lockfileVersion:3,packages:{
+		'':root,
+		'node_modules/parent':{version:'1.0.0',optionalDependencies:{mixed:'1.0.0'}},
+		'node_modules/mixed':{version:'1.0.0',devOptional:true},
+	}}});
+	const dep=collectNpmDeps(dir).get('npm:mixed');
+	assert.equal(dep.isDev,false);
+	assert.equal(dep.scope,'transitive');
+	assert.deepEqual([...dep.versionRelations['1.0.0']].sort(),['direct','transitive']);
+	const finding={dep,cve:{id:'CVE-2099-1234'}};
+	require('../lib/attribution').attributeMatchOrigins([finding]);
+	assert.equal(finding.dep.isDev,false);
 });
 
 test("npm: aliases, normalized URLs and unresolved versions use the existing version keys", t => {

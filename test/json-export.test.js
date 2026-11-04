@@ -149,6 +149,22 @@ test("findings JSON carries application inventory, warnings and coverage even wi
 	assert.equal(doc.summary.applications, 1);
 	assert.equal(doc.summary.applicationComponents, 1);
 	assert.equal(doc.summary.coverageIncomplete, 1);
+	assert.equal(doc.summary.applicationCoverageIncomplete, 1);
+	assert.equal(doc.summary.coverageWarnings, 0);
+});
+
+test("findings JSON summary includes source and dependency coverage uncertainty", () => {
+	const warnings = [
+		{type:'dependency-coverage',message:'POM unavailable'},
+		{type:'source-unavailable',message:'CVE source partial'},
+		{type:'source-stale',message:'Previous source observation'},
+		{type:'commercial-build',message:'Informational notice'},
+	];
+	const doc = buildFindings({warnings});
+	assert.equal(doc.summary.applicationCoverageIncomplete, 0);
+	assert.equal(doc.summary.coverageWarnings, 3);
+	assert.equal(doc.summary.coverageIncomplete, 3);
+	assert.equal(doc.warnings.length, 4);
 });
 
 test("findings JSON retains physical finding ID and proven private-plugin ownership", () => {

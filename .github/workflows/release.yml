@@ -26,9 +26,9 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
       - run: npm ci
-      - run: npm test
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
+      - run: npm test
       - name: build CLI binaries
         run: |
           set -eu

@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { execFileSync } = require("child_process");
 const path = require("path");
-const { DISABLE, ACTIVATE, REPORTS, applyGroups, applyReports, foldedFlags, parseList } = require("../lib/cli-groups");
+const { DISABLE, ACTIVATE, REPORTS, applyGroups, applyLayeredGroups, applyReports, foldedFlags, parseList } = require("../lib/cli-groups");
 const CLI = path.join(__dirname, "..", "vigievuln.js");
 
 function help(args) {
@@ -61,6 +61,29 @@ test("osv-db is in both lists: it is tri-state, forced on or forced off", () => 
 	const on = {}; applyGroups(on, { activate: "osv-db" });
 	assert.equal(off.osvDb, false);
 	assert.equal(on.osvDb, true);
+});
+
+test('grouped switches respect CLI, file, environment and global precedence', () => {
+	const {Command} = require('commander');
+	const {applyLayers} = require('../lib/options-env');
+	function resolve(args, fileLayer = {}, envLayer = {}, globalStore = {}) {
+		const program = new Command().option('--no-osv-db').option('--osv-db').option('--no-nvd').option('--nvd')
+			.option('-a, --activate <list>').option('-d, --disable <list>');
+		program.parse(args, {from:'user'});
+		const layers = {fileLayer,envLayer};
+		const options = applyLayers(program,layers,globalStore);
+		const result = applyLayeredGroups(options,{program,layers,globalStore});
+		assert.deepEqual(result.errors, []);
+		return options;
+	}
+	assert.equal(resolve(['--no-osv-db'],{activate:'osv-db'}).osvDb,false);
+	assert.equal(resolve(['-a','osv-db'],{osvDb:false}).osvDb,true);
+	assert.equal(resolve([], {disable:'osv-db'}, {osvDb:true}, {activate:'osv-db'}).osvDb,false);
+	assert.equal(resolve([], {osvDb:true}, {disable:'osv-db'}).osvDb,true);
+	assert.equal(resolve([], {}, {disable:'osv-db'}, {osvDb:true}).osvDb,false);
+	assert.equal(resolve(['-a','osv-db','--no-osv-db']).osvDb,false);
+	assert.equal(resolve([], {activate:'osv-db',osvDb:false}).osvDb,false);
+	assert.equal(resolve(['-d','nvd'],{activate:'osv-db'}).osvDb,true);
 });
 
 test("-r selects exactly the outputs named, and never overrides an explicit path", () => {

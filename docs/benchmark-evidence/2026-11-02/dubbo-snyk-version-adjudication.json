@@ -1,0 +1,3350 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-11-02T14:10:08.007459+00:00",
+  "scope": "Only the 38 OSV Maven target but version not returned cases from dubbo-snyk-adjudication.json. Individual package/version/advisory adjudication; no production matching changes.",
+  "counts": {
+    "already_reported_primary_equivalence": 1,
+    "indeterminate_disputed": 1,
+    "false_alert_for_version": 13,
+    "confirmed_missing_advisory": 22,
+    "indeterminate_source_disagreement": 1
+  },
+  "parentInputSha256": "2b4e3184d301d5ad32343cbaa394947aafb43df07fdb4840105ee8d23b443eff",
+  "vvOutput": {
+    "filename": "dubbo-vigie-final-online.json",
+    "sha256": "da1e3b05a4bc999cc2befa050687a1460de3e4073b69b16ad6cf76395ed014f0"
+  },
+  "sourceEvidence": {
+    "CVE-2018-12023": {
+      "key": "CVE-2018-12023",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/12xxx/CVE-2018-12023.json",
+      "status": 200,
+      "sha256": "49602bc9617622f47ec5c082bb17cb4f7f0f4d9f0fe42665c055816f2f13929f",
+      "observedAt": "2026-11-02T14:02:00.318763+00:00"
+    },
+    "CVE-2018-1336": {
+      "key": "CVE-2018-1336",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/1xxx/CVE-2018-1336.json",
+      "status": 200,
+      "sha256": "013f76049bcf6b869db12f8c6091ed623b90b546b687164aac143c2a83eb3550",
+      "observedAt": "2026-11-02T14:02:01.014731+00:00"
+    },
+    "CVE-2018-14720": {
+      "key": "CVE-2018-14720",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/14xxx/CVE-2018-14720.json",
+      "status": 200,
+      "sha256": "fe1499f1d1f7fe8d4ea5f5fd25337b89360dc0f73645feb5b65f44cafaebb3c2",
+      "observedAt": "2026-11-02T14:02:00.440474+00:00"
+    },
+    "CVE-2018-14721": {
+      "key": "CVE-2018-14721",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/14xxx/CVE-2018-14721.json",
+      "status": 200,
+      "sha256": "3416dabac96a1727ef822389dc402241d095ea2a85e9d66e0b360814fee2f858",
+      "observedAt": "2026-11-02T14:02:00.662800+00:00"
+    },
+    "CVE-2018-19360": {
+      "key": "CVE-2018-19360",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/19xxx/CVE-2018-19360.json",
+      "status": 200,
+      "sha256": "d3b14b56514d60d3756ff5522ac790900ba88e6dfd4a17b0c5da76ded654e291",
+      "observedAt": "2026-11-02T14:02:00.667748+00:00"
+    },
+    "CVE-2018-19361": {
+      "key": "CVE-2018-19361",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/19xxx/CVE-2018-19361.json",
+      "status": 200,
+      "sha256": "71b7a547be420552317b7220a1789ed4e8337b19e5f4700cd66c97b2d6a00c51",
+      "observedAt": "2026-11-02T14:02:00.743417+00:00"
+    },
+    "CVE-2019-9212": {
+      "key": "CVE-2019-9212",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/9xxx/CVE-2019-9212.json",
+      "status": 200,
+      "sha256": "cd83b8616aed89f52c71de27f771564c517263ad71b83ba27fabdaeabd65e47d",
+      "observedAt": "2026-11-02T14:01:58.935645+00:00"
+    },
+    "CVE-2020-10672": {
+      "key": "CVE-2020-10672",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10672.json",
+      "status": 200,
+      "sha256": "8a886f428b9c187596f6e008f59b7d796be0eb4dbf3f3db6f2b7240c4d0b9dba",
+      "observedAt": "2026-11-02T14:01:58.938385+00:00"
+    },
+    "CVE-2020-10968": {
+      "key": "CVE-2020-10968",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10968.json",
+      "status": 200,
+      "sha256": "f983c1a0d8f9d374a1740b96e2fb718d8735e09f39d7297f3a6b0d911b33a387",
+      "observedAt": "2026-11-02T14:01:59.351840+00:00"
+    },
+    "CVE-2020-10969": {
+      "key": "CVE-2020-10969",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10969.json",
+      "status": 200,
+      "sha256": "6dbe69ff3abcf088be3b3d0cf5feeaee510900c867bf49c53e31c6e60667eadb",
+      "observedAt": "2026-11-02T14:01:59.289588+00:00"
+    },
+    "CVE-2020-11111": {
+      "key": "CVE-2020-11111",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11111.json",
+      "status": 200,
+      "sha256": "daed4a32b99601d870e819e27ffdce7459a8712080c64a4631ff26e7004262c4",
+      "observedAt": "2026-11-02T14:01:59.461526+00:00"
+    },
+    "CVE-2020-11112": {
+      "key": "CVE-2020-11112",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11112.json",
+      "status": 200,
+      "sha256": "f1adaafe00640ffe58054dd721c64b516895fa83e6718b2b68044a4218c584ac",
+      "observedAt": "2026-11-02T14:01:59.659841+00:00"
+    },
+    "CVE-2020-11113": {
+      "key": "CVE-2020-11113",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11113.json",
+      "status": 200,
+      "sha256": "5b49bf78326be2e7270cb9be22d30d4253b3c7ac266feb02e67e253636f10929",
+      "observedAt": "2026-11-02T14:01:59.408631+00:00"
+    },
+    "CVE-2020-11619": {
+      "key": "CVE-2020-11619",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11619.json",
+      "status": 200,
+      "sha256": "9ea87cd7c5ebcc5867a9bc873b4110f54ae07d757bf4a4eb295290b02e8cd0c2",
+      "observedAt": "2026-11-02T14:01:59.783831+00:00"
+    },
+    "CVE-2020-11620": {
+      "key": "CVE-2020-11620",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11620.json",
+      "status": 200,
+      "sha256": "472539a5f7be55ac2eea15101dc295f74e9261f7e4b616034c00a4258e9f011d",
+      "observedAt": "2026-11-02T14:01:59.755598+00:00"
+    },
+    "CVE-2020-14060": {
+      "key": "CVE-2020-14060",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14060.json",
+      "status": 200,
+      "sha256": "5608fcd62bb971b9afa28dda42bf6cc434e9d7c154a62aa503f02e9f175152ba",
+      "observedAt": "2026-11-02T14:02:00.130838+00:00"
+    },
+    "CVE-2020-14061": {
+      "key": "CVE-2020-14061",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14061.json",
+      "status": 200,
+      "sha256": "864a7a4709a5b5622701e6e0f0eed2d23ab538585c3adab3db1d3aeb6bc05c9f",
+      "observedAt": "2026-11-02T14:02:00.156990+00:00"
+    },
+    "CVE-2020-14062": {
+      "key": "CVE-2020-14062",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14062.json",
+      "status": 200,
+      "sha256": "5c975f150a1c26046449655f1f44d3f294592c96ff7f1911bc2bf6a08bd13bb3",
+      "observedAt": "2026-11-02T14:01:59.850699+00:00"
+    },
+    "CVE-2020-14195": {
+      "key": "CVE-2020-14195",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14195.json",
+      "status": 200,
+      "sha256": "9e4b69eeacb609fe9bf03cdb14d3ff912d517840a23a654ab3b6732d17451987",
+      "observedAt": "2026-11-02T14:02:00.044750+00:00"
+    },
+    "CVE-2020-28491": {
+      "key": "CVE-2020-28491",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/28xxx/CVE-2020-28491.json",
+      "status": 200,
+      "sha256": "38eb8e1110dc37b78200dba720260604f918f5850b57156083462407320695dc",
+      "observedAt": "2026-11-02T14:02:00.878335+00:00"
+    },
+    "CVE-2021-22060": {
+      "key": "CVE-2021-22060",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/22xxx/CVE-2021-22060.json",
+      "status": 200,
+      "sha256": "b45e3940644d406f825a784e93c353e51a260345d4b8255e09d34bad584a808d",
+      "observedAt": "2026-11-02T14:02:01.304408+00:00"
+    },
+    "CVE-2021-22060-vendor": {
+      "key": "CVE-2021-22060-vendor",
+      "url": "https://spring.io/security/cve-2021-22060",
+      "status": 200,
+      "sha256": "ff704dc9ff8bfa4e98593943608e11f097554e15ddb5f5872f9fd18d7f123090",
+      "observedAt": "2026-11-02T14:02:01.372153+00:00"
+    },
+    "CVE-2021-22096": {
+      "key": "CVE-2021-22096",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/22xxx/CVE-2021-22096.json",
+      "status": 200,
+      "sha256": "4ab5a4d2b83288aaed52f310fe75586574fc869584b1c373765e6b20c78dd7a4",
+      "observedAt": "2026-11-02T14:02:01.265143+00:00"
+    },
+    "CVE-2021-22096-vendor": {
+      "key": "CVE-2021-22096-vendor",
+      "url": "https://spring.io/security/cve-2021-22096",
+      "status": 200,
+      "sha256": "e33263f1a8aa1664044f5b1635f81348a0d58f132b9e7e20843506711e155021",
+      "observedAt": "2026-11-02T14:02:01.367631+00:00"
+    },
+    "CVE-2023-24998": {
+      "key": "CVE-2023-24998",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/24xxx/CVE-2023-24998.json",
+      "status": 200,
+      "sha256": "e550717f6c65c50d16d71dcf3c8d0b749133b46c506d1982688908e59fea44a7",
+      "observedAt": "2026-11-02T14:02:00.993405+00:00"
+    },
+    "CVE-2023-6481": {
+      "key": "CVE-2023-6481",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/6xxx/CVE-2023-6481.json",
+      "status": 200,
+      "sha256": "461a62919a9cb68e6d2ea093644417d6e13e6ed0234efbbb8f76c5ae65cb2f1e",
+      "observedAt": "2026-11-02T14:01:58.934992+00:00"
+    },
+    "CVE-2024-56337": {
+      "key": "CVE-2024-56337",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/56xxx/CVE-2024-56337.json",
+      "status": 200,
+      "sha256": "574070e7d522746b486b0b5167b761ce9f328394c7e0fe828336660ede512d7f",
+      "observedAt": "2026-11-02T14:02:01.095801+00:00"
+    },
+    "CVE-2025-41249": {
+      "key": "CVE-2025-41249",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2025/41xxx/CVE-2025-41249.json",
+      "status": 200,
+      "sha256": "d460141ae6d211998910f6e848d78c438eb96dd506f3dfbbd69eb1ad4206e12e",
+      "observedAt": "2026-11-02T14:02:01.116330+00:00"
+    },
+    "CVE-2025-41249-vendor": {
+      "key": "CVE-2025-41249-vendor",
+      "url": "https://spring.io/security/cve-2025-41249",
+      "status": 200,
+      "sha256": "e8fb94f42133a912b079dd3db7363733e752dcf99af0f74ae5416caaaf48dd07",
+      "observedAt": "2026-11-02T14:02:01.320093+00:00"
+    },
+    "CVE-2026-18401": {
+      "key": "CVE-2026-18401",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/18xxx/CVE-2026-18401.json",
+      "status": 200,
+      "sha256": "f61119406d440d861e8fa0f3cb6d2b156cee5c8ff208c260f70dbcce66433382",
+      "observedAt": "2026-11-02T14:02:00.782064+00:00"
+    },
+    "CVE-2026-34483": {
+      "key": "CVE-2026-34483",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/34xxx/CVE-2026-34483.json",
+      "status": 200,
+      "sha256": "934cd76b31292b3d98448b18465cef1c507b10bbfee990c9ce2ab22c9f1d9824",
+      "observedAt": "2026-11-02T14:02:00.959222+00:00"
+    },
+    "CVE-2026-83557": {
+      "key": "CVE-2026-83557",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/83xxx/CVE-2026-83557.json",
+      "status": 200,
+      "sha256": "0697db6bf4d9196e29293a11ef06fc467967318d96d9bd58cc70fda9404a7989",
+      "observedAt": "2026-11-02T14:01:58.936466+00:00"
+    },
+    "GHSA-72hv-8253-57qq": {
+      "key": "GHSA-72hv-8253-57qq",
+      "url": "https://api.github.com/repos/FasterXML/jackson-core/security-advisories/GHSA-72hv-8253-57qq",
+      "status": 200,
+      "sha256": "2b2b2c32ad08a98b5dd3f91126a800b3a10affb936811091a768d9c425357f82",
+      "observedAt": "2026-11-02T14:02:00.877146+00:00"
+    },
+    "GHSA-gx83-3vf8-gh7j": {
+      "key": "GHSA-gx83-3vf8-gh7j",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/security-advisories/GHSA-gx83-3vf8-gh7j",
+      "status": 200,
+      "sha256": "ee142980b608b87420b931dce3453c290d05ed03f517f204f293ee3881455b10",
+      "observedAt": "2026-11-02T14:01:58.937120+00:00"
+    },
+    "hessian-fix": {
+      "key": "hessian-fix",
+      "url": "https://api.github.com/repos/sofastack/sofa-hessian/commits/285b071d89c8dac21d32983e54f3a8788ca34c12",
+      "status": 200,
+      "sha256": "b36c4321e8e91ab72735891f89514f79f68feae3bd06e2b40a86f998f4de1b94"
+    },
+    "hessian-issue-comments": {
+      "key": "hessian-issue-comments",
+      "url": "https://api.github.com/repos/sofastack/sofa-hessian/issues/34/comments",
+      "status": 200,
+      "sha256": "1fcfb84ca8ceeefe2d747a104d951bbaaaa533412fea99cd66b93accc17c519f"
+    },
+    "jackson-core-introduction": {
+      "key": "jackson-core-introduction",
+      "url": "https://raw.githubusercontent.com/FasterXML/jackson-core/jackson-core-2.15.0/src/main/java/com/fasterxml/jackson/core/StreamReadConstraints.java",
+      "status": 200,
+      "sha256": "ad287f9b457584e806c6714d41df33cb5cebd7a1e368f0dfd5fe09a03175ff9f"
+    },
+    "jackson-databind-introduction": {
+      "key": "jackson-databind-introduction",
+      "url": "https://raw.githubusercontent.com/FasterXML/jackson-databind/jackson-databind-2.11.0/src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+      "status": 200,
+      "sha256": "4d2bba59a86f3bc578048ac802a1bebf5fda3b809d547ab3aac0eb20c84bd9bd"
+    },
+    "jackson-databind-issue-2058": {
+      "key": "jackson-databind-issue-2058",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2058",
+      "status": 200,
+      "sha256": "4cdfc2d0da7cb9618b20e4588820f6b537be28b2a1c21a4d406c1214f483b1d6",
+      "observedAt": "2026-11-02T14:02:00.325881+00:00"
+    },
+    "jackson-databind-issue-2097": {
+      "key": "jackson-databind-issue-2097",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2097",
+      "status": 200,
+      "sha256": "cb8a1ba832ad6b64696819c5478466e865b23a346d61cd5aef5fb98557b87aff",
+      "observedAt": "2026-11-02T14:02:00.588214+00:00"
+    },
+    "jackson-databind-issue-2186": {
+      "key": "jackson-databind-issue-2186",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2186",
+      "status": 200,
+      "sha256": "58ff0b810b129c202419da47fe495cf7556cfd2fc951c8ec3937285f33d72419",
+      "observedAt": "2026-11-02T14:02:00.720202+00:00"
+    },
+    "jackson-databind-issue-2642": {
+      "key": "jackson-databind-issue-2642",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2642",
+      "status": 200,
+      "sha256": "5c5b81632c453030185830500dd232eaf7698a2ca8ca0af294c5a62af7556c65",
+      "observedAt": "2026-11-02T14:01:59.317929+00:00"
+    },
+    "jackson-databind-issue-2659": {
+      "key": "jackson-databind-issue-2659",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2659",
+      "status": 200,
+      "sha256": "f4b34e7f6e273a5515f1a41922fbbf2e8ff42bc90f5a15f44280e14e64b62754",
+      "observedAt": "2026-11-02T14:01:58.939369+00:00"
+    },
+    "jackson-databind-issue-2662": {
+      "key": "jackson-databind-issue-2662",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2662",
+      "status": 200,
+      "sha256": "152d0e69ae67192dfd111123ac57abf97f051dabfad3464bccf1a871cb010522",
+      "observedAt": "2026-11-02T14:01:59.397940+00:00"
+    },
+    "jackson-databind-issue-2664": {
+      "key": "jackson-databind-issue-2664",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2664",
+      "status": 200,
+      "sha256": "64e3c68704e77530d951dcf0a23e978dce3b050c63b1dded76a5969ea2d26ca8",
+      "observedAt": "2026-11-02T14:01:59.644667+00:00"
+    },
+    "jackson-databind-issue-2666": {
+      "key": "jackson-databind-issue-2666",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2666",
+      "status": 200,
+      "sha256": "5f1e67ea7157f88571bcaf4ad63211cbdaaf2ddf0babbdcdd3e5d1bd7c65767b",
+      "observedAt": "2026-11-02T14:01:59.688631+00:00"
+    },
+    "jackson-databind-issue-2670": {
+      "key": "jackson-databind-issue-2670",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2670",
+      "status": 200,
+      "sha256": "f34441f306691620988e91064cf204188d9f73e4748e9ec515b2757f26d328a9",
+      "observedAt": "2026-11-02T14:01:59.444915+00:00"
+    },
+    "jackson-databind-issue-2680": {
+      "key": "jackson-databind-issue-2680",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2680",
+      "status": 200,
+      "sha256": "795788b87c515ad801c2afd5dd17a9de412a13ac959c94326c6807b35e887e13",
+      "observedAt": "2026-11-02T14:01:59.819148+00:00"
+    },
+    "jackson-databind-issue-2682": {
+      "key": "jackson-databind-issue-2682",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2682",
+      "status": 200,
+      "sha256": "7d2f4835d183398601798a56d719fc10d5013f6e93d9c949d3dbc2ac8520b35e",
+      "observedAt": "2026-11-02T14:01:59.763886+00:00"
+    },
+    "jackson-databind-issue-2688": {
+      "key": "jackson-databind-issue-2688",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2688",
+      "status": 200,
+      "sha256": "5a7c364672b795c3ca2de1fb423b2f53a4a7146b0103d88bfa83498867894290",
+      "observedAt": "2026-11-02T14:02:00.152031+00:00"
+    },
+    "jackson-databind-issue-2698": {
+      "key": "jackson-databind-issue-2698",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2698",
+      "status": 200,
+      "sha256": "2d9d53adf9d181ef2e3032254a38d6f8edaa163a2d106f44707c0c83653b3ece",
+      "observedAt": "2026-11-02T14:02:00.170821+00:00"
+    },
+    "jackson-databind-issue-2704": {
+      "key": "jackson-databind-issue-2704",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2704",
+      "status": 200,
+      "sha256": "199664d31cfa0555cc2ba7fd347733512d1ec66b96b24641e59bef20a02d7965",
+      "observedAt": "2026-11-02T14:01:59.941141+00:00"
+    },
+    "jackson-databind-issue-2765": {
+      "key": "jackson-databind-issue-2765",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/2765",
+      "status": 200,
+      "sha256": "b8e53dac0c2958865a81d4fbdd839a330accbed229a2438a5c82009f6e48a419",
+      "observedAt": "2026-11-02T14:02:00.058049+00:00"
+    },
+    "jackson-databind-issue-6156": {
+      "key": "jackson-databind-issue-6156",
+      "url": "https://api.github.com/repos/FasterXML/jackson-databind/issues/6156",
+      "status": 200,
+      "sha256": "76d1ad861b88fa55fc71e9668749094f3ae0f58e375d9056a59a49a8ff4d30b9",
+      "observedAt": "2026-11-02T14:01:58.937521+00:00"
+    },
+    "jackson-dataformats-binary-issue-186": {
+      "key": "jackson-dataformats-binary-issue-186",
+      "url": "https://api.github.com/repos/FasterXML/jackson-dataformats-binary/issues/186",
+      "status": 200,
+      "sha256": "901867522b1990d5aedff3d33b62f897ed58fa632b410ac1b4c45eb4a648f6c2",
+      "observedAt": "2026-11-02T14:02:00.952616+00:00"
+    },
+    "logback-archive": {
+      "key": "logback-archive",
+      "url": "https://logback.qos.ch/news-archive.html",
+      "status": 200,
+      "sha256": "864b70fd9e541f10ec2fc47824472b56bdcc7960879d170867c428dde5e76c3e"
+    },
+    "sofa-hessian-issue-34": {
+      "key": "sofa-hessian-issue-34",
+      "url": "https://api.github.com/repos/alipay/sofa-hessian/issues/34",
+      "status": 200,
+      "sha256": "bf0edca17b96422e7d95efb06bdf0116786e10de4bbac46f172245ea6ee62ce2",
+      "observedAt": "2026-11-02T14:01:58.936042+00:00"
+    },
+    "spring-framework-issue-35342": {
+      "key": "spring-framework-issue-35342",
+      "url": "https://api.github.com/repos/spring-projects/spring-framework/issues/35342",
+      "status": 200,
+      "sha256": "6388c6a6cfede682f60cfea82acb06c7744755bd404f081ddb388138b788fcc9",
+      "observedAt": "2026-11-02T14:02:01.154246+00:00"
+    },
+    "tomcat-security8": {
+      "key": "tomcat-security8",
+      "url": "https://tomcat.apache.org/security-8.html",
+      "status": 200,
+      "sha256": "258f352a57276ed6538f0aee9253954fdf5906fbf533eca23a5f0be64b93956e",
+      "observedAt": "2026-11-02T14:02:01.471095+00:00"
+    },
+    "tomcat-security9": {
+      "key": "tomcat-security9",
+      "url": "https://tomcat.apache.org/security-9.html",
+      "status": 200,
+      "sha256": "aa7fef0b2fa7702baf6092c9821d890ba2157b163b0c15db937627cf5cdce5fc",
+      "observedAt": "2026-11-02T14:02:01.510041+00:00"
+    },
+    "hessian-vendor-readme": {
+      "key": "hessian-vendor-readme",
+      "url": "https://raw.githubusercontent.com/sofastack/sofa-hessian/master/README.md",
+      "status": 200,
+      "sha256": "d6cbcbef5d24fb364c172b64de05496f009498b4a5d834a4d4f2926e41088cf9"
+    },
+    "spring-annotation-fix": {
+      "key": "spring-annotation-fix",
+      "url": "https://github.com/spring-projects/spring-framework/commit/6d710d482a6785b069e35022e81758953afc21ff.patch",
+      "status": 200,
+      "sha256": "07674bde453c58b4a00a12ceb0c65b5a2c57bc29cc1a9afe1cdb52d7eb4149a5"
+    }
+  },
+  "sourceArchiveSearches": [
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.5",
+      "literal": "DefaultBaseTypeLimitingValidator",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "literal": "StreamReadConstraints",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "literal": "DefaultBaseTypeLimitingValidator",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.9",
+      "literal": "StreamReadConstraints",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.5",
+      "literal": "StreamReadConstraints",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.9",
+      "literal": "DefaultBaseTypeLimitingValidator",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.8.6",
+      "literal": "StreamReadConstraints",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.10.4",
+      "literal": "StreamReadConstraints",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.10.4",
+      "literal": "DefaultBaseTypeLimitingValidator",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.4",
+      "literal": "StreamReadConstraints",
+      "matchingFiles": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.4",
+      "literal": "DefaultBaseTypeLimitingValidator",
+      "matchingFiles": []
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "literal": "class MergedAnnotations",
+      "matchingFiles": []
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "literal": "class AnnotationsScanner",
+      "matchingFiles": []
+    }
+  ],
+  "assessments": {
+    "CVE-2023-6481": {
+      "verdict": "already_reported_primary_equivalence",
+      "primaryRangeRelevantToSelectedVersions": "CNA names 1.2.12, 1.3.13, 1.4.13; maintainer equates the underlying flaw with CVE-2023-6378",
+      "reason": "The vendor explicitly states that both CVEs concern the identical underlying vulnerability. VV emits CVE-2023-6378 for logback-core 1.2.2. This is established incident equivalence, not an alias inferred from a shared reference. The CVE-specific range is narrower than Snyk, but no distinct missing incident is proven.",
+      "conditionsAndLimits": "Requires reachable logback receiver; this review does not assert deployment exposure.",
+      "evidenceKeys": [
+        "CVE-2023-6481",
+        "logback-archive"
+      ],
+      "relatedAlreadyReportedIdentity": "CVE-2023-6378"
+    },
+    "CVE-2019-9212": {
+      "verdict": "indeterminate_disputed",
+      "primaryRangeRelevantToSelectedVersions": "CNA: through 4.0.2, disputed; OSV: 3.x fixed at 3.3.6",
+      "reason": "The Maven Central 3.3.6 source archive still lacks both the QName entry and the XPath prefix added by the referenced patch. This contradicts treating 3.3.6 as proven fixed. However, the current CNA record is explicitly disputed and records the vendor position that blacklist customization is required. The technical blacklist gap is corroborated, but this review does not settle the disputed vulnerability classification.",
+      "conditionsAndLimits": "No deserialization payload was run; do not infer safety from the OSV fixed boundary or unconditional exploitability from the missing blacklist entries.",
+      "evidenceKeys": [
+        "CVE-2019-9212",
+        "hessian-fix",
+        "sofa-hessian-issue-34",
+        "hessian-issue-comments",
+        "hessian-vendor-readme"
+      ],
+      "relatedAlreadyReportedIdentity": null,
+      "additionalReview": "Additional direct vendor README review confirms that consumers are expected to configure blacklist/whitelist policy and that the bundled blacklist is only a reference, not actively maintained. This supports the recorded vendor dispute; it does not erase the observed missing blacklist entries or establish safe deployment."
+    },
+    "CVE-2026-83557": {
+      "verdict": "false_alert_for_version",
+      "primaryRangeRelevantToSelectedVersions": ">=2.11.0,<2.18.10; later affected branches do not include these versions",
+      "reason": "The owning-project advisory and CNA both start the relevant branch at 2.11.0. All five selected databind versions are older, and their complete Maven source archives contain no DefaultBaseTypeLimitingValidator. The named validator-gap advisory is therefore inapplicable to these exact versions.",
+      "conditionsAndLimits": "This does not assert that older polymorphic deserialization is otherwise safe.",
+      "evidenceKeys": [
+        "CVE-2026-83557",
+        "GHSA-gx83-3vf8-gh7j",
+        "jackson-databind-issue-6156",
+        "jackson-databind-introduction"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-10672": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Aries transaction JMS gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-10672",
+        "jackson-databind-issue-2659"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-10969": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Swing JEditorPane gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-10969",
+        "jackson-databind-issue-2642"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-10968": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the bus-proxy RmiProvider gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-10968",
+        "jackson-databind-issue-2662"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-11113": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the OpenJPA WASRegistryManagedRuntime gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-11113",
+        "jackson-databind-issue-2670"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-11111": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the ActiveMQ connection pools gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-11111",
+        "jackson-databind-issue-2664"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-11112": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Commons Proxy RmiProvider gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-11112",
+        "jackson-databind-issue-2666"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-11620": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Commons Jelly Embedded gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-11620",
+        "jackson-databind-issue-2682"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-11619": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.4",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Spring AOP MethodLocatingFactoryBean gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-11619",
+        "jackson-databind-issue-2680"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-14062": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.5",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the JDK/Xalan JNDIConnectionPool gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-14062",
+        "jackson-databind-issue-2704"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-14195": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.5",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Jsecurity JndiRealmFactory gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-14195",
+        "jackson-databind-issue-2765"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-14060": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.5",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Drill shaded Xalan JNDIConnectionPool gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-14060",
+        "jackson-databind-issue-2688"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-14061": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.10.5",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Oracle AQ/JMS factories gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2020-14061",
+        "jackson-databind-issue-2698"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2018-12023": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "Before branch fixes 2.6.7.3 / 2.7.9.4 / 2.8.11.2 / 2.9.6",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Oracle JDBC gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2018-12023",
+        "jackson-databind-issue-2058"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2018-14720": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.7",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the JDK XML handling gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2018-14720",
+        "jackson-databind-issue-2097"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2018-14721": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.7",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Axis2 JAX-WS gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2018-14721",
+        "jackson-databind-issue-2097"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2018-19360": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.8",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the Axis2 JMS transport gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2018-19360",
+        "jackson-databind-issue-2186"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2018-19361": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "2.x before 2.9.8",
+      "reason": "The CNA explicitly includes the old 2.x branch containing 2.5.2; the owning-project issue identifies the OpenJPA gadget and its patch. The 2.5.2 implementation resolves polymorphic class names through ClassUtil.findClass and predates the later gadget denylist. OSV omits this old branch for the same declared identity; the tested VV output consequently lacks this package/advisory pair.",
+      "conditionsAndLimits": "Conditional package-level advisory: requires unsafe polymorphic typing, attacker input and the applicable gadget/runtime. No claim that this gadget is present/reachable in Dubbo, and no exploit was run. The code inspection corroborates the common mechanism, not an individual end-to-end payload.",
+      "evidenceKeys": [
+        "CVE-2018-19361",
+        "jackson-databind-issue-2186"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2026-18401": {
+      "verdict": "false_alert_for_version",
+      "primaryRangeRelevantToSelectedVersions": "CNA explicitly excludes <2.15.0; affected 2.15.0–2.18.5 and 2.19.0–2.21.0",
+      "reason": "The current CNA explicitly explains that versions before 2.15.0 are unaffected by this named constraint-bypass issue because StreamReadConstraints did not exist. It also acknowledges the conflicting 2.0.0 lower bound in the maintainer GHSA. All six exact source archives lack StreamReadConstraints, corroborating the CNA correction.",
+      "conditionsAndLimits": "Other excessive-number parsing risks in older releases are not disproved. This verdict is limited to the specified constraint-bypass CVE.",
+      "evidenceKeys": [
+        "CVE-2026-18401",
+        "GHSA-72hv-8253-57qq",
+        "jackson-core-introduction"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2020-28491": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "CNA: >=0,<2.11.4 (also a later 2.12 branch)",
+      "reason": "The CNA range includes 2.6.7; although this CNA is Snyk, independent owning-project source corroborates the mechanism. In the exact 2.6.7 Maven source, CBORParser._finishBytes allocates new byte[len] using the decoded length before ensuring data availability. The source path matches the maintainer issue; OSV starts at 2.8.0rc1 and excludes this demonstrably affected older implementation.",
+      "conditionsAndLimits": "Static validation only; no large allocation or denial-of-service test was run.",
+      "evidenceKeys": [
+        "CVE-2020-28491",
+        "jackson-dataformats-binary-issue-186"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2026-34483": {
+      "verdict": "false_alert_for_version",
+      "primaryRangeRelevantToSelectedVersions": "Apache CNA: 8.5.84–8.5.100 affected; <=8.5.83 explicitly unaffected",
+      "reason": "The product-owning Apache CNA explicitly excludes 8.5.31 from this JsonAccessLogValve advisory. Snyk extends its first range below the affected component introduction. This is a false alert for the selected version.",
+      "conditionsAndLimits": "The exact 9.x fixed boundary differs between source records too, but this review only adjudicates 8.5.31.",
+      "evidenceKeys": [
+        "CVE-2026-34483",
+        "tomcat-security9"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2023-24998": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "Apache CNA: Tomcat 8.5.0–8.5.84",
+      "reason": "Apache explicitly includes Tomcat 8.5.31; the original fix is released in 8.5.85. The OSV Maven record instead covers 8.5.85 through before 8.5.88 for this CVE, excluding the older affected version. The package/advisory gap in the tested VV result is confirmed.",
+      "conditionsAndLimits": "Multipart request handling is required. The additional file-count limit is configurable; no reachability claim is made.",
+      "evidenceKeys": [
+        "CVE-2023-24998",
+        "tomcat-security8"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2018-1336": {
+      "verdict": "false_alert_for_version",
+      "primaryRangeRelevantToSelectedVersions": "Apache CNA: Tomcat 8.5.0–8.5.30; fixed 8.5.31",
+      "reason": "The product-owning CNA and Apache security history put 8.5.31 after the affected interval. Snyk extends the interval to before 8.5.32 and therefore reports the already-fixed selected version.",
+      "conditionsAndLimits": "Verdict limited to the UTF-8 decoder issue identified by this CVE.",
+      "evidenceKeys": [
+        "CVE-2018-1336",
+        "tomcat-security8"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2024-56337": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "Apache CNA: Tomcat 8.5.0–8.5.100 explicitly known affected, despite EOL",
+      "reason": "The current Apache CNA explicitly confirms the EOL 8.5 branch, including 8.5.31. OSV lists only 9/10/11 branches for this package and identity. The missing 8.5 package/advisory observation is supported by primary evidence.",
+      "conditionsAndLimits": "Requires the relevant case-insensitive filesystem/default-servlet write configuration and Java canonical-path-cache conditions. EOL alone was not treated as evidence of vulnerability.",
+      "evidenceKeys": [
+        "CVE-2024-56337",
+        "tomcat-security8",
+        "tomcat-security9"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2025-41249": {
+      "verdict": "indeterminate_source_disagreement",
+      "primaryRangeRelevantToSelectedVersions": "Vendor: 5.3.44 and earlier; OSV lower bound 5.3.0",
+      "reason": "The vendor wording and CNA default affected status are broader than OSV, but the disclosed issue and patch target MergedAnnotations/AnnotationsScanner and describe EnableMethodSecurity conditions. Those named implementation classes are absent from the exact Spring Core 4.3.16 source archive. No primary test or equivalent old implementation trace for 4.3.16 was established. The broad vendor statement and narrower implementation evidence remain unresolved.",
+      "conditionsAndLimits": "Absence of the newer classes does not prove the older annotation mechanism safe; do not promote this to either a false alert or a confirmed missing finding.",
+      "evidenceKeys": [
+        "CVE-2025-41249",
+        "CVE-2025-41249-vendor",
+        "spring-framework-issue-35342",
+        "spring-annotation-fix"
+      ],
+      "relatedAlreadyReportedIdentity": null,
+      "additionalReview": "Additional direct upstream patch review confirms that the change targets only AnnotatedMethod and AnnotationsScanner, replacing unresolved generic resolution with an Object fallback. Neither patched source file exists in the 4.3.16 source archive. This does not test equivalent older algorithms or prove old-version safety, so the broad vendor range remains unresolved for this exact version."
+    },
+    "CVE-2021-22096": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "Vendor expressly includes older unsupported releases; 5.2 branch fixed at 5.2.18.RELEASE",
+      "reason": "The product-owning Spring advisory and CNA expressly include older unsupported releases, encompassing 4.3.16.RELEASE. OSV already maps this identity to spring-core but starts its affected branches at 5.2.0, omitting the older version. This is a source-range coverage gap in the tested VV output.",
+      "conditionsAndLimits": "Log injection requires relevant malicious input/logging paths. No application reachability was measured; this is not evidence of a VV comparison-algorithm error.",
+      "evidenceKeys": [
+        "CVE-2021-22096",
+        "CVE-2021-22096-vendor"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    },
+    "CVE-2021-22060": {
+      "verdict": "confirmed_missing_advisory",
+      "primaryRangeRelevantToSelectedVersions": "Vendor expressly includes older unsupported releases; 5.2 branch fixed at 5.2.19.RELEASE",
+      "reason": "The product-owning Spring advisory and CNA expressly include older unsupported releases, encompassing 4.3.16.RELEASE. OSV already maps this identity to spring-core but starts its affected branches at 5.2.0, omitting the older version. This is a source-range coverage gap in the tested VV output.",
+      "conditionsAndLimits": "Log injection requires relevant malicious input/logging paths. No application reachability was measured; this is not evidence of a VV comparison-algorithm error.",
+      "evidenceKeys": [
+        "CVE-2021-22060",
+        "CVE-2021-22060-vendor"
+      ],
+      "relatedAlreadyReportedIdentity": null
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-6097493",
+      "cve": "CVE-2023-6481",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-CHQOSLOGBACK-6097493",
+      "snykDeclaredRanges": [
+        "[,1.2.13)",
+        "[1.3.0,1.3.14)",
+        "[1.4.0,1.4.14)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-gm62-rw4g-vrc4",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "1.4.13"
+                  },
+                  {
+                    "fixed": "1.4.14"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "1.3.13"
+                  },
+                  {
+                    "fixed": "1.3.14"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "1.2.12"
+                  },
+                  {
+                    "fixed": "1.2.13"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2023-6481",
+      "verdict": "already_reported_primary_equivalence",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [
+        "CVE-2023-6378"
+      ],
+      "exactVersionCodeSources": [],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [
+        "CVE-2023-6378"
+      ],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": [
+        "CVE-2023-6378"
+      ]
+    },
+    {
+      "index": 1,
+      "package": "com.alipay.sofa:hessian",
+      "version": "3.3.6",
+      "snykId": "SNYK-JAVA-COMALIPAYSOFA-173737",
+      "cve": "CVE-2019-9212",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMALIPAYSOFA-173737",
+      "snykDeclaredRanges": [
+        "[0,4.0.3)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-pfwp-8pq4-g7pv",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "4.0.0"
+                  },
+                  {
+                    "fixed": "4.0.2"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "3.3.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2019-9212",
+      "verdict": "indeterminate_disputed",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.alipay.sofa:hessian",
+          "version": "3.3.6",
+          "url": "https://repo.maven.apache.org/maven2/com/alipay/sofa/hessian/3.3.6/hessian-3.3.6-sources.jar",
+          "sha256": "9ef014d0c148c9489e542bbce9df8212b97799b73d37aebfb7a07dcf5b398abd",
+          "fileCount": 226,
+          "selectedPaths": [
+            "security/serialize.blacklist",
+            "com/alipay/hessian/internal/InternalNameBlackListFilter.java",
+            "com/alipay/hessian/NameBlackListFilter.java"
+          ]
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 2,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "cve": "CVE-2026-83557",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "snykDeclaredRanges": [
+        "[,2.18.10)",
+        "[2.19.0-rc2,2.21.6)",
+        "[2.22.0,2.22.2)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-gx83-3vf8-gh7j",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.11.0"
+                  },
+                  {
+                    "fixed": "2.18.10"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.6"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.22.0"
+                  },
+                  {
+                    "fixed": "2.22.2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-83557",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 3,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-560766",
+      "cve": "CVE-2020-10672",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-560766",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.6.7.4)",
+        "[2.7.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-95cm-88f5-f2c7",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-10672",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 4,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561362",
+      "cve": "CVE-2020-10969",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-561362",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.6.7.4)",
+        "[2.7.0,2.7.9.7)",
+        "[2.8.0,2.8.11.6)",
+        "[2.9.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-758m-v56v-grj4",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-10969",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 5,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561373",
+      "cve": "CVE-2020-10968",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-561373",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.6.7.4)",
+        "[2.7.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-rf6r-2c4q-2vwg",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-10968",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 6,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561585",
+      "cve": "CVE-2020-11113",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-561585",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-9vvp-fxw6-jcxr",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-11113",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 7,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561586",
+      "cve": "CVE-2020-11111",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-561586",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-v3xw-c963-f5hc",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-11111",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 8,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561587",
+      "cve": "CVE-2020-11112",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-561587",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-58pp-9c76-5625",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-11112",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 9,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564887",
+      "cve": "CVE-2020-11620",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-564887",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-h4rc-386g-6m85",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-11620",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 10,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564888",
+      "cve": "CVE-2020-11619",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-564888",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.4)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-27xj-rqx5-2255",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.4"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-11619",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 11,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-570625",
+      "cve": "CVE-2020-14062",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-570625",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.5)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-c265-37vj-cwcc",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.5"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-14062",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 12,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572300",
+      "cve": "CVE-2020-14195",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-572300",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.5)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-mc6h-4qgp-37qh",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.5"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-14195",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 13,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572314",
+      "cve": "CVE-2020-14060",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-572314",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.5)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-j823-4qch-3rgm",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.5"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-14060",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 14,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572316",
+      "cve": "CVE-2020-14061",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-572316",
+      "snykDeclaredRanges": [
+        "[,2.6.7.4)",
+        "[2.7.0,2.9.10.5)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-c2q3-4qrh-fm48",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.10.5"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-14061",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 15,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72447",
+      "cve": "CVE-2018-12023",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-72447",
+      "snykDeclaredRanges": [
+        "[,2.6.7.3)",
+        "[2.7.0,2.7.9.4)",
+        "[2.8.0,2.8.11.2)",
+        "[2.9.0,2.9.6)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-6wqp-v4v6-c87c",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.7.0"
+                  },
+                  {
+                    "fixed": "2.7.9.4"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.8.0"
+                  },
+                  {
+                    "fixed": "2.8.11.2"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2018-12023",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 16,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72449",
+      "cve": "CVE-2018-14720",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-72449",
+      "snykDeclaredRanges": [
+        "[,2.6.7.3)",
+        "[2.7.0,2.7.9.5)",
+        "[2.8.0,2.8.11.3)",
+        "[2.9.0,2.9.7)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-x2w5-5m2g-7h5m",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.7"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.8.0"
+                  },
+                  {
+                    "fixed": "2.8.11.3"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.7.0"
+                  },
+                  {
+                    "fixed": "2.7.9.5"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2018-14720",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 17,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72451",
+      "cve": "CVE-2018-14721",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-72451",
+      "snykDeclaredRanges": [
+        "[,2.6.7.3)",
+        "[2.7.0,2.7.9.5)",
+        "[2.8.0,2.8.11.3)",
+        "[2.9.0,2.9.7)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-9mxf-g3x6-wv74",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.7"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.8.0"
+                  },
+                  {
+                    "fixed": "2.8.11.3"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.7.0"
+                  },
+                  {
+                    "fixed": "2.7.9.5"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2018-14721",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 18,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72883",
+      "cve": "CVE-2018-19360",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-72883",
+      "snykDeclaredRanges": [
+        "[,2.6.7.3)",
+        "[2.7.0,2.7.9.5)",
+        "[2.8.0,2.8.11.3)",
+        "[2.9.0,2.9.8)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-f9hv-mg5h-xcw9",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.8"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.8.0"
+                  },
+                  {
+                    "fixed": "2.8.11.3"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.7.0"
+                  },
+                  {
+                    "fixed": "2.7.9.5"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2018-19360",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 19,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72884",
+      "cve": "CVE-2018-19361",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-72884",
+      "snykDeclaredRanges": [
+        "[,2.6.7.3)",
+        "[2.7.0,2.7.9.5)",
+        "[2.8.0,2.8.11.3)",
+        "[2.9.0,2.9.8)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-mx9v-gmh4-mgqw",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.7.0"
+                  },
+                  {
+                    "fixed": "2.7.9.5"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.9.0"
+                  },
+                  {
+                    "fixed": "2.9.8"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.8.0"
+                  },
+                  {
+                    "fixed": "2.8.11.3"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2018-19361",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+          "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+          "fileCount": 414,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 20,
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "cve": "CVE-2026-18401",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.18.6)",
+        "[2.19.0-rc1,2.21.1)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-72hv-8253-57qq",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.1"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.15.0"
+                  },
+                  {
+                    "fixed": "2.18.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-18401",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-core",
+          "version": "2.5.2",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.5.2/jackson-core-2.5.2-sources.jar",
+          "sha256": "90b24f8db430c846a575461b1e77a9c73753bd5201145974b66e59e4cc655ba7",
+          "fileCount": 99,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 21,
+      "package": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+      "version": "2.6.7",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONDATAFORMAT-1047329",
+      "cve": "CVE-2020-28491",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONDATAFORMAT-1047329",
+      "snykDeclaredRanges": [
+        "[0,2.11.4)",
+        "[2.12.0-rc1,2.12.1)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-xmc8-26q4-qjhx",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.8.0rc1"
+                  },
+                  {
+                    "fixed": "2.11.4"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.12.0rc1"
+                  },
+                  {
+                    "fixed": "2.12.1"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2020-28491",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+          "version": "2.6.7",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-cbor/2.6.7/jackson-dataformat-cbor-2.6.7-sources.jar",
+          "sha256": "7edf31f544892b2acda0b4e361125ab187768009f14c83232eaf8f0b8d401fe1",
+          "fileCount": 19,
+          "selectedPaths": [
+            "com/fasterxml/jackson/dataformat/cbor/CBORParser.java"
+          ]
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 22,
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-15989812",
+      "cve": "CVE-2026-34483",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHETOMCATEMBED-15989812",
+      "snykDeclaredRanges": [
+        "[,9.0.117)",
+        "[10.1.0-M1,10.1.54)",
+        "[11.0.0-M1,11.0.21)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-rv64-5gf8-9qq8",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "9.0.40"
+                  },
+                  {
+                    "fixed": "9.0.116"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "10.1.0-M1"
+                  },
+                  {
+                    "fixed": "10.1.54"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "11.0.0-M1"
+                  },
+                  {
+                    "fixed": "11.0.21"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-34483",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 23,
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-3326459",
+      "cve": "CVE-2023-24998",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHETOMCATEMBED-3326459",
+      "snykDeclaredRanges": [
+        "[8.5.0,8.5.85)",
+        "[9.0.0-M1,9.0.71)",
+        "[10.1.0-M1,10.1.5)",
+        "[11.0.0-M1,11.0.0-M3)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-hfrx-6qgj-fp6c",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "10.1.0-M1"
+                  },
+                  {
+                    "fixed": "10.1.5"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "11.0.0-M2"
+                  },
+                  {
+                    "fixed": "11.0.0-M5"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "8.5.85"
+                  },
+                  {
+                    "fixed": "8.5.88"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "9.0.0-M1"
+                  },
+                  {
+                    "fixed": "9.0.71"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2023-24998",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 24,
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-451508",
+      "cve": "CVE-2018-1336",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHETOMCATEMBED-451508",
+      "snykDeclaredRanges": [
+        "[,7.0.90)",
+        "[8.0.0, 8.0.52)",
+        "[8.5.0, 8.5.32)",
+        "[9.0.0, 9.0.10)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-m59c-jpc8-m2x4",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "9.0.0.M9"
+                  },
+                  {
+                    "fixed": "9.0.8"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "8.5.0"
+                  },
+                  {
+                    "fixed": "8.5.31"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "8.0.0RC1"
+                  },
+                  {
+                    "fixed": "8.0.51"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "7.0.28"
+                  },
+                  {
+                    "fixed": "7.0.87"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2018-1336",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 25,
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-8547999",
+      "cve": "CVE-2024-56337",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHETOMCATEMBED-8547999",
+      "snykDeclaredRanges": [
+        "[8.5.0,9.0.98)",
+        "[10.1.0-M1,10.1.34)",
+        "[11.0.0-M1,11.0.2)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-27hp-xhwr-wr2m",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "11.0.0-M1"
+                  },
+                  {
+                    "fixed": "11.0.2"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "10.1.0-M1"
+                  },
+                  {
+                    "fixed": "10.1.34"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "9.0.0.M1"
+                  },
+                  {
+                    "fixed": "9.0.98"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2024-56337",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 26,
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-12817817",
+      "cve": "CVE-2025-41249",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-ORGSPRINGFRAMEWORK-12817817",
+      "snykDeclaredRanges": [
+        "[,6.2.11)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-jmp9-x22r-554x",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "5.3.0"
+                  },
+                  {
+                    "last_affected": "5.3.44"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "6.0.0"
+                  },
+                  {
+                    "last_affected": "6.1.22"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "6.2.0"
+                  },
+                  {
+                    "fixed": "6.2.11"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2025-41249",
+      "verdict": "indeterminate_source_disagreement",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "org.springframework:spring-core",
+          "version": "4.3.16.RELEASE",
+          "url": "https://repo.maven.apache.org/maven2/org/springframework/spring-core/4.3.16.RELEASE/spring-core-4.3.16.RELEASE-sources.jar",
+          "sha256": "d9f8ae43836bd31d928026413567c21a25d6574bb15da5033861041a4ec6e29d",
+          "fileCount": 409,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 27,
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-2329097",
+      "cve": "CVE-2021-22096",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-ORGSPRINGFRAMEWORK-2329097",
+      "snykDeclaredRanges": [
+        "[5.3.0,5.3.12)",
+        "[,5.2.18)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-rfmp-97jj-h8m6",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "5.3.0"
+                  },
+                  {
+                    "fixed": "5.3.11"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "5.2.0"
+                  },
+                  {
+                    "fixed": "5.2.18"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2021-22096",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "org.springframework:spring-core",
+          "version": "4.3.16.RELEASE",
+          "url": "https://repo.maven.apache.org/maven2/org/springframework/spring-core/4.3.16.RELEASE/spring-core-4.3.16.RELEASE-sources.jar",
+          "sha256": "d9f8ae43836bd31d928026413567c21a25d6574bb15da5033861041a4ec6e29d",
+          "fileCount": 409,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 28,
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-2330878",
+      "cve": "CVE-2021-22060",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-ORGSPRINGFRAMEWORK-2330878",
+      "snykDeclaredRanges": [
+        "[,5.2.19.RELEASE)",
+        "[5.3.0,5.3.14)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-6gf2-pvqw-37ph",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "5.3.0"
+                  },
+                  {
+                    "fixed": "5.3.14"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "5.2.0"
+                  },
+                  {
+                    "fixed": "5.2.19"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2021-22060",
+      "verdict": "confirmed_missing_advisory",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "org.springframework:spring-core",
+          "version": "4.3.16.RELEASE",
+          "url": "https://repo.maven.apache.org/maven2/org/springframework/spring-core/4.3.16.RELEASE/spring-core-4.3.16.RELEASE-sources.jar",
+          "sha256": "d9f8ae43836bd31d928026413567c21a25d6574bb15da5033861041a4ec6e29d",
+          "fileCount": 409,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 29,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "cve": "CVE-2026-83557",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "snykDeclaredRanges": [
+        "[,2.18.10)",
+        "[2.19.0-rc2,2.21.6)",
+        "[2.22.0,2.22.2)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-gx83-3vf8-gh7j",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.11.0"
+                  },
+                  {
+                    "fixed": "2.18.10"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.6"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.22.0"
+                  },
+                  {
+                    "fixed": "2.22.2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-83557",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.9.5",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.5/jackson-databind-2.9.5-sources.jar",
+          "sha256": "3993a5b825701d1f8a3313315129e36ca46216e81894f79f13b3d6cd76f1f0bf",
+          "fileCount": 450,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 30,
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "cve": "CVE-2026-18401",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.18.6)",
+        "[2.19.0-rc1,2.21.1)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-72hv-8253-57qq",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.1"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.15.0"
+                  },
+                  {
+                    "fixed": "2.18.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-18401",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-core",
+          "version": "2.9.5",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.9.5/jackson-core-2.9.5-sources.jar",
+          "sha256": "fc30dc19b7911a0748229110fd3915b951012d1e785701a4cfd0f797396290de",
+          "fileCount": 123,
+          "selectedPaths": [
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParser.java",
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java"
+          ]
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 31,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "cve": "CVE-2026-83557",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "snykDeclaredRanges": [
+        "[,2.18.10)",
+        "[2.19.0-rc2,2.21.6)",
+        "[2.22.0,2.22.2)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-gx83-3vf8-gh7j",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.11.0"
+                  },
+                  {
+                    "fixed": "2.18.10"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.6"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.22.0"
+                  },
+                  {
+                    "fixed": "2.22.2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-83557",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.9.9",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.9/jackson-databind-2.9.9-sources.jar",
+          "sha256": "d78ee97c1041f83c3a1706e0f01abfa91c890fcf2c622c1ef602187c76768985",
+          "fileCount": 450,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 32,
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "cve": "CVE-2026-18401",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.18.6)",
+        "[2.19.0-rc1,2.21.1)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-72hv-8253-57qq",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.1"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.15.0"
+                  },
+                  {
+                    "fixed": "2.18.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-18401",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-core",
+          "version": "2.9.9",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.9.9/jackson-core-2.9.9-sources.jar",
+          "sha256": "cfc968701a863296c8d44b36526588c850ac0dfd8dff7610b024336068caac0e",
+          "fileCount": 124,
+          "selectedPaths": [
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParser.java",
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java"
+          ]
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 33,
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.10.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "cve": "CVE-2026-18401",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.18.6)",
+        "[2.19.0-rc1,2.21.1)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-72hv-8253-57qq",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.1"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.15.0"
+                  },
+                  {
+                    "fixed": "2.18.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-18401",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-core",
+          "version": "2.10.4",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.10.4/jackson-core-2.10.4-sources.jar",
+          "sha256": "179ea5212193ff0ae6348b944fb1ca04e087442c73adabecf171d926a501c67e",
+          "fileCount": 140,
+          "selectedPaths": [
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java",
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParser.java"
+          ]
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 34,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.10.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "cve": "CVE-2026-83557",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "snykDeclaredRanges": [
+        "[,2.18.10)",
+        "[2.19.0-rc2,2.21.6)",
+        "[2.22.0,2.22.2)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-gx83-3vf8-gh7j",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.11.0"
+                  },
+                  {
+                    "fixed": "2.18.10"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.6"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.22.0"
+                  },
+                  {
+                    "fixed": "2.22.2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-83557",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.10.4",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.10.4/jackson-databind-2.10.4-sources.jar",
+          "sha256": "0e804c43af17de030aee7b8307c466eb706bd4d65103a8e08b62628731ac51e6",
+          "fileCount": 467,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 35,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "cve": "CVE-2026-83557",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "snykDeclaredRanges": [
+        "[,2.18.10)",
+        "[2.19.0-rc2,2.21.6)",
+        "[2.22.0,2.22.2)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-gx83-3vf8-gh7j",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.11.0"
+                  },
+                  {
+                    "fixed": "2.18.10"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.6"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.22.0"
+                  },
+                  {
+                    "fixed": "2.22.2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-83557",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-databind",
+          "version": "2.9.4",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.4/jackson-databind-2.9.4-sources.jar",
+          "sha256": "b01c0aeb4109b2af5e17d2a7bde9f04558100701eddfa09467d65a66133c8363",
+          "fileCount": 450,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 36,
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "cve": "CVE-2026-18401",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.18.6)",
+        "[2.19.0-rc1,2.21.1)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-72hv-8253-57qq",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.1"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.15.0"
+                  },
+                  {
+                    "fixed": "2.18.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-18401",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-core",
+          "version": "2.9.4",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.9.4/jackson-core-2.9.4-sources.jar",
+          "sha256": "1843edd2612c6b650f0b4cbcc38b6136e05ca655e070d9d138d8e9682d8dabac",
+          "fileCount": 123,
+          "selectedPaths": [
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParser.java",
+            "com/fasterxml/jackson/core/json/async/NonBlockingJsonParserBase.java"
+          ]
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    },
+    {
+      "index": 37,
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.8.6",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "cve": "CVE-2026-18401",
+      "snykReference": "https://security.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "snykDeclaredRanges": [
+        "[2.0.0,2.18.6)",
+        "[2.19.0-rc1,2.21.1)"
+      ],
+      "osvRanges": [
+        {
+          "id": "GHSA-72hv-8253-57qq",
+          "ranges": [
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.19.0"
+                  },
+                  {
+                    "fixed": "2.21.1"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.15.0"
+                  },
+                  {
+                    "fixed": "2.18.6"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ],
+      "assessmentKey": "CVE-2026-18401",
+      "verdict": "false_alert_for_version",
+      "existingExactIdentityHits": [],
+      "existingEquivalentIncidentHits": [],
+      "exactVersionCodeSources": [
+        {
+          "package": "com.fasterxml.jackson.core:jackson-core",
+          "version": "2.8.6",
+          "url": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.8.6/jackson-core-2.8.6-sources.jar",
+          "sha256": "daad4c67d0a7a35f9aabc837206dd0dfa7609a201faaf2e8d394cd8b6b8e6153",
+          "fileCount": 111,
+          "selectedPaths": []
+        }
+      ],
+      "defaultProfileExactIdentityHits": [],
+      "defaultProfileEquivalentIncidentHits": [],
+      "indexV2ExactIdentityHits": [],
+      "indexV2EquivalentIncidentHits": []
+    }
+  ],
+  "defaultProfileCrossCheck": {
+    "filename": "dubbo-vigie-default-sources.json",
+    "sha256": "c32afcb4034e6dc33f05185a86c4c8ce8a3707552cd69cc996115aa63c5c7107",
+    "codeState": "Process loaded before the v2 changes, per run owner",
+    "findingCount": 758,
+    "sources": {
+      "osv": 700,
+      "CVEProject+osv": 34,
+      "CVEProject": 24
+    }
+  },
+  "indexV2CrossCheck": {
+    "filename": "dubbo-vigie-index-v2.json",
+    "sha256": "af878ed9b6d55c83d9189b18ecfb54e3ab1edc60279dcdd7af950d1505fcaae6",
+    "findingCount": 758,
+    "sameExactFindingSetAsDefaultProfile": true
+  }
+}

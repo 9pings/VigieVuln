@@ -27,7 +27,7 @@ function fixture(t, { age = 48 * HOUR, stale = false, positive = false } = {}) {
 	configureResourceRoute({ proxyUrl: 'https://proxy.invalid', hosted: true, token: null, store: null, health: null, fetcher: null });
 	t.after(() => {
 		configureResourceRoute({ proxyUrl: null, hosted: false, token: null, store: null, health: null, fetcher: null });
-		fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	});
 	const opts = { plugins: [wordpress], selection: 'wordpress', advisoryCacheDir: dir, now: NOW,
 		publicComponents: ['site/wp-content/themes/acme-theme=example'],
@@ -59,15 +59,15 @@ test('48h stale=false local projection revalidates targeted identities and disco
 	assert.equal(result.findings.length, 1);
 	assert.deepEqual(covered(result).map(c => c.result), ['no-match', 'affected']);
 	assert.ok(covered(result).every(c => c.sourceSnapshot.collectedAt === new Date(NOW).toISOString()));
-	assert.equal(JSON.parse(fs.readFileSync(f.file))._fadSnapshot.collectedAt, new Date(NOW).toISOString());
+	assert.equal(JSON.parse(require('../lib/application-providers/snapshot-cache').read(f.file,{preferCache:true}).bytes)._fadSnapshot.collectedAt, new Date(NOW).toISOString());
 	await f.run();
 	assert.equal(f.calls.length, 1, 'fresh cached projection is reused');
 });
 
-for (const age of [HOUR - 1, HOUR, HOUR + 1]) test(`Wordfence local freshness threshold: ${age}ms`, async t => {
+for (const age of [4 * HOUR - 1, 4 * HOUR, 4 * HOUR + 1]) test(`Wordfence local freshness threshold: ${age}ms`, async t => {
 	const f = fixture(t, { age });
 	await f.run();
-	assert.equal(f.calls.length, age > HOUR ? 1 : 0);
+	assert.equal(f.calls.length, age >= 4 * HOUR ? 1 : 0);
 });
 
 test('explicit stale flag revalidates even a recent projection', async t => {
@@ -134,6 +134,7 @@ test('online revalidation precedes strict max-age check; failed required source 
 	await f.run({ maxAdvisoryAgeMs: HOUR });
 	assert.equal(f.calls.length, 1);
 	fs.writeFileSync(f.file, f.original);
+	require('../lib/application-providers/snapshot-cache').write(f.file, f.snapshot);
 	f.respond = () => new Response('', { status: 503 });
 	await assert.rejects(f.run({ requiredProviderIds: ['wordfence-v3'] }), /advisory source failed/);
 	const partial = await f.run({ requiredProviderIds: ['wordfence-v3'], reportProviderFailures: true });
@@ -170,7 +171,7 @@ test('automatic legacy full 48h stale=false cache revalidates targeted and creat
 	assert.deepEqual(covered(result).map(c => c.result), ['no-match', 'affected']);
 	assert.ok(covered(result).every(c => c.sourceSnapshot.completeness === 'targeted' && !c.sourceSnapshot.stale));
 	assert.equal(fs.readFileSync(f.file, 'utf8'), f.original, 'legacy catalogue is not rewritten');
-	assert.ok(fs.existsSync(path.join(f.dir, CACHE_FILE)));
+	assert.ok(require('../lib/application-providers/snapshot-cache').exists(path.join(f.dir, CACHE_FILE)));
 	await f.run();
 	assert.equal(f.calls.length, 1, 'next scan prefers the fresh targeted projection');
 });
@@ -187,10 +188,10 @@ for (const positive of [false, true]) test(`legacy automatic refresh failure is 
 	assert.equal(fs.existsSync(path.join(f.dir, CACHE_FILE)), false);
 });
 
-for (const age of [1000, HOUR, HOUR + 1]) test(`automatic legacy cache observes 1h threshold: ${age}ms`, async t => {
+for (const age of [1000, 4 * HOUR, 4 * HOUR + 1]) test(`automatic legacy cache observes 4h threshold: ${age}ms`, async t => {
 	const f = legacyFixture(t, { age });
 	await f.run();
-	assert.equal(f.calls.length, age > HOUR ? 1 : 0);
+	assert.equal(f.calls.length, age >= 4 * HOUR ? 1 : 0);
 });
 
 test('explicit legacy file remains authoritative online/offline, including strict max age', async t => {
@@ -218,7 +219,7 @@ test('legacy false-clean reproduction produces stale warnings in actual CLI JSON
 	const f = legacyFixture(t);
 	const cache = path.join(f.dir, '.vigie-vuln', 'advisory-snapshots');
 	fs.mkdirSync(cache, { recursive: true });
-	fs.copyFileSync(f.file, path.join(cache, 'wordfence-v3.json'));
+	require('../lib/application-providers/snapshot-cache').write(path.join(cache, 'wordfence-v3.json'), JSON.parse(f.original));
 	const callsFile = path.join(f.dir, 'calls.jsonl');
 	const hook = path.join(f.dir, 'proxy-only.cjs');
 	fs.writeFileSync(hook, `
@@ -233,7 +234,7 @@ test('legacy false-clean reproduction produces stale warnings in actual CLI JSON
 		};`);
 	const output = path.join(f.dir, 'report');
 	const args = [path.join(__dirname, '../vigievuln.js'), '-s', ROOT, '--proxy-cache', 'default', '--retries', '0',
-		'--no-transitive', '--no-all-libs', '--no-osv', '--no-nvd', '--no-epss', '--no-kev', '--no-euvd', '--no-certfr',
+		'--no-transitive', '--no-all-libs', '--no-osv', '--no-nvd', '--no-epss', '--no-kev', '--no-euvd', '--no-certfr', '--no-gcve',
 		'--no-eol', '--no-binaries', '--no-jars', '--no-certs', '--no-packagist-audit', '--no-retire',
 		'--ecosystem', 'npm', '--app-plugins', 'wordpress', '--public-component', 'site/wp-content/themes/acme-theme=example',
 		'--report-html', '--report-json', '-o', output, '--fail-on-incomplete', 'advisories'];

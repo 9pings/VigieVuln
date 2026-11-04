@@ -47,6 +47,13 @@ test("missing --src without --import-anonymized errors out", () => {
 	assert.match(r.stderr + r.stdout, /--src/);
 });
 
+test('cache prepare requires an output and rejects offline preparation', () => {
+	const missing=run(['cache','prepare','deps.json']);
+	assert.notEqual(missing.status,0);assert.match(missing.stderr+missing.stdout,/--output/);
+	const offline=run(['cache','prepare','deps.json','--output','cache.tar.gz','--offline']);
+	assert.notEqual(offline.status,0);assert.match(offline.stderr+offline.stdout,/runs online/);
+});
+
 test("--import-anonymized rejects an incompatible schema", () => {
 	const bad = tmp("bad.json");
 	fs.writeFileSync(bad, JSON.stringify({ schema: "fad-deps/999", deps: [] }));

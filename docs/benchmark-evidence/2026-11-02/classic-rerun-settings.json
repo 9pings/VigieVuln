@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-02",
+  "runtimeImage": "vigievuln-test-node24:local",
+  "projects": {
+    "dubbo": "0be2a1bbbf9168490acecaf1eed1bd16cb8db402",
+    "petclinic": "e7c879ed3abe10e446ff103887ad665ca6acf04e"
+  },
+  "commands": {
+    "osv": [
+      "osv-scanner",
+      "scan",
+      "source",
+      "-r",
+      "--format",
+      "json",
+      "--output-file",
+      "<report>",
+      "<project>"
+    ],
+    "trivy": [
+      "trivy",
+      "fs",
+      "--cache-dir",
+      "/work/trivy-cache",
+      "--skip-db-update",
+      "--skip-java-db-update",
+      "--scanners",
+      "vuln",
+      "--format",
+      "json",
+      "--output",
+      "<report>",
+      "<project>"
+    ],
+    "grype": [
+      "grype",
+      "dir:<project>",
+      "-o",
+      "json",
+      "--file",
+      "<report>"
+    ]
+  },
+  "environment": {
+    "trivy": {
+      "MAVEN_HOME": "/work/maven-home",
+      "trustStore": "Host /etc/ssl/certs mounted read-only, TLS verification enabled",
+      "mavenMirror": "https://maven-central.storage-download.googleapis.com/maven2"
+    },
+    "grype": {
+      "GRYPE_DB_CACHE_DIR": "/work/grype-db",
+      "GRYPE_DB_AUTO_UPDATE": "false",
+      "GRYPE_CHECK_FOR_APP_UPDATE": "false"
+    }
+  },
+  "excludedRuns": [
+    "Trivy runs without the Maven mirror / host trust store produced incomplete inventories; debug logs showed HTTPS trust failures. Their reports are excluded from the final comparison."
+  ],
+  "sourceData": "OSV live API; Trivy 2026-11-02 07:17 UTC and Grype 2026-11-02 06:26 UTC database snapshots retained."
+}

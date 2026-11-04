@@ -27,7 +27,7 @@ const payload = software => ({ provider: "wordfence", type: "software", params: 
 
 function temp(t) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wordfence-projection-"));
-	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	t.after(() => { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); });
 	return dir;
 }
 async function proxy(t, opts = {}) {
@@ -265,7 +265,7 @@ test("Wordfence warming queries only explicit descriptor identities and writes a
 		} });
 	assert.equal(result.wordfence, true);
 	assert.deepEqual(asked, [q("core", "wordpress"), q("theme")]);
-	const cached = JSON.parse(fs.readFileSync(path.join(dir, CACHE_FILE), "utf8"));
+	const cached = JSON.parse(require('../lib/application-providers/snapshot-cache').read(path.join(dir, CACHE_FILE)).bytes);
 	assert.equal(indexProjection(cached).queriedSoftware.size, 2);
 	assert.equal(fs.existsSync(path.join(dir, "wordfence-v3.json")), false);
 });
@@ -333,7 +333,7 @@ test("Wordfence plugin uses targeted cache offline, preserves stale coverage and
 	const snapshot = projectFeed(indexProductionFeed(feed), [q("core", "wordpress")], Date.now() - 2 * 86400000, true);
 	cacheProjection(dir, snapshot);
 	assert.equal(fs.existsSync(path.join(dir, "wordfence-v3.json")), false);
-	assert.ok(fs.existsSync(path.join(dir, CACHE_FILE)));
+	assert.ok(require('../lib/application-providers/snapshot-cache').exists(path.join(dir, CACHE_FILE)));
 	const opts = { plugins: [wordpress], selection: "wordpress", advisoryCacheDir: dir, offline: true,
 		publicComponents: ["site/wp-content/themes/acme-theme=example"], fetchImpl: async () => { throw new Error("offline network"); } };
 	const root = path.join(__dirname, "fixtures", "wordpress-custom");

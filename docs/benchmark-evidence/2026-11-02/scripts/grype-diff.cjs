@@ -1,0 +1,9 @@
+const fs=require('fs');const cases={nodegoat:'npm',prometheus:'Go',poetry:'PyPI',mastodon:'RubyGems',phpmyadmin:'Packagist','mastodon-yarn':'npm','vite-pnpm':'npm'};const vvEco={npm:'npm',Go:'go',PyPI:'pypi',RubyGems:'ruby',Packagist:'composer'};
+const cn=(n,e)=>e==='PyPI'?n.toLowerCase().replace(/[-_.]+/g,'-'):e==='Go'?n:n.toLowerCase();const cv=v=>String(v).replace(/^v(?=\d)/,'');
+for(const [name,eco] of Object.entries(cases)){
+ const o=JSON.parse(fs.readFileSync(`/tmp/vv-bench-multi/results/${name}-osv.json`)),v=JSON.parse(fs.readFileSync(`/tmp/vv-bench-multi/results/${name}${name==='phpmyadmin'?'-vv-after':'-vv'}.json`)),g=JSON.parse(fs.readFileSync(`/tmp/vv-bench-multi/results/${name}-grype.json`));const rows=[];
+ for(const m of g.matches||[]){const f=m.vulnerability,a=m.artifact;if(!a?.name||!a.version)continue;let ids=new Set([f.id,...(m.relatedVulnerabilities||[]).map(x=>x.id)]);for(const x of o.results||[])for(const p of x.packages||[])if(p.package.ecosystem===eco&&cn(p.package.name,eco)===cn(a.name,eco)&&cv(p.package.version)===cv(a.version))for(const g of p.groups||[]){const group=[...g.ids,...g.aliases||[]];if(group.some(id=>ids.has(id)))for(const id of group)ids.add(id);}
+ const match=(v.cve||[]).some(x=>x.dep?.ecosystem===vvEco[eco]&&cn(x.dep.coord,eco)===cn(a.name,eco)&&cv(x.dep.version)===cv(a.version)&&[x.id,...x.aliases||[]].some(z=>ids.has(z)));
+ if(!match)rows.push({name:a.name,version:a.version,id:f.id,related:[...(m.relatedVulnerabilities||[]).map(x=>x.id)],namespace:f.namespace,dataSource:f.dataSource,fix:f.fix?.versions,matchDetails:m.matchDetails});}
+ fs.writeFileSync(`/tmp/vv-bench-multi/results/${name}-grype-only.json`,JSON.stringify(rows,null,2));console.log(name,'grype matches',g.matches.length,'absent VV',rows.length,'DB built',g.descriptor.db.status.built);
+}

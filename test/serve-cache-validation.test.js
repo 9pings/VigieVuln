@@ -63,5 +63,5 @@ test("serve-cache: an invalid /v1/resource document is a 400 before any lookup o
 		assert.equal(upstream, 0, "no refused request reached an upstream");
 		assert.equal((await post({ provider: "npm", type: "package", params: { name: "express" } })).status, 200);
 		assert.equal(upstream, 1);
-	} finally { await new Promise(ok => h.server.close(ok)); fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { await new Promise(ok => h.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });

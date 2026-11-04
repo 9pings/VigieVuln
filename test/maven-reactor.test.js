@@ -35,11 +35,11 @@ test("same depth: the FIRST declared keeps its version; a wider later path only 
 	assert.deepEqual(versionsOf(compileFirst, "K"), ["2.0"]);
 });
 
-test("transitives of a provided dependency are dev, like the provided root", async () => {
+test("provided dependencies and their transitives may execute in production", async () => {
 	const R = upstream([leaf("P", "1", { deps: [dep("Q", "1")] }), leaf("Q", "1")]);
 	const r = await run(writeLocal({ "pom.xml": local("proj", { deps: [dep("P", "1", { scope: "provided" })] }) }), R);
-	assert.equal(r.get(`${G}:P`).isDev, true);
-	assert.equal(r.get(`${G}:Q`).isDev, true);
+	assert.equal(r.get(`${G}:P`).isDev, false);
+	assert.equal(r.get(`${G}:Q`).isDev, false);
 });
 
 test("a version RANGE resolves to the highest published version inside it — never scanned as a literal", async () => {

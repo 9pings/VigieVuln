@@ -31,3 +31,10 @@ test("webjarToNpm returns null for non-webjar coordinates", () => {
 	assert.equal(webjarToNpm({ groupId: "org.springframework", artifactId: "spring-core", version: "6.0.0" }), null);
 	assert.equal(webjarToNpm({ ecosystem: "npm", groupId: "", artifactId: "react", version: "18.0.0" }), null);
 });
+
+test("WebJars Java locator modules are not npm packages", () => {
+	for (const artifactId of ["webjars-locator", "webjars-locator-lite", "webjars-locator-core"]) {
+		assert.equal(webjarToNpm({ groupId: "org.webjars", artifactId, version: "1.0" }), null);
+	}
+	assert.equal(webjarToNpm({ groupId: "org.webjars.npm", artifactId: "webjars-locator-lite", version: "1.0" }).name, "webjars-locator-lite");
+});

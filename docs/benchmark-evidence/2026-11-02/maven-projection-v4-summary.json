@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-02",
+  "projection": {
+    "schema": 4,
+    "release": "cve_2026-11-02_1400Z"
+  },
+  "method": "Equalities checked as sets of package coordinates, versions and finding identifiers; Snyk unmatched sets use package/version/Snyk identifier with declared aliases.",
+  "dubbo": {
+    "online": 758,
+    "warmOffline": 758,
+    "setsEqual": true,
+    "snykUnmatched": 155,
+    "snykUnmatchedSetSameAsPrevious": true,
+    "onlineReportSha256": "8eb05f0e3b7e28c3966ac3d0391954559ae97ffde04ea649659e974cf3bfdbd1",
+    "offlineReportSha256": "06cb13ebd4a2a05ba5e0b8c47e4eb734712717f1c18d45a2f4093b3464092511"
+  },
+  "petclinic": {
+    "online": 164,
+    "warmOffline": 164,
+    "setsEqual": true,
+    "snykUnmatched": 76,
+    "snykUnmatchedSetSameAsPrevious": true,
+    "osvRaw": 161,
+    "osvOnly": 0,
+    "onlineReportSha256": "d239133ed6e0e87d23efa79e5955908674de29a2972db58d0fc0f91964f21293",
+    "offlineReportSha256": "d888588054e0dd70d082019d6bd991e7f5961f4f607bbf8e367070d2fe893f02"
+  },
+  "limitations": "Partial advisory coverage; Dubbo has missing POMs and a depth limit. This evidence does not establish full recall."
+}

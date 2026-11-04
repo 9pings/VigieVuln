@@ -1,0 +1,1202 @@
+{
+  "node": "v24.14.0",
+  "files": {
+    "lib/cve-download.js": "74447596605d7ce7a4fb6f94451a44b37452fc5136c717ca5f99f9e5109e96a6",
+    "lib/native-advisories.js": "dacbaf90ff461acdffa9645b3be7ee648af7bb6ee9e0485e499bd244f8ed8a2d",
+    "lib/cve-match.js": "eb66cd9a49e8558a45fd95f4cd16fa4b8af2572f46662b97f105677643df1cec",
+    "lib/cve-version-verdict.js": "6dfc6f9bb7b6db62818adce4046b405bc3699cd6291b5bb6f5efe44c82b9a6f4"
+  },
+  "rows": [
+    {
+      "index": 3,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-10672",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-10672",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10672.json",
+        "status": 200,
+        "sha256": "8a886f428b9c187596f6e008f59b7d796be0eb4dbf3f3db6f2b7240c4d0b9dba",
+        "observedAt": "2026-11-02T14:01:58.938385+00:00"
+      }
+    },
+    {
+      "index": 4,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-10969",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-10969",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10969.json",
+        "status": 200,
+        "sha256": "6dbe69ff3abcf088be3b3d0cf5feeaee510900c867bf49c53e31c6e60667eadb",
+        "observedAt": "2026-11-02T14:01:59.289588+00:00"
+      }
+    },
+    {
+      "index": 5,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-10968",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-10968",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10968.json",
+        "status": 200,
+        "sha256": "f983c1a0d8f9d374a1740b96e2fb718d8735e09f39d7297f3a6b0d911b33a387",
+        "observedAt": "2026-11-02T14:01:59.351840+00:00"
+      }
+    },
+    {
+      "index": 6,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-11113",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-11113",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11113.json",
+        "status": 200,
+        "sha256": "5b49bf78326be2e7270cb9be22d30d4253b3c7ac266feb02e67e253636f10929",
+        "observedAt": "2026-11-02T14:01:59.408631+00:00"
+      }
+    },
+    {
+      "index": 7,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-11111",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-11111",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11111.json",
+        "status": 200,
+        "sha256": "daed4a32b99601d870e819e27ffdce7459a8712080c64a4631ff26e7004262c4",
+        "observedAt": "2026-11-02T14:01:59.461526+00:00"
+      }
+    },
+    {
+      "index": 8,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-11112",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-11112",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11112.json",
+        "status": 200,
+        "sha256": "f1adaafe00640ffe58054dd721c64b516895fa83e6718b2b68044a4218c584ac",
+        "observedAt": "2026-11-02T14:01:59.659841+00:00"
+      }
+    },
+    {
+      "index": 9,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-11620",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-11620",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11620.json",
+        "status": 200,
+        "sha256": "472539a5f7be55ac2eea15101dc295f74e9261f7e4b616034c00a4258e9f011d",
+        "observedAt": "2026-11-02T14:01:59.755598+00:00"
+      }
+    },
+    {
+      "index": 10,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-11619",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-11619",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11619.json",
+        "status": 200,
+        "sha256": "9ea87cd7c5ebcc5867a9bc873b4110f54ae07d757bf4a4eb295290b02e8cd0c2",
+        "observedAt": "2026-11-02T14:01:59.783831+00:00"
+      }
+    },
+    {
+      "index": 11,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-14062",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-14062",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14062.json",
+        "status": 200,
+        "sha256": "5c975f150a1c26046449655f1f44d3f294592c96ff7f1911bc2bf6a08bd13bb3",
+        "observedAt": "2026-11-02T14:01:59.850699+00:00"
+      }
+    },
+    {
+      "index": 12,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-14195",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-14195",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14195.json",
+        "status": 200,
+        "sha256": "9e4b69eeacb609fe9bf03cdb14d3ff912d517840a23a654ab3b6732d17451987",
+        "observedAt": "2026-11-02T14:02:00.044750+00:00"
+      }
+    },
+    {
+      "index": 13,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-14060",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-14060",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14060.json",
+        "status": 200,
+        "sha256": "5608fcd62bb971b9afa28dda42bf6cc434e9d7c154a62aa503f02e9f175152ba",
+        "observedAt": "2026-11-02T14:02:00.130838+00:00"
+      }
+    },
+    {
+      "index": 14,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2020-14061",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2020-14061",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14061.json",
+        "status": 200,
+        "sha256": "864a7a4709a5b5622701e6e0f0eed2d23ab538585c3adab3db1d3aeb6bc05c9f",
+        "observedAt": "2026-11-02T14:02:00.156990+00:00"
+      }
+    },
+    {
+      "index": 15,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2018-12023",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2018-12023",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/12xxx/CVE-2018-12023.json",
+        "status": 200,
+        "sha256": "49602bc9617622f47ec5c082bb17cb4f7f0f4d9f0fe42665c055816f2f13929f",
+        "observedAt": "2026-11-02T14:02:00.318763+00:00"
+      }
+    },
+    {
+      "index": 16,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2018-14720",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2018-14720",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/14xxx/CVE-2018-14720.json",
+        "status": 200,
+        "sha256": "fe1499f1d1f7fe8d4ea5f5fd25337b89360dc0f73645feb5b65f44cafaebb3c2",
+        "observedAt": "2026-11-02T14:02:00.440474+00:00"
+      }
+    },
+    {
+      "index": 17,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2018-14721",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2018-14721",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/14xxx/CVE-2018-14721.json",
+        "status": 200,
+        "sha256": "3416dabac96a1727ef822389dc402241d095ea2a85e9d66e0b360814fee2f858",
+        "observedAt": "2026-11-02T14:02:00.662800+00:00"
+      }
+    },
+    {
+      "index": 18,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2018-19360",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2018-19360",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/19xxx/CVE-2018-19360.json",
+        "status": 200,
+        "sha256": "d3b14b56514d60d3756ff5522ac790900ba88e6dfd4a17b0c5da76ded654e291",
+        "observedAt": "2026-11-02T14:02:00.667748+00:00"
+      }
+    },
+    {
+      "index": 19,
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "cve": "CVE-2018-19361",
+      "cnaIssuer": "mitre",
+      "cnaNativeAffected": [
+        {
+          "product": "n/a",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "n/a"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "native_identity_unspecified",
+        "native_versions_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The CNA description explicitly names FasterXML jackson-databind and the old 2.x interval (or branch fixes); the owner issue confirms the gadget. Structured affected fields contain only n/a.",
+      "safeAutomaticUse": "Triage by explicit CVE identity is possible. No exact Maven coordinate or evaluable version interval can be obtained from native structured affected fields; do not turn prose or vendor similarity into an exact finding.",
+      "primarySource": {
+        "key": "CVE-2018-19361",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/19xxx/CVE-2018-19361.json",
+        "status": 200,
+        "sha256": "71b7a547be420552317b7220a1789ed4e8337b19e5f4700cd66c97b2d6a00c51",
+        "observedAt": "2026-11-02T14:02:00.743417+00:00"
+      }
+    },
+    {
+      "index": 21,
+      "package": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+      "version": "2.6.7",
+      "cve": "CVE-2020-28491",
+      "cnaIssuer": "snyk",
+      "cnaNativeAffected": [
+        {
+          "product": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "lessThan": "unspecified",
+              "status": "affected",
+              "version": "0",
+              "versionType": "custom"
+            },
+            {
+              "lessThan": "2.11.4",
+              "status": "affected",
+              "version": "unspecified",
+              "versionType": "custom"
+            },
+            {
+              "lessThan": "unspecified",
+              "status": "affected",
+              "version": "2.12.0-rc1",
+              "versionType": "custom"
+            },
+            {
+              "lessThan": "2.12.1",
+              "status": "affected",
+              "version": "unspecified",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "coordinate_only_in_product_field",
+        "native_ranges_custom_and_unspecified",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "The native product field literally names the Maven coordinate, and prose gives the affected intervals; exact-version source confirms the byte allocation. The versions array splits endpoints into separate custom entries containing unspecified.",
+      "safeAutomaticUse": "Retain the literal coordinate-shaped product as a candidate, with ecosystem proof still required. Do not pair separate range entries or silently assign Maven semantics to custom. Emission needs a corrected native package/range record or independently reviewed structured source.",
+      "primarySource": {
+        "key": "CVE-2020-28491",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/28xxx/CVE-2020-28491.json",
+        "status": 200,
+        "sha256": "38eb8e1110dc37b78200dba720260604f918f5850b57156083462407320695dc",
+        "observedAt": "2026-11-02T14:02:00.878335+00:00"
+      }
+    },
+    {
+      "index": 23,
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "cve": "CVE-2023-24998",
+      "cnaIssuer": "apache",
+      "cnaNativeAffected": [
+        {
+          "defaultStatus": "unaffected",
+          "product": "Apache Commons FileUpload",
+          "vendor": "Apache Software Foundation",
+          "versions": [
+            {
+              "lessThan": "1.5",
+              "status": "affected",
+              "version": "0",
+              "versionType": "semver"
+            }
+          ]
+        },
+        {
+          "defaultStatus": "unaffected",
+          "product": "Apache Tomcat",
+          "vendor": "Apache Software Foundation",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "11.0.0-M1"
+            },
+            {
+              "lessThanOrEqual": "10.1.4",
+              "status": "affected",
+              "version": "10.0.0-M1",
+              "versionType": "semver"
+            },
+            {
+              "lessThanOrEqual": "9.0.70",
+              "status": "affected",
+              "version": "9.0.0-M1",
+              "versionType": "semver"
+            },
+            {
+              "lessThanOrEqual": "8.5.84",
+              "status": "affected",
+              "version": "8.5.0",
+              "versionType": "semver"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": true,
+      "nativeEnvelopePackages": [
+        {
+          "ecosystem": "Maven",
+          "name": "commons-fileupload:commons-fileupload"
+        },
+        {
+          "ecosystem": "Maven",
+          "name": "org.apache.commons:commons-fileupload2-core"
+        },
+        {
+          "ecosystem": "CVEProduct",
+          "name": "apache commons fileupload"
+        },
+        {
+          "ecosystem": "Maven",
+          "name": "org.apache.tomcat:tomcat-catalina"
+        },
+        {
+          "ecosystem": "Maven",
+          "name": "org.apache.tomcat:tomcat-coyote"
+        },
+        {
+          "ecosystem": "Maven",
+          "name": "org.apache.tomcat.embed:tomcat-embed-core"
+        },
+        {
+          "ecosystem": "CVEProduct",
+          "name": "apache tomcat"
+        }
+      ],
+      "projection": [
+        {
+          "packageName": "commons-fileupload:commons-fileupload",
+          "packageNames": [
+            "commons-fileupload:commons-fileupload",
+            "org.apache.commons:commons-fileupload2-core"
+          ],
+          "vendor": "apache software foundation",
+          "product": "apache commons fileupload",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThan": "1.5"
+            }
+          ],
+          "coordinateEvidence": "curated-product"
+        },
+        {
+          "packageName": "org.apache.tomcat:tomcat-catalina",
+          "packageNames": [
+            "org.apache.tomcat:tomcat-catalina",
+            "org.apache.tomcat:tomcat-coyote",
+            "org.apache.tomcat.embed:tomcat-embed-core"
+          ],
+          "vendor": "apache software foundation",
+          "product": "apache tomcat",
+          "ranges": [
+            {
+              "version": "11.0.0-M1",
+              "status": "affected"
+            },
+            {
+              "version": "10.0.0-M1",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "10.1.4"
+            },
+            {
+              "version": "9.0.0-M1",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "9.0.70"
+            },
+            {
+              "version": "8.5.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "8.5.84"
+            }
+          ],
+          "coordinateEvidence": "curated-product"
+        }
+      ],
+      "projectedRangeVerdicts": [
+        {
+          "packageNames": [
+            "commons-fileupload:commons-fileupload",
+            "org.apache.commons:commons-fileupload2-core"
+          ],
+          "product": "apache commons fileupload",
+          "identity": "curated-product",
+          "verdict": null,
+          "perRange": [
+            null
+          ]
+        },
+        {
+          "packageNames": [
+            "org.apache.tomcat:tomcat-catalina",
+            "org.apache.tomcat:tomcat-coyote",
+            "org.apache.tomcat.embed:tomcat-embed-core"
+          ],
+          "product": "apache tomcat",
+          "identity": "curated-product",
+          "verdict": true,
+          "perRange": [
+            false,
+            false,
+            false,
+            true
+          ]
+        }
+      ],
+      "matches": [],
+      "uncertain": [
+        {
+          "id": "CVE-2023-24998",
+          "confidence": "possible"
+        }
+      ],
+      "blockingReasons": [
+        "product_to_coordinate_mapping_not_exact_identity"
+      ],
+      "humanPrimaryEvidence": "Apache CNA explicitly names Apache Tomcat and gives the affected 8.5.0–8.5.84 interval. The existing OSV record independently names tomcat-embed-core for this CVE; exact package/version source applicability was manually adjudicated.",
+      "safeAutomaticUse": "The native range evaluates true, but the existing curated product map fans out to multiple artifacts and is not exact package evidence. Preserve a candidate/coverage warning; require an explicit native coordinate or reviewed evidence of the affected component inside the artifact.",
+      "primarySource": {
+        "key": "CVE-2023-24998",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/24xxx/CVE-2023-24998.json",
+        "status": 200,
+        "sha256": "e550717f6c65c50d16d71dcf3c8d0b749133b46c506d1982688908e59fea44a7",
+        "observedAt": "2026-11-02T14:02:00.993405+00:00"
+      }
+    },
+    {
+      "index": 25,
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "cve": "CVE-2024-56337",
+      "cnaIssuer": "apache",
+      "cnaNativeAffected": [
+        {
+          "defaultStatus": "unaffected",
+          "product": "Apache Tomcat",
+          "vendor": "Apache Software Foundation",
+          "versions": [
+            {
+              "lessThanOrEqual": "11.0.1",
+              "status": "affected",
+              "version": "11.0.0-M1",
+              "versionType": "semver"
+            },
+            {
+              "lessThanOrEqual": "10.1.33",
+              "status": "affected",
+              "version": "10.1.0-M1",
+              "versionType": "semver"
+            },
+            {
+              "lessThanOrEqual": "9.0.97",
+              "status": "affected",
+              "version": "9.0.0.M1",
+              "versionType": "semver"
+            },
+            {
+              "lessThanOrEqual": "8.5.100",
+              "status": "affected",
+              "version": "8.5.0",
+              "versionType": "semver"
+            },
+            {
+              "lessThan": "8.5.0",
+              "status": "unknown",
+              "version": "3",
+              "versionType": "semver"
+            },
+            {
+              "lessThanOrEqual": "10.0.27",
+              "status": "unknown",
+              "version": "10.0.0-M1",
+              "versionType": "semver"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": true,
+      "nativeEnvelopePackages": [
+        {
+          "ecosystem": "Maven",
+          "name": "org.apache.tomcat:tomcat-catalina"
+        },
+        {
+          "ecosystem": "Maven",
+          "name": "org.apache.tomcat:tomcat-coyote"
+        },
+        {
+          "ecosystem": "Maven",
+          "name": "org.apache.tomcat.embed:tomcat-embed-core"
+        },
+        {
+          "ecosystem": "CVEProduct",
+          "name": "apache tomcat"
+        }
+      ],
+      "projection": [
+        {
+          "packageName": "org.apache.tomcat:tomcat-catalina",
+          "packageNames": [
+            "org.apache.tomcat:tomcat-catalina",
+            "org.apache.tomcat:tomcat-coyote",
+            "org.apache.tomcat.embed:tomcat-embed-core"
+          ],
+          "vendor": "apache software foundation",
+          "product": "apache tomcat",
+          "ranges": [
+            {
+              "version": "11.0.0-M1",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "11.0.1"
+            },
+            {
+              "version": "10.1.0-M1",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "10.1.33"
+            },
+            {
+              "version": "9.0.0.M1",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "9.0.97"
+            },
+            {
+              "version": "8.5.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "8.5.100"
+            },
+            {
+              "version": "3",
+              "status": "unknown",
+              "versionType": "semver",
+              "lessThan": "8.5.0"
+            },
+            {
+              "version": "10.0.0-M1",
+              "status": "unknown",
+              "versionType": "semver",
+              "lessThanOrEqual": "10.0.27"
+            }
+          ],
+          "coordinateEvidence": "curated-product"
+        }
+      ],
+      "projectedRangeVerdicts": [
+        {
+          "packageNames": [
+            "org.apache.tomcat:tomcat-catalina",
+            "org.apache.tomcat:tomcat-coyote",
+            "org.apache.tomcat.embed:tomcat-embed-core"
+          ],
+          "product": "apache tomcat",
+          "identity": "curated-product",
+          "verdict": null,
+          "perRange": [
+            false,
+            false,
+            null,
+            true,
+            null,
+            false
+          ]
+        }
+      ],
+      "matches": [],
+      "uncertain": [
+        {
+          "id": "CVE-2024-56337",
+          "confidence": "possible"
+        }
+      ],
+      "blockingReasons": [
+        "product_to_coordinate_mapping_not_exact_identity",
+        "malformed_other_branch_bounds_make_union_unknown"
+      ],
+      "humanPrimaryEvidence": "Apache CNA explicitly includes EOL Tomcat 8.5.0–8.5.100. Its matching branch evaluates true. Other entries labelled semver use 9.0.0.M1 and 3, which the strict SemVer comparator cannot order, so the full union remains unknown.",
+      "safeAutomaticUse": "Do not discard unknown entries or change their declared ordering semantics to force a hit; their possible status overlap is unproved. A corrected native interval representation and exact artifact binding are needed.",
+      "primarySource": {
+        "key": "CVE-2024-56337",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/56xxx/CVE-2024-56337.json",
+        "status": 200,
+        "sha256": "574070e7d522746b486b0b5167b761ce9f328394c7e0fe828336660ede512d7f",
+        "observedAt": "2026-11-02T14:02:01.095801+00:00"
+      }
+    },
+    {
+      "index": 27,
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "cve": "CVE-2021-22096",
+      "cnaIssuer": "vmware",
+      "cnaNativeAffected": [
+        {
+          "product": "Spring Framework",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "Spring Framework versions 5.3.x prior to 5.3.12+, 5.2.x prior to  5.2.18+ and all older unsupported versions are impacted."
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "generic_product_without_exact_coordinate",
+        "version_interval_in_free_text",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "Spring vendor advisory and CNA expressly include older unsupported Spring Framework versions; native affected names the framework and stores the release interval as prose.",
+      "safeAutomaticUse": "Candidate indexing can preserve the record, but neither spring-core identity nor a numeric native range is proved by those fields. Do not fan out a framework-wide product entry to every module or parse free-form version prose as exact.",
+      "primarySource": {
+        "key": "CVE-2021-22096",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/22xxx/CVE-2021-22096.json",
+        "status": 200,
+        "sha256": "4ab5a4d2b83288aaed52f310fe75586574fc869584b1c373765e6b20c78dd7a4",
+        "observedAt": "2026-11-02T14:02:01.265143+00:00"
+      }
+    },
+    {
+      "index": 28,
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "cve": "CVE-2021-22060",
+      "cnaIssuer": "vmware",
+      "cnaNativeAffected": [
+        {
+          "product": "Spring Framework",
+          "vendor": "n/a",
+          "versions": [
+            {
+              "status": "affected",
+              "version": "Spring Framework 5.3.0 - 5.3.13, 5.2.0 - 5.2.18, and older unsupported versions"
+            }
+          ]
+        }
+      ],
+      "mavenRelevant": false,
+      "nativeEnvelopePackages": [],
+      "projection": null,
+      "projectedRangeVerdicts": [],
+      "matches": [],
+      "uncertain": [],
+      "blockingReasons": [
+        "generic_product_without_exact_coordinate",
+        "version_interval_in_free_text",
+        "maven_relevance_filter_rejects",
+        "no_native_candidate_key"
+      ],
+      "humanPrimaryEvidence": "Spring vendor advisory and CNA expressly include older unsupported Spring Framework versions; native affected names the framework and stores the release interval as prose.",
+      "safeAutomaticUse": "Candidate indexing can preserve the record, but neither spring-core identity nor a numeric native range is proved by those fields. Do not fan out a framework-wide product entry to every module or parse free-form version prose as exact.",
+      "primarySource": {
+        "key": "CVE-2021-22060",
+        "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/22xxx/CVE-2021-22060.json",
+        "status": 200,
+        "sha256": "b45e3940644d406f825a784e93c353e51a260345d4b8255e09d34bad584a808d",
+        "observedAt": "2026-11-02T14:02:01.304408+00:00"
+      }
+    }
+  ],
+  "scope": "Read-only probe of current v2 projection and matching functions on 22 freshly fetched native CNA records. This is not a new full CLI run and does not establish which source revisions were present in the earlier default-profile process.",
+  "genericRemediationProposal": [
+    {
+      "step": "Candidate retention and discovery",
+      "behavior": "Keep native records even when the Maven projection is null, and optionally fetch by explicit CVE IDs learned from validated source identities. Index as candidates only; preserve source version, rejection state and provenance.",
+      "effect": "Makes omitted native evidence auditable; does not manufacture affected findings."
+    },
+    {
+      "step": "Explain unknown causes",
+      "behavior": "Return separate machine-readable reasons for missing package identity, unsupported version type, malformed interval, ambiguous cross-source association and absent source record. Keep completeness partial until resolved.",
+      "effect": "Distinguishes coverage limitations from comparator failures without changing counts."
+    },
+    {
+      "step": "Require independent structured proof for positive findings",
+      "behavior": "Only report once a trusted record identifies the exact ecosystem/package and an evaluable affected interval, or a separately reviewed enrichment record carries explicit package/version evidence and source citations. Store enrichment as data with provenance and withdrawals, not CVE/product conditions in matching code.",
+      "effect": "These 22 native records alone do not contain all the required structured proof. Upstream data corrections or a vetted additional source are needed to close the gaps safely."
+    },
+    {
+      "step": "Keep cross-source joins conservative",
+      "behavior": "A shared CVE ID can retrieve related documents; it must not copy every product-wide version interval onto every Maven package named elsewhere. Preserve uncertain and contradictory relations.",
+      "effect": "Prevents the artifact/module false positives that v2 removed."
+    }
+  ]
+}

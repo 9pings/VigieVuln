@@ -1,0 +1,217 @@
+[
+  {
+    "name": "brace-expansion",
+    "version": "1.1.6",
+    "id": "NSWG-ECO-338",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/338.json",
+    "primaryStatus": 200,
+    "sourceSha256": "b97b5c3ca8341fa1690f2bdb50f472249a8ca64becf12582d00d8dd6cdf3ffda",
+    "sourceModule": "brace-expansion",
+    "affectedRange": "<=1.1.6",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2017-18077"
+    ]
+  },
+  {
+    "name": "handlebars",
+    "version": "4.0.5",
+    "id": "NSWG-ECO-519",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/519.json",
+    "primaryStatus": 200,
+    "sourceSha256": "6b1c01bac52676fa21886cc3466fc87792960c65f39085d1c4b5277ec7b297be",
+    "sourceModule": "handlebars",
+    "affectedRange": "<4.6.0",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": []
+  },
+  {
+    "name": "is-my-json-valid",
+    "version": "2.15.0",
+    "id": "NSWG-ECO-375",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/375.json",
+    "primaryStatus": 200,
+    "sourceSha256": "aeb2542393ca4885b2db6b5971d4a62f8205ba95207dbc9cea84aa7cb0939cbf",
+    "sourceModule": "is-my-json-valid",
+    "affectedRange": "<1.4.1 || >=2.0.0 <2.17.2",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2018-1107"
+    ]
+  },
+  {
+    "name": "marked",
+    "version": "0.3.5",
+    "id": "NSWG-ECO-101",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/101.json",
+    "primaryStatus": 200,
+    "sourceSha256": "30556c0412d259f6190a20e622e7be4544c9924df78a88f695024d391a1eb57e",
+    "sourceModule": "marked",
+    "affectedRange": "<=0.3.5",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2016-10531"
+    ]
+  },
+  {
+    "name": "minimatch",
+    "version": "0.3.0",
+    "id": "NSWG-ECO-118",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/118.json",
+    "primaryStatus": 200,
+    "sourceSha256": "9840dd8ba06907da2aa3a51ef2a218979daf5942ac48bcb9651468fd4e7b608a",
+    "sourceModule": "minimatch",
+    "affectedRange": "<=3.0.1",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2016-10540"
+    ]
+  },
+  {
+    "name": "qs",
+    "version": "0.6.6",
+    "id": "NSWG-ECO-28",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/28.json",
+    "primaryStatus": 200,
+    "sourceSha256": "6ed58d45ed76fbb9a2be5b069ad6d8fe0e26ba0eabbbe21dff138a38c6546de5",
+    "sourceModule": "qs",
+    "affectedRange": "<1.0.0",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2014-10064"
+    ]
+  },
+  {
+    "name": "request",
+    "version": "2.36.0",
+    "id": "NSWG-ECO-309",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/309.json",
+    "primaryStatus": 200,
+    "sourceSha256": "93d09ff26407ce91b6398d9014453fdb7a6ddb1b95a257f1e0f9db6dae63a67b",
+    "sourceModule": "request",
+    "affectedRange": ">=2.2.6 <2.47.0 || >2.51.0 <=2.67.0",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2017-16026"
+    ]
+  },
+  {
+    "name": "request",
+    "version": "2.67.0",
+    "id": "NSWG-ECO-309",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/309.json",
+    "primaryStatus": 200,
+    "sourceSha256": "93d09ff26407ce91b6398d9014453fdb7a6ddb1b95a257f1e0f9db6dae63a67b",
+    "sourceModule": "request",
+    "affectedRange": ">=2.2.6 <2.47.0 || >2.51.0 <=2.67.0",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2017-16026"
+    ]
+  },
+  {
+    "name": "sshpk",
+    "version": "1.10.1",
+    "id": "NSWG-ECO-401",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/401.json",
+    "primaryStatus": 200,
+    "sourceSha256": "b2b5dd54892f08fb379879134982d8ac85ed1292f597fa37f0d3cb3738c3a796",
+    "sourceModule": "sshpk",
+    "affectedRange": "<=1.13.1",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2018-3737"
+    ]
+  },
+  {
+    "name": "stringstream",
+    "version": "0.0.5",
+    "id": "NSWG-ECO-422",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/422.json",
+    "primaryStatus": 200,
+    "sourceSha256": "0bc98361cd9d0e8d921e3c97a87fd0e4cdc3d6ccb044cc15924b810bfd0e1845",
+    "sourceModule": "stringstream",
+    "affectedRange": "<=0.0.5",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "CVE-2018-21270"
+    ]
+  },
+  {
+    "name": "tunnel-agent",
+    "version": "0.4.3",
+    "id": "NSWG-ECO-393",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/393.json",
+    "primaryStatus": 200,
+    "sourceSha256": "8bdf5a581c5abbd5f492bf88af550c5e6fa8cac810a5fbc82101f9ede8ee2a6f",
+    "sourceModule": "tunnel-agent",
+    "affectedRange": "<0.6.0",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": [
+      "GHSA-xc7v-wxcw-j472"
+    ]
+  },
+  {
+    "name": "utile",
+    "version": "0.2.1",
+    "id": "NSWG-ECO-445",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/445.json",
+    "primaryStatus": 200,
+    "sourceSha256": "5e21a60291a827fa6e4a9a7bc81516e22e6a2b204aaadd3e0b73e024019c617a",
+    "sourceModule": "utile",
+    "affectedRange": "<=0.3.0",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": []
+  },
+  {
+    "name": "utile",
+    "version": "0.3.0",
+    "id": "NSWG-ECO-445",
+    "osvGroup": [],
+    "source": "nodejs-security-wg",
+    "primary": "https://raw.githubusercontent.com/nodejs/security-wg/f643f84d4977d0ba379dc7c5805c9b65206369b5/vuln/npm/445.json",
+    "primaryStatus": 200,
+    "sourceSha256": "5e21a60291a827fa6e4a9a7bc81516e22e6a2b204aaadd3e0b73e024019c617a",
+    "sourceModule": "utile",
+    "affectedRange": "<=0.3.0",
+    "versionAffected": true,
+    "cves": [],
+    "relatedVV": []
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "cve": "CVE-2020-28491",
+  "source": "https://github.com/FasterXML/jackson-dataformats-binary/commit/de072d314af8f5f269c8abec6930652af67bc8e6",
+  "artifacts": [
+    {
+      "artifact": "jackson-core",
+      "version": "2.6.7",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.6.7/jackson-core-2.6.7.jar",
+      "sha256": "918c04b9f9043d51dead2192b5d94d9f065870c9f26c8defbe9c6dbc951f304f"
+    },
+    {
+      "artifact": "jackson-core",
+      "version": "2.11.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.11.4/jackson-core-2.11.4.jar",
+      "sha256": "e1dda269f16f3be00578f3a46c754f098245c7a480b86e07030b6ee7087ee1f1"
+    },
+    {
+      "artifact": "jackson-dataformat-cbor",
+      "version": "2.6.7",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-cbor/2.6.7/jackson-dataformat-cbor-2.6.7.jar",
+      "sha256": "956a0fb9186a796b8a6548909da1ee55004279647e261c7f540e5d49d4f199bf"
+    },
+    {
+      "artifact": "jackson-dataformat-cbor",
+      "version": "2.11.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-cbor/2.11.4/jackson-dataformat-cbor-2.11.4.jar",
+      "sha256": "5ee11635882a69c03da5da0cff53e977240186ed3fc8a75d4f056ff6232a06d8"
+    }
+  ],
+  "probeSha256": "ae04f115a1754901e923954d2ebcfdf1db89bf4788f322837152cc9b03bd53ba",
+  "results": [
+    {
+      "version": "2.6.7",
+      "heapLimit": "32m",
+      "result": "EAGER_ALLOCATION_OOME"
+    },
+    {
+      "version": "2.11.4",
+      "heapLimit": "32m",
+      "result": "INPUT_REJECTED_WITHOUT_LARGE_ALLOCATION"
+    }
+  ]
+}

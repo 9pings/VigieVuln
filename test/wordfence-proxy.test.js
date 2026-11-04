@@ -41,7 +41,7 @@ for (const apiKey of [undefined, "client-key"]) {
 test("Wordfence: a refused live source fails the scan and leaves no complete-looking snapshot", async t => {
 	const { calls, fetchImpl } = refusedProxy(t);
 	const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "wordfence-refused-"));
-	t.after(() => fs.rmSync(cacheDir, { recursive: true, force: true }));
+	t.after(() => { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
 	// An old local snapshot must not hide failure of an explicitly requested live source.
 	const cachedFile = path.join(cacheDir, "wordfence-v3.json");
 	const previous = JSON.stringify({ _fadSnapshot: { collectedAt: "2020-01-01T00:00:00Z", completeness: "tool-fetched" } });
@@ -52,5 +52,5 @@ test("Wordfence: a refused live source fails the scan and leaves no complete-loo
 	}), /wordpress advisory source failed: .*HTTP 410/);
 	assert.equal(calls.length, 1);
 	assert.equal(fs.readFileSync(cachedFile, "utf8"), previous);
-	assert.deepEqual(fs.readdirSync(cacheDir), ["wordfence-v3.json"]);
+	assert.deepEqual(fs.readdirSync(cacheDir).filter(name=>!name.startsWith('cache.sqlite')), ["wordfence-v3.json"]);
 });

@@ -1,0 +1,817 @@
+{
+  "date": "2026-11-02",
+  "scope": "Dubbo same input and source profile, CVE index schema 4; matcher changes only",
+  "online": 776,
+  "offline": 776,
+  "offlineSetEqual": true,
+  "removed": [],
+  "additions": [
+    {
+      "package": "io.netty:netty-handler",
+      "version": "4.1.35.Final",
+      "id": "CVE-2026-62243",
+      "evidence": [
+        {
+          "exactPackageName": "io.netty:netty-handler",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "4.2.0.Final",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "4.2.16.Final"
+            },
+            {
+              "version": "4.2.16.Final",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        },
+        {
+          "exactPackageName": "io.netty:netty-handler",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "4.1.137.Final"
+            },
+            {
+              "version": "4.1.137.Final",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.apache.ant:ant",
+      "version": "1.9.4",
+      "id": "CVE-2026-78254",
+      "evidence": [
+        {
+          "exactPackageName": "org.apache.ant:ant",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "apache"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "1.2",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "1.10.18"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "id": "CVE-2026-90559",
+      "evidence": [
+        {
+          "exactPackageName": "org.xerial.snappy:snappy-java",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThanOrEqual": "1.1.10.8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "id": "CVE-2026-93452",
+      "evidence": [
+        {
+          "exactPackageName": "org.xerial.snappy:snappy-java",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThanOrEqual": "1.1.10.8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "id": "CVE-2026-100666",
+      "evidence": [
+        {
+          "exactPackageName": "io.netty:netty-codec-http",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "4.2.0.Final",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "4.2.17.Final"
+            },
+            {
+              "version": "4.2.17.Final",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        },
+        {
+          "exactPackageName": "io.netty:netty-codec-http",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "4.1.137.Final"
+            },
+            {
+              "version": "4.1.137.Final",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "id": "CVE-2026-110257",
+      "evidence": [
+        {
+          "exactPackageName": "org.ow2.asm:asm",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "5.0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "9.11"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "id": "CVE-2026-110258",
+      "evidence": [
+        {
+          "exactPackageName": "org.ow2.asm:asm",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "3.0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "9.11"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "id": "CVE-2026-110259",
+      "evidence": [
+        {
+          "exactPackageName": "org.ow2.asm:asm",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "3.0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "9.11"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "id": "CVE-2026-110260",
+      "evidence": [
+        {
+          "exactPackageName": "org.ow2.asm:asm",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "3.0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "9.11"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "id": "CVE-2026-110261",
+      "evidence": [
+        {
+          "exactPackageName": "org.ow2.asm:asm",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "3.0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "9.11"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "id": "CVE-2026-110263",
+      "evidence": [
+        {
+          "exactPackageName": "org.ow2.asm:asm",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "3.0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "9.11"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-security",
+      "version": "9.4.11.v20180605",
+      "id": "CVE-2026-18659",
+      "evidence": [
+        {
+          "exactPackageName": "org.eclipse.jetty:jetty-security",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "eclipse"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "11.0.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "11.0.32"
+            },
+            {
+              "version": "10.0.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "10.0.32"
+            },
+            {
+              "version": "7.6.13",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "9.4.64"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-security",
+      "version": "9.4.11.v20180605",
+      "id": "CVE-2026-18662",
+      "evidence": [
+        {
+          "exactPackageName": "org.eclipse.jetty:jetty-security",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "eclipse"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "11.0.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "11.0.32"
+            },
+            {
+              "version": "10.0.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "10.0.32"
+            },
+            {
+              "version": "7.6.13",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "9.4.64"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-security",
+      "version": "9.4.11.v20180605",
+      "id": "CVE-2026-19864",
+      "evidence": [
+        {
+          "exactPackageName": "org.eclipse.jetty:jetty-security",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "eclipse"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "9.4.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "9.4.64"
+            },
+            {
+              "version": "10.0.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "10.0.32"
+            },
+            {
+              "version": "11.0.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "11.0.32"
+            },
+            {
+              "version": "12.0.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "12.0.38"
+            },
+            {
+              "version": "12.1.0",
+              "status": "affected",
+              "versionType": "semver",
+              "lessThanOrEqual": "12.1.12"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "io.netty:netty-codec-socks",
+      "version": "4.1.35.Final",
+      "id": "CVE-2026-62380",
+      "evidence": [
+        {
+          "exactPackageName": "io.netty:netty-codec-socks",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "4.2.0.Final",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "4.2.16.Final"
+            },
+            {
+              "version": "4.2.16.Final",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        },
+        {
+          "exactPackageName": "io.netty:netty-codec-socks",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "4.1.137.Final"
+            },
+            {
+              "version": "4.1.137.Final",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.6",
+      "id": "CVE-2026-116486",
+      "evidence": [
+        {
+          "exactPackageName": "org.objenesis:objenesis",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "3.6"
+            },
+            {
+              "version": "3.6",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.5.1",
+      "id": "CVE-2026-116486",
+      "evidence": [
+        {
+          "exactPackageName": "org.objenesis:objenesis",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "3.6"
+            },
+            {
+              "version": "3.6",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.4",
+      "id": "CVE-2026-116486",
+      "evidence": [
+        {
+          "exactPackageName": "org.objenesis:objenesis",
+          "coordinateEvidence": "explicit-coordinate",
+          "affectedProviders": [
+            {
+              "kind": "cna",
+              "name": "VulnCheck"
+            }
+          ],
+          "defaultStatus": "unaffected",
+          "ranges": [
+            {
+              "version": "0",
+              "status": "affected",
+              "versionType": "custom",
+              "lessThan": "3.6"
+            },
+            {
+              "version": "3.6",
+              "status": "unaffected",
+              "versionType": "custom"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "snykBefore": 155,
+  "snykAfter": 140,
+  "recovered": [
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-20154836",
+      "ids": [
+        "SNYK-JAVA-IONETTY-20154836",
+        "CVE-2026-100666",
+        "GHSA-2g6j-r8q9-5hr8"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-handler",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-19233599",
+      "ids": [
+        "SNYK-JAVA-IONETTY-19233599",
+        "CVE-2026-62243",
+        "GHSA-p85m-gvr3-788c"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-socks",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-19233598",
+      "ids": [
+        "SNYK-JAVA-IONETTY-19233598",
+        "CVE-2026-62380",
+        "GHSA-cc6x-ffm5-83wf"
+      ],
+      "previousCategory": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-security",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-21243543",
+      "ids": [
+        "SNYK-JAVA-ORGECLIPSEJETTY-21243543",
+        "CVE-2026-18662",
+        "GHSA-phjh-v7c6-g7mv"
+      ],
+      "previousCategory": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-security",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-21243559",
+      "ids": [
+        "SNYK-JAVA-ORGECLIPSEJETTY-21243559",
+        "CVE-2026-18659",
+        "GHSA-53x7-f9fc-h7qr"
+      ],
+      "previousCategory": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.6",
+      "snykId": "SNYK-JAVA-ORGOBJENESIS-21755439",
+      "ids": [
+        "SNYK-JAVA-ORGOBJENESIS-21755439",
+        "CVE-2026-116486",
+        "GHSA-743r-26gf-97ff"
+      ],
+      "previousCategory": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715439",
+      "ids": [
+        "SNYK-JAVA-ORGOW2ASM-21715439",
+        "CVE-2026-110261"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715442",
+      "ids": [
+        "SNYK-JAVA-ORGOW2ASM-21715442",
+        "CVE-2026-110257"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715445",
+      "ids": [
+        "SNYK-JAVA-ORGOW2ASM-21715445",
+        "CVE-2026-110263"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715448",
+      "ids": [
+        "SNYK-JAVA-ORGOW2ASM-21715448",
+        "CVE-2026-110258"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715452",
+      "ids": [
+        "SNYK-JAVA-ORGOW2ASM-21715452",
+        "CVE-2026-110260"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "snykId": "SNYK-JAVA-ORGXERIALSNAPPY-19778376",
+      "ids": [
+        "SNYK-JAVA-ORGXERIALSNAPPY-19778376",
+        "CVE-2026-90559"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "snykId": "SNYK-JAVA-ORGXERIALSNAPPY-19964087",
+      "ids": [
+        "SNYK-JAVA-ORGXERIALSNAPPY-19964087",
+        "CVE-2026-93452"
+      ],
+      "previousCategory": "indeterminate"
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.4",
+      "snykId": "SNYK-JAVA-ORGOBJENESIS-21755439",
+      "ids": [
+        "SNYK-JAVA-ORGOBJENESIS-21755439",
+        "CVE-2026-116486",
+        "GHSA-743r-26gf-97ff"
+      ],
+      "previousCategory": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.5.1",
+      "snykId": "SNYK-JAVA-ORGOBJENESIS-21755439",
+      "ids": [
+        "SNYK-JAVA-ORGOBJENESIS-21755439",
+        "CVE-2026-116486",
+        "GHSA-743r-26gf-97ff"
+      ],
+      "previousCategory": "confirmed_missing_package_advisory"
+    }
+  ],
+  "hashes": {
+    "dubbo-vv-v4.json": "8eb05f0e3b7e28c3966ac3d0391954559ae97ffde04ea649659e974cf3bfdbd1",
+    "dubbo-vv-matching-repair.json": "0bf0739bceb642de3cabefceadeab5ba67ece73a6fcc978ca8149943be52aa0b",
+    "dubbo-vv-matching-repair-offline.json": "3d1b8fcc1696938cc133b0ea1162620e02974b1f2767bcc25423033ff9011cf6"
+  },
+  "petclinic": {
+    "before": 164,
+    "online": 171,
+    "offline": 171,
+    "offlineSetEqual": true,
+    "removed": [],
+    "added": [
+      "org.ow2.asm:asm|5.0.4|CVE-2026-110257",
+      "org.ow2.asm:asm|5.0.4|CVE-2026-110258",
+      "org.ow2.asm:asm|5.0.4|CVE-2026-110259",
+      "org.ow2.asm:asm|5.0.4|CVE-2026-110260",
+      "org.ow2.asm:asm|5.0.4|CVE-2026-110261",
+      "org.ow2.asm:asm|5.0.4|CVE-2026-110263",
+      "org.objenesis:objenesis|3.1|CVE-2026-116486"
+    ],
+    "snykBefore": 76,
+    "snykAfter": 76,
+    "hashes": {
+      "petclinic-vv-matching-repair.json": "60eadfe944e881578a36ea5726fd8fbd697d900711dd4f9f396ad79c53171bbe",
+      "petclinic-vv-matching-repair-offline.json": "616f8328029af059631fcf25154191015aa3fd5243713261222e3b009b7a4228"
+    }
+  }
+}

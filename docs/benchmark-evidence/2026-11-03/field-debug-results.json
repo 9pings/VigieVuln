@@ -1,0 +1,57 @@
+{
+  "date": "2026-11-03",
+  "scope": "Updated VigieVuln real-project scans against the preserved 2026-11-02 Snyk reports. Same exact coordinate/version and explicitly declared IDs. Online refresh uses live OSV/NVD with the native CVEProject baseline frozen (--cve-offline); remaining incomplete-coverage warnings are retained.",
+  "projects": {
+    "dubbo": {
+      "findings": 794,
+      "added": [
+        {
+          "package": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+          "version": "2.6.7",
+          "ids": [
+            "CVE-2020-28491"
+          ]
+        }
+      ],
+      "removed": [],
+      "snykTotal": 708,
+      "snykMissing": 131,
+      "snykMatched": 577,
+      "vigievulnOnly": 207,
+      "offlineNetwork": "Docker --network none",
+      "offlineSha256": "0448efcef2e357e243640b55ec0ac83ce73f349dee694f3a8729913c8c3da96c",
+      "onlineFindings": 794,
+      "onlineOfflineEqual": true,
+      "onlineSha256": "bd28e3b6741f40c42833a752421bf61ec122b80257bf1b82d1411041cae73075",
+      "previouslyConfirmedMissingRemaining": 53
+    },
+    "petclinic": {
+      "findings": 174,
+      "added": [],
+      "removed": [],
+      "snykTotal": 215,
+      "snykMissing": 73,
+      "snykMatched": 142,
+      "vigievulnOnly": 31,
+      "offlineNetwork": "Docker --network none",
+      "offlineSha256": "7c3b146e020013f72b1c4ba46fc4b3c908eae60aaa5e17bfc82b8c6c2d51a137"
+    }
+  },
+  "tests": {
+    "linux": {
+      "passed": 1865,
+      "skipped": 12,
+      "failed": 0
+    },
+    "windows": {
+      "passed": 1854,
+      "skipped": 23,
+      "failed": 0
+    },
+    "server": {
+      "passed": 488,
+      "failed": 0
+    },
+    "packagedOfflineTransfer": "PASS: fresh containers, zero offline network requests"
+  }
+}

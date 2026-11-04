@@ -21,14 +21,15 @@ const CACHE_DIR = path.join(os.homedir(), ".vigie-vuln");
 // user's file. `fn` is async (checkEolDeps saves the cache at its END), so it MUST be awaited
 // here — restoring before it finishes lets its final save overwrite the user's real cache.
 async function withSeededCache(file, data, fn) {
-	const had = fs.existsSync(file);
-	const backup = had ? fs.readFileSync(file) : null;
+	const repository=require('../lib/cache-repository').createCacheRepository(CACHE_DIR);
+	const key={"npm-registry-cache.json":"npm-registry","packagist-cache.json":"packagist","rubygems-cache.json":"rubygems","go-proxy-cache.json":"go-proxy","pypi-cache.json":"pypi","nuget-cache.json":"nuget"}[path.basename(file)]||path.basename(file);
+	const backup=repository.get('auxiliary',key);
 	try {
-		fs.mkdirSync(path.dirname(file), { recursive: true });
-		fs.writeFileSync(file, JSON.stringify(data));
+		repository.put('auxiliary',key,data);
 		return await fn();
 	} finally {
-		if (had) fs.writeFileSync(file, backup); else { try { fs.unlinkSync(file); } catch { /* ignore */ } }
+		if(backup)repository.put('auxiliary',key,backup.value,{fetchedAt:backup.fetchedAt});
+		else repository.delete('auxiliary',key);
 	}
 }
 const mapOf = (...recs) => { const m = new Map(); for (const r of recs) m.set(r.coordKey, r); return m; };

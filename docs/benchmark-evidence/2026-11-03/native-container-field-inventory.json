@@ -1,0 +1,4617 @@
+{
+  "date": "2026-11-03",
+  "records": [
+    {
+      "id": "CVE-2015-9251",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2015/9xxx/CVE-2015-9251.json",
+      "sha256": "4a5af457e35b454841a47249a67981e3c474e5537b3c333a4a2306476f6e0ae4",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2016-5003",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2016/5xxx/CVE-2016-5003.json",
+      "sha256": "f1b20081c378a56aa51ef225893972f1d5d7a16e4a9c8a50f824faf59ee77911",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2016-6345",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2016/6xxx/CVE-2016-6345.json",
+      "sha256": "c189b1bfb86d3f94c21c0ce75c0be1467899ba1804b38f5069bfba8e8cbfb1ec",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2016-6347",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2016/6xxx/CVE-2016-6347.json",
+      "sha256": "df5291759476a4459264a2c3cb44fc97f64c467196b3de58f56c60aa70fbed9e",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2016-6348",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2016/6xxx/CVE-2016-6348.json",
+      "sha256": "27e86910c06fbcf5acfc858d477e5a84a08b8fd0668699447f1a317b30d59c3b",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2016-7103",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2016/7xxx/CVE-2016-7103.json",
+      "sha256": "ca34d5cb5c4424c6c7c8bc2ae0308e375213b6e7a0e9f7d6b896239385462e5c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-11040",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/11xxx/CVE-2018-11040.json",
+      "sha256": "7e05290114f34b899eeab0647ff137ac88b014c42f2f27fe9a38309f7309a145",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-12023",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/12xxx/CVE-2018-12023.json",
+      "sha256": "49602bc9617622f47ec5c082bb17cb4f7f0f4d9f0fe42665c055816f2f13929f",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-1336",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/1xxx/CVE-2018-1336.json",
+      "sha256": "013f76049bcf6b869db12f8c6091ed623b90b546b687164aac143c2a83eb3550",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-14720",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/14xxx/CVE-2018-14720.json",
+      "sha256": "fe1499f1d1f7fe8d4ea5f5fd25337b89360dc0f73645feb5b65f44cafaebb3c2",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-14721",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/14xxx/CVE-2018-14721.json",
+      "sha256": "3416dabac96a1727ef822389dc402241d095ea2a85e9d66e0b360814fee2f858",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-15756",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/15xxx/CVE-2018-15756.json",
+      "sha256": "a248236d2ed29ab23f91c6bbbbe236dab54bddb10ac19b6e6a862e1309cd40ff",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-19360",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/19xxx/CVE-2018-19360.json",
+      "sha256": "d3b14b56514d60d3756ff5522ac790900ba88e6dfd4a17b0c5da76ded654e291",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2018-19361",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2018/19xxx/CVE-2018-19361.json",
+      "sha256": "71b7a547be420552317b7220a1789ed4e8337b19e5f4700cd66c97b2d6a00c51",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-11358",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/11xxx/CVE-2019-11358.json",
+      "sha256": "9f6cbad1600bc5208cee273ecbc9f32485d7a80848ab8a5d2b8204b23626d25c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-16869",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/16xxx/CVE-2019-16869.json",
+      "sha256": "17cf9ec9e6d9d821e9ea1d21ab35a75a2139fbbd8833af01f9559e992e6da526",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-17570",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/17xxx/CVE-2019-17570.json",
+      "sha256": "5f03040d0d3d5bc27e201d5fa197ea76f0e3dbfea898ccdf9330b2655155c621",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-17573",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/17xxx/CVE-2019-17573.json",
+      "sha256": "2f2c36f7e8224ee3f89690bf4f18e0248088fa3367c762e018d2c866d1388154",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-20444",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/20xxx/CVE-2019-20444.json",
+      "sha256": "f8223440e80905ab7ed60a73f32a3eec56b9a59600a607835246dec16768c9fa",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-20445",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/20xxx/CVE-2019-20445.json",
+      "sha256": "db254627eaf71fda5f050285c557c86cdacac524bb25cc328b37d16c827472d4",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-9212",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/9xxx/CVE-2019-9212.json",
+      "sha256": "cd83b8616aed89f52c71de27f771564c517263ad71b83ba27fabdaeabd65e47d",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "tags",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-9512",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/9xxx/CVE-2019-9512.json",
+      "sha256": "f4d49185ae2470bbb92318fab66339d75115f1486b0af3efc6adf6a6584c73fa",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-9514",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/9xxx/CVE-2019-9514.json",
+      "sha256": "839e0da6e3a0140f9b19902064f88c33eeb83260abdaf6ddee89c7d8ccd8ac4c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-9515",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/9xxx/CVE-2019-9515.json",
+      "sha256": "d69930ef739141bd18bec3942f518b0f7d944fa590119efa9bde4ec6eac30a4c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2019-9518",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2019/9xxx/CVE-2019-9518.json",
+      "sha256": "98c41a23e4b9ae3e3337178d29037025187dce6a0dcbc9fd71ad7052ef90de19",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-10672",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10672.json",
+      "sha256": "8a886f428b9c187596f6e008f59b7d796be0eb4dbf3f3db6f2b7240c4d0b9dba",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "affected",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "cpes",
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-10688",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10688.json",
+      "sha256": "09a46102e1ba667584bb9be74dd23043a89797151470b6bc7adf6cc382caf57c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-10968",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10968.json",
+      "sha256": "f983c1a0d8f9d374a1740b96e2fb718d8735e09f39d7297f3a6b0d911b33a387",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "affected",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "cpes",
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-10969",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/10xxx/CVE-2020-10969.json",
+      "sha256": "6dbe69ff3abcf088be3b3d0cf5feeaee510900c867bf49c53e31c6e60667eadb",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "affected",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "cpes",
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-11022",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11022.json",
+      "sha256": "df2b3bfe2b6e1369768c8f75e189f70a8717abd2f5db6bd6874ad85196a899d1",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-11023",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11023.json",
+      "sha256": "e98a817589d926cc02ba2eb1975962199f20fd90297675d1cd2e1bd1ef438319",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "references",
+          "timeline",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-11111",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11111.json",
+      "sha256": "daed4a32b99601d870e819e27ffdce7459a8712080c64a4631ff26e7004262c4",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "affected",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "cpes",
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-11612",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11612.json",
+      "sha256": "0dac20b235fcb81c31bd998374d48a777c05a3acdde07db700de8f1ca2faaf15",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-11620",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/11xxx/CVE-2020-11620.json",
+      "sha256": "472539a5f7be55ac2eea15101dc295f74e9261f7e4b616034c00a4258e9f011d",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-13934",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/13xxx/CVE-2020-13934.json",
+      "sha256": "c1592a402c36aa92405681349c35956c734b5e9eb223c0507149914d4b937004",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-13943",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/13xxx/CVE-2020-13943.json",
+      "sha256": "9e784743c090e404395bac902a20a3943161f9cc01058706a1c00e1c1b64d41d",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-13954",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/13xxx/CVE-2020-13954.json",
+      "sha256": "c3257352aeee37677eb1482e3385705f5ba0a90205e3eb5f11873e22a57c8130",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "workarounds",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-14061",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14061.json",
+      "sha256": "864a7a4709a5b5622701e6e0f0eed2d23ab538585c3adab3db1d3aeb6bc05c9f",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-14195",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/14xxx/CVE-2020-14195.json",
+      "sha256": "9e4b69eeacb609fe9bf03cdb14d3ff912d517840a23a654ab3b6732d17451987",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-1695",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/1xxx/CVE-2020-1695.json",
+      "sha256": "8d951066d1ab31b86b19de225ee65b50c6e51884fbcea884be088b8346125675",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-17527",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/17xxx/CVE-2020-17527.json",
+      "sha256": "03aa4f955d5ab11efc6eec1860930cf446ac8b2bfc4f897f4bddfb568d0ca558",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-28491",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/28xxx/CVE-2020-28491.json",
+      "sha256": "38eb8e1110dc37b78200dba720260604f918f5850b57156083462407320695dc",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "title",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-5421",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/5xxx/CVE-2020-5421.json",
+      "sha256": "690e4f3320f4254d413327786ca9b5038e3c3234349cfab1a39e6db85772de62",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-7238",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/7xxx/CVE-2020-7238.json",
+      "sha256": "87364d0cb4429bc3282c52a8d12d22a382779014b3d81bb3c202b8fc2163d5a8",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2020-9488",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2020/9xxx/CVE-2020-9488.json",
+      "sha256": "7e175340284a2e80c9e7f4a180bf4e46fbea86078346de9cff124982e9839501",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-21290",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/21xxx/CVE-2021-21290.json",
+      "sha256": "dc6310d648b8436097e0f3ab4289b4d2f1f2cb4d2972bb1f3a1d384150caf52f",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-21295",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/21xxx/CVE-2021-21295.json",
+      "sha256": "e2a1c9285a08e09bcd4b8858c3e7dcb78442c2404157e190d269247c680df3b9",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-22060",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/22xxx/CVE-2021-22060.json",
+      "sha256": "b45e3940644d406f825a784e93c353e51a260345d4b8255e09d34bad584a808d",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-22096",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/22xxx/CVE-2021-22096.json",
+      "sha256": "4ab5a4d2b83288aaed52f310fe75586574fc869584b1c373765e6b20c78dd7a4",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-28165",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/28xxx/CVE-2021-28165.json",
+      "sha256": "4c94ff3d5e3679d44073cf65a1b90fb8bca20bf76430577bf34cf5955d1602e5",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-30640",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/30xxx/CVE-2021-30640.json",
+      "sha256": "d0f80fed6e5b175203972dd3b0e3f127ceec1db003e015c18c6297c658ab4c10",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-33037",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/33xxx/CVE-2021-33037.json",
+      "sha256": "6c4517ce636076333ae72d2cd28d1b84f854f93b262d91670b28a50dfb4c741e",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-41079",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/41xxx/CVE-2021-41079.json",
+      "sha256": "c1a650b5ab7e604b28bf0d2829c609363b027b35153f6a88d8b645ab4eae7809",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-41182",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/41xxx/CVE-2021-41182.json",
+      "sha256": "51e1837497bcb8434f486069eaa0078eaaad192b9ce57a86df713f27541c33ab",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-41183",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/41xxx/CVE-2021-41183.json",
+      "sha256": "63ef8fed825d3d8ea2558a2616c3d600db8dfde89c252c2362c5548f0135fbad",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-41184",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/41xxx/CVE-2021-41184.json",
+      "sha256": "761b362e06ebf1810fabff4ce0b386c927fb900a671dba1663613fe57253fa03",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-43297",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/43xxx/CVE-2021-43297.json",
+      "sha256": "418ecd0c0111e33f1d7be0ade065c32ab66e3dab0722b1a1ec7e7479a3cf3c7d",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2021-43980",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2021/43xxx/CVE-2021-43980.json",
+      "sha256": "247cdc88a87b452c7cfb297564cc46fbc87dd2db6faa9f8c7cf0f0afda3a04b4",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2022-23181",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2022/23xxx/CVE-2022-23181.json",
+      "sha256": "8f00fbadd3813cfb7e67e4cd7c64c6582bd3ee55f3e390b44bf42d86325c8c8f",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2022-24823",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2022/24xxx/CVE-2022-24823.json",
+      "sha256": "66719ef619f9ec1197bf02610148f27de827ac611afc376a0a4c743954b1123a",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_legacyV4Record"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2022-31160",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2022/31xxx/CVE-2022-31160.json",
+      "sha256": "483676b29c6eadff25175c24b41e580a98ea125bad8b3a3511b1f22a6ea957da",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2022-46363",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2022/46xxx/CVE-2022-46363.json",
+      "sha256": "0a7dcd126c37337137e1a94e67e94885c8a169019083836e95074fa4ef7e0643",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-0833",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/0xxx/CVE-2023-0833.json",
+      "sha256": "0c8f7c7ae73923155c23211f9ba2713e87648970c66ecb816ea19bbb0f32ad3b",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "timeline",
+          "title",
+          "x_redhatCweChain"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "cpes",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-24998",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/24xxx/CVE-2023-24998.json",
+      "sha256": "e550717f6c65c50d16d71dcf3c8d0b749133b46c506d1982688908e59fea44a7",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-26049",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/26xxx/CVE-2023-26049.json",
+      "sha256": "28183d9febdeb6d4e62b6546754c9f02f49b291d12b5d06afb25534039b77773",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-28708",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/28xxx/CVE-2023-28708.json",
+      "sha256": "9744701fe624351e9b86583d369962bea99c9f99437586e95206cf9447044e36",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-36478",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/36xxx/CVE-2023-36478.json",
+      "sha256": "0d888d6b5a3de331bbedcdee36a07ac347af0a11d6fdb62647d0ad9441466f77",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-38286",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/38xxx/CVE-2023-38286.json",
+      "sha256": "3a0614d5f0f5545a559acaab57ce58a544de9e66c7287820dc2e8362c49c2597",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-44487",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/44xxx/CVE-2023-44487.json",
+      "sha256": "e04861ddf30ba8aa58ba78556a7a1f7acd8cad1c0f71530fde77d24b34eacd98",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "problemTypes",
+          "providerMetadata",
+          "references"
+        ],
+        [
+          "affected",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "timeline",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "affected",
+          "providerMetadata",
+          "references",
+          "x_adpType"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "cpes",
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2023-6481",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/6xxx/CVE-2023-6481.json",
+      "sha256": "461a62919a9cb68e6d2ea093644417d6e13e6ed0234efbbb8f76c5ae65cb2f1e",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "configurations",
+          "credits",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "solutions",
+          "source",
+          "title",
+          "workarounds",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "modules",
+        "platforms",
+        "product",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2024-12798",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/12xxx/CVE-2024-12798.json",
+      "sha256": "e9771da1787176f071c4e83fb671ac8663d895cba2aae229f40dcc5de900aa1e",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "exploits",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "solutions",
+          "source",
+          "title",
+          "workarounds",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "modules",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2024-38820",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/38xxx/CVE-2024-38820.json",
+      "sha256": "e2a69a37f335a78b88f20c06132d9b4ad94d1704b28d9cc439bc0329c32c597c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2024-52316",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/52xxx/CVE-2024-52316.json",
+      "sha256": "c443c3fa6fecf65573a2b7f8957e0e4cce06fd4e62b54c3deb5bb533e07e88e4",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "affected",
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "cpes",
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2024-56337",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/56xxx/CVE-2024-56337.json",
+      "sha256": "574070e7d522746b486b0b5167b761ce9f328394c7e0fe828336660ede512d7f",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2024-6485",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/6xxx/CVE-2024-6485.json",
+      "sha256": "534b542049dfd087039b3820d03a7957bcbb40d5112df4b0c79dfffb54f3a0fb",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "affected",
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "cpes",
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2024-6763",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/6xxx/CVE-2024-6763.json",
+      "sha256": "99dede84b7d3cf03b019fa0f4f2ba40a586e77c6e002af06e5c2834fe10894f4",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "workarounds",
+          "x_generator"
+        ],
+        [
+          "affected",
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "cpes",
+        "defaultStatus",
+        "modules",
+        "packageName",
+        "product",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2024-9622",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2024/9xxx/CVE-2024-9622.json",
+      "sha256": "3581e24b03092d88ef97afabdd81e12a2c3cdc45f59f0dd13f2f1e0bbb9db5eb",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "timeline",
+          "title",
+          "x_redhatCweChain"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "cpes",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2025-11143",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2025/11xxx/CVE-2025-11143.json",
+      "sha256": "bdeda586e40dfa06aaea606dfc3edc0ad1acefb8d54b4082f0b0e86f8d002a5c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2025-41242",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2025/41xxx/CVE-2025-41242.json",
+      "sha256": "bbb6d9ca4eb424a3dac0bbfb628fee52a0bf50cd0f53190b5320b5c2b3595668",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2025-41249",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2025/41xxx/CVE-2025-41249.json",
+      "sha256": "d460141ae6d211998910f6e848d78c438eb96dd506f3dfbbd69eb1ad4206e12e",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2025-58057",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2025/58xxx/CVE-2025-58057.json",
+      "sha256": "e09664a39ffdc69af23a68bb2b6ebca3e4d99031611fdbf89652cb7ce98a2f51",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-101296",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/101xxx/CVE-2026-101296.json",
+      "sha256": "1ef52ac99d44ebb0a02b5480d9eac00f5be5e8945bc9e6f69509d318a90bc863",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-108104",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/108xxx/CVE-2026-108104.json",
+      "sha256": "23d483006c310e7aabb75ae224882234d881b24f8274d10065eca3938746ae99",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "cpeApplicability",
+          "credits",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [
+        {
+          "provider": {
+            "orgId": "83251b91-4cc7-4094-a5c7-464a1b83ea10",
+            "shortName": "VulnCheck",
+            "dateUpdated": "2026-10-09T14:33:28.705Z"
+          },
+          "cpeApplicability": [
+            {
+              "nodes": [
+                {
+                  "operator": "OR",
+                  "negate": false,
+                  "cpeMatch": [
+                    {
+                      "vulnerable": true,
+                      "criteria": "cpe:2.3:a:xerial:snappy-java:*:*:*:*:*:*:*:*",
+                      "versionStartIncluding": "1.1.7.4",
+                      "versionEndExcluding": "1.1.10.10"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "affectedKeys": [
+        "defaultStatus",
+        "packageURL",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-18401",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/18xxx/CVE-2026-18401.json",
+      "sha256": "f61119406d440d861e8fa0f3cb6d2b156cee5c8ff208c260f70dbcce66433382",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "tags",
+          "timeline",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "programFiles",
+        "programRoutines",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-19203",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/19xxx/CVE-2026-19203.json",
+      "sha256": "5e224c6c7bc9512e6aca994b9a2383265a70708bcf5fdc6fd9bec14940fb1bfa",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-22733",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/22xxx/CVE-2026-22733.json",
+      "sha256": "bfe5b5438fec8c2c8600df3e6d01307ddc1abc13c8a2efd9dadc4d5d1e2e31a9",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-22735",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/22xxx/CVE-2026-22735.json",
+      "sha256": "1f804eac31e507329ff6ac7d978d9a8c9f959d0b3a44d698794032cca78b05dd",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-22740",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/22xxx/CVE-2026-22740.json",
+      "sha256": "f9f2ff2518f960f14e657323f3371e36d0d2faf18785d4131f45f225a95f7123",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-22745",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/22xxx/CVE-2026-22745.json",
+      "sha256": "ef59a91d44ce0442d6d49f8f789b3321fa9853dc69101fac5b0af21e6287498a",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-24733",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/24xxx/CVE-2026-24733.json",
+      "sha256": "a443e4115f6b9698ca4a59403ac156631ffe271972626066d7e40a13e17b7dff",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-29145",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/29xxx/CVE-2026-29145.json",
+      "sha256": "2416382d526a06edf78b54ff1a542ee9799c937b652ac0c5e905342dcf76fe7a",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-34483",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/34xxx/CVE-2026-34483.json",
+      "sha256": "934cd76b31292b3d98448b18465cef1c507b10bbfee990c9ce2ab22c9f1d9824",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-34500",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/34xxx/CVE-2026-34500.json",
+      "sha256": "d519669f43911b19589cf244344acfe82405491ee75b76001a9591eaa91820ce",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-40974",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/40xxx/CVE-2026-40974.json",
+      "sha256": "b09b8403ec35c93f4fecf9e285ca4b51976f7bd0c31e5af2707b6821e176072c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-40975",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/40xxx/CVE-2026-40975.json",
+      "sha256": "c87046c4c8c9ab82f89d11f2e145a0527b3f3c7b5506a611f86c5ec66f7a4861",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "solutions",
+          "timeline",
+          "title",
+          "workarounds",
+          "x_adpType",
+          "x_generator"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "cpes",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-40977",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/40xxx/CVE-2026-40977.json",
+      "sha256": "669fd5d917c57cfab85ca2a63c1f2d5fc69e4bd15087b037990494a8c66fa996",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-41001",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/41xxx/CVE-2026-41001.json",
+      "sha256": "3e31371d12de2eaa4930f6a7bd9a849bbe64479ac8a06ff23138393fdb275689",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-41845",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/41xxx/CVE-2026-41845.json",
+      "sha256": "e8cdef1bccde963b23c7e35861c19713fc89ea62c0c14a2138c36e0a8e829e3c",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-42498",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/42xxx/CVE-2026-42498.json",
+      "sha256": "99593424b03c819fedc2b0a59f640bc6eeaf3d3ab56484fb70e32abcd70132ed",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-42587",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/42xxx/CVE-2026-42587.json",
+      "sha256": "edbd8156134ca50e842d2a3431659fa65104a69c63e9a0d41323b43edb6b9bb8",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "solutions",
+          "timeline",
+          "title",
+          "workarounds",
+          "x_adpType",
+          "x_generator"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "cpes",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-47321",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/47xxx/CVE-2026-47321.json",
+      "sha256": "a2a2eccb041dd531e05f3bf17d6250222afd7f1127637dcf2d014aaee8e4b510",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-47886",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/47xxx/CVE-2026-47886.json",
+      "sha256": "5a1ebb6315b512841ef93384d386d0a9f559957e1cde01fd8a84e7d2266f4172",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-47887",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/47xxx/CVE-2026-47887.json",
+      "sha256": "551c7dbe647c6c9d9d0cfbbc334273c6d3cdaa83d5132703d611452c623ea507",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-53404",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/53xxx/CVE-2026-53404.json",
+      "sha256": "31a6f3d512460ebffd15f9c5cbe1b66355eea7f46bd18de4111d7b725d0bdbc2",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-55276",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/55xxx/CVE-2026-55276.json",
+      "sha256": "46932d33f1d54588b9f08b826b8f6e67c499a96c8890751dc87e8c3dc5665257",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-55955",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/55xxx/CVE-2026-55955.json",
+      "sha256": "ea7dc6edd096f8520fa88e5b5f51d4da91b1424e8b465069b9c7d46a2dcc4d94",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-55956",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/55xxx/CVE-2026-55956.json",
+      "sha256": "d3ae17536c6bd5cf0b7b0396eed14a928317321972378edfe764dc25ea446baa",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-55957",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/55xxx/CVE-2026-55957.json",
+      "sha256": "1f97cc6f97ca7efe72b2da1127abac2d9b641010b49c05e01d3cd49a98bc270d",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59280",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59280.json",
+      "sha256": "d673c4cf2f4a4a817f5ef16459fc35c2ccc707f9ec4e2099847b2c7bb2184346",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59281",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59281.json",
+      "sha256": "64a9e98fb20936e84fb25682c747eb410ed7f948e126e6d7da374ee147e49e1a",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59282",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59282.json",
+      "sha256": "0975070d0508b91fd86c7d9def4da5ff09667d4a411141135dfecac5b916111a",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59283",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59283.json",
+      "sha256": "31afba9b6de508cc51e577024037fa93bdbdd56f623dd3bee51e5cfdb8ec98d5",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59295",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59295.json",
+      "sha256": "2be2ac2719594de41b5c5011203192f41f7fd94e9eb11dde45c2baecdf48a0dd",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59296",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59296.json",
+      "sha256": "1a4bbf193f7d14ce824e987dd73a5b8d0bbf88fa7230277046957c31cf706643",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59313",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59313.json",
+      "sha256": "9081344e4d576f7e5cac98526e25f132f89519ba792d23240a179d21ad9d2512",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-59314",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/59xxx/CVE-2026-59314.json",
+      "sha256": "44138d1a74691165515939b13a29b0710c677ba15a5695041fe3d003cf8ba7fa",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "impacts",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title"
+        ],
+        [
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-65927",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/65xxx/CVE-2026-65927.json",
+      "sha256": "904645595a36efe4febc3b3fd92dc7ca96d1d0d53a30a454f8e4f66185fa06b7",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-68569",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/68xxx/CVE-2026-68569.json",
+      "sha256": "d3683c2570e9d49da4ee28c521f8af678a16c513715887da051eff168ba7f80e",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-68763",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/68xxx/CVE-2026-68763.json",
+      "sha256": "bff5dab59c79e9dcefac630fa4bbce4cb67c50fc0828fdaadff3efbd6c955bc6",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-73180",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/73xxx/CVE-2026-73180.json",
+      "sha256": "db5a13a302b454fea646229b90ed7f1af7335ecddc872d4e5abcfb9b712d4126",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-73581",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/73xxx/CVE-2026-73581.json",
+      "sha256": "7e786c7000c59f8c4c4d48c48dd1506b00194c70fd6c463de010e53f1e37a797",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-75973",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/75xxx/CVE-2026-75973.json",
+      "sha256": "355391da41d4f3637697a7ce6f0663903ca1875bf22e7b6deb0c1e6ab8751068",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-76183",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/76xxx/CVE-2026-76183.json",
+      "sha256": "716c6564d49692b712423c36f685b5737223048fc4e5208915caf82335186891",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-77756",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/77xxx/CVE-2026-77756.json",
+      "sha256": "ae747d7914c276b6f47827fb88ee75af3b43c45e1183ac68a1174a8307f99444",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-77762",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/77xxx/CVE-2026-77762.json",
+      "sha256": "7e8670bf0662c60934b6f7161086bb1de772d9984e3b8504a8f0e3714690caa2",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-78383",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/78xxx/CVE-2026-78383.json",
+      "sha256": "0965c844a3d007bc5adb33aef89db5f911f02e6ca8056ef5822e795790668fce",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-79677",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/79xxx/CVE-2026-79677.json",
+      "sha256": "de3d1458599abd09ee2b2b9f9d9f3b04ca4bce271a5b9fe58973ea3f1947056e",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-83557",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/83xxx/CVE-2026-83557.json",
+      "sha256": "0697db6bf4d9196e29293a11ef06fc467967318d96d9bd58cc70fda9404a7989",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "solutions",
+          "source",
+          "timeline",
+          "title",
+          "workarounds"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "programFiles",
+        "programRoutines",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-87022",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/87xxx/CVE-2026-87022.json",
+      "sha256": "555be69a2e1ae6ed13de290ce670a11765ed9e17502d55d13bb1af9b95d8d22f",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ],
+        [
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-89044",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/89xxx/CVE-2026-89044.json",
+      "sha256": "8793a2dcb781b5e15895ec0c07830a2795dffe4417025b438210982ad53b0a66",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "cpeApplicability",
+          "credits",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [
+        {
+          "provider": {
+            "orgId": "83251b91-4cc7-4094-a5c7-464a1b83ea10",
+            "shortName": "VulnCheck",
+            "dateUpdated": "2026-09-10T17:39:34.162Z"
+          },
+          "cpeApplicability": [
+            {
+              "nodes": [
+                {
+                  "operator": "OR",
+                  "negate": false,
+                  "cpeMatch": [
+                    {
+                      "vulnerable": true,
+                      "criteria": "cpe:2.3:a:netty:netty:*:*:*:*:*:*:*:*",
+                      "versionStartIncluding": "4.1.133.final",
+                      "versionEndExcluding": "4.1.138.final"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "nodes": [
+                {
+                  "operator": "OR",
+                  "negate": false,
+                  "cpeMatch": [
+                    {
+                      "vulnerable": true,
+                      "criteria": "cpe:2.3:a:netty:netty:*:*:*:*:*:*:*:*",
+                      "versionStartIncluding": "4.2.13.final",
+                      "versionEndExcluding": "4.2.18.final"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "affectedKeys": [
+        "collectionURL",
+        "defaultStatus",
+        "packageURL",
+        "product",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-91776",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/91xxx/CVE-2026-91776.json",
+      "sha256": "b0872a3aa111bb3e47d16940a35cfd6e8f6e86a11a8235c16bb1b0ec4e8a1ec2",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "credits",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "solutions",
+          "title",
+          "workarounds"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "references",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "programRoutines",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-93491",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/93xxx/CVE-2026-93491.json",
+      "sha256": "f2924a54b49f06bcb18f4917c78152e8a6be37ab8f0e51b6c8a6e6734a0aed13",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "datePublic",
+          "descriptions",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "timeline",
+          "title",
+          "workarounds",
+          "x_generator",
+          "x_redhatCweChain"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "collectionURL",
+        "cpes",
+        "defaultStatus",
+        "packageName",
+        "product",
+        "vendor",
+        "versions"
+      ]
+    },
+    {
+      "id": "CVE-2026-93879",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/93xxx/CVE-2026-93879.json",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "id": "CVE-2026-9828",
+      "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/9xxx/CVE-2026-9828.json",
+      "sha256": "2d2dd0ed05861a1c41ce4844674c189ced7658e72a83f8fe215ea8b365758700",
+      "state": "PUBLISHED",
+      "fields": [
+        [
+          "affected",
+          "configurations",
+          "credits",
+          "datePublic",
+          "descriptions",
+          "exploits",
+          "impacts",
+          "metrics",
+          "problemTypes",
+          "providerMetadata",
+          "references",
+          "solutions",
+          "source",
+          "title",
+          "x_generator"
+        ],
+        [
+          "metrics",
+          "providerMetadata",
+          "title"
+        ]
+      ],
+      "extraApplicability": [],
+      "affectedKeys": [
+        "defaultStatus",
+        "modules",
+        "packageName",
+        "product",
+        "programFiles",
+        "repo",
+        "vendor",
+        "versions"
+      ]
+    }
+  ],
+  "containerFields": {
+    "affected": 144,
+    "datePublic": 30,
+    "descriptions": 135,
+    "problemTypes": 154,
+    "providerMetadata": 339,
+    "references": 240,
+    "x_legacyV4Record": 48,
+    "title": 294,
+    "source": 88,
+    "metrics": 191,
+    "tags": 2,
+    "credits": 41,
+    "x_generator": 67,
+    "timeline": 9,
+    "workarounds": 9,
+    "x_redhatCweChain": 3,
+    "x_adpType": 3,
+    "configurations": 2,
+    "impacts": 20,
+    "solutions": 7,
+    "exploits": 2,
+    "cpeApplicability": 2
+  },
+  "affectedFields": {
+    "product": 133,
+    "vendor": 133,
+    "versions": 133,
+    "cpes": 13,
+    "defaultStatus": 72,
+    "collectionURL": 11,
+    "packageName": 13,
+    "modules": 4,
+    "platforms": 1,
+    "repo": 8,
+    "packageURL": 2,
+    "programFiles": 3,
+    "programRoutines": 3
+  }
+}

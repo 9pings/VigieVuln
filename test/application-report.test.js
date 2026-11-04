@@ -15,6 +15,18 @@ const match = file => ({ findingId: `finding:${file}`, applicationIds: ["wordpre
     version: "1.0.0", scope: "prod", manifestPaths: [`/audit/${file}`] },
   cve: { id: "CVE-2099-0001", severity: "HIGH", score: 7.5, description: "fixture" } });
 
+test('CVE heading distinguishes direct test dependencies from production findings', () => {
+  const direct=match('direct'), indirect=match('indirect');
+  direct.dep.scope='test'; direct.dep.isDev=true;
+  indirect.dep.scope='transitive'; indirect.dep.isDev=true;
+  for(const render of [generateHtmlReport,generateWordReport]) {
+    const report=render({cveMatches:[],devCveMatches:[direct,indirect],projectInfo});
+    assert.match(report,/0 direct prod, 0 indirect prod, 1 direct dev\/test, 1 indirect dev\/test/);
+  }
+  const fr=generateHtmlReport({cveMatches:[],devCveMatches:[direct,indirect],projectInfo,locale:'fr'});
+  assert.match(fr,/0 en direct prod, 0 en indirect prod, 1 en direct dev\/test, 1 en indirect dev\/test/);
+});
+
 test("HTML and Word group private plugin dependency CVEs without losing physical copies", () => {
   const payload = { cveMatches: [match("site/a/composer.lock"), match("site/b/composer.lock")],
     applications: apps, applicationInventory: inventory, projectInfo };
@@ -359,7 +371,7 @@ test("report numbers only populated subsections and keeps the contents links val
 			assert.match(report, new RegExp(`id="${id}"`), `missing chapter ${id}`);
 	}
 	const empty = generateHtmlReport({ applications: apps, applicationInventory: inventory, projectInfo });
-	assert.match(empty, /1\. CVE \(0 direct, 0 indirect, 0 dev\)/);
+	assert.match(empty, /1\. CVE \(0 direct prod, 0 indirect prod, 0 direct dev\/test, 0 indirect dev\/test\)/);
 	assert.match(empty, /1\.1 CMS & Frameworks \(0\)/, "an inventoried instance keeps its chapter even with zero findings");
 	assert.match(empty, /Instance synthesis \(1\)/);
 	assert.match(empty, /Application inventory & coverage/);

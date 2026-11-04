@@ -1,411 +1,123 @@
-# Scanner benchmark: full capability, and with no network
+# Scanner comparison — 3 November 2026
 
-Five scanners on one public project, measured two ways. Everything here is reproducible — the
-target is pinned to a commit, the commands are below, and every number can be recomputed from
-the tools' own JSON output. Run it and tell me if it doesn't hold.
+These figures are a dated snapshot and continue to evolve. On the Dubbo and Petclinic inputs below, VigieVuln includes all observations reported by OSV-Scanner, Trivy and Grype in the compared runs; this is not a general guarantee. Published VigieVuln advisories add AI-assisted reconciliation and human review, whose coverage is evolving and is not represented as a fixed benchmark gain.
 
-Spoiler for the impatient, so nothing here reads as a sales pitch: **at full capability no tool
-finds everything** — vigievuln leads at 87% of the union, and 118 pairs were reported by Snyk
-and not by it. Those 118 were published here as a recall gap; they are not one. Every pair has
-since been adjudicated against the public record and **none is a recall bug** —
-[the measurement](#what-vigievuln-misses-and-why). Its differentiator remains the second table:
-what survives when the network is gone.
+**Latest targeted correction:** Dubbo now returns **794 findings online and 794 offline**, with identical sets and no removals. The recovered observation is `jackson-dataformat-cbor@2.6.7 / CVE-2020-28491`. Its original CVE V4 operators and range sentence agree, but conversion to CVE V5 split the intervals into `unspecified` bounds. The normalizer now recovers only this precisely corroborated format. The [runtime proof](benchmark-evidence/2026-11-03/cbor-runtime-proof.json) reproduces the eager-allocation failure in the actual 2.6.7 JAR with a 32 MiB heap, while 2.11.4 rejects the malformed input without that allocation. Both records remain unchanged in storage; there are no per-CVE overrides or inferred automatic fixes.
 
-> **Re-measured — 2026-10-02, after the Maven mediation fixes** (dependencyManagement-only
-> pins no longer scanned, `<exclusions>` and managed scopes applied, import-BOM versions pinning
-> transitives — see CHANGELOG). Same pinned commit, same unit. OSV-Scanner online now reports
-> **705** pairs (its database grew since the table below): fad recovers **705/705 online and
-> 705/705 under `unshare -rn --offline`**, before and after the fixes. The fixes remove **71**
-> fad pairs and add none; **none of the 71 is reported by OSV-Scanner**, and each was checked
-> against `mvn dependency:tree` on the declaring modules: `jackson-databind`/`jackson-core`
-> **2.4.3** (55 pairs — no module resolves 2.4.3), `io.netty:netty:3.10.6.Final` (13 — excluded
-> from zookeeper), `grpc-netty-shaded:1.22.1` (managed only; its declaration is commented out),
-> `commons-httpclient:3.0.1` and `junit:4.11` (on no classpath of the modules they were filed
-> under). fad goes from 883 to 812 pairs: those 71 were false positives.
->
-> **Second pass, same day — Maven resolved module by module** (`lib/maven-reactor.js`, plus
-> Maven's own version ordering and deterministic nearest-wins). OSV-Scanner recall stays
-> **705/705 online and air-gapped**. fad goes from 812 to **834** pairs: **−9** that were false
-> positives — `jetty-server`/`jetty-http` `9.4.11.v20180605` for CVE-2017-7656/7657/7658 and
-> CVE-2018-12536, all fixed IN 9.4.11 (the old ordering ranked `.v20180605` below 9.4.11), and a
-> CVE filed on the `spring-framework-bom` POM — and **+31** real ones the global pass masked:
-> netty **4.1.35.Final** (`netty-codec`/`-handler`/`-codec-http`/`-common`) in dubbo-rpc-grpc,
-> `netty-all` **4.1.25.Final** in dubbo-rpc-rest, `jetty-util` 9.4.11.v20180605 — every one of
-> them present at that version and scope in `mvn dependency:tree` of the module it is filed
-> under. Air-gapped wall clock, warm cache: about 1 s.
+| Project | Current VV findings | Snyk observations | Matched Snyk | Snyk-only | VV-only |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Dubbo | 794 online / offline | 708 | 577 | 131 | 207 |
+| Petclinic | 174 offline | 215 | 142 | 73 | 31 |
 
-## Two different questions
+These new VV scans are compared with the preserved 2 November scanner reports, not newly queried comparator databases. [Dubbo](benchmark-evidence/2026-11-03/dubbo-classic-comparison.json) and [Petclinic](benchmark-evidence/2026-11-03/petclinic-classic-comparison.json) still have zero omissions against OSV-Scanner, Trivy and Grype on those inputs. [Exact results and report hashes](benchmark-evidence/2026-11-03/field-debug-results.json) retain the source profile and limitations: Dubbo refreshed OSV/NVD online while keeping the native CVEProject baseline frozen; Petclinic was rerun offline. Of Dubbo's previously confirmed omissions, **53 remain** after the CBOR correction. This is one fixed omission, not a claim that all remaining discrepancies are resolved or that every VV-only finding has been proven free of false positives.
 
-A scanner comparison usually conflates two things. This one separates them, because the
-answers are not the same.
+The broader field audit inspected [133 native CVE records](benchmark-evidence/2026-11-03/native-container-field-inventory.json), including retained `x_legacyV4Record`, additional `cpeApplicability` and configuration conditions. The [source-artifact inspection](benchmark-evidence/2026-11-03/native-field-source-audit.json) covers all 26 missing observations across the 10 advisories carrying repository/module/file/routine clues and 26 exact-version source JARs including controls. Six observations concern a different module already reported; fourteen have no supported range extension; four lack sufficient version/deployment evidence; two Codehaus Jackson observations have analogous legacy code that requires separate applicability evidence. File or method presence alone is never promoted to a vulnerability finding.
 
-1. **At full capability, what does each tool find?** Every scanner online, in its best
-   configuration, with a populated `~/.m2`. This is the fair product comparison.
-2. **With no network, what survives?** The narrower question vigievuln is built around.
+The sections below retain the earlier 2 November measurements and adjudications as historical evidence.
 
-Target for both: **Apache Dubbo 2.7.8**, a 105-module Maven reactor
-(`0be2a1bbbf9168490acecaf1eed1bd16cb8db402`).
+**Latest comparison against the classic scanners:** the current CLI's new online scans return **793 findings on Dubbo** and **174 on Spring Petclinic**. Subsequent runs in Docker with `--network none` return exactly the same package/version/ID sets. All three classic scanners were rerun on the same pinned checkouts: OSV-Scanner queried the live API; Trivy and Grype reused the database snapshots identified below. The comparison gives **zero missing observations against each scanner on both projects**. Their new reports and SHA-256 hashes are preserved in the [Dubbo comparison](benchmark-evidence/2026-11-02/dubbo-classic-bindings.json) and [Petclinic comparison](benchmark-evidence/2026-11-02/petclinic-classic-bindings.json).
 
-Unit: distinct `(coordinate@version | vulnerability)` pairs, Maven only, GHSA and `SNYK-*` ids
-mapped to their CVE alias so every tool sits on one identifier space. Dubbo's **own**
-`org.apache.dubbo` artifacts are excluded on every side: OSV-Scanner filters reactor modules as
-"local/unscannable", so counting them would flatter whoever does scan them.
+| Project | Current VigieVuln online / warm offline | OSV-Scanner observations / missing | Trivy observations / missing | Grype observations / missing |
+| --- | ---: | ---: | ---: | ---: |
+| Dubbo | 793 / 793, identical sets | 727 / 0 | 605 / 0 | 47 / 0 |
+| Spring Petclinic | 174 / 174, identical sets | 161 / 0 | 155 / 0 | 6 / 0 |
 
-## 1. Full capability
+The Trivy rerun used the existing Maven Central mirror and the host CA trust bundle. Initial runs with failed HTTPS trust produced incomplete inventories and were excluded. With dependency resolution restored, Petclinic reports 155 Trivy observations rather than the earlier six; all 155 are in VigieVuln. The [rerun settings](benchmark-evidence/2026-11-02/classic-rerun-settings.json) preserve the commands and source snapshots. Trivy documents its Maven metadata resolution and mirror support in its [Java coverage guide](https://trivy.dev/docs/v0.76/guide/coverage/language/java/).
 
-Union of everything any tool found: **908** pairs.
+Comparisons require case-sensitive Maven coordinates, the exact version and an explicitly declared common advisory ID. No observations lacked the necessary identity fields. Trivy's 605 observations use directly declared identifiers; the earlier table's 604 used transitive alias grouping across all scanner reports. Inventories still differ, so these numbers are not a claim of exhaustive dependency or vulnerability coverage. The scans retain their CVEProject/GCVE coverage warnings; Dubbo also warns about missing POMs and the dependency depth limit.
 
-| Scanner, best configuration | Found | Unique to it | % of union | Not reported¹ |
-| --- | --- | --- | --- | --- |
-| **vigievuln 2.4.6** | **790** | 125 | **87.0%** | 118 → **0 real**¹ |
-| OSV-Scanner 2.4.0 (online) | 657 | 0 | 72.4% | 251 |
-| Snyk 1.1302.1 (`--all-projects`, mvn build) | 603 | **117** | 66.4% | 305 |
-| Trivy 0.72.0 (populated `~/.m2`) | 546 | 0 | 60.1% | 362 |
-| Grype 0.116.0 + Syft 1.49.0 | 45 | 0 | 5.0% | 863 |
+**The 54 outstanding Dubbo observations are Snyk-specific in these inputs:** none is reported by the three classic scanners for that same package/version. Their earlier classification as confirmed omissions means that manual primary-source/code review supports applicability. It does **not** establish 54 bugs in the CLI's processing of available structured data. Snyk may have additional curated package bindings or corrected ranges. They remain a documented coverage difference; no advisory database overrides were introduced. Petclinic now has 73 unmatched Snyk observations (previously 76): the three newly reported Logback findings account for that change.
 
-¹ **"Not reported" is union arithmetic, not a verified recall gap.** It counts pairs some other
-tool produced and this one did not — which is only a miss if the public record actually binds that
-vulnerability to that coordinate and version. For vigievuln that was checked, pair by pair:
-**0 of them are recall bugs**, and two thirds are Snyk contradicting the public record
-([detail](#what-vigievuln-misses-and-why)). The other rows have *not* been adjudicated, so read
-their column the same way — as "did not report", not "missed".
+The latest engine fix also removes dependence on another version being present in the same scan. Full stored OSV documents now supply exact package/CVE lookup candidates independently of their affected-version verdict. NVD enriches those candidates using its usual source/cache paths; a finding requires either an unambiguous artifact-level CPE and a satisfied range, or a verified native package/module identity and applicable NVD `affected` ranges. Candidate bindings themselves never enter the report. Withdrawn or ambiguous OSV bindings are excluded; missing NVD records produce an incomplete-coverage warning. Regression tests cover an isolated Jackson 2.5.2 project through the actual CLI online and offline, source disablement, withdrawal, missing NVD data, and exclusion of fixed versions. No source documents are edited.
 
-Read the other rows fairly too: Trivy and Grype are **container and SBOM scanners**; a raw Maven
-source checkout is not the job they are built for.
+Validation after the changes: Linux CLI **1,853 passed / 12 skipped**, native Windows CLI **1,842 passed / 23 skipped** (including DPAPI and ACL checks), server-main **486 passed**, public server **100 passed**, all with zero failures. The packaged export/import/offline-transfer cycle passes with zero offline network attempts. The [result summary](benchmark-evidence/2026-11-02/package-bindings-results.json) records exact result-set deltas and validation log hashes.
 
-Snyk and Trivy at full capability both depend
-on a real Maven build having happened — Snyk invokes `mvn`, and Trivy needs either network access
-or a `~/.m2` that a previous build populated. vigievuln and OSV-Scanner read the tree without
-building. That is a different starting assumption, not a better one, and it is the reason the
-second table exists.
+**Latest audit of the 62 confirmed remaining Dubbo gaps:** eight are now recovered (three Logback module/platform matches and five Jackson version matches supported by NVD). The run with OSV, CVEProject and NVD enabled returns **793 package/version/ID results online and offline**, and the unmatched Snyk set falls from **140 to 132**. The remaining partition is 54 confirmed missing observations, 24 alerts contradicted by primary evidence, three proven equivalent identifiers and 51 indeterminate cases. The [run summary](benchmark-evidence/2026-11-02/remaining-62-results.json) preserves hashes, exact set deltas and validation results. The [62-case diagnostic](benchmark-evidence/2026-11-02/remaining-62-diagnosis.json) records the actual cached native CVEProject, OSV and NVD data and each blocking path. Among the 54 unresolved cases, 17 have OSV ranges excluding the tested version, 17 have OSV records naming another artifact, 17 lack a usable package binding in the native/OSV fields, and three Snyk observations have no public identifier. These are diagnosed blockers, not a declaration that the remaining gaps are acceptable or all outside the scanner.
 
-Two measured details worth stating rather than assuming. **Trivy's result is identical online and
-with a fully populated `~/.m2`** (559 raw pairs either way) — the local repository fully
-substitutes for the network. **Grype+Syft does not move at all**: 58 raw pairs with defaults, 58
-with `java.use-network=true` and `java.resolve-transitive-dependencies=true`, because that option
-is scoped to archives, not to `pom.xml` source scanning.
+The source profiles matter: after the named-module correction, the OSV/CVEProject profile with NVD disabled returns 779 (previously 776). Enabling NVD adds 14 Jackson package/version findings, including the five confirmed gaps above. The default NVD addition requires an existing OSV binding of the same CVE to the exact package, a unique curated CPE mapping naming that artifact, and a satisfied version range without platform constraints or AND/negated conditions. Generic framework CPEs remain excluded. The subsequent package-binding correction described above also discovers candidates from full stored OSV records, so it no longer requires another matching version in the same scan. The CVE projection schema is now 5, so old projections are rebuilt online. The earlier [matching correction](benchmark-evidence/2026-11-02/matching-repair.json) remains documented separately. Petclinic has now been rerun online and warm offline as documented above; the older measurements below retain their original source profiles.
 
-## 2. No network at all
+These measurements update the earlier comparison. Unless explicitly noted, they were taken before the current CVEProject projection changes and must not be read as final results for the current working tree. The [historical benchmark and its individual adjudications](BENCHMARK-HISTORICAL.md) remain available, with their original qualifications. They use the **unpublished 1.2.0 development tree**, not a released CLI. They are observations for the specific inputs, databases and configurations below, not a guarantee of complete vulnerability coverage or a ranking of scanners. A finding is an affected package **and version**, grouped by advisory identifiers and explicitly declared aliases. Equal counts alone do not establish equal sets; the equalities in the OSV table were checked as sets.
 
-Same tree, every scanner under `unshare -rn`, in a namespace with **no network interface** —
-not merely an offline flag. Reference: OSV-Scanner's own **online** output, 657 pairs.
+OSV-Scanner 2.3.8 used the live OSV API. Trivy 0.76.1 used a database updated 2026-11-02 07:17 UTC; Grype 0.121.0 used its database built 2026-11-02 06:26 UTC. Findings and databases change over time. The official seed used for cold tests contained 288,568 OSV records for Maven, npm, PyPI, Packagist, NuGet, Go and RubyGems; its OSV record-stream SHA-256 was `b71ced5e5f537181703181a28bab348d9dbd3ceb8eb16c3014db97f4d8d133ad` and the seed archive SHA-256 was `7dcaca5f022ef3e2b9d79cd921570e33152959b9aea9b2cc7a1cab174282878f`.
 
-| Scanner, no network | Recovers | Wall clock |
+**NVD native-field audit (subsequent correction):** all 205 remaining Snyk observations (132 Dubbo, 73 Petclinic) were checked against fresh NVD API records: 134 distinct CVE IDs, 133 returned, and CVE-2026-93879 absent. The 28 observations without a CVE ID cannot be looked up in NVD by that identifier. NVD `affected[].affectedData[]` was previously dropped; it is now retained through CLI caches, server storage, proxy replies and bundles and evaluated by the native Maven normalizer. Package names, modules, platforms, provider boundaries, default status, version ordering, bounds and status changes are preserved. Rejected records and conflicting or unresolved applicability cannot create findings. This fixes a real input-processing defect, but the extra structured data alone proves **zero additional matches among those 205 remaining observations**; unresolved identities are not thereby classified as false positives. The [individual audit](benchmark-evidence/2026-11-02/nvd-affected-audit.json) preserves native entries and record hashes. CVE-2026-13006 is a separate positive regression control: already reported through CVEProject, it is now also evaluable from NVD alone. Server jobs reproject unchanged feeds once; no database table migration is needed. Existing deployed bundles need rebuilding to include the retained fields.
+
+## OSV and VigieVuln
+
+These comparisons use the same project scope and OSV as the common advisory source. The lockfile comparisons used OSV-only profiles. The Dubbo run also enabled cached CVEProject data; its 734 retained groups came from OSV. Other enrichment sources were disabled, so these comparisons do not measure the complete default configuration. Offline tests ran in Docker with `--network none`, using isolated homes and caches. Warm means the project was previously scanned online; cold means a fresh home initialized from the seed only.
+
+| Ecosystem and input | Project and commit | OSV online | VigieVuln online | VigieVuln offline | Observed difference |
+| --- | --- | ---: | ---: | ---: | --- |
+| Maven reactor | [Apache Dubbo](https://github.com/apache/dubbo) `0be2a1bbbf9168490acecaf1eed1bd16cb8db402` | 727 | 734 | 734 | Seven VigieVuln-only groups independently checked below |
+| npm, package-lock | [OWASP NodeGoat](https://github.com/OWASP/NodeGoat) `c5cb68a7084e4ae7dcc60e6a98768720a81841e8` | 320 | 320 | 320 | Same set |
+| PyPI, root poetry.lock | [Poetry](https://github.com/python-poetry/poetry) `46bf7fd3d1797b75ad9b07adc280039d93414e07` | 90 | 90 | 90 | Same set |
+| RubyGems, Gemfile.lock | [Mastodon](https://github.com/mastodon/mastodon) `fbcbf7898f000d9d1a21d52e8a8d3ed4602aa7db` | 158 | 158 | 158 | Same set; cold seed also 158 |
+| Packagist, composer.lock | [phpMyAdmin](https://github.com/phpmyadmin/phpmyadmin) `ed65cd2d8b26073d30311163f8e25e722a9aef0f` | 36 | 36 | 36 | Same set |
+| Yarn v1, yarn.lock | Mastodon, same commit | 273 | — | 273 | Same set; cold seed |
+| pnpm v5.4, pnpm-lock.yaml | [Vite](https://github.com/vitejs/vite) `566d4c7bb51cf56550a5374ee46e1e1cbea1cf1f` | 235 | — | 235 | Same set; cold seed |
+
+The Yarn and pnpm VigieVuln runs used the seed offline and isolated lockfile and manifest scopes, not the whole monorepo; an online VigieVuln run was not measured for these inputs. The other offline column values are warm unless otherwise noted. Trivy did not recognise this pnpm lockfile: this is an unsupported input, not a result of zero vulnerabilities. Poetry excludes `tests/**` fixtures from this comparison; a recursive project scan includes those separately.
+
+On [Prometheus](https://github.com/prometheus/prometheus) `37468d88dce85ac507f3fb7864c7d1c078e3e27d`, VigieVuln produced the same 127 Go groups online and warm offline, including three from a nested `go.sum`. OSV-Scanner also reported 143 standard-library groups inferred from the `go 1.14` language directive; that directive does not establish the toolchain version actually used, so these are excluded from dependency parity claims. The static inventory included 187 selected modules; `go list -m all` resolved 577, including those 187 at the same versions. A graph entry alone does not prove its code is imported, but the difference is a material inventory limitation. The CLI now warns when it falls back to a pre-1.17, unpruned Go module graph.
+
+## Second Maven project: Spring Petclinic
+
+[Spring Petclinic](https://github.com/spring-projects/spring-petclinic), commit `e7c879ed3abe10e446ff103887ad665ca6acf04e` (2.4.5), was scanned online against OSV-Scanner 2.3.8, Snyk 1.1302.1, Trivy 0.76.1 and Grype 0.121.0 using isolated caches. The VigieVuln profile enabled OSV, CVEProject and GCVE; NVD, EPSS, KEV, EUVD, CERT-FR, EOL and Retire.js were disabled. The comparison therefore does not characterize every default source.
+
+The online VigieVuln scan was repeated after rebuilding CVEProject projection schema 4 from release `cve_2026-11-02_1400Z`. Its 164 package/version/advisory results and its 76 unmatched Snyk groups are exactly the same sets as the earlier run. A subsequent warm scan with Docker networking disabled returned the same 164 package/version/ID set. This verifies this particular comparison after the projection changes, not the other projects in this document.
+
+An independent Maven 3.9.16 `dependency:tree` resolved 112 distinct external coordinate/version pairs, exactly the same 112 in the corrected VigieVuln inventory. The CLI reports 113 total inventory entries including a parent. Before the fix, it omitted `org.apache.logging.log4j:log4j-api:2.13.3`: a `test-jar` management entry incorrectly changed the scope of the ordinary JAR. Maven confirms that dependency, and the corrected CLI reports OSV's `CVE-2026-49844`.
+
+| Measurement | Result |
+| --- | ---: |
+| VigieVuln online | 164 findings |
+| VigieVuln warm offline, Docker `--network none` | 164; same package/version/ID set |
+| VigieVuln seed-only cold offline, Docker `--network none` | 6; all included in the online set |
+| OSV-Scanner online | 161 raw advisory records; none without an explicit-identifier match in VigieVuln |
+| Snyk online | 215 distinct package/version/Snyk-ID groups; 76 without an explicit-identifier match in VigieVuln |
+| Trivy / Grype | 6 / 6 raw records; their inventories differ and the figures are not normalized recall |
+
+The cold offline scan had 17 inventory entries, warned about four unavailable POMs and 13 unresolved versions, and cannot replace a warmed dependency cache. The seed in this run predates the latest projection schema; this is an actual test of that available seed, not a claim about a regenerated server bundle.
+
+Among the 76 Snyk differences, 15 missing package/version findings are supported by the Apache CNA and the relevant exact-version source JAR. Another ten WebJar observations match exact upstream JavaScript bytes and OSV advisories in this profile, which disabled Retire.js; the behavior of every default mode has not been established. Four versions are excluded by the primary CNA, one reported artifact does not contain the named component, and two are already reported under a vendor-confirmed equivalent ID. The other 44 are **not yet adjudicated as bugs**: [per-record evidence](benchmark-evidence/2026-11-02/petclinic-snyk-primary-evidence.json) contains CNA lookup statuses, source-JAR hashes and patch-file overlaps. Those overlaps are leads, not a proof of applicability, and the independent verdicts remain open. Trivy warned that POM dependency versions could not all be determined. The online and warm offline VigieVuln reports both warned of partial CVEProject/GCVE coverage; the offline report also included a registry-presence warning. The [Maven tree](benchmark-evidence/2026-11-02/petclinic-maven-tree.log) and scripts preserve the inventory check.
+
+## Gradle and NuGet against four scanners
+
+| Input | VigieVuln | OSV-Scanner | Trivy | Grype | Set comparison |
+| --- | ---: | ---: | ---: | ---: | --- |
+| [DataDog vulnerable-java-application](https://github.com/DataDog/vulnerable-java-application) `e5c6c7a5b7edaaddf5c2856d491023edffd59877`, Gradle lockfile | 85 | 85 | 85 | 85 | Same 85 groups |
+| [eShopOnWeb](https://github.com/dotnet-architecture/eShopOnWeb) `9a21db6979da339c109d717fe3809bbaa8555400`, generated NuGet lockfile | 21 | 21 | 21 | 21 | Same 21 groups |
+
+The Gradle project is deliberately vulnerable. Its cold seed scan warned that CVEProject/GCVE coverage was incomplete. The online scan also returned 85, but its CVEProject refresh failed because the container lacked `unzip`; it does not validate that refresh. The NuGet lock was generated for this benchmark using .NET SDK 6.0.400 and `dotnet restore --use-lock-file` on `src/Web/Web.csproj`, targeting the unsupported `netcoreapp2.2`; all tools consumed that same resolved inventory. The cold scan returned 21 but warned about 33 OSV NuGet ranges it could not evaluate locally. The online scan returned 21 without that warning; the subsequent offline scan reported one unevaluable range. These warnings preclude a claim of complete coverage.
+
+## Dubbo and Maven inventory
+
+After correcting overly confident CVEProject product-name matching, VigieVuln reported 734 distinct groups online and warm offline; OSV-Scanner reported 727, all included in VigieVuln's result. Trivy reported 604 and Grype 47, all included in OSV's result for this scope. Dubbo reactor's own `org.apache.dubbo:*` modules are excluded consistently. These figures depend on Maven metadata available during resolution, not just advisory data.
+
+The seven VigieVuln-only groups were checked against both Maven 3.9.16 `dependency:tree` and direct OSV API responses for the same coordinates and versions:
+
+| Dependency | Confirmed advisory groups | Maven scope |
 | --- | --- | --- |
-| **vigievuln 2.4.6** `--offline` | **657 (100%)** | 4.5 s |
-| Grype + Syft (defaults) | 45 (6.8%) | 32 s |
-| Trivy `--offline-scan`, cold `~/.m2` | 40 (6.1%) | 1.0 s |
-| OSV-Scanner `--offline` | 37 (5.6%) | 0.8 s |
+| `commons-beanutils:commons-beanutils:1.8.0` | CVE-2014-0114, CVE-2019-10086, CVE-2025-48734 | test |
+| `commons-collections:commons-collections:3.2.1` | CVE-2015-6420, CVE-2015-7501 | test |
+| `commons-lang:commons-lang:2.4` | CVE-2025-48924 | test |
+| `com.cedarsoftware:json-io:2.5.1` | CVE-2023-34610 | compile |
 
-100% here means "recovers everything OSV-Scanner finds **with** network access", not "finds
-everything that exists" — table 1 is the honest answer to that, and there fad sits at 87%.
-OSV-Scanner returns the identical 37 with and without the namespace: it behaves exactly as
-documented, it is not failing.
+OSV-Scanner's output did not contain those resolved versions; the difference here is inventory. A dependency in a classpath does not itself establish reachability or exploitability. VigieVuln warned that five POMs were unavailable and that a depth limit was reached. A seed of vulnerability advisories does not contain all Maven POMs: the cold seed-only offline scan produced 185 groups, all included in the 734 warm results, and warned about 186 unavailable POMs and four unresolved versions. In a separate offline run with cold Maven metadata, Trivy reported 35, OSV-Scanner 37, and Grype 47 groups; the caches and resolution capabilities differ, so these figures are not an apples-to-apples recall ranking.
 
-The mechanism is in OSV-Scanner's own documentation:
+## Snyk follow-up
 
-> "OSV-Scanner supports transitive dependency scanning for Maven pom.xml. This feature is enabled
-> by default when scanning, but it can be disabled using the `--no-resolve` flag. **It is also
-> disabled in the offline mode.**"
-> — [supported languages and lockfiles](https://google.github.io/osv-scanner/supported-languages-and-lockfiles/)
+A new Dubbo scan returned 98 Snyk project results. Its initial strict comparison found 167 package/version/advisory groups without a direct declared-identifier match in the VigieVuln report. These are **not 167 confirmed misses**. [Individual evidence and the current method](benchmark-evidence/2026-11-02/dubbo-snyk-method.md) document the source checks. A later online run with rebuilt native CVEProject data recovered 12 cases from the old projection. The scan repeated after rebuilding projection schema 4 returned the same set of 758 package/version/IDs and the same set of 155 unmatched Snyk groups as the earlier run, with source and Maven coverage warnings. Those [155 groups](benchmark-evidence/2026-11-02/dubbo-snyk-v3-consolidated.json) include 68 confirmed missing package/advisory observations, 24 version/module alerts contradicted by primary evidence, three already reported under proven equivalent identifiers and 60 indeterminate cases; other discrepancies remain under investigation. The per-record follow-up is in the [version disagreements](benchmark-evidence/2026-11-02/dubbo-snyk-version-adjudication.md), [coordinate disagreements](benchmark-evidence/2026-11-02/dubbo-snyk-other-coordinates.md), and [other identities](benchmark-evidence/2026-11-02/dubbo-snyk-primary-individual.md) reviews. Some cases remain indeterminate; final adjudication against primary records and inventory is still open; the historical Snyk adjudication applies to its own run and must not be transplanted to this new result.
 
-Online, OSV-Scanner finds 92 vulnerable Maven packages on this project. Offline it finds 3. The
-missing 89 are transitive.
+A warm offline Dubbo scan with Docker networking disabled returned the same set of 758 package/version/IDs as the schema 4 online run. Both warned about five unavailable POMs, the configured transitive depth limit and partial source coverage; equality therefore does not demonstrate complete coverage.
 
-Note the asymmetry between the two Trivy rows: 40 pairs on a cold `~/.m2`, 546 once a build has
-populated it. Trivy's dependency is on *a resolved local repository*, which the network or a
-prior build can supply. fad's cache is coordinate-keyed and travels
-(`--export-cache` / `--import-cache`), which is what makes the air-gapped workflow work.
+## Known source and coverage differences
 
-## Per-ecosystem results
+* NodeGoat's Trivy result included Node.js Security WG advisories absent from the OSV-only comparison. The [individual review](benchmark-evidence/2026-11-02/nodegoat-trivy-adjudication.md) found two `utile` package/version pairs missing from the OSV-only run; for the other 11, equivalence with related OSV findings remains unproven, even where records share strong evidence of the same incident. This does not establish a default-configuration miss for all sources. This source is not currently integrated; its npm directory was last updated in 2023, so it cannot be treated as a current complete feed.
+* Mastodon's Trivy result included RubySec advisory records absent from the OSV-only comparison. The [individual review of 22 records](benchmark-evidence/2026-11-02/mastodon-trivy-adjudication.md) identifies 18 missing package/advisory records in that run, one already-reported alias, one version for which the described vulnerable code is absent, and two indeterminate cases. These findings do not establish exploitability or distinct incidents, and do not establish coverage by every other VigieVuln source. RubySec's [licence](https://github.com/rubysec/ruby-advisory-db/blob/master/LICENSE.txt) notes that some data may originate from OSVDB and carry additional conditions. RubySec is not bundled or enabled here.
+* On phpMyAdmin, the independent Packagist source reported 39 groups online and offline, including [three not present in OSV but already reported through Packagist](benchmark-evidence/2026-11-02/phpmyadmin-trivy-adjudication.json).
+* Warm offline and online OSV sets matched for the five principal lockfile projects. Offline reports still contain freshness warnings, and some contain coverage warnings: equality on these projects does not prove completeness for other packages or versions.
 
-Maven is where vigievuln's design pays off, so it gets its own deep dive above. But it
-claims ten ecosystems, and "we benchmarked one of them" is not an answer. Here are the others,
-same method: OSV-Scanner and vigievuln on the same public project, findings normalised to
-`(package@version | CVE)` with GHSA/PYSEC ids mapped to their CVE alias.
+## Evidence and reproduction
 
-**Expect parity, and that is the point.** For npm, PyPI, Go, RubyGems and Composer the
-transitive graph is *in the lockfile*. Every tool reads the same file, so no scanner has a
-structural advantage and none should. Maven is the exception because its graph is not in the
-tree at all — it has to be resolved from the registry, which is why an offline gap exists there
-and nowhere else.
-
-### Targets
-
-| Ecosystem | Project | Pinned at | Manifest read |
-| --- | --- | --- | --- |
-| Maven | [apache/dubbo](https://github.com/apache/dubbo) 2.7.8 | `0be2a1bb` | 105 × `pom.xml` |
-| npm | [OWASP/NodeGoat](https://github.com/OWASP/NodeGoat) | `c5cb68a` | `package-lock.json`, 1 927 entries |
-| Go | [prometheus/prometheus](https://github.com/prometheus/prometheus) v2.30.0 | `37468d8` | `go.mod` (go 1.14, 97 requires) + `go.sum` (578 modules) |
-| PyPI | [python-poetry/poetry](https://github.com/python-poetry/poetry) 1.1.15 | `46bf7fd` | `poetry.lock`, 91 packages |
-| RubyGems | [mastodon/mastodon](https://github.com/mastodon/mastodon) v3.5.3 | `fbcbf78` | `Gemfile.lock`, 426 specs |
-| Composer | [phpmyadmin/phpmyadmin](https://github.com/phpmyadmin/phpmyadmin) 5.1.1 | `ed65cd2` | `composer.lock`, 224 entries |
-
-Real projects pinned to a released tag, not synthetic fixtures — old enough to carry genuine
-vulnerabilities, and reproducible by anyone.
-
-### Results
-
-| Ecosystem | OSV-Scanner | vigievuln | Both | fad only | OSV only |
-| --- | --- | --- | --- | --- | --- |
-| Maven | 657 | **790** | 657 | 133 | 0 |
-| npm | 274 | 274 | **274** | 0 | 0 |
-| RubyGems | 150 | 150 | **150** | 0 | 0 |
-| Composer¹ | 34 | 34 | **34** | 0 | 0 |
-| Go | 113 | 110 | 110 | 0 | 3 |
-| PyPI | 83 | 79 | 79 | 0 | 4 |
-
-**npm, RubyGems and Composer: identical sets, not merely equal counts.** Zero difference in
-either direction. That is the expected and correct result when both tools read the same
-lockfile, and it is worth publishing precisely because it is unremarkable.
-
-¹ **Composer needed `--no-ignore`.** phpMyAdmin's `.gitignore` lists `composer.lock` on line 57
-even though the file is committed, and OSV-Scanner honours `.gitignore` by default, so its
-recursive scan skipped the lockfile entirely and reported 0 Packagist findings. Pointed straight
-at the file it finds the same 34. Not a bug on either side, a policy difference: fad scans what
-is **on disk**, which for an audit is the right answer — a gitignored-but-present lockfile still
-describes what will be installed.
-
-**Go — 3 pairs, version selection.** `golang.org/x/sys` at a pseudo-version and
-`gopkg.in/yaml.v2@2.2.4`: OSV reads the version from `go.mod`, fad takes the highest version
-carrying a zip hash in `go.sum`. 
-
-**PyPI — 4 pairs, and fad is arguably right.** All four are `setuptools@9.1.0`, which
-OSV-Scanner picked up from `tests/utils/fixtures/setups/ansible/requirements.txt` — a **test
-fixture inside poetry's own test suite**, not a dependency of the project. fad reads
-`poetry.lock`, which is authoritative, and ignores stray requirements files when a lockfile
-exists.
-
-### What parity does not measure
-
-Equal CVE counts do not make two tools equivalent. On these same projects fad additionally
-reported, and OSV-Scanner does not attempt: **1 120 outdated** dependencies and 58 deprecated on
-mastodon, **618 outdated** and 2 EOL frameworks on phpMyAdmin, 65 outdated on poetry. Whether
-that is signal or noise is the auditor's call — the point is that it is a different question,
-not a better score on the same one.
-
-### The air-gapped descriptor, outside Maven
-
-The offline *recall* gap is Maven-only, but the anonymized-descriptor workflow is not — and it
-matters more outside Maven, because a `package-lock.json` names internal packages and carries
-private registry URLs. Measured on the npm target, same project both sides:
-
-| | fad `--export-anonymized` | Syft SBOM |
-| --- | --- | --- |
-| Entries | 804 deps | 419 components |
-| File paths | **absent** | present (`syft:location`) |
-| Registry URLs | **absent** | present |
-| Integrity hashes | **absent** | present |
-
-The descriptor carries `ecosystem, ecosystemType, namespace, name, version, versions, scope,
-isDev` and nothing else. An SBOM is a fine transport for a scan, but it is not an anonymised
-one.
-
-## Reproducing it
-
-```bash
-# 1. The target, pinned
-git clone --depth 1 --branch dubbo-2.7.8 https://github.com/apache/dubbo.git
-
-# 2. Reference set: OSV-Scanner, online, transitive resolution on (its default)
-osv-scanner scan source -r ./dubbo --format json --output osv-online.json
-
-# 3. OSV-Scanner with no network
-osv-scanner scan source -r ./dubbo --offline --download-offline-databases \
-  --format json --output osv-offline.json          # fetches its local DB once
-unshare -rn osv-scanner scan source -r ./dubbo --offline \
-  --format json --output osv-airgap.json           # real air gap
-
-# 4. vigievuln: one online run to warm the cache, then no network
-vigievuln -s ./dubbo --report-json fad-online.json
-unshare -rn vigievuln -s ./dubbo --offline --report-json fad-airgap.json
-
-# 5. Snyk at full capability — it invokes mvn, so this also populates ~/.m2
-cd dubbo && snyk test --all-projects --json > ../snyk.json; cd ..
-
-# 6. Trivy at full capability. With ~/.m2 populated by step 5 this equals the online
-#    result exactly (559 raw pairs either way), which is worth verifying yourself.
-trivy fs --scanners vuln --offline-scan --format json --output trivy-full.json ./dubbo
-trivy fs --scanners vuln --format json --output trivy-online.json ./dubbo
-
-# 7. Grype + Syft at full capability. Syft's transitive option is scoped to ARCHIVES, so on
-#    a pom.xml source tree it is a no-op — the result does not move, 58 pairs either way.
-grype dir:./dubbo -o json --file grype.json
-SYFT_JAVA_RESOLVE_TRANSITIVE_DEPENDENCIES=true SYFT_JAVA_USE_NETWORK=true \
-  syft dir:./dubbo -o syft-json=s.json && grype sbom:./s.json -o json --file grype-full.json
-```
-
-**If Maven Central rate-limits you** (`429 Too Many Requests`), and running several of these
-back to back will, point Trivy at a mirror instead of waiting it out. Trivy reads
-`settings.xml`, honours `<mirrors>`, and `MAVEN_HOME` keeps it out of your real Maven config:
-
-```bash
-mkdir -p /tmp/mvnhome/conf && cat > /tmp/mvnhome/conf/settings.xml <<'XML'
-<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
-  <localRepository>${user.home}/.m2/repository</localRepository>
-  <mirrors><mirror>
-    <id>gcs-central</id><mirrorOf>central</mirrorOf>
-    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
-  </mirror></mirrors>
-</settings>
-XML
-MAVEN_HOME=/tmp/mvnhome trivy fs --scanners vuln --format json -o trivy-online.json ./dubbo
-```
-
-That is how the online Trivy row here was obtained: the benchmark IP had been rate-limited by
-the other scans, the penalty renewed on every retry, and the mirror is a different host serving
-identical artifacts.
-
-Compare on `(coordinate@version | vulnerability id)` pairs, restricted to Maven. Normalise two
-things or the comparison is meaningless: map OSV `GHSA-*` ids to their `CVE-*` alias, and strip
-Maven hard-pin brackets (`[1.2.3]` → `1.2.3`).
-
-Environment for the numbers above: Node 24.14.0, Linux 6.6.87 (WSL2), vigievuln 2.4.6,
-OSV-Scanner 2.4.0 (osv-scalibr 0.4.5).
-
-## What vigievuln misses, and why
-
-**At full capability: 118 pairs**, all found by Snyk and by no other tool.
-
-> **Re-measured — 2026-09-18. Of 131 claimed misses, zero are recall bugs against OSV.**
->
-> The analysis below read OSV's `affected[].versions` as a list of *fixed* versions. It is the
-> list of **affected** versions ("each string is a single affected version", [osv-schema](https://github.com/ossf/osv-schema/blob/main/docs/schema.md)).
-> It also read the CVE-converted record without its GHSA alias, where the Maven binding actually
-> lives. Both errors inflate the gap.
->
-> The run was repeated on the same pinned commit (fad 2.4.9, Snyk 1.1302.1, same method: distinct
-> Maven `(coordinate@version | vulnerability)` pairs, reactor artifacts excluded). Snyk produced
-> 654 distinct pairs, fad 873, and **131** Snyk pairs had no counterpart in fad. Each was
-> adjudicated against OSV by `scripts/adjudicate-gap.js`:
->
-> | | | |
-> | ---: | --- | --- |
-> | 57 | 43.5% | `WRONG_ARTIFACT` — the advisory binds a different coordinate |
-> | 31 | 23.7% | `OUT_OF_RANGE` — the version is outside every declared affected range |
-> | 23 | 17.6% | `NOT_IN_OSV` — 19 proprietary `SNYK-*` ids, 4 that only NVD carries |
-> | 19 | 14.5% | `NO_MAVEN_BINDING` — the advisory binds no Maven package at all |
-> | 1 | 0.8% | `ALREADY_REPORTED` — fad has it under the CVE alias |
-> | **0** | **0.0%** | **`CONFIRMED_MISS`** |
->
-> So **88 of the 131 (67%) are Snyk contradicting the public record**, and reporting them would
-> mean shipping false positives. Two examples carry the whole argument. `GHSA-gm62-rw4g-vrc4` is
-> claimed on `logback-classic@1.2.2`: it binds `logback-**core**` at `[1.2.12, 1.2.13)` — wrong
-> artifact, and a version from before the flaw existed. `GHSA-72hv-8253-57qq` is claimed on
-> `jackson-core@2.10.4` and `@2.5.2`: its ranges are `[2.15.0, 2.18.6)` and `[2.19.0, 2.21.1)`.
->
-> **Independently reviewed**, adversarially, by a second model asked to find errors rather than
-> agree. It re-queried all 131 pairs against OSV, fetched 20 advisories by id, and audited the
-> range evaluation and the diff. Verdict: the zero holds. It also found three defects, all fixed
-> above: `fetchVuln` discarded OSV's 404 alias hint (`"…but the following aliases were: GHSA-…"`),
-> which mislabelled 4 public advisories as proprietary; the verdict was named `NO_PUBLIC_RECORD`
-> when only OSV is queried; and the reviewer confirmed no bug in `rangeAffects` /
-> `vulnAffectsVersion` that could *under*-count misses (multi-range advisories, `last_affected`,
-> `introduced: "0"`, and Maven ordering on `.Final` / `.RELEASE` / `1.11 > 1.9` / `2.9.9 < 2.9.9.1`
-> all check out), and that `mergeRecords` can only add bindings, so it cannot mask a miss.
->
-> Three caveats it raised, kept here rather than buried. **`NOT_IN_OSV` is not "in no public
-> database"** — 4 of the 23 (`CVE-2026-59281/59282/59283/47886` on `spring-core@4.3.16`) are in
-> NVD. **The single `ALREADY_REPORTED`** rests on OSV aliasing `CVE-2021-29441` and
-> `CVE-2021-29442` together while NVD treats them as distinct; fad reports only the former on
-> `nacos-common@1.3.1`. **The diff credits fad's CPE-filtered findings as "seen"**, which touches
-> exactly 3 pairs — all out of range anyway, so no verdict depends on it.
->
-> **One authority, named — and where that cuts against this document.** The adjudication is
-> defined against **OSV**, because OSV is what vigievuln queries by default and the adjudicator
-> reuses its own range evaluation. Under NVD's CPE ranges instead, 36 of the 131 would sit inside
-> a vulnerable range — but 24 of those are the framework-vs-artifact granularity noise that
-> [`--nvd-cpe-match` was measured at 12% precision for](#a-negative-result-nvd-cpe-ranges-as-a-matching-tier)
-> (`netty:netty` landing on every netty sub-artifact, and so on), so NVD is not the better
-> authority here, it is the noisier one.
->
-> Five are not noise, and they are awkward: `jackson-databind@2.5.2` for `CVE-2020-11112`,
-> `-11113`, `-11619`, `-14060` and `-14062`. GHSA declares only the 2.9.x branch; NVD's range
-> includes 2.5.2 — and the section further down argues, **about this exact artifact**, that the
-> narrower entry is "incomplete CPE curation, not a statement that 2.5.2 is safe." So this
-> document has reasoned in both directions: NVD's wider range when defending fad's findings,
-> OSV's narrower one when dismissing these five. Under the OSV-defined adjudication they are
-> `OUT_OF_RANGE` and the zero stands; under the opt-in `--nvd-cpe-match` tier fad would report
-> them. The honest statement is **"0 recall bugs against OSV"**, not "0 against all public data".
->
-> The 30/88 split below is the original assertion, kept for the record. It is not a verified
-> result, and **"they are real misses, not Snyk noise" does not hold**. Re-adjudicate before
-> treating any claimed miss as a recall bug:
-> `node scripts/adjudicate-gap.js --snyk snyk.json --found findings.json`.
-
-- **30** carry a proprietary `SNYK-*` identifier with no public CVE alias. They exist in Snyk's
-  commercial database and in no public one.
-- **87** are public CVEs. Checked against NVD's own CPE ranges: 7 confirmed outright, 13 where
-  NVD's range disagrees, 67 where NVD simply has no CPE naming that artifact.
-
-Neither the 13 nor the 67 exonerate fad, and both were traced to their cause.
-
-**The 67 "NVD is silent" cases were classified from the CVE record alone** — and the 2026-09-18
-re-measurement above supersedes this whole section. The worked example
-used to be `CVE-2023-6481` on `logback-classic@1.2.2`, described as a coverage gap because the
-CVE entry carries no Maven binding — only a GIT commit range. Fetching its GHSA alias shows the
-binding does exist: `ch.qos.logback:logback-core`, `{introduced: 1.2.12, fixed: 1.2.13}`. The
-audited dependency is a *different artifact* at a version *below the introduction*, so nothing
-was missed. Whether the other 66 survive the same check is an open question, and
-`scripts/adjudicate-gap.js` is what answers it per pair.
-
-**The 13 "NVD contradicts" cases are NVD contradicting itself.** Two sibling jackson-databind
-deserialization CVEs published weeks apart:
-
-| CVE | Ranges NVD declares |
-| --- | --- |
-| CVE-2020-9546 | `2.0.0–2.7.9.7`, `2.8.0–2.8.11.6`, `2.9.0–2.9.10.4` |
-| CVE-2020-10672 | `2.9.0–2.9.10.4` only |
-
-2.5.2 is affected by both or by neither. The narrower entry is incomplete CPE curation, not a
-statement that 2.5.2 is safe.
-
-So the honest summary of this gap: public advisory data declares ranges **per release branch**,
-and old branches that never received a fix are frequently just absent — plus a long tail of
-records with no ecosystem binding. A hand-curated commercial database fills that in. Aggregating
-public sources, however carefully, does not reproduce it. `--nvd-cpe-match` was the attempt, and
-[it fails on precision](#a-negative-result-nvd-cpe-ranges-as-a-matching-tier) for a reason worth
-reading.
-
-**With no network: nothing**, on this project — 657 of 657 against OSV-Scanner's online output.
-That is recall against one tool's view in one scenario; the adjudication above is the
-completeness answer.
-
-## A negative result: NVD CPE ranges as a matching tier
-
-Since NVD's ranges are broader than OSV's, using them to *match* rather than only to *filter*
-should close part of the gap. It does not, and the reason generalises.
-
-Implemented as `--nvd-cpe-match` (off by default), restricted to coordinates with an unambiguous
-1:1 entry in `data/cpe-coord-map.json`, no name heuristics, and no new network path. Measured on
-Dubbo: **76 new findings, 9 of them (12%) corroborated by Snyk**. Allowing the curated map's
-deliberate 1:N entries was worse — 262 findings, 8% corroborated.
-
-The cause is a granularity mismatch, not bad curation. CPE products are **framework**-level
-(`spring_framework`, `netty`, `log4j`) while Maven coordinates are **artifact**-level, so
-`CVE-2016-1000027` — a spring-web flaw — lands on spring-core, spring-beans and spring-context
-alike, and `CVE-2019-20444` (netty-codec-http) lands on netty-common, netty-codec and
-netty-handler. This is the same limitation that makes CPE-driven scanners noisy.
-
-Worth noting against the earlier finding: Snyk succeeds here precisely because its assertions are
-curated **per artifact**. The problem was never which database to read, it was the granularity of
-what that database asserts. The flag ships as a triage aid ("what might I be missing?") with its
-12% stated in the flag's own help text.
-
-## Honest caveats
-
-- **`--offline` needs a warmed cache.** These numbers come from a cache warmed by one prior
-  online run on the same project. On a cold cache the air-gapped run legitimately finds nothing.
-  That is the intended air-gapped workflow (`--export-cache` / `--import-cache`), not a trick,
-  but it means "100% with no network" is not the same as "100% from a standing start".
-- **The machine had a populated `~/.m2` (287 MB).** It does not affect either tool here
-  (OSV-Scanner resolves via deps.dev or Maven Central, not the local repository), but Trivy and
-  Syft *do* consult it, so a comparison including them must control for it.
-- **One project, one shape.** Dubbo is a large flat reactor with heavy transitive depth. A
-  project whose vulnerabilities are mostly in direct dependencies would narrow the gap sharply,
-  because direct dependencies are exactly what an offline scanner still sees.
-- **This measures recall against one reference, not correctness.** fad also reports ~90 pairs that
-  are not in OSV-Scanner's online output at all, because it additionally matches against the
-  CVEProject index and NVD. Those are not counted as wins here, and they are not independently
-  validated by this benchmark.
-
+Compact [comparison evidence](benchmark-evidence/2026-11-02/) includes the pinned inputs, tool/database versions, selected classified differences and direct OSV responses. The [scripts](benchmark-evidence/2026-11-02/scripts/) preserve the commands and normalizers actually used. They refer to the original Docker mounts and `/tmp` paths and require adaptation; they are evidence of the procedure, not a turnkey harness. The recorded `summary.json` likewise contains local paths. The measurements used isolated caches, a seed of the stated hash, and public checkouts at the commits above. To repeat, obtain the named scanner versions and databases, check out those exact commits, run each scanner on the stated input, export JSON, and compare **sets** by package, version and explicit advisory aliases. Preserve each scanner's inventory and warnings; do not equate missing input support, unknown ranges, stale data or inferred identities with negative results. Since live feeds change, a future run is not expected to reproduce the same counts without the same snapshots.

@@ -1,8 +1,9 @@
+const isolatedTestCache = require('./helpers/isolated-cache')('osv-db');
 /**
  * lib/osv-db.js — offline OSV-database matching (Maven).
  * Tests the new logic: OSV range evaluation over Maven ordering, version-set
- * membership, the dep matcher (scans the versions[] array, skips non-Maven / embedded
- * / binary), and index building from an all.zip buffer.
+ * membership, the dep matcher (scans versions[], including embedded Maven
+ * coordinates, and skips other ecosystems / native binaries), and ZIP indexing.
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
@@ -37,7 +38,7 @@ function idx(records) { return { byPackage: records }; }
 
 test("matchOsvDbDeps scans EVERY version in versions[] (composes with the overlay)", () => {
 	const index = idx({
-		"org.apache.poi:poi": [{ id: "GHSA-x", aliases: ["CVE-2017-12626"], affected: [{ ranges: [ECO([{ introduced: "0" }, { fixed: "3.17" }])], versions: [] }] }],
+		"org.apache.poi:poi": [{ id: "GHSA-x", aliases: ["CVE-2017-12626"], affected: [{ package: {ecosystem: "Maven", name: "org.apache.poi:poi"}, ranges: [ECO([{ introduced: "0" }, { fixed: "3.17" }])], versions: [] }] }],
 	});
 	const poi = makeDepRecord({ ecosystem: "maven", namespace: "org.apache.poi", name: "poi", version: "5.4.1" });
 	poi.versions = ["5.4.1", "3.11"]; // the masked 3.11 the per-module overlay recovers
@@ -49,13 +50,16 @@ test("matchOsvDbDeps scans EVERY version in versions[] (composes with the overla
 	assert.equal(m[0].source, "osv");
 });
 
-test("matchOsvDbDeps skips non-Maven, embedded and binary records", () => {
-	const index = idx({ "g:a": [{ id: "X", affected: [{ ranges: [ECO([{ introduced: "0" }])], versions: [] }] }] });
+test("matchOsvDbDeps includes embedded Maven coordinates and skips other ecosystems and native binaries", () => {
+	const index = idx({ "g:a": [{ id: "X", affected: [{ package: {ecosystem: "Maven", name: "g:a"}, ranges: [ECO([{ introduced: "0" }])], versions: [] }] }] });
 	const npm = makeDepRecord({ ecosystem: "npm", namespace: null, name: "g:a", version: "1.0" });
 	const emb = { ...makeDepRecord({ ecosystem: "maven", namespace: "g", name: "a", version: "1.0" }), provenance: "embedded" };
 	const bin = { ...makeDepRecord({ ecosystem: "maven", namespace: "g", name: "a", version: "1.0" }), provenance: "binary" };
 	const r = new Map([["npm:g:a", npm], ["embedded:x", emb], ["binary:y", bin]]);
-	assert.equal(matchOsvDbDeps(r, index).length, 0);
+	const matches = matchOsvDbDeps(r, index);
+	assert.equal(matches.length, 1);
+	assert.equal(matches[0].dep, emb);
+	assert.equal(matches[0].cve.id, 'X');
 });
 
 test("buildIndexFromZip indexes Maven records, drops withdrawn, ignores other ecosystems", () => {

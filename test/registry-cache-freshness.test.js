@@ -24,8 +24,10 @@ const fs = require("node:fs"), path = require("node:path"), assert = require("no
 require("node:os").homedir = () => process.argv[2];
 const [eco, mod, method, filename, key] = JSON.parse(process.argv[1]);
 const check = require(path.resolve(mod))[method];
-const dir = path.join(process.argv[2], ".vigie-vuln"), file = path.join(dir, filename);
-fs.mkdirSync(dir, { recursive: true });
+const dir = path.join(process.argv[2], ".vigie-vuln");
+const cacheKey = {npm:'npm-registry',composer:'packagist',ruby:'rubygems',pypi:'pypi',nuget:'nuget',go:'go-proxy',maven:'version-cache.json'}[eco];
+const cache = require('./lib/json-cache'), repository = require('./lib/cache-repository').createCacheRepository(dir);
+const read = () => cache.load(dir,cacheKey,null);
 const dep = { ecosystem: eco, name: "demo", artifactId: "demo", version: "1.0.0", scope: "compile",
 	namespace: eco === "maven" ? "org.example" : eco === "composer" ? "acme" : "",
 	groupId: eco === "maven" ? "org.example" : eco === "composer" ? "acme" : "" };
@@ -41,27 +43,26 @@ globalThis.fetch = async () => {
 		response: { docs: [{ v: "3.0.0" }] },
 	}), { status: 200, headers: { "content-type": "application/json" } });
 };
-const seed = stamp => fs.writeFileSync(file, JSON.stringify({ meta: { fetchedAt: stamp }, entries: { [key]: { latest: "2.0.0" } } }));
+const seed = stamp => cache.save(dir,cacheKey,{ meta: { fetchedAt: stamp }, entries: { [key]: { latest: "2.0.0" } } });
 (async () => {
 	const stale = Date.now() - 72 * 3600e3;
 	seed(stale);
-	const bytes = fs.readFileSync(file, "utf8"), modified = fs.statSync(file).mtimeMs;
+	const before = read();
 	await check(deps, { offline: true });
 	assert.equal(calls, 0);
-	assert.equal(fs.readFileSync(file, "utf8"), bytes);
-	assert.equal(fs.statSync(file).mtimeMs, modified);
+	assert.deepEqual(read(), before);
 	await check(deps, { offline: false });
 	assert.ok(calls > 0, "offline must not hide expiration from the next online scan");
-	assert.equal(JSON.parse(fs.readFileSync(file)).entries[key].latest, "3.0.0");
+	assert.equal(read().entries[key].latest, "3.0.0");
 	const fresh = Date.now() - 3600e3;
 	seed(fresh); calls = 0;
 	await check(deps, { offline: false });
 	assert.equal(calls, 0);
-	assert.equal(JSON.parse(fs.readFileSync(file)).meta.fetchedAt, fresh, "a cache-only online run must not renew untouched data either");
-	fs.unlinkSync(file);
+	assert.equal(read().meta.fetchedAt, fresh, "a cache-only online run must not renew untouched data either");
+	repository.delete('auxiliary',cacheKey);
 	await check(deps, { offline: true });
 	assert.equal(calls, 0);
-	assert.equal(fs.existsSync(file), false, "cold offline scan must not create a fresh-looking empty cache");
+	assert.equal(read(), null, "cold offline scan must not create a fresh-looking empty cache");
 })().catch(error => { console.error(error); process.exitCode = 1; });
 `, JSON.stringify(spec), root], { cwd: path.resolve(__dirname, ".."), encoding: "utf8" });
 		assert.ok(typeof output === "string");

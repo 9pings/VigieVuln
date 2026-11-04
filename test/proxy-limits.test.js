@@ -11,7 +11,7 @@ async function harness(opts = {}) {
 	const running = await startProxyCacheServer({ port: 0, store, ...opts });
 	return { ...running, dir, store, close: async () => {
 		running.server.closeAllConnections();
-		await new Promise(ok => running.server.close(ok)); fs.rmSync(dir, { recursive: true, force: true });
+		await new Promise(ok => running.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	} };
 }
 const call = (h, name, signal) => fetch(h.url + "/v1/resource", { method: "POST", signal,
@@ -33,7 +33,7 @@ test("proxy deadline cancels cold and stalled-body fetches and releases upstream
 		}
 		mode = "ok";
 		assert.equal(await (await call(h, "healthy")).json(), "ok");
-		assert.equal(fs.readdirSync(h.store.entriesDir).some(f => f.startsWith(".tmp-")), false);
+		assert.equal(h.store.size(), 1);
 	} finally { await h.close(); }
 });
 
@@ -47,7 +47,7 @@ test("deadline on a stale refresh retains the previous body", async () => {
 		const response = await call(h, "a");
 		assert.equal(response.headers.get("x-fad-proxy"), "stale");
 		assert.equal(await response.json(), "old");
-		assert.equal(JSON.parse(fs.readFileSync(h.store.get(key("a")).bodyPath, "utf8")), "old");
+		assert.equal(JSON.parse(h.store.readBody(h.store.get(key("a"))).toString('utf8')), "old");
 	} finally { await h.close(); }
 });
 
@@ -89,7 +89,7 @@ test("chunked transfers exceeding the hard cap leave no temporary or cache entry
 		const response = await call(h, "large");
 		assert.equal(response.status, 502); assert.match(await response.text(), /transfer limit/);
 		assert.equal(h.store.bodyBytes(), 0); assert.equal(h.store.size(), 0);
-		assert.deepEqual(fs.readdirSync(h.store.entriesDir), []);
+		assert.equal(h.store.size(), 0);
 	} finally { await h.close(); }
 });
 
@@ -108,15 +108,13 @@ test("quota evicts old unpinned entries and refuses to evict active readers", as
 	} finally { await h.close(); }
 });
 
-test("server startup removes orphaned spools and generations, with exclusive store ownership", async () => {
+test("server startup shares the SQLite cache safely across store handles", async () => {
 	const dir = temp(), store = createCacheStore(dir);
-	fs.writeFileSync(path.join(store.entriesDir, ".tmp-crash"), "orphan");
-	fs.writeFileSync(path.join(store.entriesDir, "a".repeat(64) + ".body-abc"), "orphan");
 	const h = await startProxyCacheServer({ port: 0, store });
 	try {
-		assert.deepEqual(fs.readdirSync(store.entriesDir), []);
-		assert.throws(() => startProxyCacheServer({ port: 0, store: createCacheStore(dir) }), /already owned/);
-	} finally { await new Promise(ok => h.server.close(ok)); fs.rmSync(dir, { recursive: true, force: true }); }
+		store.put(key('shared'),Buffer.from('body'),{fetchedAt:Date.now(),ttlMs:1000,contentType:'text/plain'});
+		assert.equal(createCacheStore(dir).readBody(createCacheStore(dir).get(key('shared'))).toString(),'body');
+	} finally { await new Promise(ok => h.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("batch responses obey deadlines and size limits", async () => {
@@ -132,18 +130,18 @@ test("batch responses obey deadlines and size limits", async () => {
 	} finally { await h.close(); }
 });
 
-test("disk publication failure retains the old body and removes the staged file", async () => {
+test("SQLite publication failure retains the old body", async () => {
 	let body = "old";
 	const h = await harness({ overrideTtlMs: 1, swr: false, fetcher: async () => Response.json(body) });
 	try {
 		await (await call(h, "a")).text(); body = "new";
 		await new Promise(ok => setTimeout(ok, 5));
-		const commit = h.store.commit;
-		h.store.commit = () => { throw Object.assign(new Error("disk full"), { code: "ENOSPC" }); };
+		const createWriter = h.store.createWriter;
+		h.store.createWriter = (...args) => { const writer=createWriter(...args); writer.commit=()=>{writer.abort();throw Object.assign(new Error('disk full'),{code:'ENOSPC'})};return writer; };
 		try { assert.equal(await (await call(h, "a")).json(), "old"); }
-		finally { h.store.commit = commit; }
+		finally { h.store.createWriter = createWriter; }
 		assert.equal(h.store.bodyBytes(), 5);
-		assert.equal(fs.readdirSync(h.store.entriesDir).some(f => f.startsWith(".tmp-")), false);
+		assert.equal(h.store.size(), 1);
 	} finally { await h.close(); }
 });
 

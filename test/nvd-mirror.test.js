@@ -71,8 +71,10 @@ test("NVD down AND mirror without the record → the hole is reported under NVD 
 test("NVD down, mirror down, but a cached record past its TTL exists → served stale, not dropped", async () => {
 	const health = createSourceHealth(); setActiveLedger(health);
 	const c = id("0000104");
-	fs.mkdirSync(N.NVD_CACHE_DIR, { recursive: true });
-	fs.writeFileSync(path.join(N.NVD_CACHE_DIR, `${c}.json`), JSON.stringify({ _fetchedAt: 0, _schema: N.NVD_CACHE_SCHEMA, body: { score: 5.0, cwes: ["CWE-79"] } }));
+	const body=Buffer.from(JSON.stringify({score:5.0,cwes:['CWE-79']}));
+	require('../lib/cache-db').getCacheDb(path.dirname(N.NVD_CACHE_DIR)).prepare(`INSERT INTO nvd_records
+	 (cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)`).run(
+	 c,'live',1,null,require('../lib/advisory-compression').compress(body),body.length,JSON.stringify({schema:N.NVD_CACHE_SCHEMA}));
 	const r = await N.fetchOne(c, { fetcher: fakeFetcher(res(503, {}), res(503, {})) });
 	assert.deepEqual(r.cwes, ["CWE-79"]);
 	assert.deepEqual(health.degraded(), []);

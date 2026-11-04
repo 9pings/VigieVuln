@@ -1,0 +1,1277 @@
+{
+  "date": "2026-11-02",
+  "scope": "Maven distinct coordinate/version/Snyk-ID; reconstructed native CVEProject/OSV/GCVE pre-v3 report; enrichments disabled; v3 rebuild pending",
+  "snykGroups": 708,
+  "snykWithoutDeclaredMatch": 155,
+  "categories": {
+    "indeterminate": 60,
+    "confirmed_missing_package_advisory": 68,
+    "already_reported_proven_equivalence": 3,
+    "confirmed_snyk_error": 24
+  },
+  "cases": [
+    {
+      "package": "io.grpc:grpc-core",
+      "version": "1.12.0",
+      "snykId": "SNYK-JAVA-IOGRPC-571957",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-1726923",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-17675439",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-6097493",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "already_reported_primary_equivalence",
+      "category": "already_reported_proven_equivalence"
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-17675450",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-19882330",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-20824362",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-6097492",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "version not affected according to CNA",
+      "category": "already_reported_proven_equivalence",
+      "overrideEvidence": {
+        "package": "ch.qos.logback:logback-classic",
+        "version": "1.2.2",
+        "snykId": "SNYK-JAVA-CHQOSLOGBACK-6097492",
+        "originalVerdict": "version not affected according to CNA",
+        "finalCategory": "already_reported_proven_equivalence",
+        "reportedId": "CVE-2023-6378",
+        "snykCve": "CVE-2023-6481",
+        "primary": "https://logback.qos.ch/news-archive.html",
+        "reason": "The maintainer explicitly states the two CVEs describe the identical underlying vulnerability. CVE-2023-6378 is emitted for this exact package/version. For an exclusive incident accounting, existing proven equivalence takes precedence over the narrower 6481 range disagreement; use the same rule as the logback-core case."
+      }
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-8539867",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.alibaba:hessian-lite",
+      "version": "3.2.8",
+      "snykId": "SNYK-JAVA-COMALIBABA-2332177",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.alipay.sofa:hessian",
+      "version": "3.3.6",
+      "snykId": "SNYK-JAVA-COMALIPAYSOFA-173737",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "indeterminate_disputed",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-560766",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561362",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561373",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561585",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561586",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561587",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564887",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564888",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-570625",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572300",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572314",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572316",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72447",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72449",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72451",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72883",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72884",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-31519",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-31520",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-7569538",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+      "version": "2.6.7",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONDATAFORMAT-1047329",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.woodstox:woodstox-core",
+      "version": "5.2.1",
+      "snykId": "SNYK-JAVA-COMFASTERXMLWOODSTOX-2928754",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "commons-codec:commons-codec",
+      "version": "1.9",
+      "snykId": "SNYK-JAVA-COMMONSCODEC-561518",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.squareup.okhttp3:okhttp",
+      "version": "3.12.2",
+      "snykId": "SNYK-JAVA-COMSQUAREUPOKHTTP3-2958044",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "indetermine",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.grpc:grpc-core",
+      "version": "1.22.1",
+      "snykId": "SNYK-JAVA-IOGRPC-571957",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-1020439",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-12485150",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-1317097",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-19778369",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "desaccord_sources_primaires",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-20074868",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "indetermine",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-20154836",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-469234",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-543490",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-6056419",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "io.netty:netty-common",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-1082234",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-common",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-2812456",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-handler",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-1082235",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-handler",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-19233599",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-transport",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-1082236",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http2",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-12485151",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http2",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-459301",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_editeur_non_integree_version_indeterminee",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http2",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-459302",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_editeur_non_integree_version_indeterminee",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http2",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-459303",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_editeur_non_integree_version_indeterminee",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http2",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-459304",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_editeur_non_integree_version_indeterminee",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec-http2",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-5953332",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "already_reported_proven_equivalence",
+      "overrideEvidence": {
+        "package": "io.netty:netty-codec-http2",
+        "version": "4.1.35.Final",
+        "snykId": "SNYK-JAVA-IONETTY-5953332",
+        "originalVerdict": "affected artifact and version supported by CNA and upstream code",
+        "finalCategory": "already_reported_proven_equivalence",
+        "reportedId": "GHSA-xpw8-rcwv-8f8p",
+        "snykCve": "CVE-2023-44487",
+        "primary": "https://github.com/netty/netty/commit/58f75f665aa81a8cbcf6ffa74820042a285c5e61",
+        "reason": "The upstream commit explicitly links the GHSA and CVE. The GHSA is already emitted for this exact package/version; the other-coordinate review records that verified relation in expandedSourceFindingsWithSameCve."
+      }
+    },
+    {
+      "package": "io.netty:netty-codec",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-16438930",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-codec",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-564897",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "io.netty:netty-codec-socks",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-19233598",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "io.netty:netty-all",
+      "version": "4.1.25.Final",
+      "snykId": "SNYK-JAVA-IONETTY-559515",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "io.netty:netty-all",
+      "version": "4.1.25.Final",
+      "snykId": "SNYK-JAVA-IONETTY-559516",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "io.netty:netty-all",
+      "version": "4.1.25.Final",
+      "snykId": "SNYK-JAVA-IONETTY-6056420",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "log4j:log4j",
+      "version": "1.2.16",
+      "snykId": "SNYK-JAVA-LOG4J-1300176",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.apache.cxf:cxf-rt-transports-http",
+      "version": "3.1.15",
+      "snykId": "SNYK-JAVA-ORGAPACHECXF-1039798",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.cxf:cxf-rt-transports-http",
+      "version": "3.1.15",
+      "snykId": "SNYK-JAVA-ORGAPACHECXF-3168313",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.apache.cxf:cxf-rt-transports-http",
+      "version": "3.1.15",
+      "snykId": "SNYK-JAVA-ORGAPACHECXF-542666",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.mina:mina-core",
+      "version": "1.1.7",
+      "snykId": "SNYK-JAVA-ORGAPACHEMINA-20159132",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "hors_module_et_plage_selon_cna",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1017119",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1048292",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-15307825",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-15989808",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "version not affected according to CNA",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-15989812",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-15989820",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "version not affected according to CNA",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728264",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728265",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728266",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-21715432",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-21715436",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-3035793",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-3326459",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-3369687",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-451508",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-584427",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-8547999",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.apache.xmlrpc:xmlrpc-client",
+      "version": "3.1.3",
+      "snykId": "SNYK-JAVA-ORGAPACHEXMLRPC-542690",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.apache.xmlrpc:xmlrpc-common",
+      "version": "3.1.3",
+      "snykId": "SNYK-JAVA-ORGAPACHEXMLRPC-6184386",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.codehaus.jackson:jackson-mapper-asl",
+      "version": "1.9.12",
+      "snykId": "SNYK-JAVA-ORGCODEHAUSJACKSON-20059687",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-server",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-15426540",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-server",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-8186158",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-io",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-1090340",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-http",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-19644207",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_editeur_maven_non_integree",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-http",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-5426161",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-http",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-5958847",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-security",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-21243543",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_editeur_maven_non_integree",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-security",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-21243559",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_editeur_maven_non_integree",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jackson-provider",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-1040444",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-31203",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-31206",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-609370",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-8706731",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-netty4",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-8168842",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.6",
+      "snykId": "SNYK-JAVA-ORGOBJENESIS-21755439",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_confirmee_code_editeur_type_custom",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715439",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715442",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715445",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715448",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.ow2.asm:asm",
+      "version": "5.0.4",
+      "snykId": "SNYK-JAVA-ORGOW2ASM-21715452",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-1009832",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-15701755",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "version not affected according to CNA",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-16109615",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "vulnerable feature absent in tested artifact version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267076",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267078",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-31689",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-72470",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "affected artifact and version supported by CNA and upstream code",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.springframework:spring-beans",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-12008931",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "version not affected according to CNA",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "org.springframework:spring-beans",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267072",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-12817817",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "indeterminate_source_disagreement",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-16109618",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-2329097",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-2330878",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "confirmed_missing_advisory",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-8230365",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.springframework:spring-expression",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267073",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.springframework:spring-expression",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267075",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_cna_code_version_exacte",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "snykId": "SNYK-JAVA-ORGXERIALSNAPPY-19778376",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "snykId": "SNYK-JAVA-ORGXERIALSNAPPY-19964087",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "limitation_matcher_type_custom",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "snykId": "SNYK-JAVA-ORGXERIALSNAPPY-20825056",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "desaccord_sources_primaires",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_avis_code_sans_cve",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15907551",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "fausse_alerte_selon_avis_editeur",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-7569538",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_avis_code_sans_cve",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15907551",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "fausse_alerte_selon_avis_editeur",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-7569538",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.10.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.10.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15907551",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "fausse_alerte_selon_avis_editeur",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.10.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-7569538",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.10.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "commons-codec:commons-codec",
+      "version": "1.11",
+      "snykId": "SNYK-JAVA-COMMONSCODEC-561518",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-19496766",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_corroboree_avis_code_sans_cve",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15907551",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "fausse_alerte_selon_avis_editeur",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-7569538",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.codehaus.jackson:jackson-mapper-asl",
+      "version": "1.9.13",
+      "snykId": "SNYK-JAVA-ORGCODEHAUSJACKSON-20059687",
+      "group": "dubbo-snyk-other-coordinates.json",
+      "sourceVerdict": "indeterminate",
+      "category": "indeterminate"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.8.6",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15365924",
+      "group": "dubbo-snyk-version-adjudication.json",
+      "sourceVerdict": "false_alert_for_version",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.8.6",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-15907551",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "fausse_alerte_selon_avis_editeur",
+      "category": "confirmed_snyk_error"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.8.6",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-7569538",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "source_non_integree",
+      "category": "indeterminate"
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.4",
+      "snykId": "SNYK-JAVA-ORGOBJENESIS-21755439",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_confirmee_code_editeur_type_custom",
+      "category": "confirmed_missing_package_advisory"
+    },
+    {
+      "package": "org.objenesis:objenesis",
+      "version": "2.5.1",
+      "snykId": "SNYK-JAVA-ORGOBJENESIS-21755439",
+      "group": "dubbo-snyk-primary-individual.json",
+      "sourceVerdict": "omission_confirmee_code_editeur_type_custom",
+      "category": "confirmed_missing_package_advisory"
+    }
+  ],
+  "limitations": "Cases classified by source/code; indeterminate includes unproven identity or ranges. Other-artefact matches do not prove applicability to this artifact."
+}

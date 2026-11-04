@@ -16,6 +16,7 @@ _fad_check() {
 		'--allLibs[query Maven Central]'
 		'-v[verbose]'
 		'--verbose[verbose]'
+		'--force-update[revalidate online sources]'
 		'--test[read-only]'
 		'--report[generate CVE/EOL/obsolete report]'
 		'--report-output[base dir for default-named outputs]:directory:_directories'

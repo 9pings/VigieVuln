@@ -1,0 +1,2365 @@
+{
+  "date": "2026-11-03",
+  "method": "Maven Central exact coordinate/version source JARs, hashed; class/method presence is identity evidence only, never sufficient proof of vulnerability or version applicability. No source code is executed.",
+  "observations": 26,
+  "distinctAdvisories": 10,
+  "sourceArtifacts": 26,
+  "downloadFailures": 0,
+  "rows": [
+    {
+      "project": "dubbo",
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "id": "CVE-2023-6481",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "logback",
+          "defaultStatus": "unaffected",
+          "modules": [
+            "logback receiver"
+          ],
+          "platforms": [
+            "Windows",
+            "Linux",
+            "MacOS"
+          ],
+          "repo": "https://github.com/qos-ch/logback",
+          "versions": [
+            {
+              "version": "1.4.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.3.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.2.13",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-core/1.2.2/logback-core-1.2.2-sources.jar",
+        "sha256": "d7476f88cc1bdfa3e8c926c6846fcc539886f136c68099de05ff3842d1e727d8",
+        "javaFiles": 326
+      },
+      "relatedClasses": [
+        "ch/qos/logback/core/net/HardenedObjectInputStream.java"
+      ],
+      "conclusion": "insufficient_version_evidence",
+      "reason": "Native versions list only unaffected releases and default unaffected; receiver deployment is an additional condition. Source-file presence alone cannot establish applicability to 1.2.2/1.2.3."
+    },
+    {
+      "project": "dubbo",
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "id": "CVE-2026-9828",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "logback",
+          "defaultStatus": "unaffected",
+          "packageName": "logback-core",
+          "modules": [
+            "HardenedObjectInputStream (logback-core)"
+          ],
+          "programFiles": [
+            "HardenedObjectInputStream.java"
+          ],
+          "repo": "https://github.com/qos-ch/logback",
+          "versions": [
+            {
+              "version": "0",
+              "lessThanOrEqual": "1.5.32",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "1.5.33",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "HardenedObjectInputStream.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.2/logback-classic-1.2.2-sources.jar",
+        "sha256": "96810579b282e480c9d7a878c726e2d77f83e587c8687178020c52db27e8f953",
+        "javaFiles": 169
+      },
+      "relatedClasses": [],
+      "conclusion": "already_reported_on_named_module",
+      "reason": "Named HardenedObjectInputStream.java is in logback-core, absent from logback-classic; the existing scan reports the CVE on core. Shared repository does not identify classic."
+    },
+    {
+      "project": "dubbo",
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "id": "CVE-2023-6481",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "logback",
+          "defaultStatus": "unaffected",
+          "modules": [
+            "logback receiver"
+          ],
+          "platforms": [
+            "Windows",
+            "Linux",
+            "MacOS"
+          ],
+          "repo": "https://github.com/qos-ch/logback",
+          "versions": [
+            {
+              "version": "1.4.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.3.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.2.13",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.2/logback-classic-1.2.2-sources.jar",
+        "sha256": "96810579b282e480c9d7a878c726e2d77f83e587c8687178020c52db27e8f953",
+        "javaFiles": 169
+      },
+      "relatedClasses": [],
+      "conclusion": "insufficient_version_evidence",
+      "reason": "Native versions list only unaffected releases and default unaffected; receiver deployment is an additional condition. Source-file presence alone cannot establish applicability to 1.2.2/1.2.3."
+    },
+    {
+      "project": "dubbo",
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "id": "CVE-2024-12798",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "Logback-core",
+          "defaultStatus": "unaffected",
+          "modules": [
+            "logback-core"
+          ],
+          "versions": [
+            {
+              "version": "0.1",
+              "lessThanOrEqual": "1.3.14",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "1.4.0",
+              "lessThanOrEqual": "1.5.12",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "1.3.15",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.5.13",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.2/logback-classic-1.2.2-sources.jar",
+        "sha256": "96810579b282e480c9d7a878c726e2d77f83e587c8687178020c52db27e8f953",
+        "javaFiles": 169
+      },
+      "relatedClasses": [],
+      "conclusion": "already_reported_on_named_module",
+      "reason": "The native named module is logback-core, already reported. Do not duplicate attribution to classic from a common repository."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "id": "CVE-2026-83557",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "2.11.0",
+              "lessThan": "2.18.10",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.22.0",
+              "lessThan": "2.22.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.2.0",
+              "lessThan": "3.2.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+        "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+        "javaFiles": 383
+      },
+      "relatedClasses": [
+        "com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "conclusion": "no_supported_range_extension",
+      "reason": "DefaultBaseTypeLimitingValidator.java is absent from every tested older release and present in the 2.11.0 control; the source range starts at 2.11.0. Other older deserialization bugs do not establish this CVE."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "id": "CVE-2026-18401",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "2.15.0",
+              "lessThanOrEqual": "2.18.5",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.18.6",
+              "versionType": "maven",
+              "status": "unaffected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.1",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.21.1",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.0",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.1.0",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.5.2/jackson-core-2.5.2-sources.jar",
+        "sha256": "90b24f8db430c846a575461b1e77a9c73753bd5201145974b66e59e4cc655ba7",
+        "javaFiles": 80
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "The named source class is absent from tested older releases; native package ranges start at 2.15.0. This evidence does not justify extending applicability to earlier parsers."
+    },
+    {
+      "project": "dubbo",
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "id": "CVE-2026-89044",
+      "entries": [
+        {
+          "vendor": "netty",
+          "product": "netty",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo1.maven.org/maven2/io/netty/netty-codec-http/",
+          "repo": "https://github.com/netty/netty",
+          "packageURL": "pkg:maven/io.netty/netty-codec-http",
+          "versions": [
+            {
+              "version": "4.1.133.Final",
+              "lessThan": "4.1.138.Final",
+              "versionType": "custom",
+              "status": "affected"
+            },
+            {
+              "version": "4.2.13.Final",
+              "lessThan": "4.2.18.Final",
+              "versionType": "custom",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/io/netty/netty-codec-http/4.1.35.Final/netty-codec-http-4.1.35.Final-sources.jar",
+        "sha256": "29eaf8027c361140f0a75b57b343108b6b8bef4c347b02bc84cfe5a04993cfd1",
+        "javaFiles": 235
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "Both affected and cpeApplicability start at 4.1.133.Final / 4.2.13.Final, excluding the tested 4.1.35.Final. The repository cannot override the version bounds."
+    },
+    {
+      "project": "dubbo",
+      "package": "org.codehaus.jackson:jackson-mapper-asl",
+      "version": "1.9.12",
+      "id": "CVE-2026-91776",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo1.maven.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-databind",
+          "programRoutines": [
+            {
+              "name": "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "2.0.0",
+              "lessThanOrEqual": "2.18.10",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThanOrEqual": "2.21.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.22.0",
+              "lessThanOrEqual": "2.22.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": [
+            {
+              "requested": "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo1.maven.org/maven2",
+          "packageName": "tools.jackson.core:jackson-databind",
+          "programRoutines": [
+            {
+              "name": "tools.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThanOrEqual": "3.1.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.2.0",
+              "lessThanOrEqual": "3.2.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": [
+            {
+              "requested": "tools.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/org/codehaus/jackson/jackson-mapper-asl/1.9.12/jackson-mapper-asl-1.9.12-sources.jar",
+        "sha256": "399543e4993270a24cf078c461c1c26b40cd6267e9519780414f9d4eeed175e1",
+        "javaFiles": 309
+      },
+      "relatedClasses": [
+        "org/codehaus/jackson/map/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "conclusion": "legacy_port_requires_separate_applicability_evidence",
+      "reason": "The older Codehaus artifact contains an analogous _findDeserializer cache with attacker-controlled typeId keys, but the CVE names FasterXML 2.x/3.x coordinates, namespaces and ranges. Similar code is a relevant lead; copying version ranges between these release lines would be unjustified."
+    },
+    {
+      "project": "dubbo",
+      "package": "org.eclipse.jetty:jetty-server",
+      "version": "9.4.11.v20180605",
+      "id": "CVE-2025-11143",
+      "entries": [
+        {
+          "vendor": "Eclipse Foundation",
+          "product": "Eclipse Jetty",
+          "defaultStatus": "unaffected",
+          "repo": "https://github.com/jetty/jetty.project",
+          "versions": [
+            {
+              "version": "9.4.0",
+              "lessThanOrEqual": "9.4.58",
+              "versionType": "semver",
+              "status": "affected"
+            },
+            {
+              "version": "10.0.0",
+              "lessThanOrEqual": "10.0.26",
+              "versionType": "semver",
+              "status": "affected"
+            },
+            {
+              "version": "11.0.0",
+              "lessThanOrEqual": "11.0.26",
+              "versionType": "semver",
+              "status": "affected"
+            },
+            {
+              "version": "12.0.0",
+              "lessThanOrEqual": "12.0.30",
+              "versionType": "semver",
+              "status": "affected"
+            },
+            {
+              "version": "12.1.0",
+              "lessThanOrEqual": "12.1.4",
+              "versionType": "semver",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/org/eclipse/jetty/jetty-server/9.4.11.v20180605/jetty-server-9.4.11.v20180605-sources.jar",
+        "sha256": "c1e41052cc549b4d19f40ff2a0204a6f5167843df2e4c3ece0e4c0ca56e17cd3",
+        "javaFiles": 142
+      },
+      "relatedClasses": [],
+      "conclusion": "already_reported_on_named_module",
+      "reason": "The referenced upstream advisory names jetty-http. HttpURI.java is in jetty-http, absent from jetty-server. The scan already reports the CVE on jetty-http."
+    },
+    {
+      "project": "dubbo",
+      "package": "org.eclipse.jetty:jetty-server",
+      "version": "9.4.11.v20180605",
+      "id": "CVE-2024-6763",
+      "entries": [
+        {
+          "vendor": "Eclipse Foundation",
+          "product": "Jetty",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2/",
+          "packageName": "org.eclipse.jetty:jetty-http",
+          "modules": [
+            "jetty-http"
+          ],
+          "repo": "https://github.com/jetty/jetty.project",
+          "versions": [
+            {
+              "version": "7.0.0",
+              "lessThanOrEqual": "12.0.11",
+              "versionType": "semver",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/org/eclipse/jetty/jetty-server/9.4.11.v20180605/jetty-server-9.4.11.v20180605-sources.jar",
+        "sha256": "c1e41052cc549b4d19f40ff2a0204a6f5167843df2e4c3ece0e4c0ca56e17cd3",
+        "javaFiles": 142
+      },
+      "relatedClasses": [],
+      "conclusion": "already_reported_on_named_module",
+      "reason": "The native coordinate and module explicitly name jetty-http; HttpURI.java is absent from jetty-server. The scan reports the HTTP module."
+    },
+    {
+      "project": "dubbo",
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "id": "CVE-2026-108104",
+      "entries": [
+        {
+          "vendor": "xerial",
+          "product": "snappy-java",
+          "defaultStatus": "unaffected",
+          "packageURL": "pkg:maven/org.xerial.snappy/snappy-java",
+          "versions": [
+            {
+              "version": "1.1.7.4",
+              "lessThan": "1.1.10.10",
+              "versionType": "custom",
+              "status": "affected"
+            },
+            {
+              "version": "1.1.10.10",
+              "versionType": "custom",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/org/xerial/snappy/snappy-java/1.1.1.3/snappy-java-1.1.1.3-sources.jar",
+        "sha256": "a84d92464a9136fe62f673a5118a999b4573b48ee983128c270176faaaeaa789",
+        "javaFiles": 17
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "Both affected and cpeApplicability start at 1.1.7.4, excluding tested 1.1.1.3. An explicit purl establishes identity, not a broader range."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.5",
+      "id": "CVE-2026-83557",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "2.11.0",
+              "lessThan": "2.18.10",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.22.0",
+              "lessThan": "2.22.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.2.0",
+              "lessThan": "3.2.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.5/jackson-databind-2.9.5-sources.jar",
+        "sha256": "3993a5b825701d1f8a3313315129e36ca46216e81894f79f13b3d6cd76f1f0bf",
+        "javaFiles": 419
+      },
+      "relatedClasses": [
+        "com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "conclusion": "no_supported_range_extension",
+      "reason": "DefaultBaseTypeLimitingValidator.java is absent from every tested older release and present in the 2.11.0 control; the source range starts at 2.11.0. Other older deserialization bugs do not establish this CVE."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.5",
+      "id": "CVE-2026-18401",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "2.15.0",
+              "lessThanOrEqual": "2.18.5",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.18.6",
+              "versionType": "maven",
+              "status": "unaffected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.1",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.21.1",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.0",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.1.0",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.9.5/jackson-core-2.9.5-sources.jar",
+        "sha256": "fc30dc19b7911a0748229110fd3915b951012d1e785701a4cfd0f797396290de",
+        "javaFiles": 101
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "The named source class is absent from tested older releases; native package ranges start at 2.15.0. This evidence does not justify extending applicability to earlier parsers."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.9",
+      "id": "CVE-2026-83557",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "2.11.0",
+              "lessThan": "2.18.10",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.22.0",
+              "lessThan": "2.22.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.2.0",
+              "lessThan": "3.2.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.9/jackson-databind-2.9.9-sources.jar",
+        "sha256": "d78ee97c1041f83c3a1706e0f01abfa91c890fcf2c622c1ef602187c76768985",
+        "javaFiles": 419
+      },
+      "relatedClasses": [
+        "com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "conclusion": "no_supported_range_extension",
+      "reason": "DefaultBaseTypeLimitingValidator.java is absent from every tested older release and present in the 2.11.0 control; the source range starts at 2.11.0. Other older deserialization bugs do not establish this CVE."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.9",
+      "id": "CVE-2026-18401",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "2.15.0",
+              "lessThanOrEqual": "2.18.5",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.18.6",
+              "versionType": "maven",
+              "status": "unaffected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.1",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.21.1",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.0",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.1.0",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.9.9/jackson-core-2.9.9-sources.jar",
+        "sha256": "cfc968701a863296c8d44b36526588c850ac0dfd8dff7610b024336068caac0e",
+        "javaFiles": 102
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "The named source class is absent from tested older releases; native package ranges start at 2.15.0. This evidence does not justify extending applicability to earlier parsers."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.10.4",
+      "id": "CVE-2026-18401",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "2.15.0",
+              "lessThanOrEqual": "2.18.5",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.18.6",
+              "versionType": "maven",
+              "status": "unaffected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.1",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.21.1",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.0",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.1.0",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.10.4/jackson-core-2.10.4-sources.jar",
+        "sha256": "179ea5212193ff0ae6348b944fb1ca04e087442c73adabecf171d926a501c67e",
+        "javaFiles": 112
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "The named source class is absent from tested older releases; native package ranges start at 2.15.0. This evidence does not justify extending applicability to earlier parsers."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.10.4",
+      "id": "CVE-2026-83557",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "2.11.0",
+              "lessThan": "2.18.10",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.22.0",
+              "lessThan": "2.22.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.2.0",
+              "lessThan": "3.2.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.10.4/jackson-databind-2.10.4-sources.jar",
+        "sha256": "0e804c43af17de030aee7b8307c466eb706bd4d65103a8e08b62628731ac51e6",
+        "javaFiles": 430
+      },
+      "relatedClasses": [
+        "com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "conclusion": "no_supported_range_extension",
+      "reason": "DefaultBaseTypeLimitingValidator.java is absent from every tested older release and present in the 2.11.0 control; the source range starts at 2.11.0. Other older deserialization bugs do not establish this CVE."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.4",
+      "id": "CVE-2026-83557",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "2.11.0",
+              "lessThan": "2.18.10",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.22.0",
+              "lessThan": "2.22.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "com.fasterxml.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-databind",
+          "programFiles": [
+            "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.2.0",
+              "lessThan": "3.2.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "tools.jackson.databind.jsontype.DefaultBaseTypeLimitingValidator.isUnsafeBaseType",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.4/jackson-databind-2.9.4-sources.jar",
+        "sha256": "b01c0aeb4109b2af5e17d2a7bde9f04558100701eddfa09467d65a66133c8363",
+        "javaFiles": 419
+      },
+      "relatedClasses": [
+        "com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "conclusion": "no_supported_range_extension",
+      "reason": "DefaultBaseTypeLimitingValidator.java is absent from every tested older release and present in the 2.11.0 control; the source range starts at 2.11.0. Other older deserialization bugs do not establish this CVE."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.4",
+      "id": "CVE-2026-18401",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "2.15.0",
+              "lessThanOrEqual": "2.18.5",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.18.6",
+              "versionType": "maven",
+              "status": "unaffected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.1",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.21.1",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.0",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.1.0",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.9.4/jackson-core-2.9.4-sources.jar",
+        "sha256": "1843edd2612c6b650f0b4cbcc38b6136e05ca655e070d9d138d8e9682d8dabac",
+        "javaFiles": 101
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "The named source class is absent from tested older releases; native package ranges start at 2.15.0. This evidence does not justify extending applicability to earlier parsers."
+    },
+    {
+      "project": "dubbo",
+      "package": "org.codehaus.jackson:jackson-mapper-asl",
+      "version": "1.9.13",
+      "id": "CVE-2026-91776",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo1.maven.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-databind",
+          "programRoutines": [
+            {
+              "name": "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "2.0.0",
+              "lessThanOrEqual": "2.18.10",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThanOrEqual": "2.21.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.22.0",
+              "lessThanOrEqual": "2.22.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": [
+            {
+              "requested": "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-databind",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo1.maven.org/maven2",
+          "packageName": "tools.jackson.core:jackson-databind",
+          "programRoutines": [
+            {
+              "name": "tools.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-databind",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThanOrEqual": "3.1.6",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.2.0",
+              "lessThanOrEqual": "3.2.2",
+              "versionType": "maven",
+              "status": "affected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": [
+            {
+              "requested": "tools.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/org/codehaus/jackson/jackson-mapper-asl/1.9.13/jackson-mapper-asl-1.9.13-sources.jar",
+        "sha256": "da040569de0b23cfd0c39c303a7d9dd512d0a848e71f48f370b33442949c3e5c",
+        "javaFiles": 309
+      },
+      "relatedClasses": [
+        "org/codehaus/jackson/map/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "conclusion": "legacy_port_requires_separate_applicability_evidence",
+      "reason": "The older Codehaus artifact contains an analogous _findDeserializer cache with attacker-controlled typeId keys, but the CVE names FasterXML 2.x/3.x coordinates, namespaces and ranges. Similar code is a relevant lead; copying version ranges between these release lines would be unjustified."
+    },
+    {
+      "project": "dubbo",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.8.6",
+      "id": "CVE-2026-18401",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "2.15.0",
+              "lessThanOrEqual": "2.18.5",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.18.6",
+              "versionType": "maven",
+              "status": "unaffected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.1",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.21.1",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.0",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.1.0",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.8.6/jackson-core-2.8.6-sources.jar",
+        "sha256": "daad4c67d0a7a35f9aabc837206dd0dfa7609a201faaf2e8d394cd8b6b8e6153",
+        "javaFiles": 91
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "The named source class is absent from tested older releases; native package ranges start at 2.15.0. This evidence does not justify extending applicability to earlier parsers."
+    },
+    {
+      "project": "petclinic",
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.3",
+      "id": "CVE-2023-6481",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "logback",
+          "defaultStatus": "unaffected",
+          "modules": [
+            "logback receiver"
+          ],
+          "platforms": [
+            "Windows",
+            "Linux",
+            "MacOS"
+          ],
+          "repo": "https://github.com/qos-ch/logback",
+          "versions": [
+            {
+              "version": "1.4.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.3.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.2.13",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-core/1.2.3/logback-core-1.2.3-sources.jar",
+        "sha256": "1f69b6b638ec551d26b10feeade5a2b77abe347f9759da95022f0da9a63a9971",
+        "javaFiles": 326
+      },
+      "relatedClasses": [
+        "ch/qos/logback/core/net/HardenedObjectInputStream.java"
+      ],
+      "conclusion": "insufficient_version_evidence",
+      "reason": "Native versions list only unaffected releases and default unaffected; receiver deployment is an additional condition. Source-file presence alone cannot establish applicability to 1.2.2/1.2.3."
+    },
+    {
+      "project": "petclinic",
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.3",
+      "id": "CVE-2026-9828",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "logback",
+          "defaultStatus": "unaffected",
+          "packageName": "logback-core",
+          "modules": [
+            "HardenedObjectInputStream (logback-core)"
+          ],
+          "programFiles": [
+            "HardenedObjectInputStream.java"
+          ],
+          "repo": "https://github.com/qos-ch/logback",
+          "versions": [
+            {
+              "version": "0",
+              "lessThanOrEqual": "1.5.32",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "1.5.33",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "HardenedObjectInputStream.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3-sources.jar",
+        "sha256": "480cb5e99519271c9256716d4be1a27054047435ff72078d9deae5c6a19f63eb",
+        "javaFiles": 169
+      },
+      "relatedClasses": [],
+      "conclusion": "already_reported_on_named_module",
+      "reason": "Named HardenedObjectInputStream.java is in logback-core, absent from logback-classic; the existing scan reports the CVE on core. Shared repository does not identify classic."
+    },
+    {
+      "project": "petclinic",
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.3",
+      "id": "CVE-2023-6481",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "logback",
+          "defaultStatus": "unaffected",
+          "modules": [
+            "logback receiver"
+          ],
+          "platforms": [
+            "Windows",
+            "Linux",
+            "MacOS"
+          ],
+          "repo": "https://github.com/qos-ch/logback",
+          "versions": [
+            {
+              "version": "1.4.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.3.14",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.2.13",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3-sources.jar",
+        "sha256": "480cb5e99519271c9256716d4be1a27054047435ff72078d9deae5c6a19f63eb",
+        "javaFiles": 169
+      },
+      "relatedClasses": [],
+      "conclusion": "insufficient_version_evidence",
+      "reason": "Native versions list only unaffected releases and default unaffected; receiver deployment is an additional condition. Source-file presence alone cannot establish applicability to 1.2.2/1.2.3."
+    },
+    {
+      "project": "petclinic",
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.3",
+      "id": "CVE-2024-12798",
+      "entries": [
+        {
+          "vendor": "QOS.CH Sarl",
+          "product": "Logback-core",
+          "defaultStatus": "unaffected",
+          "modules": [
+            "logback-core"
+          ],
+          "versions": [
+            {
+              "version": "0.1",
+              "lessThanOrEqual": "1.3.14",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "1.4.0",
+              "lessThanOrEqual": "1.5.12",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "1.3.15",
+              "status": "unaffected"
+            },
+            {
+              "version": "1.5.13",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [],
+          "routineEvidence": []
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3-sources.jar",
+        "sha256": "480cb5e99519271c9256716d4be1a27054047435ff72078d9deae5c6a19f63eb",
+        "javaFiles": 169
+      },
+      "relatedClasses": [],
+      "conclusion": "already_reported_on_named_module",
+      "reason": "The native named module is logback-core, already reported. Do not duplicate attribution to classic from a common repository."
+    },
+    {
+      "project": "petclinic",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.11.4",
+      "id": "CVE-2026-18401",
+      "entries": [
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "com.fasterxml.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "2.15.0",
+              "lessThanOrEqual": "2.18.5",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.18.6",
+              "versionType": "maven",
+              "status": "unaffected"
+            },
+            {
+              "version": "2.19.0",
+              "lessThan": "2.21.1",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "2.21.1",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        },
+        {
+          "vendor": "FasterXML",
+          "product": "jackson-core",
+          "defaultStatus": "unaffected",
+          "collectionURL": "https://repo.maven.apache.org/maven2",
+          "packageName": "tools.jackson.core:jackson-core",
+          "programFiles": [
+            "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+          ],
+          "programRoutines": [
+            {
+              "name": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart"
+            },
+            {
+              "name": "NonBlockingUtf8JsonParserBase._valueComplete"
+            }
+          ],
+          "repo": "https://github.com/FasterXML/jackson-core",
+          "versions": [
+            {
+              "version": "3.0.0",
+              "lessThan": "3.1.0",
+              "versionType": "maven",
+              "status": "affected"
+            },
+            {
+              "version": "3.1.0",
+              "versionType": "maven",
+              "status": "unaffected"
+            }
+          ],
+          "fileEvidence": [
+            {
+              "requested": "src/main/java/tools/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java",
+              "matches": []
+            }
+          ],
+          "routineEvidence": [
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._finishNumberIntegralPart",
+              "matches": []
+            },
+            {
+              "requested": "NonBlockingUtf8JsonParserBase._valueComplete",
+              "matches": []
+            }
+          ]
+        }
+      ],
+      "source": {
+        "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.11.4/jackson-core-2.11.4-sources.jar",
+        "sha256": "229657f71a83b63e468ba92903ffa73f771fbf1ee3de1289e4fa8ca74587110c",
+        "javaFiles": 112
+      },
+      "relatedClasses": [],
+      "conclusion": "no_supported_range_extension",
+      "reason": "The named source class is absent from tested older releases; native package ranges start at 2.15.0. This evidence does not justify extending applicability to earlier parsers."
+    }
+  ],
+  "controls": [
+    {
+      "package": "org.codehaus.jackson:jackson-mapper-asl",
+      "version": "1.9.13",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/org/codehaus/jackson/jackson-mapper-asl/1.9.13/jackson-mapper-asl-1.9.13-sources.jar",
+      "sha256": "da040569de0b23cfd0c39c303a7d9dd512d0a848e71f48f370b33442949c3e5c",
+      "javaFiles": 309,
+      "relatedClasses": []
+    },
+    {
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-core/1.2.2/logback-core-1.2.2-sources.jar",
+      "sha256": "d7476f88cc1bdfa3e8c926c6846fcc539886f136c68099de05ff3842d1e727d8",
+      "javaFiles": 326,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.10.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.10.4/jackson-databind-2.10.4-sources.jar",
+      "sha256": "0e804c43af17de030aee7b8307c466eb706bd4d65103a8e08b62628731ac51e6",
+      "javaFiles": 430,
+      "relatedClasses": []
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/io/netty/netty-codec-http/4.1.35.Final/netty-codec-http-4.1.35.Final-sources.jar",
+      "sha256": "29eaf8027c361140f0a75b57b343108b6b8bef4c347b02bc84cfe5a04993cfd1",
+      "javaFiles": 235,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.10.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.10.4/jackson-core-2.10.4-sources.jar",
+      "sha256": "179ea5212193ff0ae6348b944fb1ca04e087442c73adabecf171d926a501c67e",
+      "javaFiles": 112,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.5",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.9.5/jackson-core-2.9.5-sources.jar",
+      "sha256": "fc30dc19b7911a0748229110fd3915b951012d1e785701a4cfd0f797396290de",
+      "javaFiles": 101,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.5",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.5/jackson-databind-2.9.5-sources.jar",
+      "sha256": "3993a5b825701d1f8a3313315129e36ca46216e81894f79f13b3d6cd76f1f0bf",
+      "javaFiles": 419,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+      "version": "2.6.7",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-cbor/2.6.7/jackson-dataformat-cbor-2.6.7-sources.jar",
+      "sha256": "7edf31f544892b2acda0b4e361125ab187768009f14c83232eaf8f0b8d401fe1",
+      "javaFiles": 7,
+      "relatedClasses": [
+        "com/fasterxml/jackson/dataformat/cbor/CBORParser.java"
+      ]
+    },
+    {
+      "package": "org.xerial.snappy:snappy-java",
+      "version": "1.1.1.3",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/org/xerial/snappy/snappy-java/1.1.1.3/snappy-java-1.1.1.3-sources.jar",
+      "sha256": "a84d92464a9136fe62f673a5118a999b4573b48ee983128c270176faaaeaa789",
+      "javaFiles": 17,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.9",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.9/jackson-databind-2.9.9-sources.jar",
+      "sha256": "d78ee97c1041f83c3a1706e0f01abfa91c890fcf2c622c1ef602187c76768985",
+      "javaFiles": 419,
+      "relatedClasses": []
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-server",
+      "version": "9.4.11.v20180605",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/org/eclipse/jetty/jetty-server/9.4.11.v20180605/jetty-server-9.4.11.v20180605-sources.jar",
+      "sha256": "c1e41052cc549b4d19f40ff2a0204a6f5167843df2e4c3ece0e4c0ca56e17cd3",
+      "javaFiles": 142,
+      "relatedClasses": []
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.2/logback-classic-1.2.2-sources.jar",
+      "sha256": "96810579b282e480c9d7a878c726e2d77f83e587c8687178020c52db27e8f953",
+      "javaFiles": 169,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.9",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.9.9/jackson-core-2.9.9-sources.jar",
+      "sha256": "cfc968701a863296c8d44b36526588c850ac0dfd8dff7610b024336068caac0e",
+      "javaFiles": 102,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.11.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.11.4/jackson-core-2.11.4-sources.jar",
+      "sha256": "229657f71a83b63e468ba92903ffa73f771fbf1ee3de1289e4fa8ca74587110c",
+      "javaFiles": 112,
+      "relatedClasses": []
+    },
+    {
+      "package": "org.codehaus.jackson:jackson-mapper-asl",
+      "version": "1.9.12",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/org/codehaus/jackson/jackson-mapper-asl/1.9.12/jackson-mapper-asl-1.9.12-sources.jar",
+      "sha256": "399543e4993270a24cf078c461c1c26b40cd6267e9519780414f9d4eeed175e1",
+      "javaFiles": 309,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.9.4/jackson-databind-2.9.4-sources.jar",
+      "sha256": "b01c0aeb4109b2af5e17d2a7bde9f04558100701eddfa09467d65a66133c8363",
+      "javaFiles": 419,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.9.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.9.4/jackson-core-2.9.4-sources.jar",
+      "sha256": "1843edd2612c6b650f0b4cbcc38b6136e05ca655e070d9d138d8e9682d8dabac",
+      "javaFiles": 101,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.5.2/jackson-databind-2.5.2-sources.jar",
+      "sha256": "44f62b02bde2aedbc350cad4d38864ac6b58d9fa8b6797b2087e4b0dcdee6ea6",
+      "javaFiles": 383,
+      "relatedClasses": []
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-http",
+      "version": "9.4.11.v20180605",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/org/eclipse/jetty/jetty-http/9.4.11.v20180605/jetty-http-9.4.11.v20180605-sources.jar",
+      "sha256": "edd879e21254731a368ee518fa24784cb1fea64c2e7a5e860d131699e025725e",
+      "javaFiles": 45,
+      "relatedClasses": [
+        "org/eclipse/jetty/http/HttpURI.java"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+      "version": "2.11.4",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-cbor/2.11.4/jackson-dataformat-cbor-2.11.4-sources.jar",
+      "sha256": "69eb6aac5230d10344124e4dc9846c1cb387b0f16d281615044a96dad578a9f9",
+      "javaFiles": 10,
+      "relatedClasses": [
+        "com/fasterxml/jackson/dataformat/cbor/CBORParser.java"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.5.2",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.5.2/jackson-core-2.5.2-sources.jar",
+      "sha256": "90b24f8db430c846a575461b1e77a9c73753bd5201145974b66e59e4cc655ba7",
+      "javaFiles": 80,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.15.0",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.15.0/jackson-core-2.15.0-sources.jar",
+      "sha256": "f0edf838a7817d3e9ab8f25c51cb50e7c627db215ef19356cf6bf5266313924e",
+      "javaFiles": 129,
+      "relatedClasses": [
+        "com/fasterxml/jackson/core/json/async/NonBlockingUtf8JsonParserBase.java"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.8.6",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/2.8.6/jackson-core-2.8.6-sources.jar",
+      "sha256": "daad4c67d0a7a35f9aabc837206dd0dfa7609a201faaf2e8d394cd8b6b8e6153",
+      "javaFiles": 91,
+      "relatedClasses": []
+    },
+    {
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.3",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-core/1.2.3/logback-core-1.2.3-sources.jar",
+      "sha256": "1f69b6b638ec551d26b10feeade5a2b77abe347f9759da95022f0da9a63a9971",
+      "javaFiles": 326,
+      "relatedClasses": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.11.0",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/2.11.0/jackson-databind-2.11.0-sources.jar",
+      "sha256": "e40715a657019f7622b050a8283d3eecc4f8b7f2123a20af9834ef919fe7c83e",
+      "javaFiles": 431,
+      "relatedClasses": [
+        "com/fasterxml/jackson/databind/jsontype/DefaultBaseTypeLimitingValidator.java"
+      ]
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.3",
+      "url": "https://maven-central.storage-download.googleapis.com/maven2/ch/qos/logback/logback-classic/1.2.3/logback-classic-1.2.3-sources.jar",
+      "sha256": "480cb5e99519271c9256716d4be1a27054047435ff72078d9deae5c6a19f63eb",
+      "javaFiles": 169,
+      "relatedClasses": []
+    }
+  ]
+}

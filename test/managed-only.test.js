@@ -70,8 +70,8 @@ test("resolution: an unused pin is never a root and leaves the scan set; a reach
 	assert.ok(!r.has("org.codehaus.jackson:jackson-mapper-asl"));
 
 	const idx = { byPackageName: {
-		"org.codehaus.jackson:jackson-mapper-asl": [{ id: "CVE-2019-10202", severity: "CRITICAL", ranges: [{ lessThanOrEqual: "1.9.13" }] }],
-		"com.mchange:c3p0": [{ id: "CVE-C3P0", severity: "HIGH", ranges: [{ lessThan: "0.12.0" }] }],
+		"org.codehaus.jackson:jackson-mapper-asl": [{ id: "CVE-2019-10202", coordinateEvidence: "explicit-coordinate", exactPackageName: "org.codehaus.jackson:jackson-mapper-asl", severity: "CRITICAL", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThanOrEqual: "1.9.13" }] }],
+		"com.mchange:c3p0": [{ id: "CVE-C3P0", coordinateEvidence: "explicit-coordinate", exactPackageName: "com.mchange:c3p0", severity: "HIGH", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThan: "0.12.0" }] }],
 	}, byProduct: {} };
 	const ids = matchDepsAgainstCves(r, idx).map(m => m.cve.id);
 	assert.ok(!ids.includes("CVE-2019-10202"), "no CVE against a jar no classpath holds");

@@ -85,8 +85,22 @@ test("buildCycloneDx points GHSA/OSV ids at the right advisory db", () => {
 	]);
 	const ghsa = bom.vulnerabilities.find(v => v.id.startsWith("GHSA"));
 	const cve = bom.vulnerabilities.find(v => v.id.startsWith("CVE"));
-	assert.match(ghsa.source.url, /github\.com\/advisories/);
+	assert.match(ghsa.source.url, /osv\.dev\/vulnerability/);
+	assert.equal(ghsa.source.name, 'OSV');
 	assert.match(cve.source.url, /nvd\.nist\.gov/);
+});
+
+test('SBOM preserves advisory provenance instead of inferring NVD from a CVE id', () => {
+	const dep = makeDepRecord({ ecosystem:'npm', name:'x', version:'1.0.0', manifestPath:'package.json' });
+	const bom = buildCycloneDx(new Map([[dep.coordKey, dep]]), [
+		{dep, source:'CVEProject+osv', cve:{id:'CVE-2024-1234',severity:'HIGH',score:7}},
+		{dep, cve:{id:'CVE-2024-5678',severity:'LOW',score:2}},
+	]);
+	const a = bom.vulnerabilities.find(v=>v.id==='CVE-2024-1234');
+	assert.equal(a.source.name,'CVEProject');
+	assert.deepEqual(a.properties.filter(p=>p.name==='vigievuln:source').map(p=>p.value),['CVEProject','osv']);
+	assert.equal(a.ratings[0].source, undefined, 'do not guess which source supplied a merged score');
+	assert.equal(bom.vulnerabilities.find(v=>v.id==='CVE-2024-5678').source.name,'cache');
 });
 
 test("Wordfence-only advisory registers its application component in CycloneDX", () => {

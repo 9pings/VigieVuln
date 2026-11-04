@@ -1,0 +1,15 @@
+{
+  "name": "jquery",
+  "version": "2.2.4",
+  "jarUrl": "https://maven-central.storage-download.googleapis.com/maven2/org/webjars/jquery/2.2.4/jquery-2.2.4.jar",
+  "jarSha256": "de28c4da0ea9f16101352dd3582ec8021ee5e2de5f45104ca171876003d54db6",
+  "npmTarballUrl": "https://registry.npmjs.org/jquery/-/jquery-2.2.4.tgz",
+  "npmTarballSha256": "1ce113265b4e2a1c8cfc1da2fbf8836bd44e2911daa2a264b8ec52afef2e19a1",
+  "matches": [
+    {
+      "jarPath": "META-INF/resources/webjars/jquery/2.2.4/jquery.js",
+      "npmPath": "dist/jquery.js",
+      "sha256": "893e90f6230962e42231635df650f20544ad22affc3ee396df768eaa6bc5a6a2"
+    }
+  ]
+}

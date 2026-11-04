@@ -1,0 +1,289 @@
+{
+  "date": "2026-11-02",
+  "project": "Apache Dubbo",
+  "commit": "0be2a1bbbf9168490acecaf1eed1bd16cb8db402",
+  "unit": "Exact Maven coordinate/version/advisory ID; declared aliases used only for Snyk comparison; org.apache.dubbo reactor excluded",
+  "sourceProfiles": {
+    "before": {
+      "nvd": false,
+      "findings": 776
+    },
+    "moduleCorrectionOnly": {
+      "nvd": false,
+      "findings": 779
+    },
+    "final": {
+      "osv": true,
+      "cveproject": true,
+      "nvd": true,
+      "epss": false,
+      "kev": false,
+      "euvd": false,
+      "certfr": false,
+      "eol": false,
+      "retire": false
+    }
+  },
+  "cveProjectionSchema": 5,
+  "online": 793,
+  "offline": 793,
+  "offlineNetwork": "Docker --network none",
+  "offlineSetEqual": true,
+  "removed": [],
+  "addedByModuleCorrection": [
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "id": "CVE-2026-104721"
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "id": "CVE-2026-19880"
+    },
+    {
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "id": "CVE-2026-13006"
+    }
+  ],
+  "addedWithNvd": [
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "id": "CVE-2020-11112"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "id": "CVE-2020-11113"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "id": "CVE-2020-11619"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "id": "CVE-2020-14060"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "id": "CVE-2020-14062"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "id": "CVE-2020-9546"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2019-14893"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2020-10969"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2020-11112"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2020-11113"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2020-11619"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2020-14060"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2020-14062"
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.8.4",
+      "id": "CVE-2020-9546"
+    }
+  ],
+  "snykBeforeUnmatched": 140,
+  "snykAfterUnmatched": 132,
+  "recoveredSnyk": [
+    {
+      "package": "ch.qos.logback:logback-core",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-17675439",
+      "ids": [
+        "SNYK-JAVA-CHQOSLOGBACK-17675439",
+        "CVE-2026-13006"
+      ]
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-19882330",
+      "ids": [
+        "SNYK-JAVA-CHQOSLOGBACK-19882330",
+        "CVE-2026-19880"
+      ]
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-20824362",
+      "ids": [
+        "SNYK-JAVA-CHQOSLOGBACK-20824362",
+        "CVE-2026-104721"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561585",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561585",
+        "CVE-2020-11113",
+        "GHSA-9vvp-fxw6-jcxr"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561587",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561587",
+        "CVE-2020-11112",
+        "GHSA-58pp-9c76-5625"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564888",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564888",
+        "CVE-2020-11619",
+        "GHSA-27xj-rqx5-2255"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-570625",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-570625",
+        "CVE-2020-14062",
+        "GHSA-c265-37vj-cwcc"
+      ]
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572314",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572314",
+        "CVE-2020-14060",
+        "GHSA-j823-4qch-3rgm"
+      ]
+    }
+  ],
+  "remainingPartition": {
+    "confirmedMissing": 54,
+    "contradictedByPrimaryEvidence": 24,
+    "provenEquivalentIds": 3,
+    "indeterminate": 51
+  },
+  "diagnosis62Counts": {
+    "matcher_corrected": 3,
+    "osv_names_other_artifact": 17,
+    "native_only_without_usable_package_binding": 17,
+    "osv_ranges_exclude_version": 17,
+    "corrected_by_bound_nvd_range": 5,
+    "no_public_identifier_in_observation": 3
+  },
+  "validation": {
+    "cli": {
+      "tests": 1862,
+      "passed": 1850,
+      "skipped": 12,
+      "failed": 0
+    },
+    "serverMainIsolatedCurrentCli": {
+      "tests": 486,
+      "passed": 486,
+      "skipped": 0,
+      "failed": 0
+    },
+    "windowsTargeted": {
+      "passed": 25,
+      "failed": 0,
+      "note": "Before final strict vulnerable=true guard assertion and platform-union regression; final Linux suite includes both."
+    },
+    "packagedOfflineTransfer": "PASS; fresh containers; stale KEV gate; zero offline network attempts"
+  },
+  "limitations": [
+    "54 previously confirmed missing observations remain unresolved; diagnosis is not closure.",
+    "NVD additions reuse an OSV-bound CVE already enriched in this scan; this is not global candidate discovery for isolated older versions.",
+    "The final scan still warns about unresolved POMs, dependency depth and partial native CVEProject/GCVE coverage.",
+    "Petclinic and the other ecosystems were not rerun after the latest module/NVD changes.",
+    "Full server-main tests used an isolated installation linked to the current CLI; the workspace installed CLI dependency is stale."
+  ],
+  "artifacts": [
+    {
+      "file": "dubbo-vv-matching-repair.json",
+      "sha256": "0bf0739bceb642de3cabefceadeab5ba67ece73a6fcc978ca8149943be52aa0b"
+    },
+    {
+      "file": "dubbo-vv-module-repair.json",
+      "sha256": "55b39c79334672f2f16853344ff65cc70aece8fb553918957fa10f3bc981860d"
+    },
+    {
+      "file": "dubbo-vv-62-online.json",
+      "sha256": "bab7600efaaa3232bcee6c813df8672c6a689dc83e5ede8615cca01c12913201"
+    },
+    {
+      "file": "dubbo-vv-62-offline.json",
+      "sha256": "83a6679b42f111c4896f8b2be72d61c9dbb86cbe5845a2e4e25623bbf8619e72"
+    },
+    {
+      "file": "dubbo-snyk-online.json",
+      "sha256": "02cdd1dfe716f142cf2bc0aaf31723beeeba290221074b89ea5a33f21db91099"
+    },
+    {
+      "file": "dubbo-vv-62-offline-final.json",
+      "sha256": "61554e49c0765e39ce44cb653dc6d5dd6b668c368b0c6ce6c55a3b228c0f522c"
+    }
+  ],
+  "validationLogs": [
+    {
+      "file": "/tmp/vv-final-62-cli.log",
+      "sha256": "5f0a3090d45e28416f34111ae6b88565c8191252637d0ea584cb3ea7cf9962ef"
+    },
+    {
+      "file": "/tmp/vv-module-server-isolated.log",
+      "sha256": "94582fdcf4040e87f3a2a8490ba6a07901592cecc644fd690e26d61097d79997"
+    },
+    {
+      "file": "/tmp/vv-module-nvd-windows.log",
+      "sha256": "1aeab011065fd84f37e0b8f0aa90d092516c8a65aed5e9f0e5f939b1692be3bd"
+    },
+    {
+      "file": "/tmp/vv-module-nvd-transfer.log",
+      "sha256": "efd4bf598947333694ff9fb765c60b4c1980c228b1e01502c9d6fd7994b33811"
+    }
+  ],
+  "lastChange": "Preserve OS platform constraints when combining same-provider affected branches; regression tested in both row orders. Final offline scan after this guard has exactly the same 793 keys as the online scan."
+}

@@ -1,0 +1,114 @@
+{
+  "CVE-2021-43297": {
+    "status": 200,
+    "package": "com.alibaba:hessian-lite",
+    "version": "3.2.8",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "59"
+  },
+  "CVE-2020-13954": {
+    "status": 200,
+    "package": "org.apache.cxf:cxf-rt-transports-http",
+    "version": "3.1.15",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "58"
+  },
+  "CVE-2019-17573": {
+    "status": 200,
+    "package": "org.apache.cxf:cxf-rt-transports-http",
+    "version": "3.1.15",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "55"
+  },
+  "CVE-2020-13943": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "57"
+  },
+  "CVE-2020-17527": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "56"
+  },
+  "CVE-2026-24733": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "54"
+  },
+  "CVE-2021-41079": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "53"
+  },
+  "CVE-2021-30640": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "52"
+  },
+  "CVE-2021-33037": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "51"
+  },
+  "CVE-2023-28708": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "50"
+  },
+  "CVE-2020-13934": {
+    "status": 200,
+    "package": "org.apache.tomcat.embed:tomcat-embed-core",
+    "version": "8.5.31",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "49"
+  },
+  "CVE-2016-5003": {
+    "status": 200,
+    "package": "org.apache.xmlrpc:xmlrpc-common",
+    "version": "3.1.3",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "48"
+  },
+  "CVE-2020-10688": {
+    "status": 200,
+    "package": "org.jboss.resteasy:resteasy-jaxrs",
+    "version": "3.0.19.Final",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "47"
+  },
+  "CVE-2024-9622": {
+    "status": 200,
+    "package": "org.jboss.resteasy:resteasy-netty4",
+    "version": "3.0.19.Final",
+    "matching": [],
+    "advisoryCount": 1,
+    "remaining": "46"
+  }
+}

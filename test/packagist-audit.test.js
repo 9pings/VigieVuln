@@ -188,8 +188,9 @@ test("queryPackagistAudit batches package names, caches per package, and serves 
 	assert.equal(first.length, 3, "twig 1.35.0 × 2 advisories + snappy 1.4.2 × 1");
 	assert.equal(fetcher.calls().length, 1, "one batched request for both packages");
 	assert.ok(fetcher.calls()[0].includes("packages[]="), "the packages[] query convention");
-	assert.ok(fs.existsSync(path.join(cacheDir, "twig__twig.json")), "per-package cache file");
-	assert.ok(fs.existsSync(path.join(cacheDir, "knplabs__knp-snappy.json")));
+	const repository=require('../lib/cache-repository').createCacheRepository(cacheDir);
+	assert.ok(repository.get('packagist-audit','twig/twig'), "per-package SQLite cache entry");
+	assert.ok(repository.get('packagist-audit','knplabs/knp-snappy'));
 
 	// Offline on the warm cache: zero network, same recall.
 	const tripwire = async (url) => { throw new Error(`NETWORK CALL in offline mode: ${url}`); };
@@ -212,7 +213,7 @@ test("Packagist audit does not query Adobe's Composer repository packages", asyn
 		assert.equal(fetcher.calls().length, 1);
 		assert.match(fetcher.calls()[0], /twig%2Ftwig|twig\/twig/);
 		assert.doesNotMatch(fetcher.calls()[0], /magento|module-pay/);
-	} finally { fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("queryPackagistAudit makes zero network calls offline on a cold cache", async () => {
@@ -246,11 +247,11 @@ test("Packagist keeps omitted packages unknown while retaining valid results", a
 		const matches = await queryPackagistAudit(deps, { cacheDir, fetcher, onUnknown: names => { unknown = names; } });
 		assert.equal(matches.length, 2, "the known package is still audited");
 		assert.deepEqual(unknown, ["disp/log-bundle"]);
-		assert.deepEqual(fs.readdirSync(cacheDir), ["twig__twig.json"], "unknown is never cached as clean");
+		assert.deepEqual([...require('../lib/cache-repository').createCacheRepository(cacheDir).entries('packagist-audit')].map(([key])=>key), ['twig/twig'], "unknown is never cached as clean");
 		await queryPackagistAudit(deps, { cacheDir, fetcher, onUnknown: names => { unknown = names; } });
 		assert.equal(fetcher.calls().length, 2, "the unknown package is retried next run");
 		assert.deepEqual(unknown, ["disp/log-bundle"]);
-	} finally { fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("Packagist accepts an empty top-level advisory array as unknown, not clean", async () => {
@@ -263,8 +264,8 @@ test("Packagist accepts an empty top-level advisory array as unknown, not clean"
 		});
 		assert.deepEqual(matches, []);
 		assert.deepEqual(unknown, ["disp/log-bundle"]);
-		assert.deepEqual(fs.readdirSync(cacheDir), []);
-	} finally { fs.rmSync(cacheDir, { recursive: true, force: true }); }
+		assert.deepEqual([...require('../lib/cache-repository').createCacheRepository(cacheDir).entries('packagist-audit')], []);
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("Packagist refuses malformed answers without caching them as clean", async () => {
@@ -280,8 +281,8 @@ test("Packagist refuses malformed answers without caching them as clean", async 
 		try {
 			await assert.rejects(queryPackagistAudit(deps, { cacheDir, fetcher: async () => response }),
 				/Packagist audit batch/, label);
-			assert.deepEqual(fs.readdirSync(cacheDir), [], `${label} must not write a clean cache entry`);
-		} finally { fs.rmSync(cacheDir, { recursive: true, force: true }); }
+			assert.deepEqual([...require('../lib/cache-repository').createCacheRepository(cacheDir).entries('packagist-audit')], [], `${label} must not write a clean cache entry`);
+		} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 	}
 });
 
@@ -290,13 +291,14 @@ test("a legacy empty Packagist cache entry is revalidated online", async () => {
 	const deps = new Map([[r.coordKey, r]]);
 	const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-pksa-legacy-"));
 	try {
-		fs.writeFileSync(path.join(cacheDir, "twig__twig.json"), JSON.stringify({ _fetchedAt: Date.now(), body: [] }));
+		const repository=require('../lib/cache-repository').createCacheRepository(cacheDir);
+		repository.put('packagist-audit','twig/twig',{ _fetchedAt: Date.now(), body: [] });
 		let calls = 0;
 		await queryPackagistAudit(deps, { cacheDir, fetcher: async () => {
 			calls++;
 			return { ok: true, json: async () => ({ advisories: { "twig/twig": [] } }) };
 		} });
 		assert.equal(calls, 1);
-		assert.equal(JSON.parse(fs.readFileSync(path.join(cacheDir, "twig__twig.json")))._schema, 2);
-	} finally { fs.rmSync(cacheDir, { recursive: true, force: true }); }
+		assert.equal(repository.get('packagist-audit','twig/twig').value._schema, 2);
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });

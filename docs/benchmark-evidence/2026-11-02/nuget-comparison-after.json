@@ -1,0 +1,23 @@
+{
+  "ecosystem": "nuget",
+  "raw": {
+    "vv": 21,
+    "osv": 21,
+    "trivy": 21,
+    "grype": 21
+  },
+  "normalized": {
+    "vv": 21,
+    "osv": 21,
+    "trivy": 21,
+    "grype": 21,
+    "all": 21
+  },
+  "missing": [],
+  "extra": [],
+  "grypeMissing": [],
+  "grypeExtra": [],
+  "warnings": {
+    "osv-coverage": 33
+  }
+}

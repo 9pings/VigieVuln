@@ -1,0 +1,652 @@
+{
+  "project": "dubbo",
+  "unit": "Exact case-sensitive Maven coordinate/version and declared common advisory ID",
+  "comparisonInputs": "Scanners rerun on 2026-11-02; OSV live API, Trivy/Grype pinned databases; see inventories and warnings in BENCHMARK.md",
+  "vigievuln": 794,
+  "scanners": {
+    "osv": {
+      "observations": 727,
+      "missingFromVigievuln": 0,
+      "missing": []
+    },
+    "trivy": {
+      "observations": 605,
+      "missingFromVigievuln": 0,
+      "missing": []
+    },
+    "grype": {
+      "observations": 47,
+      "missingFromVigievuln": 0,
+      "missing": []
+    }
+  },
+  "unidentifiedObservations": {
+    "vigievuln": 0,
+    "osv": 0,
+    "trivy": 0,
+    "grype": 0
+  },
+  "artifacts": {
+    "vigievuln": {
+      "file": "/tmp/vigie-benchmark-20261102/output/dubbo-vv-field-debug-online.json",
+      "sha256": "bd28e3b6741f40c42833a752421bf61ec122b80257bf1b82d1411041cae73075"
+    },
+    "osv": {
+      "file": "dubbo-osv-online.json",
+      "sha256": "14a1d3ea669aa252a6c7928b20662ad7374927c7b91eb03339d9c77d9364e89f"
+    },
+    "trivy": {
+      "file": "dubbo-trivy-online.json",
+      "sha256": "d36cd6a5760bc5e87903f7b016aca638fcabe531a04658bb370aa7d03b7a3afe"
+    },
+    "grype": {
+      "file": "dubbo-grype-online.json",
+      "sha256": "359d6a93bd7f8fb9da9bb2265459eb6ff197d350a6335d602b0876f3bb6a4223"
+    }
+  },
+  "remainingPreviouslyConfirmed": [
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-8539867",
+      "ids": [
+        "SNYK-JAVA-CHQOSLOGBACK-8539867",
+        "CVE-2024-12798",
+        "GHSA-pr98-23f8-jwxv"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.alibaba:hessian-lite",
+      "version": "3.2.8",
+      "snykId": "SNYK-JAVA-COMALIBABA-2332177",
+      "ids": [
+        "SNYK-JAVA-COMALIBABA-2332177",
+        "CVE-2021-43297"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-560766",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-560766",
+        "CVE-2020-10672",
+        "GHSA-95cm-88f5-f2c7"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561362",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561362",
+        "CVE-2020-10969",
+        "GHSA-758m-v56v-grj4"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561373",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561373",
+        "CVE-2020-10968",
+        "GHSA-rf6r-2c4q-2vwg"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561586",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-561586",
+        "CVE-2020-11111",
+        "GHSA-v3xw-c963-f5hc"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564887",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-564887",
+        "CVE-2020-11620",
+        "GHSA-h4rc-386g-6m85"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572300",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572300",
+        "CVE-2020-14195",
+        "GHSA-mc6h-4qgp-37qh"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572316",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-572316",
+        "CVE-2020-14061",
+        "GHSA-c2q3-4qrh-fm48"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72447",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72447",
+        "CVE-2018-12023",
+        "GHSA-6wqp-v4v6-c87c"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72449",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72449",
+        "CVE-2018-14720",
+        "GHSA-x2w5-5m2g-7h5m"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72451",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72451",
+        "CVE-2018-14721",
+        "GHSA-9mxf-g3x6-wv74"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72883",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72883",
+        "CVE-2018-19360",
+        "GHSA-f9hv-mg5h-xcw9"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.5.2",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72884",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-72884",
+        "CVE-2018-19361",
+        "GHSA-mx9v-gmh4-mgqw"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-469234",
+      "ids": [
+        "SNYK-JAVA-IONETTY-469234",
+        "CVE-2019-16869"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "io.netty:netty-codec-http",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-6056419",
+      "ids": [
+        "SNYK-JAVA-IONETTY-6056419",
+        "CVE-2019-20445"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "io.netty:netty-codec",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-564897",
+      "ids": [
+        "SNYK-JAVA-IONETTY-564897",
+        "CVE-2020-11612",
+        "GHSA-mm9x-g8pc-w292"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "io.netty:netty-all",
+      "version": "4.1.25.Final",
+      "snykId": "SNYK-JAVA-IONETTY-559515",
+      "ids": [
+        "SNYK-JAVA-IONETTY-559515",
+        "CVE-2019-20444"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "io.netty:netty-all",
+      "version": "4.1.25.Final",
+      "snykId": "SNYK-JAVA-IONETTY-6056420",
+      "ids": [
+        "SNYK-JAVA-IONETTY-6056420",
+        "CVE-2019-20445"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.cxf:cxf-rt-transports-http",
+      "version": "3.1.15",
+      "snykId": "SNYK-JAVA-ORGAPACHECXF-1039798",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHECXF-1039798",
+        "CVE-2020-13954",
+        "GHSA-64x2-gq24-75pv"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.cxf:cxf-rt-transports-http",
+      "version": "3.1.15",
+      "snykId": "SNYK-JAVA-ORGAPACHECXF-542666",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHECXF-542666",
+        "CVE-2019-17573",
+        "GHSA-f93p-f762-vr53"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1017119",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-1017119",
+        "CVE-2020-13943"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1048292",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-1048292",
+        "CVE-2020-17527"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-15307825",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-15307825",
+        "CVE-2026-24733"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728264",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728264",
+        "CVE-2021-41079"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728265",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728265",
+        "CVE-2021-30640"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728266",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-1728266",
+        "CVE-2021-33037"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-21715432",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-21715432",
+        "CVE-2026-73581"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-21715436",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-21715436",
+        "CVE-2026-78383"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-3326459",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-3326459",
+        "CVE-2023-24998"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-3369687",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-3369687",
+        "CVE-2023-28708",
+        "GHSA-2c9m-w27f-53rm"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-584427",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-584427",
+        "CVE-2020-13934"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.tomcat.embed:tomcat-embed-core",
+      "version": "8.5.31",
+      "snykId": "SNYK-JAVA-ORGAPACHETOMCATEMBED-8547999",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHETOMCATEMBED-8547999",
+        "CVE-2024-56337",
+        "GHSA-27hp-xhwr-wr2m"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.apache.xmlrpc:xmlrpc-common",
+      "version": "3.1.3",
+      "snykId": "SNYK-JAVA-ORGAPACHEXMLRPC-6184386",
+      "ids": [
+        "SNYK-JAVA-ORGAPACHEXMLRPC-6184386",
+        "CVE-2016-5003"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-io",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-1090340",
+      "ids": [
+        "SNYK-JAVA-ORGECLIPSEJETTY-1090340",
+        "CVE-2021-28165",
+        "GHSA-26vr-8j45-3r4w"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.eclipse.jetty:jetty-http",
+      "version": "9.4.11.v20180605",
+      "snykId": "SNYK-JAVA-ORGECLIPSEJETTY-19644207",
+      "ids": [
+        "SNYK-JAVA-ORGECLIPSEJETTY-19644207",
+        "CVE-2026-19203",
+        "GHSA-xc35-c22g-239h"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jackson-provider",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-1040444",
+      "ids": [
+        "SNYK-JAVA-ORGJBOSSRESTEASY-1040444",
+        "CVE-2016-6348"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-31203",
+      "ids": [
+        "SNYK-JAVA-ORGJBOSSRESTEASY-31203",
+        "CVE-2016-6345"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-31206",
+      "ids": [
+        "SNYK-JAVA-ORGJBOSSRESTEASY-31206",
+        "CVE-2016-6347"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-609370",
+      "ids": [
+        "SNYK-JAVA-ORGJBOSSRESTEASY-609370",
+        "CVE-2020-1695"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-jaxrs",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-8706731",
+      "ids": [
+        "SNYK-JAVA-ORGJBOSSRESTEASY-8706731",
+        "CVE-2020-10688",
+        "GHSA-29qj-rvv6-qrmv"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.jboss.resteasy:resteasy-netty4",
+      "version": "3.0.19.Final",
+      "snykId": "SNYK-JAVA-ORGJBOSSRESTEASY-8168842",
+      "ids": [
+        "SNYK-JAVA-ORGJBOSSRESTEASY-8168842",
+        "CVE-2024-9622",
+        "GHSA-5wpr-cj9p-959r"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267076",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267076",
+        "CVE-2026-59314"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267078",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267078",
+        "CVE-2026-59281"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-web",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-72470",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-72470",
+        "CVE-2018-15756",
+        "GHSA-ffvq-7w96-97p7"
+      ],
+      "category": "osv_names_other_artifact",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-beans",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267072",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267072",
+        "CVE-2026-59282"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-2329097",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-2329097",
+        "CVE-2021-22096"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-core",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-2330878",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-2330878",
+        "CVE-2021-22060"
+      ],
+      "category": "osv_ranges_exclude_version",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-expression",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267073",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267073",
+        "CVE-2026-47886"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "org.springframework:spring-expression",
+      "version": "4.3.16.RELEASE",
+      "snykId": "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267075",
+      "ids": [
+        "SNYK-JAVA-ORGSPRINGFRAMEWORK-19267075",
+        "CVE-2026-59283"
+      ],
+      "category": "native_only_without_usable_package_binding",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.5",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016"
+      ],
+      "category": "no_public_identifier_in_observation",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.9",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016"
+      ],
+      "category": "no_public_identifier_in_observation",
+      "alsoReportedBy": []
+    },
+    {
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.9.4",
+      "snykId": "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016",
+      "ids": [
+        "SNYK-JAVA-COMFASTERXMLJACKSONCORE-467016"
+      ],
+      "category": "no_public_identifier_in_observation",
+      "alsoReportedBy": []
+    }
+  ]
+}

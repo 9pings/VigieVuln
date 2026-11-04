@@ -2,16 +2,35 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
+const os = require('node:os');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'vigievuln-nvd-sqlite-test-'));
+os.homedir=()=>root;
 const N = require("../lib/nvd");
+const db=require('../lib/cache-db').getCacheDb(path.dirname(N.NVD_CACHE_DIR));
+process.on('exit',()=>{ require('../lib/cache-db').closeCacheDbs(); fs.rmSync(root,{recursive:true,force:true}); });
 
-// Write a raw cache file with an explicit _schema/_fetchedAt so we can simulate a
-// stale (TTL-expired) or older-schema warmed entry, then clean it up.
+// Seed an explicit timestamp/schema to exercise online and offline policy.
 function withCacheEntry(cveId, { schema, ageMs, body }, fn) {
-	fs.mkdirSync(N.NVD_CACHE_DIR, { recursive: true });
-	const p = path.join(N.NVD_CACHE_DIR, `${cveId}.json`);
-	fs.writeFileSync(p, JSON.stringify({ _schema: schema, _fetchedAt: Date.now() - ageMs, body }));
-	try { return fn(p); } finally { try { fs.unlinkSync(p); } catch { /* best effort */ } }
+	const bytes=Buffer.from(JSON.stringify(body));
+	db.prepare('INSERT INTO nvd_records(cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)')
+	 .run(cveId,'live',Date.now()-ageMs,null,require('../lib/advisory-compression').compress(bytes),bytes.length,JSON.stringify({schema}));
+	const cleanup=()=>db.prepare('DELETE FROM nvd_records WHERE cve=?').run(cveId);
+	try { const value=fn(); return value?.then?value.finally(cleanup):(cleanup(),value); }
+	catch(error){cleanup();throw error}
 }
+
+test('a cached empty NVD answer is distinguishable from missing or corrupt data', () => {
+	assert.equal(N.hasCachedAbsence('CVE-2099-99990'), false);
+	withCacheEntry('CVE-2099-99991', {schema:3, ageMs:0, body:null}, () => {
+		assert.equal(N.hasCachedAbsence('CVE-2099-99991'), true);
+	});
+	withCacheEntry('CVE-2099-99992', {schema:3, ageMs:0, body:{id:'CVE-2099-99992'}}, () => {
+		assert.equal(N.hasCachedAbsence('CVE-2099-99992'), false);
+	});
+	withCacheEntry('CVE-2099-99993', {schema:3, ageMs:8 * 24 * 3600000, body:null}, () => {
+		assert.equal(N.hasCachedAbsence('CVE-2099-99993'), false, 'old negative answers do not certify a current absence');
+	});
+});
 
 test("readCache OFFLINE returns a TTL-expired warmed body (never drops enrichment); ONLINE rejects it to re-fetch", () => {
 	const cveId = "CVE-0000-OFFLINE-TTL-" + process.pid;

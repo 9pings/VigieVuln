@@ -107,9 +107,9 @@ test("snapshot cache writes are atomic and leave no temporary residue", () => {
 	try {
 		const file = path.join(temp, "drupal-security-advisories.json");
 		writeSnapshotAtomically(file, { queriedPackages: [], advisories: {}, _fadSnapshot: { collectedAt: "2026-09-23T12:00:00.000Z" } });
-		assert.deepEqual(JSON.parse(fs.readFileSync(file, "utf8")).queriedPackages, []);
-		assert.equal(fs.readdirSync(temp).length, 1, "only the final file remains after the atomic rename");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+		assert.deepEqual(JSON.parse(require('../lib/application-providers/snapshot-cache').read(file).bytes).queriedPackages, []);
+		assert.deepEqual(fs.readdirSync(temp).filter(name=>!name.startsWith('cache.sqlite')), [], "only SQLite cache files remain");
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("the Drupal plugin queries live advisories for its inventoried public packages", async () => {
@@ -133,9 +133,9 @@ test("the Drupal plugin queries live advisories for its inventoried public packa
 		const advisories = result.coverage.find(c => c.capability === "advisories");
 		assert.equal(advisories.sourceSnapshot.completeness, "tool-fetched");
 		assert.equal(advisories.sourceSnapshot.collectedAt, "2026-09-23T12:00:00.000Z");
-		const cached = JSON.parse(fs.readFileSync(path.join(cacheDir, "drupal-security-advisories.json"), "utf8"));
+		const cached = JSON.parse(require('../lib/application-providers/snapshot-cache').read(path.join(cacheDir, "drupal-security-advisories.json")).bytes);
 		assert.equal(cached._fadSnapshot.sourceUrl, "https://example.invalid/security-advisories");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("a failing live Drupal source stops the scan like any required provider", async () => {
@@ -167,8 +167,8 @@ test("the WordPress plugin assesses a live feed for a user-declared public theme
 		assert.equal(result.findings[0].cve.id, `WF-${uuid}`);
 		assert.equal(result.findings[0].cve.copyrightNotice, "Fixture copyright");
 		assert.equal(result.coverage.find(c => c.capability === "advisories").sourceSnapshot.completeness, "tool-fetched");
-		assert.ok(fs.existsSync(path.join(temp, "cache", "wordfence-v3.json")));
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+		assert.ok(require('../lib/application-providers/snapshot-cache').exists(path.join(temp, "cache", "wordfence-v3.json")));
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 // Builds a scan root holding two independent Drupal instances. The instance discovered
@@ -234,13 +234,13 @@ test("the Drupal live source queries the union of every instance's public packag
 			assert.equal(fooCoverage.execution, "completed");
 			assert.equal(fooCoverage.result, "affected");
 			// The reusable disk snapshot holds the exact union of packages actually queried.
-			const cached = JSON.parse(fs.readFileSync(path.join(cacheDir, "drupal-security-advisories.json"), "utf8"));
+			const cached = JSON.parse(require('../lib/application-providers/snapshot-cache').read(path.join(cacheDir, "drupal-security-advisories.json")).bytes);
 			assert.deepEqual([...cached.queriedPackages].sort(), ["drupal/core", "drupal/foo"],
 				`disk cache holds the queried union (order fooInSecond=${fooInSecond})`);
 			assert.ok(Object.keys(cached.advisories).includes("drupal/foo"));
 			for (const call of calls) for (const pkg of new URL(call).searchParams.getAll("packages[]"))
 				assert.match(pkg, /^drupal\/(core|foo)$/, "private or already-covered packages are never re-sent");
-		} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+		} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 	}
 });
 
@@ -256,7 +256,7 @@ test("the CLI refuses live advisory sources under --offline", () => {
 			assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
 			assert.match(run.stderr, /--offline/);
 		}
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 const githubPage = (records, next = null) => ({ ok: true, status: 200,
@@ -292,10 +292,10 @@ test("the PrestaShop live lane fetches the publisher feed once per scan and reus
 		assert.ok(result.findings.every(f => f.cve.id === "CVE-2026-11111" && f.cve.fixVersion === "8.2.8"));
 		assert.ok(result.coverage.filter(c => c.capability === "advisories")
 			.every(c => c.sourceSnapshot.completeness === "tool-fetched" && c.sourceSnapshot.collectedAt));
-		const cached = JSON.parse(fs.readFileSync(path.join(temp, "cache", "github-prestashop-advisories.json"), "utf8"));
+		const cached = JSON.parse(require('../lib/application-providers/snapshot-cache').read(path.join(temp, "cache", "github-prestashop-advisories.json")).bytes);
 		assert.deepEqual(cached.advisories.map(a => a.ghsa_id), ["GHSA-live-fixture"]);
 		assert.equal(cached._fadSnapshot.collectedAt, "2026-09-23T12:00:00.000Z");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("a configured live Github lane whose plugin is not selected fails the scan", async () => {
@@ -307,7 +307,7 @@ test("a configured live Github lane whose plugin is not selected fails the scan"
 			resolvedDeps: deps, activeCodecIds: ["composer"],
 			livePrestashopAdvisoriesUrl: "https://api.github.com/repos/PrestaShop/PrestaShop/security-advisories" }),
 			/github-prestashop-advisories source configured but its application plugin is not selected/);
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("a failing live Github source stops the scan like any required provider", async () => {
@@ -320,7 +320,7 @@ test("a failing live Github source stops the scan like any required provider", a
 			livePrestashopAdvisoriesUrl: "https://api.github.com/repos/PrestaShop/PrestaShop/security-advisories",
 			fetchImpl: async () => ({ ok: false, status: 429, text: async () => "Too Many Requests" }) }),
 			/PrestaShop advisory source failed|HTTP 429/);
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("the TYPO3 live lane fetches once and matches system extensions per coordinate", async () => {
@@ -345,6 +345,6 @@ test("the TYPO3 live lane fetches once and matches system extensions per coordin
 		assert.deepEqual(result.findings, []);
 		const rows = result.coverage.filter(c => c.capability === "advisories");
 		assert.ok(rows.length >= 2 && rows.every(r => r.execution === "completed" && r.result === "no-match"));
-		assert.ok(fs.existsSync(path.join(temp, "cache", "github-typo3-advisories.json")), "the fetched feed is cached for offline reuse");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+		assert.ok(require('../lib/application-providers/snapshot-cache').exists(path.join(temp, "cache", "github-typo3-advisories.json")), "the fetched feed is cached for offline reuse");
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });

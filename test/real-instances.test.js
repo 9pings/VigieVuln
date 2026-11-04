@@ -160,13 +160,15 @@ test("a corpus of four real repositories scans as four distinct applications", {
 	assert.equal(sfFramework.version, "7.1.1");
 	assert.equal(sfHttpFoundation.version, "7.1.1");
 	assert.ok(doc.coverage.some(c => c.applicationId === "symfony:symfony-demo-v2.6.0" &&
-		c.diagnostic === "CMS_ADVISORY_NOT_QUALIFIED"), "unqualified advisory capability stays announced");
+		c.capability === "advisories" && c.sourceId === "dependency-lanes" && c.execution === "completed"),
+		"Symfony delegates advisory evaluation to dependency lanes");
 
 	// BookStack v24.10: the real lock pins laravel/framework 10.48.22.
 	const bsFramework = inventoryBy("laravel", c => c.kind === "framework");
 	assert.equal(bsFramework.version, "10.48.22");
 	assert.ok(doc.coverage.some(c => c.applicationId === "laravel:bookstack-v24.10" &&
-		c.diagnostic === "CMS_ADVISORY_NOT_QUALIFIED"));
+		c.capability === "advisories" && c.sourceId === "dependency-lanes" && c.execution === "completed"),
+		"Laravel delegates advisory evaluation to dependency lanes");
 
 	// The real drupal/drupal tree ships intentionally invalid test fixtures
 	// (core/modules/system/tests/fixtures/HtaccessTest): they must stay visible as scoped

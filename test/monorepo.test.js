@@ -114,6 +114,7 @@ test("Combined: a sample CVE match flow runs without throwing on a mixed Map", a
 		byPackageName: {
 			"org.apache.logging.log4j:log4j-core": [{
 				id: "CVE-2021-44228",
+				coordinateEvidence: "explicit-coordinate", exactPackageName: "org.apache.logging.log4j:log4j-core",
 				severity: "CRITICAL",
 				score: 10.0,
 				description: "Log4Shell",

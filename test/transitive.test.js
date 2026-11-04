@@ -34,6 +34,31 @@ test("effectivePom honors injected propertyOverrides for parent-chain managed ve
 		"a child overriding <log4j2.version> must win over the parent's default");
 });
 
+test('an imported BOM can inherit the same parent as the importing POM', async () => {
+	const {upstream}=require('./helpers/maven-scenario');
+	const responses=upstream([
+		{g:'g',a:'parent',v:'1',props:{'bom.version':'2'}},
+		{g:'g',a:'root',v:'1',parent:{g:'g',a:'parent',v:'1'},depMgmt:[{g:'g',a:'intermediate',v:'1',scope:'import',type:'pom'}]},
+		{g:'g',a:'intermediate',v:'1',parent:{g:'g',a:'parent',v:'1'},depMgmt:[{g:'g',a:'versioned-bom',v:'${bom.version}',scope:'import',type:'pom'}]},
+		{g:'g',a:'versioned-bom',v:'2',depMgmt:[{g:'g',a:'library',v:'3'}]},
+	]);
+	const missing=[];
+	const eff=await effectivePom('g','root','1',{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onMissingPom:x=>missing.push(x)});
+	assert.equal(buildMgmt(eff.depMgmt).get('g:library')?.version,'3');
+	assert.deepEqual(missing,[]);
+});
+
+test('parent cycles still terminate when parent branches have independent visited sets', async () => {
+	const {upstream}=require('./helpers/maven-scenario');
+	const responses=upstream([
+		{g:'g',a:'a',v:'1',parent:{g:'g',a:'b',v:'1'}},
+		{g:'g',a:'b',v:'1',parent:{g:'g',a:'a',v:'1'}},
+	]);
+	let calls=0;const fetcher=fakeFetcher(responses);
+	const eff=await effectivePom('g','a','1',{fetcher:async (...args)=>{calls++;return fetcher(...args)},cacheDir:freshCache()});
+	assert.ok(eff);assert.equal(calls,2);
+});
+
 // Per-test cache dir so we don't poison ~/.vigie-vuln/poms-cache during tests
 function freshCache() {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-pom-cache-"));
@@ -331,4 +356,35 @@ test("resolveTransitiveDeps nearest-wins on version conflict", async () => {
 	// from x, and skips it (nearest-wins).
 	const y = transitives.get("g:y");
 	assert.ok(y, "y should be in transitives");
+});
+
+test('test-jar management cannot override the scope or version of an ordinary jar', async () => {
+ const parent=`<project><groupId>g</groupId><artifactId>parent</artifactId><version>1</version><dependencyManagement><dependencies>
+ <dependency><groupId>g</groupId><artifactId>lib</artifactId><version>1</version><type>test-jar</type><scope>test</scope></dependency>
+ </dependencies></dependencyManagement></project>`;
+ const root=`<project><parent><groupId>g</groupId><artifactId>parent</artifactId><version>1</version></parent><artifactId>root</artifactId><dependencies>
+ <dependency><groupId>g</groupId><artifactId>lib</artifactId></dependency>
+ </dependencies></project>`;
+ const lib=`<project><groupId>g</groupId><artifactId>lib</artifactId><version>2</version></project>`;
+ const responses={ [`${MC}/g/parent/1/parent-1.pom`]:parent,[`${MC}/g/root/1/root-1.pom`]:root,[`${MC}/g/lib/2/lib-2.pom`]:lib };
+ const found=await resolveTransitiveDeps([{groupId:'g',artifactId:'root',version:'1',scope:'compile'}],{
+  fetcher:fakeFetcher(responses),cacheDir:freshCache(),rootDepMgmt:new Map([['g:lib',{version:'2'}]]),
+ });
+ assert.equal(found.get('g:lib')?.version,'2');assert.equal(found.get('g:lib')?.scope,'compile');
+ const eff=await effectivePom('g','root','1',{fetcher:fakeFetcher(responses),cacheDir:freshCache()});
+ assert.equal(buildMgmt(eff.depMgmt).get('g:lib'),undefined);
+ assert.equal(buildMgmt(eff.depMgmt).get('g:lib:test-jar:tests').scope,'test');
+});
+
+test('different Maven artifact classifiers cannot silently collapse without coverage warning', async () => {
+ const root=`<project><groupId>g</groupId><artifactId>root</artifactId><version>1</version><dependencies>
+ <dependency><groupId>g</groupId><artifactId>lib</artifactId><version>1</version></dependency>
+ <dependency><groupId>g</groupId><artifactId>lib</artifactId><version>2</version><classifier>tests</classifier></dependency>
+ </dependencies></project>`;
+ const lib=`<project><groupId>g</groupId><artifactId>lib</artifactId><version>1</version></project>`;
+ const responses={ [`${MC}/g/root/1/root-1.pom`]:root,[`${MC}/g/lib/1/lib-1.pom`]:lib };
+ const warnings=[];const found=await resolveTransitiveDeps([{groupId:'g',artifactId:'root',version:'1',scope:'compile'}],{
+  fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>warnings.push(x),
+ });
+ assert.equal(found.get('g:lib')?.version,'1');assert.deepEqual(warnings,[{groupId:'g',artifactId:'lib'}]);
 });

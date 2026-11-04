@@ -1,0 +1,145 @@
+{
+  "date": "2026-11-02",
+  "changes": [
+    "Discover NVD candidates through complete stored OSV package records independently of matching versions in this scan.",
+    "Preserve original source documents; no curated advisory overrides.",
+    "Require exact OSV package identity, one CVE per binding, and an unambiguous artifact-level NVD CPE with a satisfied range.",
+    "Exclude withdrawn identities and surface unavailable NVD candidate records."
+  ],
+  "projects": {
+    "dubbo": {
+      "online": 793,
+      "offline": 793,
+      "identicalSets": true,
+      "offlineNetwork": "Docker --network none",
+      "removed": [],
+      "added": [],
+      "artifacts": [
+        {
+          "file": "dubbo-vv-bindings-online.json",
+          "sha256": "a1ec01392d13e1729caaa7dffffd45a999d288a41eb8f0cf5d2931b17883b803"
+        },
+        {
+          "file": "dubbo-vv-bindings-offline.json",
+          "sha256": "36abd9d02fa831be42213474c6595f2131567ae72bf29b549bb64b38c4f1f07e"
+        },
+        {
+          "file": "dubbo-vv-62-online.json",
+          "sha256": "bab7600efaaa3232bcee6c813df8672c6a689dc83e5ede8615cca01c12913201"
+        }
+      ],
+      "snykRemaining": 132,
+      "previouslyConfirmedSnykOmissionsRemaining": 54,
+      "classicScanners": {
+        "osv": {
+          "observations": 727,
+          "missingFromVigievuln": 0
+        },
+        "trivy": {
+          "observations": 605,
+          "missingFromVigievuln": 0
+        },
+        "grype": {
+          "observations": 47,
+          "missingFromVigievuln": 0
+        }
+      },
+      "remaining54AlsoReportedByClassicScanners": 0
+    },
+    "petclinic": {
+      "online": 174,
+      "offline": 174,
+      "identicalSets": true,
+      "offlineNetwork": "Docker --network none",
+      "removed": [],
+      "added": [
+        [
+          "ch.qos.logback:logback-classic",
+          "1.2.3",
+          "CVE-2026-104721"
+        ],
+        [
+          "ch.qos.logback:logback-classic",
+          "1.2.3",
+          "CVE-2026-19880"
+        ],
+        [
+          "ch.qos.logback:logback-core",
+          "1.2.3",
+          "CVE-2026-13006"
+        ]
+      ],
+      "artifacts": [
+        {
+          "file": "petclinic-vv-bindings-online.json",
+          "sha256": "088117877485d450576477677ab768c641188a6a204f323f609262533ec9e220"
+        },
+        {
+          "file": "petclinic-vv-bindings-offline.json",
+          "sha256": "aa3fcbe0531d707dc27212043b41708452486ae5c5994b704d0aa16e4b1221de"
+        },
+        {
+          "file": "petclinic-vv-matching-repair.json",
+          "sha256": "60eadfe944e881578a36ea5726fd8fbd697d900711dd4f9f396ad79c53171bbe"
+        }
+      ],
+      "snykRemaining": 73,
+      "classicScanners": {
+        "osv": {
+          "observations": 161,
+          "missingFromVigievuln": 0
+        },
+        "trivy": {
+          "observations": 155,
+          "missingFromVigievuln": 0
+        },
+        "grype": {
+          "observations": 6,
+          "missingFromVigievuln": 0
+        }
+      }
+    }
+  },
+  "limits": [
+    "All three classic scanners rerun on the same pinned project checkouts; OSV live API and Trivy/Grype pinned database snapshots. Their inventories differ.",
+    "No claim of complete coverage: native CVEProject/GCVE remain partial, and Dubbo reports unresolved POMs and a depth limit.",
+    "Package/CVE discovery requires an OSV binding in the current store; no binding or unavailable NVD data means unknown additional coverage."
+  ],
+  "validation": {
+    "cliLinux": {
+      "tests": 1865,
+      "passed": 1853,
+      "failed": 0,
+      "skipped": 12,
+      "logSha256": "5b5cf63099d32fd572630f8df5f26579379a89ad5d54952b0a5218d3eee83a94"
+    },
+    "cliWindows": {
+      "tests": 1865,
+      "passed": 1842,
+      "failed": 0,
+      "skipped": 23,
+      "logSha256": "225f49512fcf625789d6ae62cf9af91f01526f3b95fc52adb55282be9f8849f3"
+    },
+    "serverMain": {
+      "tests": 486,
+      "passed": 486,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "6602f0fb69cec3d833c82831623770a82d0f2b6320616f030cede8c5c950327d"
+    },
+    "serverPublic": {
+      "tests": 100,
+      "passed": 100,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "e131d1ba3c5956b41081cf518d430fdf7ed206f51eee54c2aeb56da0ec0c0555"
+    },
+    "offlineTransfer": {
+      "result": "PASS",
+      "zeroOfflineNetworkAttempts": true,
+      "logSha256": "454de0e1b4e6eb097530052ce219ef35b371b75e61362140daf3997d499dbf93"
+    },
+    "windowsSessionRegression": "Bootstrap test now creates the session using the real private store (DPAPI/ACL on Windows), rather than an invalid plaintext fixture."
+  },
+  "trivyInventoryCorrection": "Restoring Maven mirror and HTTPS trust yields 605 Dubbo and 155 Petclinic observations. Incomplete TLS-failing runs were excluded."
+}

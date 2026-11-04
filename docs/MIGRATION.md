@@ -25,8 +25,7 @@ provided for integrations that invoke the JavaScript file directly.
 
 The CLI migrates `~/.fad-checker/` and `~/.fad-checker-proxy-cache/` to
 `~/.vigie-vuln/` and `~/.vigie-vuln-proxy-cache/` when the destination is absent.
-Existing API keys, registry settings, warmed caches,
-anonymized descriptors and offline transfer archives remain usable.
+For 1.2.0, API keys, account sessions and registry settings are preserved. Legacy filesystem caches are removed on startup; regenerate them and create new SQLite cache archives. Older cache archives are not imported.
 
 New configuration names:
 

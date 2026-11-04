@@ -83,7 +83,7 @@ test("a version declared ONLY at test scope is reported as dev", async () => {
 	const { matchDepsAgainstCves } = require("../lib/cve-match");
 	const { attributeMatchOrigins } = require("../lib/attribution");
 	const idx = {
-		byPackageName: { "com.acme:lib": [{ id: "CVE-BOM-0001", severity: "HIGH", ranges: [{ lessThan: "9.9.9" }] }] },
+		byPackageName: { "com.acme:lib": [{ id: "CVE-BOM-0001", coordinateEvidence: "explicit-coordinate", exactPackageName: "com.acme:lib", severity: "HIGH", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThan: "9.9.9" }] }] },
 		byProduct: {},
 	};
 	const matches = matchDepsAgainstCves(resolved, idx);

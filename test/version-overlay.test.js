@@ -81,7 +81,7 @@ test("matchDepsAgainstCves flags the recovered 3.11 against a <4.0 CVE", async (
 	await resolveReactor(resolved, store, propsByPom, { fetcher: fakeFetcher, cacheDir });
 
 	const idx = {
-		byPackageName: { "org.apache.poi:poi": [{ id: "CVE-FIX-0001", severity: "HIGH", ranges: [{ lessThan: "4.0" }] }] },
+		byPackageName: { "org.apache.poi:poi": [{ id: "CVE-FIX-0001", coordinateEvidence: "explicit-coordinate", exactPackageName: "org.apache.poi:poi", severity: "HIGH", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThan: "4.0" }] }] },
 		byProduct: {},
 	};
 	const matches = matchDepsAgainstCves(resolved, idx);

@@ -95,7 +95,7 @@ test("the overlay recovers a version masked behind a TEST-scoped dependency", as
 test("a masked version reached at COMPILE scope by ANY module stays production", async () => {
 	const { resolved } = await run();
 	const idx = {
-		byPackageName: { "com.acme:lib": [{ id: "CVE-TEST-0002", severity: "HIGH", ranges: [{ lessThan: "2.0.0" }] }] },
+		byPackageName: { "com.acme:lib": [{ id: "CVE-TEST-0002", coordinateEvidence: "explicit-coordinate", exactPackageName: "com.acme:lib", severity: "HIGH", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThan: "2.0.0" }] }] },
 		byProduct: {},
 	};
 	const matches = matchDepsAgainstCves(resolved, idx);
@@ -113,7 +113,7 @@ test("a masked version reached at COMPILE scope by ANY module stays production",
 test("a version masked ONLY behind test scope is flagged dev", async () => {
 	const { resolved } = await run();
 	const idx = {
-		byPackageName: { "com.acme:lib": [{ id: "CVE-TEST-0001", severity: "HIGH", ranges: [{ lessThan: "2.0.0" }] }] },
+		byPackageName: { "com.acme:lib": [{ id: "CVE-TEST-0001", coordinateEvidence: "explicit-coordinate", exactPackageName: "com.acme:lib", severity: "HIGH", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThan: "2.0.0" }] }] },
 		byProduct: {},
 	};
 	const matches = matchDepsAgainstCves(resolved, idx);
@@ -148,7 +148,7 @@ test("a DECLARED version wins over a test-scoped transitive provenance for the s
 	// also recorded 1.0.0 as a test-scoped transitive of module-b.
 	lib.versionPaths = { ...(lib.versionPaths || {}), "1.0.0": ["module-x/pom.xml"] };
 	const idx = {
-		byPackageName: { "com.acme:lib": [{ id: "CVE-TEST-0003", severity: "HIGH", ranges: [{ lessThan: "2.0.0" }] }] },
+		byPackageName: { "com.acme:lib": [{ id: "CVE-TEST-0003", coordinateEvidence: "explicit-coordinate", exactPackageName: "com.acme:lib", severity: "HIGH", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThan: "2.0.0" }] }] },
 		byProduct: {},
 	};
 	const matches = matchDepsAgainstCves(resolved, idx);

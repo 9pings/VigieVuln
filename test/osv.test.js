@@ -1,3 +1,4 @@
+const isolatedTestCache = require('./helpers/isolated-cache')('osv');
 const test = require("node:test");
 const assert = require("node:assert");
 const { osvEcosystemFor, osvPkgName, severityFromOsv, vulnToMatch, fixVersionFromOsv } = require("../lib/osv");
@@ -42,21 +43,13 @@ test("osvPkgName delegates to codec for maven (g:a) and npm (bare name)", () => 
 	assert.strictEqual(osvPkgName({ ecosystem: "npm", namespace: "", name: "lodash", artifactId: "lodash" }), "lodash");
 });
 
-const { queryOsvForDeps, OSV_CACHE_DIR } = require("../lib/osv");
+const { queryOsvForDeps } = require("../lib/osv");
 const { makeDepRecord } = require("../lib/dep-record");
-const fs = require("fs");
 
 // Regression: queryOsvForDeps must send the codec's package name + ecosystem to
 // OSV for EVERY ecosystem. A prior bug cherry-picked only groupId/artifactId when
 // rebuilding per-version deps, so composer/pypi/nuget queried name=undefined.
 test("queryOsvForDeps sends correct package name + ecosystem per codec (mock fetcher)", async () => {
-	// Purge sentinel cache entries so the mock fetcher is always exercised
-	// (queryBatch writes a per-dep cache after a live batch — would self-poison).
-	try {
-		for (const f of fs.readdirSync(OSV_CACHE_DIR)) {
-			if (f.includes("9.9.9-fadtest")) fs.unlinkSync(require("path").join(OSV_CACHE_DIR, f));
-		}
-	} catch { /* dir may not exist yet */ }
 	const captured = [];
 	const fetcher = async (url, opts) => {
 		if (url.includes("/querybatch")) {
@@ -78,7 +71,7 @@ test("queryOsvForDeps sends correct package name + ecosystem per codec (mock fet
 		r._exp = { name: expName, eco: expEco };
 		deps.set(r.coordKey, r);
 	}
-	await queryOsvForDeps(deps, { fetcher });
+	await queryOsvForDeps(deps, { fetcher, cacheDir: require('path').join(isolatedTestCache, 'codecs') });
 	for (const d of deps.values()) {
 		const q = captured.find(c => c.package.name === d._exp.name);
 		assert.ok(q, `expected an OSV query with package.name="${d._exp.name}" (${d.ecosystem})`);
@@ -111,26 +104,19 @@ test("vulnToMatch carries the CVSS vector + version from OSV severity", () => {
 // Regression (air-gapped principle): a warmed OSV cache older than the 12h TTL
 // must STILL be served under --offline — it is the only source there. Expiring
 // it silently reported "0 OSV vulns" for every ecosystem on an air-gapped box.
-test("offline serves the warmed OSV cache even past the 12h TTL (no network)", async () => {
-	const path = require("path");
+test("offline serves the warmed OSV cache even past the 12h TTL (no network)", async t => {
 	const staleAt = Date.now() - 48 * 3600 * 1000; // 2 days old
 	const dep = makeDepRecord({ ecosystem: "pypi", namespace: "", name: "fadtest-stale-pkg", version: "1.0.0-fadtest", manifestPath: "x" });
-	fs.mkdirSync(OSV_CACHE_DIR, { recursive: true });
-	const depKey = "pypi____fadtest-stale-pkg__1.0.0-fadtest.json";
-	const vulnKey = "vuln_FADTEST-2026-0001.json";
-	fs.writeFileSync(path.join(OSV_CACHE_DIR, depKey), JSON.stringify({ _fetchedAt: staleAt, body: ["FADTEST-2026-0001"] }));
-	fs.writeFileSync(path.join(OSV_CACHE_DIR, vulnKey), JSON.stringify({
-		_fetchedAt: staleAt,
-		body: { id: "FADTEST-2026-0001", summary: "stale-cache sentinel", aliases: ["CVE-2026-99999"], database_specific: { severity: "HIGH" } },
-	}));
+	const cacheDir = require('path').join(isolatedTestCache, 'stale');
+	const store = require('../lib/advisory-store').openAdvisoryStore({ cacheDir });
+	t.after(() => store.close());
+	store.commit({ records: [{ source: 'osv', fetchedAt: staleAt, document:
+		{ id: 'FADTEST-2026-0001', summary: 'stale-cache sentinel', aliases: ['CVE-2026-99999'], database_specific: { severity: 'HIGH' } } }],
+		queries: [{ source: 'osv', ecosystem: 'PyPI', name: dep.name, version: dep.version,
+			ids: ['FADTEST-2026-0001'], fetchedAt: staleAt, complete: true }] });
 	const tripwire = async () => { throw new Error("offline mode must not touch the network"); };
-	try {
-		const matches = await queryOsvForDeps(new Map([[dep.coordKey, dep]]), { offline: true, fetcher: tripwire });
+		const matches = await queryOsvForDeps(new Map([[dep.coordKey, dep]]), { offline: true, fetcher: tripwire, cacheDir });
 		assert.strictEqual(matches.length, 1, "stale-but-warmed cache entry still matched offline");
 		assert.strictEqual(matches[0].cve.id, "CVE-2026-99999");
 		assert.strictEqual(matches[0].cve.severity, "HIGH");
-	} finally {
-		fs.unlinkSync(path.join(OSV_CACHE_DIR, depKey));
-		fs.unlinkSync(path.join(OSV_CACHE_DIR, vulnKey));
-	}
 });

@@ -20,7 +20,7 @@ function throwingFetcher() {
 }
 const cacheWith = (entry, ageMs) => ({ meta: { fetchedAt: NOW - ageMs }, entries: { symfony: entry }, fetchedAt: { symfony: NOW - ageMs } });
 
-test("online: a STALE entry (older than 7 d) is refetched and restamped", async () => {
+test("online: a STALE entry (older than 4 h) is refetched and restamped", async () => {
 	const cache = cacheWith(OLD, 8 * DAY);
 	const f = fetcherReturning(NEW);
 	const r = await fetchEndoflife("symfony", cache, { now: NOW, fetcher: f });
@@ -32,15 +32,15 @@ test("online: a STALE entry (older than 7 d) is refetched and restamped", async 
 });
 
 test("online: a FRESH entry is served from cache, no network, no restamp", async () => {
-	const cache = cacheWith(OLD, 3 * DAY);
+	const cache = cacheWith(OLD, 3 * 3600000);
 	const f = fetcherReturning(NEW);
 	const r = await fetchEndoflife("symfony", cache, { now: NOW, fetcher: f });
 	assert.equal(f.calls, 0);
 	assert.deepEqual(r, OLD);
-	assert.equal(cache.fetchedAt.symfony, NOW - 3 * DAY);
+	assert.equal(cache.fetchedAt.symfony, NOW - 3 * 3600000);
 });
 
-test("TTL boundary: exactly 7 d is stale, 7 d minus 1 ms is fresh", async () => {
+test("TTL boundary: exactly 4 h is stale, 4 h minus 1 ms is fresh", async () => {
 	const stale = cacheWith(OLD, EOL_CACHE_MAX_AGE_MS), fs = fetcherReturning(NEW);
 	await fetchEndoflife("symfony", stale, { now: NOW, fetcher: fs });
 	assert.equal(fs.calls, 1);

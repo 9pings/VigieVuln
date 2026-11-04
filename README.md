@@ -26,7 +26,7 @@ It scans dependencies and **9 CMS/frameworks** in one pass without build tools, 
 - **Multiple ecosystems in one pass**: Maven and Gradle, npm/Yarn/pnpm, Composer, PyPI, NuGet, Go and Ruby — plus **vendored JS**, committed **native binaries** and **embedded JARs**.
 - **No build tools**; No `mvn`/`gradle`/`npm`/`pip`/`dotnet`/`go`, no `node_modules/` → [how](docs/COMPARISON.md#how-its-autonomous-no-build-tools)
 - **CVE from multiple sources, merged & prioritised**; CVEProject + OSV.dev + Packagist security advisories + NVD, ranked **CISA KEV → EPSS → CVSS**.
-- **European references on every CVE**: ENISA **EUVD** id + ENISA's exploited flag, **GCVE** id, and the **CERT-FR** advisories citing it. Hosted proxy lookups send relevant CVE identifiers to the proxy.
+- **European vulnerability references**: ENISA **EUVD** id + ENISA's exploited flag, **GCVE** id, and the **CERT-FR** advisories citing it. Hosted proxy lookups send relevant CVE identifiers to the proxy.
 - **Beyond CVEs**; Report **EOL and out-of-active-support** frameworks, deprecated/abandoned/yanked, outdated, SPDX **licenses**, and **private/internal packages**
 - **CMS & frameworks audited as instances**; Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP with per-instance inventory (core, plugins, themes, bundles, components) → [the dedicated guide](docs/CMS-FRAMEWORKS.md)
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
@@ -95,6 +95,8 @@ vigievuln scan ./code
 
 The selection and the proxy key created during proxy sign-in are saved in `~/.vigie-vuln/config.json` and reused on subsequent scans. This proxy key is separate from the account session used by `watch`. Alternatively, save an existing key with `vigievuln --set-proxy-cache-token <key>`, or provide it via `VIGIEVULN_PROXY_CACHE_TOKEN` (useful in CI). Remove the selection or key with `--unset-proxy-cache` or `--unset-proxy-cache-token`. `--proxy-cache <url>` overrides the saved selection for one scan. The hosted proxy receives requested package coordinates and CVE identifiers; it does not receive your source code. [Proxy documentation](docs/USAGE.md#hosted-vigievuln-proxy).
 
+With the official proxy, scans also match published [VigieVuln advisories](https://www.vigievuln.fr/advisories/vigievuln?lang=en) for Maven and npm packages, including when OSV is disabled. Their `VV:CVE-…` identifier and sources are retained; AI-assisted reconciliation and review are disclosed on each advisory. Partial version evidence leaves other versions unknown. Cached advisories are available offline.
+
 ### Interactive HTML samples
 
 - **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the report screenshot below, rescanned with VigieVuln 1.1.3; 105 Maven descriptors, direct/transitive CVEs, KEV matches, EOL and fix recommendations.
@@ -113,7 +115,7 @@ for versions, sources and limitations. `⚠️` indicates partial or conditional
 | What an auditor actually needs to do                                                       | **VigieVuln** | OSV | Trivy | Grype+Syft | OWASP DC | Snyk |
 | ------------------------------------------------------------------------------------------ | :-: | :-: | :-: | :-: | :-: | :-: |
 | Audit a **100-module polyglot monorepo in one command**, with **no toolchain installed**  | ✅ 105 modules | ⚠️ reactor skipped | ⚠️ needs `~/.m2` | ⚠️ opt-in | ⚠️ Java build | ⚠️ `mvn` build |
-| **Scan offline / air-gapped without dropping transitive deps**                            | ✅ 657/657 | ❌ | ⚠️ `~/.m2` | ⚠️ opt-in | ⚠️ mirror | ❌ |
+| **Scan offline / air-gapped with cached data**                                            | ⚠️ cached metadata | ⚠️ limited | ⚠️ `~/.m2` | ⚠️ opt-in | ⚠️ mirror | ❌ |
 | **Identify the private/internal deps** across a big project                               | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Extract cleaned deps descriptors** into an external directory                           | ✅ `-t` | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Report EOL / deprecated frameworks & deps**, transitive ones included                   | ✅ | ⚠️ deprecated only | ⚠️ OS distros only | ❌ | ❌ | ⚠️ web UI only |
@@ -128,6 +130,8 @@ for versions, sources and limitations. `⚠️` indicates partial or conditional
 | **Share one cache across the fleet**, API keys server-side                               | ✅ `serve-cache` | ❌ | ⚠️ local DB | ⚠️ local DB | ⚠️ local DB | ⚠️ cloud |
 
 
+Offline dependency resolution depends on cached metadata. In the Dubbo test, a cold advisory seed alone produced 185 groups versus 734 with warm metadata and reported missing POMs; see the [benchmark](docs/BENCHMARK.md) for scope and warnings.
+
 **Deliberately not a goal: reachability.** A finding is a vulnerable version on the dependency
 graph, and the report says exactly that (in Methodology) instead of guessing at call paths. Deciding
 whether the vulnerable code is reachable in *this* application is the auditor's call, made with
@@ -140,7 +144,7 @@ vigievuln -s ./proj -e "^com\.acme\."                        # exclude private l
 vigievuln -s ./proj -t ../clean -e "^com\.acme\."            # extract only: normalised descriptors, private modules flagged
 vigievuln -s ./proj -t ../clean -e "^com\.acme\." -a snyk   # same extraction + scan + merge Snyk
 vigievuln -s ./proj --offline                                # fully offline (zero network, needs a warmed cache)
-vigievuln -s ./proj -a osv-db,typosquat                      # offline-complete OSV + typosquat
+vigievuln -s ./proj -a osv-db,typosquat                      # OSV advisory matching + typosquat
 vigievuln -s ./proj -a licenses --fail-on high               # license chapter + CI gate
 vigievuln -s ./proj --report-json --baseline last.json --fail-on-new   # differential audit: fail CI on NEW findings
 vigievuln diff last.json this.json                           # standalone diff of two findings JSONs
@@ -150,9 +154,10 @@ vigievuln -s ./site --app-plugins wordpress --private-component wp-content/plugi
 
 > [!IMPORTANT]
 > **`--offline` reads the cache, it doesn't replace it.** On a *cold* cache there is nothing to
-> match against, so an offline first run legitimately reports **0 CVE / 0 EOL / 0 outdated**;
-> that's an empty cache, not a clean project. Warm it once (a normal online run on any project,
-> or `--import-cache`), then `--offline` returns the full result set with zero network calls.
+> match against; an empty report is not evidence that the project is clean. Initialise it from
+> a seed or warm it online, then review coverage and freshness warnings in the offline report.
+> Cached advisories can match other applicable versions, but neither a partial cache nor an
+> old snapshot guarantees complete or current results.
 > Air-gapped machines get their cache via [`--export-cache` / `--import-cache`](#air-gapped-audits).
 
 ## What it finds
@@ -164,7 +169,7 @@ The report keeps the six root chapters. Sub-chapters appear only when they conta
 | **0. Warnings** *(top)* | local heuristics | Missing lockfiles, unresolved Maven versions (BOM-managed), private packages absent from configured registries |
 | **Δ. Changes since baseline** *(top, with `--baseline`)* | diff vs prior JSON | New / fixed / unchanged findings per category + the list of **new production CVEs**; for repeat audits and `--fail-on-new` CI gating |
 | **1. CVE** *(X direct, Y indirect, Z dev)* | CVEProject + OSV.dev + Packagist + qualified publisher feeds + NVD/CPE | **Applications first when findings exist**; CMS/framework findings by instance and owner · **Production**; public CVE / GHSA in other prod deps, per ecosystem, per manifest, **prioritised** by CISA KEV + EPSS + CVSS · **Vendored JS vulns** ([retire.js](https://retirejs.github.io/)) — one row per physical library, linked CVEs + CWEs on the row, every advisory behind a click · **Dev** (`test`/`provided`, `dev`/`optional`/`peer`) · **Likely false positives** (CPE-filtered) |
-| **2. Unmanaged / unversioned components** | deps.dev + CIRCL (by checksum), retire.js, built-in X.509 | **Embedded binaries**; CVEs in libs shipped inside committed `.jar`/`.war`/`.ear` (fat-jars, shaded uber-jars) · **Native binaries** (`.dll`/`.exe`/`.so`/`.dylib`) identified by hash, flagged should-be-managed / name≠checksum / unknown / malicious · **Vendored JavaScript** inventory (jQuery, Bootstrap, …) vulnerable *or not* · **Certificates &amp; key material**; committed certs (expiry / weak key / weak signature / self-signed), **private vs public keys** (PEM/OpenSSH/PuTTY/PGP/SSH) and keystores, all parsed offline |
+| **2. Unmanaged / unversioned components** | deps.dev + CIRCL (by checksum), retire.js, built-in X.509 | **Embedded binaries**; CVEs in libs shipped inside committed `.jar`/`.war`/`.ear` (fat-jars, shaded uber-jars) · **Native binaries** (`.dll`/`.exe`/`.so`/`.dylib`): available metadata and checksum evidence; metadata alone does not reliably identify a product or establish CVE applicability · **Vendored JavaScript** inventory (jQuery, Bootstrap, …) vulnerable *or not* · **Certificates &amp; key material**; committed certs (expiry / weak key / weak signature / self-signed), **private vs public keys** (PEM/OpenSSH/PuTTY/PGP/SSH) and keystores, all parsed offline |
 | **3. Maintenance / EOL** *(X EOL, Y obsolete, Z outdated)* | endoflife.date · curated + registry flags · Maven Central / npm / Packagist / PyPI / NuGet | **End-of-Life** frameworks (+ an "Out of active support" band with `--eol-support`; Symfony/Laravel grouped as one row per framework; PHP runtime when the Composer constraint proves it), split **direct** (declared / parent-POM-inherited — bump these) vs **transitive** (bump the dep that pulls them in) · **Obsolete / deprecated / abandoned / yanked** · **Outdated** (newer version available, with release dates; direct deps only) |
 | **4. Licenses** *(opt-in: `--licenses`)* | registry metadata + Maven POMs → SPDX policy | Each dep's license normalised to SPDX and classified; copyleft (GPL/AGPL/LGPL/MPL), proprietary and unknown flagged for review |
 | **5. Fix Recommendations** | computed | Per-ecosystem pin recipes: Maven `<dependencyManagement>`, Gradle `constraints { }`, npm `overrides`, yarn `resolutions`, `composer require`, `pip install`, `dotnet add package` |
@@ -194,9 +199,21 @@ vigievuln doesn't just read the `composer.json` under a WordPress or Drupal site
 | **SPIP** | core (`$spip_version_branche` in `ecrire/inc_version.php`), dist plugins (`paquet.xml`), user plugins (`paquet.xml`/legacy `plugin.xml`) | **NVD product CVEs** (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source; plugins stay honestly not-qualified |
 | **Joomla / Magento (Adobe Commerce)** | core, extensions/modules, themes | no machine-readable publisher feed exists; components locked as Composer packages read as covered by the **dependency lanes**, the rest stays honestly **not qualified**. A Magento source distribution reports its exact version from the root `composer.json` |
 
-Every advisory snapshot a live lane fetches is stamped and cached in `~/.vigie-vuln/advisory-snapshots/`, carried by `--export-cache`/`--import-cache`, **warmed from the air-gapped descriptor itself** by `--import-anonymized`, and reused automatically offline — the Wordfence API key never travels to the enclave. Private/custom components are inventoried separately and never sent to any publisher. → **[the dedicated guide](docs/CMS-FRAMEWORKS.md)** · [application usage](docs/USAGE.md#application-inventory-experimental)
+Every advisory snapshot a live lane fetches is stamped and cached in the local SQLite database, **prepared from the air-gapped descriptor** by `cache prepare`, and reused automatically offline — the Wordfence API key never travels to the enclave. Private/custom components are inventoried separately and never sent to any publisher. → **[the dedicated guide](docs/CMS-FRAMEWORKS.md)** · [application usage](docs/USAGE.md#application-inventory-experimental)
 
 ## Air-gapped audits
+
+Run `vigievuln setup` in an interactive terminal to select all sources (the default), US-operated services, European-operated services, or a proxy only. Setup can sign in to an official or custom instance and initialise the local cache from its authenticated bundle. Regions describe the service operator, not the origin of every advisory it aggregates.
+
+For unattended setup, use `vigievuln setup --mode direct --sources all` or `vigievuln setup --mode server --server-url https://server.example --seed`. The modes are `direct`, `official`, and `server`; direct mode also accepts `--sources us` or `--sources eu` and `--seed-url` with `--seed`. Authentication reuses a saved session or reads `VIGIEVULN_EMAIL` and `VIGIEVULN_PASSWORD` from the environment. To accept terms after reviewing them, pass `--accept-terms <exact-version>`; a different server version is rejected.
+
+A local server can explicitly allow anonymous access, including seed downloads. An HTTP server requires confirmation before the first connection because credentials and keys are not encrypted. In unattended setup use, for example, `vigievuln setup --mode server --server-url http://192.168.1.10:8322 --seed --allow-insecure-http`; the confirmation is remembered for that exact origin. Prefer HTTPS on untrusted networks.
+
+Stored OSV and GCVE advisories are matched against dependency versions during the scan. An online scan can collect GCVE data through the configured proxy without a seed; offline matching uses the local cache or an imported bundle. Check the report's coverage warnings: a collection can be incomplete or stale, and some advisory version formats cannot be evaluated reliably. A bundle checksum detects corruption but does not authenticate its origin.
+
+Online scans add downloaded advisories to the same local store, so they can also match other affected versions offline. `--advisory-query-ttl <hours>` controls when source queries are refreshed (default: 4 hours; `0` requests revalidation on every online scan). `--force-update` revalidates consulted online sources, using conditional requests when available. A proxy may itself serve cached data; the report indicates known freshness and coverage limits. Selecting a seed in direct mode does not enable a proxy for subsequent scans.
+
+The global seed can include previously observed public Maven POMs and npm manifests by version, but is not a complete registry mirror. Other ecosystems are not yet covered by this durable metadata store. Offline transitive resolution for a new project still depends on lockfiles, manifests and previously warmed local package data; the vulnerability seed alone cannot guarantee it.
 
 > **Zero-data-sent guarantee.** Under `--offline`, vigievuln makes **no network calls
 > whatsoever**; it reads only the warmed `~/.vigie-vuln/` caches and never transmits a
@@ -214,9 +231,9 @@ from public ones: exclude internal dependencies and review the descriptor, inclu
 parent/BOM coordinates, before transfer. The **detailed report is produced back on the
 offline machine**.
 
-The transfer relies on a property of vigievuln's caches: they are keyed by *coordinate*
-or *vuln id*, never by path, so they are **machine-independent**. The online step just
-**warms the caches**; the offline step replays the scan and gets cache hits.
+The online step warms transferable package data and advisory records. The offline scan
+matches available advisories against the dependencies it finds and reports known coverage
+and freshness limitations.
 
 ```bash
 # ── Phase 1; OFFLINE (audited machine): export the anonymized descriptor ──
@@ -225,10 +242,10 @@ vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
 #   → deps.json: dependency coordinates and version hints. Review before transfer.
 
 # ── Phase 2; ONLINE (any machine, no source needed): warm the caches ──
-vigievuln --import-anonymized deps.json     # scans coordinates → OSV/NVD/CVE/registry/EOL + retire signatures
-                                              #   + warms the CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds,
-                                              #   WP checksums per core version, Wordfence when a key is set)
-vigievuln --export-cache vigievuln-cache.tar.gz   # bundle the warmed ~/.vigie-vuln/
+vigievuln cache prepare deps.json --output vigievuln-cache.tar.gz  # add --force-update to revalidate cached online sources
+# Resolves and warms the descriptor, then writes its project-scoped SQLite archive.
+# A configured proxy may initialise the local OSV catalogue if it is missing.
+# CMS snapshots and Retire signatures are prepared during the same command.
 
 # ── Phase 3; OFFLINE (audited machine): full report, all local context ──
 vigievuln --import-cache vigievuln-cache.tar.gz   # merged into the enclave's own cache
@@ -237,6 +254,16 @@ vigievuln -s ./proj --offline               # re-collect locally (real paths) + 
 #   CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds, WP checksums) fetched live by
 #   the online phase ride the same archive and are consumed automatically — no flags.
 ```
+
+`cache prepare` includes advisories for resolved packages and the data needed for
+offline matching. If an offline scan discovers an unprepared package, its OSV
+coverage is reported as incomplete. CMS and native-binary descriptors retain the
+full NVD cache when their requirements cannot be narrowed to package coordinates.
+`--export-cache` separately exports the complete local cache.
+
+For Maven projects, regenerate descriptors made by an older build before preparing
+the archive: the descriptor now includes path-free per-module resolution hints.
+Review those coordinates and version hints before transferring the JSON.
 
 Descriptor imports also warm Maven registry presence (unless
 `--no-all-libs` is set). Legacy negative presence entries are discarded automatically:
@@ -247,7 +274,7 @@ analysis data is retained.
 Unverified empty OSV cache entries are not trusted, because a failed request may have
 been stored as “no vulnerabilities”. Re-warm and export the cache to verify these entries; until then offline reports warn about incomplete
 OSV coverage. Existing cached advisory IDs remain usable. Offline KEV and binary identity
-lookups reuse the last available snapshot even after 24 hours, without changing its date.
+lookups reuse the last available snapshot even after four hours, without changing its date.
 
 The [offline Docker integration check](docs/USAGE.md#offline-docker-integration-check) exercises this workflow in an isolated container.
 
@@ -263,7 +290,7 @@ What the descriptor (`fad-deps/1`) contains vs. drops:
 
 The online phase report is itself path-free; vendored-JavaScript (retire.js) findings are
 produced **offline in phase 3**, since retire needs the actual `.js` files; its signature
-DB is warmed online (phase 2) and carried by `--export-cache`. Full offline/cache control →
+DB is warmed online and included by `cache prepare` (phase 2). Full offline/cache control →
 [`docs/USAGE.md`](docs/USAGE.md).
 
 ## Docs
@@ -272,7 +299,7 @@ DB is warmed online (phase 2) and carried by `--export-cache`. Full offline/cach
 - [`docs/CMS-FRAMEWORKS.md`](docs/CMS-FRAMEWORKS.md); the CMS/framework instance view: detection markers, per-product advisory lanes, coverage semantics and the air-gapped workflow.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); internals: codecs, collection, matching, report pipeline.
 - [`docs/COMPARISON.md`](docs/COMPARISON.md); vs OSV-Scanner / Trivy / Grype / OWASP DC / Snyk, and how it stays build-free.
-- [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — reproducible air-gapped recall benchmark vs OSV-Scanner on a public 105-module project.
+- [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — dated scanner comparisons on pinned projects, including warm and cold offline limitations.
 - [`docs/DATA-SOURCES.md`](docs/DATA-SOURCES.md); the public datasets vigievuln uses + their licenses.
 - [`CHANGELOG.md`](CHANGELOG.md) · [`CLAUDE.md`](CLAUDE.md); release history · code-level orientation for contributors.
 
@@ -287,8 +314,7 @@ itself → [`SECURITY.md`](SECURITY.md) (please report privately).
 **On AI assistance:** this codebase is written with heavy use of Claude Code; [`CLAUDE.md`](CLAUDE.md)
 in the repo root is exactly what it looks like. The bar it's held to is the one you can check
 yourself: the test suite (`npm test`), the zero-network guarantee enforced by a tripwire test and
-reproducible under `unshare -rn`, and coverage numbers measured against a Snyk baseline rather
-than asserted. `vigievuln` itself uses **no LLM at runtime**; findings come from public
+and the dated comparisons and limitations documented in [`docs/BENCHMARK.md`](docs/BENCHMARK.md). `vigievuln` itself uses **no LLM at runtime**; findings come from public
 vulnerability databases and deterministic parsers, and no report text is generated. Full
 statement, including where review actually caught a bad finding →
 [`AI_POLICY.md`](AI_POLICY.md). Where the code doesn't meet that bar, that's a bug report I want.

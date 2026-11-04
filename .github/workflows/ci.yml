@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        node: ['20', '22', '24']
+        node: ['22', '24']
         include:
           - os: windows-latest
             node: '22'
@@ -28,6 +28,8 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
       - run: npm test
       - run: node vigievuln.js -s test/fixtures/monorepo-mixed --offline --no-report
       - run: npm pack --dry-run

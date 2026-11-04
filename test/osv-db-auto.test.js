@@ -1,10 +1,10 @@
+const isolatedTestCache = require('./helpers/isolated-cache')('osv-db-auto');
 /**
  * When the local OSV database turns itself on.
  *
- * A Java project is the one case where the per-dep OSV cache is not enough: offline
- * recall then depends on which deps happened to be queried online before, which is not
- * a property an air-gapped audit can rely on. So Maven/Gradle scans pull the full OSV
- * Maven export on their first run and reuse the cached index afterwards.
+ * Local indexes add range-based recall for versions never queried online.
+ * Existing indexes can be reused, but an ordinary scan never downloads a full
+ * ecosystem archive implicitly.
  */
 const test = require("node:test");
 const assert = require("node:assert");
@@ -34,6 +34,7 @@ test("--osv-db forces it on even where it would not auto-enable", () => {
 
 test("a non-Java scan does not pull a Maven-only database", () => {
 	assert.strictEqual(autoEnableOsvDb({}, { runMaven: false, runGradle: false }), false);
+	assert.strictEqual(autoEnableOsvDb({offline:true}, {hasOtherIndex:true}), true);
 });
 
 test("--no-osv means no OSV data at all, local database included", () => {

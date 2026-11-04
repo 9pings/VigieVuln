@@ -1,0 +1,28 @@
+{
+  "scope": "Explicit consolidation decisions that supersede two preliminary group verdicts; original reviews remain available.",
+  "verifiedV2ReportSha256": "af878ed9b6d55c83d9189b18ecfb54e3ab1edc60279dcdd7af950d1505fcaae6",
+  "overrides": [
+    {
+      "package": "io.netty:netty-codec-http2",
+      "version": "4.1.35.Final",
+      "snykId": "SNYK-JAVA-IONETTY-5953332",
+      "originalVerdict": "affected artifact and version supported by CNA and upstream code",
+      "finalCategory": "already_reported_proven_equivalence",
+      "reportedId": "GHSA-xpw8-rcwv-8f8p",
+      "snykCve": "CVE-2023-44487",
+      "primary": "https://github.com/netty/netty/commit/58f75f665aa81a8cbcf6ffa74820042a285c5e61",
+      "reason": "The upstream commit explicitly links the GHSA and CVE. The GHSA is already emitted for this exact package/version; the other-coordinate review records that verified relation in expandedSourceFindingsWithSameCve."
+    },
+    {
+      "package": "ch.qos.logback:logback-classic",
+      "version": "1.2.2",
+      "snykId": "SNYK-JAVA-CHQOSLOGBACK-6097492",
+      "originalVerdict": "version not affected according to CNA",
+      "finalCategory": "already_reported_proven_equivalence",
+      "reportedId": "CVE-2023-6378",
+      "snykCve": "CVE-2023-6481",
+      "primary": "https://logback.qos.ch/news-archive.html",
+      "reason": "The maintainer explicitly states the two CVEs describe the identical underlying vulnerability. CVE-2023-6378 is emitted for this exact package/version. For an exclusive incident accounting, existing proven equivalence takes precedence over the narrower 6481 range disagreement; use the same rule as the logback-core case."
+    }
+  ]
+}

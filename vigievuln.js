@@ -12,6 +12,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+if (!process.env.__FAD_RETIRE__) require('./lib/cache-startup').prepareDirectCache();
 const { rimraf } = require("rimraf");
 const chalk = require("chalk");
 const pLimit = require("p-limit");
@@ -44,7 +45,11 @@ try {
 	process.argv = [...process.argv.slice(0, 2), ...routed.args];
 } catch (error) { console.error(`❌  ${error.message}`); process.exit(2); }
 
-if (["auth", "project", "watch"].includes(process.argv[2])) {
+if (process.argv[2] === "setup") {
+	require("./lib/cli-setup").run(process.argv.slice(3)).catch(err => {
+		console.error(`❌  ${err.message}`); process.exitCode = 2;
+	}).finally(() => process.exit(process.exitCode || 0));
+} else if (["auth", "project", "watch"].includes(process.argv[2])) {
 	require("./lib/cli-project-commands").run(process.argv.slice(2)).catch(err=>{
 		console.error(`❌  ${err.message}`); process.exitCode=2;
 	}).finally(()=>process.exit(process.exitCode || 0));
@@ -82,6 +87,10 @@ if (process.argv.includes("--set-proxy-cache-token") || process.argv.includes("-
 if (process.argv.includes("--set-proxy-cache") || process.argv.includes("--unset-proxy-cache")) {
 	const config = require("./lib/config");
 	if (process.argv.includes("--unset-proxy-cache")) {
+		if (config.get("sourceProfile") === "proxy") {
+			console.error("The saved source profile requires this proxy. Run 'vigievuln setup --mode direct --sources all' (or choose us/eu) to explicitly switch to direct sources, or run setup to select another proxy.");
+			process.exit(2);
+		}
 		config.set("proxyCache", null);
 		console.log("Proxy cache removed from " + config.CONFIG_PATH);
 	} else {
@@ -218,26 +227,43 @@ if (process.argv.includes("--add-repo") || process.argv.includes("--remove-repo"
 	}
 }
 
+if (process.argv.includes('--prepare-offline') && (process.argv.includes('--export-cache') || process.argv.includes('--import-cache'))) {
+	console.error(chalk.red('❌  cache prepare cannot be combined with cache import or export.'));
+	process.exit(2);
+}
 // -------- --export-cache / --import-cache (handled before program.parse) --------
 if (process.argv.includes("--export-cache") || process.argv.includes("--import-cache")) {
 	(async () => {
-		const { exportCache, importCache, FAD_CACHE_DIR } = require("./lib/cache-archive");
+		try {
+		// Resolve the same profile layers as a scan before the early archive command.
+		const { Command } = require("commander");
+		const archiveProgram = new Command().allowUnknownOption(true).allowExcessArguments(true)
+			.option("--config <file>").option("--source-profile <profile>")
+			.option("--proxy-cache <url>").option("--vigievuln-proxy [domain]");
+		archiveProgram.parse(process.argv);
+		const layersApi = require("./lib/options-env");
+		const layers = layersApi.loadLayers({ configPath: archiveProgram.opts().config, program: archiveProgram });
+		let archiveOptions = layersApi.applyLayers(archiveProgram, layers, require("./lib/config").load());
+		archiveOptions = { ...archiveOptions, ...require("./lib/hosted-proxy").resolveHostedProxy({ ...archiveOptions, offline: true }) };
+		archiveOptions = require("./lib/source-profile").applySourceProfile(archiveOptions).options;
+		const proxyOrigin = archiveOptions.sourceProfile === "proxy" ? require("./lib/proxy-scope").proxyOrigin(archiveOptions.proxyCache) : null;
+		const cacheDir = proxyOrigin ? require("./lib/proxy-scope").proxyScope(proxyOrigin) : require("./lib/cache-directory").getCacheDir();
+		const { exportCache, importCache } = require("./lib/cache-archive-sqlite");
 		const verbose = process.argv.includes("--verbose");
 		const exportIdx = process.argv.indexOf("--export-cache");
 		const importIdx = process.argv.indexOf("--import-cache");
-		try {
 			if (exportIdx !== -1) {
 				const dest = process.argv[exportIdx + 1];
 				if (!dest || dest.startsWith("-")) {
 					console.error(chalk.red("❌  --export-cache requires a destination path (e.g. vigievuln-cache.tar.gz)"));
 					process.exit(1);
 				}
-				const includeConfig = process.argv.includes("--include-config");
-				const { path: out, size, excluded } = await exportCache(dest, { verbose, includeConfig });
+				const { path: out, size, excluded, scope } = await exportCache(dest, { sourceDir: cacheDir, proxyOrigin });
 				const mb = (size / 1024 / 1024).toFixed(2);
 				console.log(chalk.green(`✅ Cache exported (${mb} MB) → ${out}`));
-				console.log(chalk.gray(`   Source: ${FAD_CACHE_DIR}`));
-				if (excluded?.length) console.log(chalk.gray(`   Excluded (pass --include-config to ship them too): ${excluded.join(", ")}`));
+				console.log(chalk.gray(`   Source: ${cacheDir}`));
+				console.log(chalk.gray(`   Scope: ${scope === 'project' ? 'last prepared project' : 'complete local cache'}`));
+				if (excluded?.length) console.log(chalk.gray(`   Local configuration excluded: ${excluded.join(", ")}`));
 			} else {
 				const src = process.argv[importIdx + 1];
 				if (!src || src.startsWith("-")) {
@@ -246,14 +272,17 @@ if (process.argv.includes("--export-cache") || process.argv.includes("--import-c
 				}
 				const force = process.argv.includes("--force");
 				const replace = process.argv.includes("--replace");
-				const { dir, mode, stats } = await importCache(src, { verbose, force, replace });
+				const phases = {validating:'Checking bundle contents',extracting:'Extracting SQLite database',checking:'Checking SQLite integrity',merging:'Merging SQLite cache'};
+				const { dir, mode, stats } = await importCache(src, { force, replace, targetDir: cacheDir, proxyOrigin,
+					onProgress: ({phase}) => { if (phases[phase]) console.error(chalk.gray(`   ${phases[phase]}…`)); } });
 				if (mode === "merge") {
 					console.log(chalk.green(`✅ Cache merged → ${dir}`));
-					console.log(chalk.gray(`   ${stats.added} new, ${stats.updated} refreshed, ${stats.merged} merged key-by-key, ${stats.kept} kept (local copy was fresher)`));
-					if (stats.skipped.length) console.log(chalk.gray(`   Left untouched (machine-local): ${stats.skipped.join(", ")}`));
+				console.log(chalk.gray(`   SQLite database merged with local entries.`));
+					if (stats.skipped.length) console.warn(chalk.yellow(`   Cache entries not imported: ${stats.skipped.join(", ")}`));
 				} else {
 					console.log(chalk.green(`✅ Cache imported → ${dir}`));
-					console.log(chalk.gray(`   --replace: previous cache ${force ? "removed" : "moved to ~/.vigie-vuln.bak-<timestamp>"}`));
+				console.log(chalk.gray(`   SQLite database installed; local configuration retained.`));
+					if (stats.skipped.length) console.warn(chalk.yellow(`   Cache entries not imported: ${stats.skipped.join(", ")}`));
 				}
 			}
 			process.exit(0);
@@ -411,6 +440,7 @@ program
 	.option("-s, --src <src>", "source directory (legacy alternative to scan <dir>)")
 	.option("--source <src>", "alias of --src")
 	.option("--config <file>", "load default options from a trusted JSON file")
+	.option("--source-profile <profile>", "vulnerability service operators: all (default), us, eu or proxy")
 	.option("-d, --disable <list>", "turn features OFF (comma-separated) — see the token list below")
 	.option("-a, --activate <list>", "turn ON what is off by default (comma-separated) — see below")
 	.option("-r, --report <list>", "outputs to write, comma-separated: html,doc,xlsx,sbom,csaf,json,sarif (default: html,json)")
@@ -419,11 +449,13 @@ program
 	.option("--exclude-path <glob...>", "ignore sub-paths during the walk (gitignore-style glob, relative to --src). Repeatable")
 	.option("--no-default-excludes", "walk everything, including node_modules/vendor/target/…")
 	.option("--verbose", "verbose")   // -v is the version flag; verbose is long-form only
+	.option("--force-update", "revalidate all consulted online sources, retaining cached data on failure")
 	// Defaults: report + transitive + allLibs all ON. Use --no-* to disable.
 	.option("--no-report", "write NO output files at all — the scan, terminal summary and --fail-on gate still run (gate-only / CI mode)")
 	.option("--no-transitive", "skip transitive dependency resolution")
 	.option("--no-all-libs", "skip Maven Central queries (outdated check + missing-on-central check)")
 	.option("--no-osv", "skip OSV.dev (Google/GitHub aggregated Maven CVE feed)")
+	.option("--advisory-query-ttl <hours>", "hours before refreshing advisory consultations (0–8760; default 4; 0 always refreshes)")
 	.option("--no-packagist-audit", "skip the Packagist security-advisories lane for Composer deps (the data `composer audit` queries — closes CVEs OSV carries without composer coordinates)")
 	.option("--no-nvd", "skip NIST NVD enrichment of matched CVEs")
 	.option("--nvd-cpe-match", "ALSO match deps against NVD CPE version ranges (opt-in, LOW PRECISION: ~12% of the findings it adds were corroborated by another scanner — triage aid, not a default)")
@@ -431,6 +463,8 @@ program
 	.option("--no-eol", "skip the end-of-life check (endoflife.date)")
 	.option("--no-kev", "skip CISA KEV (known-exploited) enrichment")
 	.option("--no-euvd", "skip ENISA EUVD enrichment (EUVD id + ENISA exploited catalogue)")
+	.option("--no-gcve", "skip independent GCVE advisory collection and matching")
+	.option("--gcve-offline", "use the local GCVE index without refreshing it")
 	.option("--no-certfr", "skip CERT-FR (ANSSI) advisory references")
 	// Output family: each --report-<type> takes an OPTIONAL path (omit → default name
 	// under --report-output). With NO --report-* flag at all, HTML + findings JSON are written
@@ -454,6 +488,7 @@ program
 	.option("--no-nvd-mirror", "NVD only: don't fall back to the fkie-cad/nvd-json-data-feeds mirror when NVD does not answer")
 	.option("--retries <n>", "retries (waiting 5+n s each) before a data source is marked unavailable; 0 = none", "5")
 	.option("--proxy-cache <url|vigievuln|default>", "shared data-source cache or official VigieVuln proxy")
+	.option("--allow-insecure-http", "allow unencrypted HTTP to the selected proxy for this invocation")
 	.option("--set-proxy-cache <url|vigievuln|default>", "save the proxy cache for future scans")
 	.option("--unset-proxy-cache", "remove the saved proxy cache")
 	.option("--set-proxy-cache-token <token>", "save a proxy key for future scans")
@@ -463,27 +498,29 @@ program
 	.option("--proxy <url>", "corporate proxy for all requests")
 	.option("--set-nvd-key <key>", "save NVD API key to ~/.vigie-vuln/config.json (10× faster NVD enrichment)")
 	.option("--show-config", "print the persisted ~/.vigie-vuln/config.json")
-	.option("--export-cache <file>", "tar.gz/zip the ~/.vigie-vuln/ caches to <file> (excludes config.json by default)")
+	.option("--export-cache <file>", "export the SQLite cache as a tar.gz bundle (excludes local configuration)")
 	.option("--import-cache <file>", "merge a previously exported archive into ~/.vigie-vuln/ (keeps the local cache + config.json; newest entry wins)")
 	.option("--replace", "with --import-cache: replace ~/.vigie-vuln/ wholesale instead of merging (previous dir kept as .bak unless --force)")
 	.option("--include-config", "with --export-cache: also bundle config.json (contains the NVD API key)")
 	.option("--export-anonymized <file>", "offline: write a path-free dependency descriptor and exit")
 	.option("--prepare-project <file>", "offline: prepare a path-free project descriptor for review")
 	.option("--import-anonymized <file>", "online, no --src: scan a descriptor to warm the caches")
+	.option("--prepare-offline <file>", "prepare a project archive from an anonymized descriptor")
+	.option("--output <file>", "archive destination for --prepare-offline")
 	.option("--force", "allow replacing a non-empty --target directory; with --import-cache --replace, skip backup")
 	.option("-o, --report-output <dir>", "report output directory", "./vigievuln-report")
 	.option("--ignore-test", "skip test-scoped dependencies in report")
 	.option("--cve-refresh", "force re-download of CVE database")
 	.option("--cve-offline", "use cached CVE index only (no download)")
-	.option("--osv-db", "import + match the full local OSV database (Maven, ~9 MB) — offline-complete recall, independent of the per-dep OSV cache. Never imported implicitly, and never under --offline; once imported, later Maven/Gradle scans reuse the cached index automatically")
-	.option("--no-osv-db", "skip the local OSV database even when its index is already cached")
-	.option("--osv-db-refresh", "force re-download of the local OSV database")
+	.option("--osv-db", "enable matching against locally stored OSV advisories")
+	.option("--no-osv-db", "skip range matching against locally stored OSV advisories")
+	.option("--osv-db-refresh", "revalidate OSV package/version queries online")
 	.option("--snyk", "run snyk on cleaned POMs and merge into report (requires --target)")
 	.option("--typosquat", "flag npm/PyPI deps whose name is one edit from a popular package (heuristic typosquat/slopsquat detection)")
 	.option("--no-retire", "skip retire.js vendored-JS scan")
 	.option("--no-vendored-js-inventory", "don't list ALL identified vendored JS libs (chapter 1D) — keep only the vulnerable ones (chapter 2)")
 	.option("--retire-refresh", "ignore retire cache and re-scan")
-	.option("--transitive-depth <n>", "max transitive resolution depth", "6")
+	.option("--transitive-depth <n>", "max transitive resolution depth", "20")
 	.option("--ecosystem <list>", "auto (default) | all | comma list of codec ids", "auto")
 	.option("--app-plugins <list>", "auto (default) | none | all | comma list of bundled application plugins", "auto")
 	.option("--scan-context <kind>", "application input context: source (default) | installation | component", "source")
@@ -533,12 +570,11 @@ program
 // The -d / -a vocabularies, laid out once under the options instead of wrapped inside two
 // option descriptions where they cost fifteen lines.
 program.addHelpText("after", `
-  -d  eol nvd nvd-mirror osv packagist-audit epss kev euvd certfr retire transitive all-libs checksums
+  -d  eol nvd nvd-mirror osv packagist-audit epss kev euvd gcve certfr retire transitive all-libs checksums
       osv-db report vendored-js-inventory default-excludes
       maven gradle npm yarn nuget composer pypi go ruby js jars binaries certs
   -a  licenses eol-support typosquat snyk osv-db nvd-cpe-match cve-refresh
-      cve-offline osv-db-refresh retire-refresh
-
+      cve-offline gcve-offline osv-db-refresh retire-refresh
   e.g.  vigievuln scan . -d nvd,epss,certs -a licenses,typosquat -o ./audit
   --help-all lists the individual flags these replace.  Full guide: docs/USAGE.md`);
 // -d / -a fold thirty-six boolean flags into two lists. The flags still WORK — hiding them
@@ -548,7 +584,7 @@ if (!process.argv.includes("--help-all")) {
 	const { foldedFlags } = require("./lib/cli-groups");
 	const { ADMIN_FLAGS, REPORTS } = require("./lib/cli-groups");
 	const folded = new Set([...foldedFlags(), ...ADMIN_FLAGS, ...REPORTS.map(r => `--report-${r}`),
-		"--list-app-plugins", "--scan-context", "--private-component", "--public-component", "--wordfence-live", "--wordfence-feed", "--drupal-advisories", "--wordfence-feed-url", "--drupal-advisories-live", "--prestashop-advisories", "--prestashop-advisories-live", "--typo3-advisories", "--typo3-advisories-live", "--spip-advisories", "--spip-advisories-live", "--wp-checksums", "--wp-checksums-live", "--wp-checksums-locale", "--max-advisory-age", "--fail-on-incomplete", "--proxy-cache-token"]);
+		"--source", "--list-app-plugins", "--scan-context", "--private-component", "--public-component", "--wordfence-live", "--wordfence-feed", "--drupal-advisories", "--wordfence-feed-url", "--drupal-advisories-live", "--prestashop-advisories", "--prestashop-advisories-live", "--typo3-advisories", "--typo3-advisories-live", "--spip-advisories", "--spip-advisories-live", "--wp-checksums", "--wp-checksums-live", "--wp-checksums-locale", "--max-advisory-age", "--fail-on-incomplete", "--proxy-cache-token", "--advisory-query-ttl", "--prepare-offline", "--output"]);
 	for (const opt of program.options) if (folded.has(opt.long)) opt.hidden = true;
 } else {
 	process.argv = process.argv.map(a => a === "--help-all" ? "--help" : a);
@@ -604,8 +640,37 @@ try {
 	process.exit(1);
 }
 Object.assign(options, applyLayers(program, _layers, require("./lib/config").load()));
+if (options.prepareOffline) {
+	if (options.importAnonymized || !options.output || options.offline || options.src || options.source) {
+		console.error(chalk.red('❌  cache prepare requires a descriptor and --output, runs online, and cannot be combined with --src or --import-anonymized.'));
+		process.exit(2);
+	}
+	if (path.resolve(options.prepareOffline) === path.resolve(options.output)) {
+		console.error(chalk.red('❌  archive destination must differ from the descriptor.'));
+		process.exit(2);
+	}
+	options.importAnonymized=options.prepareOffline;
+} else if (options.output) {
+	console.error(chalk.red('❌  --output is used with cache prepare.'));
+	process.exit(2);
+}
 // An anonymized export is strictly local, including proxy resolution and preflight.
 if (options.exportAnonymized || options.prepareProject) options.offline = true;
+if (!options.offline && /^http:\/\//i.test(String(options.proxyCache || ''))) {
+	try {
+		const {proxyOrigin,requireHttpConsent,HTTP_WARNING}=require('./lib/proxy-scope');
+		const config=require('./lib/config'), origin=proxyOrigin(options.proxyCache);
+		const allowed=program.getOptionValueSource('allowInsecureHttp') === 'cli' && !!options.allowInsecureHttp;
+		ui.warn(HTTP_WARNING);
+		if (!allowed && config.get('insecureHttpOrigin') !== origin && process.stdin.isTTY && process.stderr.isTTY) {
+			process.stderr.write(`Allow unencrypted HTTP to ${origin}? [y/N] `);
+			const input=Buffer.alloc(1024), n=require('node:fs').readSync(0,input,0,input.length,null);
+			if (!/^y(?:es)?$/i.test(input.subarray(0,n).toString('utf8').trim())) throw new Error('Scan cancelled: HTTP connection not approved.');
+			config.set('insecureHttpOrigin',origin);
+		}
+		requireHttpConsent(origin,{acceptedOrigin:config.get('insecureHttpOrigin'),allow:allowed});
+	} catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
+}
 let hostedAccountSession = null;
 if (!options.offline && !options.proxyCacheToken && !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN &&
 	(options.vigievulnProxy || /^(default|vigievuln|https:\/\/api\.vigievuln\.(fr|com)\/?$)$/i.test(String(options.proxyCache || "")))) {
@@ -614,6 +679,12 @@ if (!options.offline && !options.proxyCacheToken && !process.env.VIGIEVULN_PROXY
 }
 try { Object.assign(options, require("./lib/hosted-proxy").resolveHostedProxy({ ...options, allowProxyLogin: !!hostedAccountSession || !!(process.stdin.isTTY && process.stderr.isTTY) })); }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
+// An explicitly anonymous server must not receive an inherited key from a
+// different setup. An explicit CLI/environment/file token still takes priority.
+if (options.proxyCache && require('./lib/config').get('proxyAnonymousOrigin') === String(options.proxyCache).replace(/\/+$/, '') &&
+    !program.getOptionValueSource('proxyCacheToken')?.match(/^(cli|env)$/) &&
+    !Object.hasOwn(_layers.fileLayer, 'proxyCacheToken') && !Object.hasOwn(_layers.envLayer, 'proxyCacheToken') &&
+    !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN) options.proxyCacheToken = null;
 const savedProxyTokenOrigin = require('./lib/config').get('proxyCacheTokenOrigin');
 if (options.proxyCache && options.proxyCacheToken && savedProxyTokenOrigin &&
     !program.getOptionValueSource('proxyCacheToken')?.match(/^(cli|env)$/) &&
@@ -636,23 +707,42 @@ if (options.proxyCache && !options.vigievulnProxy && options.proxyCacheToken &&
 // --source CLI alias → src (applyLayers already maps the file/env JSON 'source' key).
 if (!options.src && options.source) options.src = options.source;
 
-// -d / -a are applied BEFORE the layered config so a config file can still override them
-// the same way it overrides any other option.
+// Grouped and individual switches have the same layer precedence. Direct
+// switches win over conflicting groups in the same layer.
 {
-	const { applyGroups } = require("./lib/cli-groups");
+	const { applyLayeredGroups } = require("./lib/cli-groups");
 	const { applyReports } = require("./lib/cli-groups");
-	const { errors } = applyGroups(options, { disable: options.disable, activate: options.activate });
+	const { errors } = applyLayeredGroups(options, { program, layers: _layers, globalStore: require("./lib/config").load() });
 	errors.push(...applyReports(options, options.report && options.report !== true ? options.report : "").errors);
 	if (errors.length) {
 		for (const e of errors) console.error(chalk.red(`❌  ${e}`));
 		process.exit(2);
 	}
 }
-const deps2Exclude = options.exclude ? new RegExp(options.exclude) : null;
-if (options.vigievulnProxy && !options.offline && (options.osvDb === true || options.osvDbRefresh)) {
-	console.error(chalk.red("❌  --osv-db and --osv-db-refresh download a bulk archive and cannot be used with the hosted proxy online."));
+if (options.advisoryQueryTtl !== undefined && (!/^(?:0|[1-9]\d*)$/.test(String(options.advisoryQueryTtl)) || Number(options.advisoryQueryTtl) > 8760)) {
+	console.error(chalk.red('❌  --advisory-query-ttl must be an integer from 0 to 8760 hours.'));
 	process.exit(2);
 }
+options.advisoryQueryTtlMs = options.advisoryQueryTtl === undefined ? 4 * 3600 * 1000 : Number(options.advisoryQueryTtl) * 3600 * 1000;
+if (options.forceUpdate && (options.offline || options.exportAnonymized || options.prepareProject)) {
+	console.error(chalk.red('❌  --force-update requires an online scan or cache preparation.'));
+	process.exit(2);
+}
+require('./lib/cache-policy').setForceUpdate(!!options.forceUpdate);
+let profileWarnings = [];
+try {
+	const explicit = name => program.getOptionValueSource(name) === 'cli' || (name === 'osvDb' && String(options.activate || '').split(',').includes('osv-db'));
+	const result = require('./lib/source-profile').applySourceProfile(options, {explicit});
+	Object.assign(options, result.options); profileWarnings = result.warnings;
+	for (const warning of profileWarnings) ui.warn(warning);
+} catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
+if (options.sourceProfile === 'proxy') {
+	try {
+		const scoped = require('./lib/proxy-scope').proxyScope(options.proxyCache);
+		require('./lib/cache-directory').setActiveCacheDir(scoped);
+	} catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
+}
+const deps2Exclude = options.exclude ? new RegExp(options.exclude) : null;
 const verbose = !!options.verbose;
 
 // ---- Source health: a remote source that goes dark must not produce a quiet hole ----
@@ -661,13 +751,17 @@ const verbose = !!options.verbose;
 // globalThis.fetch, so wrapping it once covers all of them — and a lookup served from the
 // warm cache issues no request at all, which IS the "100% from cache, stay silent" rule.
 const sourceHealth = createSourceHealth();
+const officialAccountFetch = options.sourceProfile === 'proxy' && options.vigievulnProxy && !options.offline
+	? require('./lib/source-profile').officialAccountFetch(globalThis.fetch) : null;
 try { setRetryAttempts(options.retries == null ? 5 : options.retries); }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 if (!options.offline) {
 	// The mirror/registry rotations report their own exhaustion (their requests bypass the
 	// guard: they carry their own AbortSignal and failover).
 	setActiveLedger(sourceHealth);
-	const baseFetch = globalThis.fetch;
+	const baseFetch = options.sourceProfile === 'proxy'
+		? require('./lib/source-profile').proxyOnlyFetch(globalThis.fetch, options.proxyCache)
+		: globalThis.fetch;
 	// Public data clients call getResource(provider, type, params); configure its
 	// transport once, before any lookup. Custom registry URLs stay direct.
 	if (options.proxyCache) {
@@ -788,7 +882,8 @@ async function classifyMavenLibs(ids, repos) {
 		if (!probeRepos.length) ui.warn("no Maven repository reachable — existence check skipped, cache reused; pass --offline on an air-gapped box");
 	}
 	const noNetwork = options.offline || !probeRepos.length;
-	const fresh = cache.meta?.fetchedAt && Date.now() - cache.meta.fetchedAt < MAX_AGE_MS;
+	const fresh = cache.meta?.fetchedAt && require('./lib/cache-policy').fresh(cache.meta.fetchedAt, MAX_AGE_MS);
+	const previous = !fresh && !noNetwork ? {entries:cache.entries,fetchedAt:cache.meta?.fetchedAt} : null;
 	if (!fresh && !noNetwork) cache.entries = {};
 	const limit = pLimit(10);
 	const results = await Promise.all([...new Set(ids)].map(id => limit(async () => {
@@ -796,6 +891,7 @@ async function classifyMavenLibs(ids, repos) {
 		return { id, found: await checkMavenLibExist(g, a, probeRepos, cache, { offline: noNetwork, configuredRepos: repos }) };
 	})));
 	if (!noNetwork) cache.meta = { fetchedAt: Date.now() };
+	if (!noNetwork) require('./lib/cache-policy').preserveEntries(cache,previous);
 	if (!noNetwork || migrated) saveJsonCache(MAVEN_EXISTS_CACHE_PATH, cache);
 	const absent = results.filter(r => r.found === false).map(r => r.id);
 	const unknown = results.filter(r => r.found === null).length;
@@ -875,7 +971,7 @@ async function timedPhase(label, fn) {
 					rl.question("", answer => { rl.close(); if (secret) process.stderr.write("\n"); resolve(answer); });
 				});
 				if (hostedAccountSession) {
-					const account = require("./lib/account-client").createAccountClient();
+					const account = require("./lib/account-client").createAccountClient(officialAccountFetch ? {fetcher:officialAccountFetch} : {});
 					const current = await account.me();
 					await require("./lib/account-terms").requireTerms({account, terms:current.terms, ask});
 					options.proxyCacheToken = await require("./lib/hosted-proxy").createProxyKey(account);
@@ -888,7 +984,7 @@ async function timedPhase(label, fn) {
 				console.error("No account? Register at https://www.vigievuln.fr/account");
 				const email = await ask("Email: ");
 				const password = await ask("Password: ", true);
-				options.proxyCacheToken = await require("./lib/hosted-proxy").loginForProxy({email,password,ask});
+				options.proxyCacheToken = await require("./lib/hosted-proxy").loginForProxy({email,password,ask,...(officialAccountFetch ? {fetcher:officialAccountFetch} : {})});
 				require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
 				require("./lib/config").set("proxyCacheTokenOrigin", null);
 				require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
@@ -967,11 +1063,14 @@ async function timedPhase(label, fn) {
 		let imported;
 		try { imported = deserializeDeps(descriptor); }
 		catch (e) { console.error(chalk.red(`❌  invalid descriptor: ${e.message}`)); process.exit(1); }
-		const { resolved, activeIds, runMaven, runNpm, externalParents = [], importBoms = [], propertyOverrides = {}, applications = [] } = imported;
+		const { resolved, activeIds, runMaven, runNpm, externalParents = [], importBoms = [], propertyOverrides = {}, applications = [], reactor } = imported;
+		// Resolve the project and query its package versions below. A global OSV
+		// seed is optional and must not be downloaded for a project archive.
 		ui.section("Anonymized descriptor");
 		ui.ok(`imported ${chalk.bold(resolved.size)} dep(s) across ${activeIds.join(", ") || "—"}`
 			+ (applications.length ? ` · ${chalk.bold(applications.length)} application(s) (${[...new Set(applications.map(a => a.type))].join(", ")})` : ""));
 		if (options.offline) ui.warn("--offline: caches won't warm; only useful to re-render from an already-warm cache");
+		if (runMaven && !reactor) ui.warn("This descriptor lacks Maven module resolution information; the offline cache may be incomplete. Re-export the descriptor from the extracted manifests with this version.");
 		if (!resolved.size && !applications.length) { ui.warn("descriptor has no dependencies or applications — nothing to scan"); process.exit(0); }
 		// Replay the external-parent / import-BOM backfill from the descriptor's carried hints.
 		// Workflow B has no source tree here, so the mainline store-based backfill can't run —
@@ -996,7 +1095,7 @@ async function timedPhase(label, fn) {
 		// descriptor's drupal/* identities and PrestaShop/TYPO3 are whole-repository
 		// feeds, so no source tree is needed. Application identities also justify SPIP
 		// and WordPress snapshots; --wordfence-live can use a key held by the proxy.
-		if (!options.offline) {
+		if (!options.offline && options.appPlugins !== "none") {
 			const { warmCmsAdvisorySnapshots } = require("./lib/cms-snapshot-warm");
 			try {
 				const warmed = await warmCmsAdvisorySnapshots(resolved, {
@@ -1035,7 +1134,17 @@ async function timedPhase(label, fn) {
 			? await classifyMavenLibs([...resolved.values()].filter(d => d.ecosystem === "maven")
 				.map(d => `${d.namespace || d.groupId}:${d.name || d.artifactId}`), mavenRepos)
 			: [];
-		await runReportFlow(resolved, { activeIds, runMaven, runNpm, privateLibIds, mavenRepos, regMap, collectWarnings: [], walkOpts });
+		const warmedReport = await runReportFlow(resolved, { activeIds, runMaven, runNpm, privateLibIds, mavenRepos, regMap, collectWarnings: [], walkOpts, mavenStore: reactor?.store, mavenPropsByPom: reactor?.propsByPom });
+		if (options.prepareOffline && !process.exitCode) {
+			const scope=require('./lib/airgap-project').buildProjectScope(resolved,{applications,cves:warmedReport?.cveIds || []});
+			const cacheDir=require('./lib/cache-directory').getCacheDir();
+			const proxyOrigin=options.sourceProfile==='proxy' ? require('./lib/proxy-scope').proxyOrigin(options.proxyCache) : null;
+			if(!scope.packages.length) ui.warn('no package scope available; exporting the complete local cache');
+			try {
+				const result=await require('./lib/cache-archive-sqlite').exportCache(options.output,{sourceDir:cacheDir,proxyOrigin,project:scope.packages.length?scope:null});
+				ui.ok(`offline archive prepared: ${result.path} (${(result.size/1048576).toFixed(2)} MiB; ${scope.packages.length} packages)`);
+			} catch(error) {console.error(chalk.red(`❌  could not prepare offline archive: ${error.message}`));process.exitCode=2;}
+		}
 		return;
 	}
 
@@ -1147,8 +1256,8 @@ async function timedPhase(label, fn) {
 		const pkgVersion = require("./package.json").version;
 		// Carry the Maven resolution hints so a no-source-tree online warm run (Phase 2) can
 		// resolve the versionless deps' versions and warm their CVE caches in ONE exchange.
-		const externalParents = mavenCtx?.store ? collectExternalParents(mavenCtx.store) : [];
-		const importBoms = mavenCtx?.propsByPom ? collectImportBoms(mavenCtx.propsByPom) : [];
+		const externalParents = (mavenCtx?.store ? collectExternalParents(mavenCtx.store) : []).filter(c => !deps2Exclude || !deps2Exclude.test(c.groupId || ''));
+		const importBoms = (mavenCtx?.propsByPom ? collectImportBoms(mavenCtx.propsByPom) : []).filter(c => !deps2Exclude || !deps2Exclude.test(c.groupId || ''));
 		const propertyOverrides = mavenCtx?.store ? collectPropertyOverrides(mavenCtx.store) : {};
 		// Application identities (public product coordinates — type + core version, no
 		// paths): they let a Phase-2 online run warm what no package coordinate carries
@@ -1179,7 +1288,8 @@ async function timedPhase(label, fn) {
 			} catch { /* the descriptor stays valid without application identities */ }
 		}
 		let omittedProperties = 0;
-		const descriptor = serializeDeps(resolved, { generator: `vigievuln ${pkgVersion}`, externalParents, importBoms,
+		const reactor = mavenCtx?.store && mavenCtx?.propsByPom ? require('./lib/maven-airgap').buildReactorHints(mavenCtx, { exclude: deps2Exclude, versionPropertyNames: collectVersionPropertyNames(mavenCtx.store) }) : null;
+		const descriptor = serializeDeps(resolved, { generator: `vigievuln ${pkgVersion}`, externalParents, importBoms, reactor,
 			propertyOverrides, versionPropertyNames: collectVersionPropertyNames(mavenCtx?.store), applications,
 			onOmittedProperties: n => { omittedProperties = n; } });
 		try { fs.writeFileSync(options.exportAnonymized, JSON.stringify(descriptor, null, 2) + "\n"); }
@@ -1196,8 +1306,7 @@ async function timedPhase(label, fn) {
 		const srcShown = options.src || "./proj";
 		ui.section("Next steps");
 		ui.info(`${chalk.dim("Phase 2 —")} ${chalk.cyan("ONLINE")} ${chalk.dim("(any box, no --src): warm the caches, then bundle them")}`);
-		ui.info("  " + chalk.white(`vigievuln --import-anonymized ${descFile}`));
-		ui.info("  " + chalk.white("vigievuln --export-cache fad-cache.tar.gz"));
+		ui.info("  " + chalk.white(`vigievuln cache prepare ${descFile} --output fad-cache.tar.gz`));
 		ui.info(`${chalk.dim("Phase 3 —")} ${chalk.cyan("OFFLINE")} ${chalk.dim("(back here): import the cache, then run the full report")}`);
 		ui.info("  " + chalk.white("vigievuln --import-cache fad-cache.tar.gz"));
 		ui.info("  " + chalk.white(`vigievuln -s ${srcShown} --offline`));
@@ -1354,13 +1463,17 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// Collection counts already shown in the "Collection" section by main();
 	// for --import-anonymized they were shown in the "Anonymized descriptor" section.
 	const npmWarnings = collectWarnings || [];
-	let scanWarnings = [];
+	let scanWarnings = profileWarnings.map(message => ({type:'source-unavailable', message}));
+	const sourceLimitations = [];
+	const noteSourceLimitation = (source, message) => {
+		if (!sourceLimitations.some(note => note.source === source && note.message === message)) sourceLimitations.push({source,message});
+	};
 	let registryPrivateHits = [];
 	const directCount = resolved.size;
 	let appState = { applications: [], inventory: [], findings: [], coverage: [], diagnostics: [] };
 	let applicationRelations = [];
 	if (options.src) {
-		const wordfenceApiKey = options.wordfenceApiKey || process.env.WORDFENCE_API_KEY || null;
+		const wordfenceApiKey = ['us', 'eu'].includes(options.sourceProfile) ? null : (options.wordfenceApiKey || process.env.WORDFENCE_API_KEY || null);
 		const { DRUPAL_ADVISORIES_URL, WORDFENCE_PRODUCTION_URL, PRESTASHOP_GITHUB_ADVISORIES_URL, TYPO3_GITHUB_ADVISORIES_URL } = require("./lib/application-providers/live-snapshot");
 		const wordfenceLiveUrl = options.wordfenceFeedUrl || ((options.wordfenceLive || wordfenceApiKey) && !options.wordfenceFeed ? WORDFENCE_PRODUCTION_URL : null);
 		const spipLiveUrl = options.spipAdvisoriesLive
@@ -1460,9 +1573,13 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// and the Maven-Central transitive/BOM/outdated/EOL passes cover them — they're EXCLUDED
 	// from the per-codec registry loop below to avoid double-processing.
 	const cveScanner = (runMaven || runGradle) ? (getCodec("maven").nativeScanners || []).find(s => s.kind === "cve") : null;
-	const cveIndexExists = fs.existsSync(require("./lib/cve-download").CVE_INDEX_PATH);
+	const cveStore = require("./lib/advisory-store").openAdvisoryStore();
+	const cveIndexExists = !!require("./lib/cve-download").loadCveIndex() || !!cveStore.getSourceCoverage("cveproject", "*") || !!cveStore.getSourceCoverage("cveproject-legacy", "*");
 	const otherRegistryIds = activeIds.filter(id => id !== "maven" && id !== "gradle" && id !== "npm" && id !== "yarn" && getCodec(id)?.checkRegistry);
-	const willCve = !!cveScanner && (!(options.cveOffline || offline) || cveIndexExists);
+	const willCve = !options.disableCveProject && !!cveScanner && (!(options.cveOffline || offline) || cveIndexExists);
+	if (!options.disableCveProject && cveScanner && (options.cveOffline || offline) && !cveIndexExists) {
+		scanWarnings.push({type: "source-unavailable", message: "CVEProject: local Maven CVE index is missing; Maven CVE coverage is incomplete."});
+	}
 	// Maven with a source tree: every module is resolved on ITS OWN effective model
 	// (lib/maven-reactor.js) and the scan set is rebuilt from the union — this replaces the
 	// old global merged pass + additive per-module overlay, which let one project's pins
@@ -1492,21 +1609,18 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const externalParents = (runMaven && mavenStore)
 		? require("./lib/maven-bom").collectExternalParents(mavenStore) : [];
 	const willBom = allBoms.length > 0 || externalParents.length > 0;
-	const willOsv = !!options.osv;
+	const willOsv = !!options.osv || options.osvDb === true;
 	// Packagist security-advisories lane (Composer): the advisory DB `composer audit`
 	// queries. OSV misses CVEs that exist there only as CVEProject entries without
 	// Packagist coordinates (measured: twig/twig CVE-2026-46636/46627, knp-snappy
 	// CVE-2026-46643 on the real-instance corpus) — this lane is their official home.
 	const willPackagistAudit = options.packagistAudit !== false &&
 		[...resolved.values()].some(d => d.ecosystem === "composer");
-	// Local OSV DB import (Maven): offline-complete OSV recall, independent of the per-dep
-	// OSV.dev cache. Opt-in (downloads ~9 MB once); then matches online or offline.
-	const { autoEnableOsvDb, hasOsvDbIndex } = require("./lib/osv-db");
-	const willOsvDb = autoEnableOsvDb(options, { runMaven, runGradle, hasIndex: hasOsvDbIndex("maven") });
 	const willOutdated = !!options.allLibs;
 	const willNvd = !!options.nvd;
 	const willEpss = !!options.epss;
 	const willKev = !!options.kev;
+	const willGcve = options.gcve !== false && !options.disableGcve;
 	const willEuvd = options.euvd !== false;
 	const willCertFr = options.certfr !== false;
 	const willEol = options.eol !== false;
@@ -1516,13 +1630,26 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const willCerts = options.certs !== false && !!options.src;
 	const certExpiryDays = parseInt(options.certExpiryDays, 10) || 90;
 	// Identify committed native binaries by checksum (deps.dev + CIRCL) when present.
-	const willBinaryId = [...resolved.values()].some(d => d.provenance === "binary");
+	const willBinaryId = !options.disableBinaryId && [...resolved.values()].some(d => d.provenance === "binary");
 	// License detection piggybacks on the registry passes (same fetched metadata),
 	// so it adds no progress step of its own.
 	const totalSteps = [willBom, willReactor, willTransitive, willCve, willEol, willEol && composerPlatforms.length > 0,
-		willOutdated, /*npm reg*/ true, ...otherRegistryIds.map(() => true), willOsv, willPackagistAudit, willOsvDb,
-		willNvd, willEpss, willKev, willEuvd, willCertFr, willRetire, willCerts, willBinaryId].filter(Boolean).length;
+		willOutdated, /*npm reg*/ true, ...otherRegistryIds.map(() => true), willOsv, willPackagistAudit,
+		willNvd, willEpss, willKev, willGcve, willEuvd, willCertFr, willRetire, willCerts, willBinaryId].filter(Boolean).length;
 	const progress = new ui.Progress(totalSteps);
+	// Missing POMs and truncated traversal make the dependency inventory
+	// incomplete even when every advisory source is available. Keep coordinates
+	// in memory only; reports disclose the count rather than private names.
+	const missingMavenPoms = new Set();
+	const mavenVariantCollisions = new Set();
+	let mavenDepthLimited = false;
+	let mavenResolutionErrors = 0;
+	const mavenCoverage = {
+		onMissingPom: ({groupId, artifactId, version}) => missingMavenPoms.add(`${groupId}:${artifactId}:${version}`),
+		onDepthLimit: count => { if (count > 0) mavenDepthLimited = true; },
+		onVariantCollision: ({groupId, artifactId}) => mavenVariantCollisions.add(`${groupId}:${artifactId}`),
+		onResolutionError: () => { mavenResolutionErrors++; },
+	};
 
 	// The external import-BOM + <parent> managed table, kept for the transitive pass: Maven
 	// pins transitive versions with it too, not only versionless declarations.
@@ -1532,7 +1659,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		try {
 			const { resolveBomManagedVersions, backfillVersions } = require("./lib/maven-bom");
 			const effCache = new Map();
-			const base = { repos: mavenRepos, offline, verbose, effCache };
+			const base = { repos: mavenRepos, offline, verbose, effCache, ...mavenCoverage };
 			// Import BOMs first: a local <scope>import</scope> declaration wins over the
 			// versions inherited from an external parent (Maven precedence). Import BOMs
 			// resolve in their own context — the project's property overrides do NOT reach
@@ -1547,7 +1674,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			bomDepMgmt = mgmt;
 			const filled = backfillVersions(resolved, mgmt);
 			st.done(`${filled} dep version(s) from ${allBoms.length} BOM(s) + ${externalParents.length} parent(s)`);
-		} catch (err) { st.fail(err.message); }
+		} catch (err) { st.fail(err.message); scanWarnings.push({type:'dependency-coverage',message:'Maven BOM or parent resolution failed; dependency coverage is incomplete.'}); }
 	}
 
 	if (willReactor) {
@@ -1557,15 +1684,16 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			const rr = await resolveReactor(resolved, mavenStore, mavenPropsByPom, {
 				verbose,
 				offline,
-				maxDepth: parseInt(options.transitiveDepth, 10) || 6,
+				maxDepth: parseInt(options.transitiveDepth, 10) || 20,
 				includeTestDeps: !options.ignoreTest,
 				repos: mavenRepos,
 				transitive: !!options.transitive,
 				deps2Exclude,
+				...mavenCoverage,
 			});
 			st.done(`${rr.modules} module(s), ${resolved.size} dependencies${rr.dropped.length ? `, ${rr.dropped.length} managed-only coord(s) on no classpath` : ""}`);
 			if (verbose && rr.dropped.length) console.log(chalk.gray(`   not on any classpath, not scanned: ${rr.dropped.slice(0, 10).join(", ")}${rr.dropped.length > 10 ? ", …" : ""}`));
-		} catch (err) { st.fail(err.message); }
+		} catch (err) { st.fail(err.message); scanWarnings.push({type:'dependency-coverage',message:'Maven reactor resolution failed; dependency coverage is incomplete.'}); }
 	}
 
 	if (willTransitive) {
@@ -1573,15 +1701,22 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		await expandWithTransitives(resolved, {
 			verbose,
 			offline,
-			maxDepth: parseInt(options.transitiveDepth, 10) || 6,
+			maxDepth: parseInt(options.transitiveDepth, 10) || 20,
 			includeTestDeps: !options.ignoreTest,
 			repos: mavenRepos,
 			bomDepMgmt,
+			...mavenCoverage,
 			// With the reactor in charge of the Maven records, only Gradle ones are seeded here.
 			...(willReactor ? { only: d => d.ecosystemType === "gradle" } : {}),
 		});
 		st.done(`+${resolved.size - directCount} transitive (total ${resolved.size})`);
 	}
+	if (missingMavenPoms.size) scanWarnings.push({type:'dependency-coverage',count:missingMavenPoms.size,
+		message:`${missingMavenPoms.size} Maven POM(s) could not be resolved; transitive dependency coverage may be incomplete.`});
+	if (mavenVariantCollisions.size) scanWarnings.push({type:'dependency-coverage',count:mavenVariantCollisions.size,
+		message:`${mavenVariantCollisions.size} Maven coordinate(s) occur with different types or classifiers; version and transitive dependency coverage may be incomplete.`});
+	if (mavenResolutionErrors) scanWarnings.push({type:'dependency-coverage',count:mavenResolutionErrors,
+		message:'Maven transitive resolution failed for part of the dependency graph; coverage is incomplete.'});
 
 	// <dependencyManagement>-only pins: keep the ones a resolution pass reached (now
 	// transitives), drop the rest — a pin nothing pulls in is on no classpath.
@@ -1598,7 +1733,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// are flagged, not the ones we just resolved from spring-boot-dependencies & co.
 	if (runMaven || runGradle) {
 		const { detectScanCompletenessWarnings } = require("./lib/scan-completeness");
-		scanWarnings = detectScanCompletenessWarnings(resolved, { ranSnyk: !!options.snyk, ranTransitive: !!options.transitive });
+		scanWarnings.push(...detectScanCompletenessWarnings(resolved, { ranSnyk: !!options.snyk, ranTransitive: !!options.transitive }));
 	}
 
 	// 1. CVE — native scanner contributed by the maven codec (local cvelistV5 index).
@@ -1607,14 +1742,46 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (willCve) {
 		const st = progress.start("CVE index (CVEProject)");
 		try {
-			const r = await cveScanner.scan(resolved, { cveRefresh: !!options.cveRefresh, cveOffline: !!options.cveOffline, offline, verbose, hostedProxy: !!options.vigievulnProxy });
+			const r = await cveScanner.scan(resolved, { cveRefresh: !!options.cveRefresh, cveOffline: !!options.cveOffline, offline, verbose, hostedProxy: !!options.vigievulnProxy, queryTtlMs:options.advisoryQueryTtlMs });
 			cveMatches = r.matches || [];
 			cveDataDate = r.meta?.cveDataDate || null;
+			if (r.meta?.incomplete) {
+				if (!offline && !r.meta.refreshError) noteSourceLimitation('CVEProject','The Maven lookup uses a partial native or legacy projection; some source records may not be represented.');
+				else scanWarnings.push({type:"source-unavailable",message:`CVEProject: ${r.meta.refreshError ? `refresh failed (${r.meta.refreshError}); ` : ""}native or legacy source coverage is partial; Maven advisory coverage is incomplete.`});
+			}
+			if (r.meta?.identityUncertain) {
+				const candidates=r.meta.uncertainCandidates || [];
+				const needsReview=require('./lib/coverage-diagnostics').needsMavenReview;
+				if (r.meta.oldProjection || candidates.some(candidate=>needsReview(candidate,cveStore,{ttlMs:options.advisoryQueryTtlMs})))
+					scanWarnings.push({type:"source-unavailable",message:"CVEProject: some advisory product identities or version ranges could not be verified; those candidates were not reported and coverage is incomplete."});
+				else noteSourceLimitation('CVEProject','Some product-only candidates lack a reliable Maven package identity; independent OSV evidence is used when available.');
+			}
+			if (r.meta?.stale || r.meta?.timestampUnknown) scanWarnings.push({type:"source-stale",message:`CVEProject: proxy response ${r.meta.timestampUnknown ? "has no trustworthy collection timestamp" : "is stale"}; advisory coverage may be outdated.`});
+			if (r.meta?.conflict) scanWarnings.push({type:"source-unavailable",message:"CVEProject: a native record conflicts with the proxy corpus; the native revision or rejection was used."});
 			st.done(`${cveMatches.length} match(es)${cveDataDate ? ` · ${String(cveDataDate).slice(0, 10)}` : ""}`);
 		} catch (err) {
 			st.fail(err.message);
 			scanWarnings.push({type:"source-unavailable",message:`CVEProject: ${err.message}; Maven CVE coverage is incomplete.`});
 		}
+	}
+
+	// CVEProject also publishes explicit npm PURLs. They are independent of
+	// the Maven-only projected index and complement OSV when a CNA advisory is
+	// absent there; never infer npm identity from the product description.
+	if (!options.disableCveProject && runNpm) {
+		try {
+			if (!offline && !options.cveOffline && require('./lib/providers').hasHostedProxy()) {
+				try {
+					const status=await require('./lib/cve-npm-proxy').refreshNpmCves(resolved,cveStore,{ttlMs:options.advisoryQueryTtlMs});
+					if(status.incomplete)scanWarnings.push({type:'source-unavailable',message:'CVEProject: the npm proxy index is partial or stale; advisory coverage is incomplete.'});
+				} catch (err) {scanWarnings.push({type:'source-unavailable',message:`CVEProject npm proxy: ${err.message}; cached records are still matched.`});}
+			}
+			const npmCves = require('./lib/native-advisories').matchNativeNpmCves(resolved, cveStore);
+			cveMatches = require('./lib/merge-sources').mergeBySource(cveMatches, npmCves.matches);
+			if (npmCves.unknown.length) scanWarnings.push({type:'source-unavailable',message:`CVEProject: ${npmCves.unknown.length} npm package/version comparison(s) are undecidable; advisory coverage is incomplete.`});
+			const npmNames=require('./lib/cve-npm-proxy').packageNames(resolved);
+			if (!cveStore.getSourceCoverage('cveproject','*')?.complete && npmNames.some(name=>!cveStore.getQuery({source:'cveproject',ecosystem:'npm',name,version:'*'},{ttlMs:options.advisoryQueryTtlMs})?.fresh)) scanWarnings.push({type:'source-unavailable',message:'CVEProject: native npm advisory coverage is incomplete; records absent from OSV may be missing.'});
+		} catch (err) { scanWarnings.push({type:'source-unavailable',message:`CVEProject npm: ${err.message}; advisory coverage is incomplete.`}); }
 	}
 
 	// 1c. Identify committed native binaries by checksum (deps.dev → CIRCL).
@@ -1724,22 +1891,31 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// query transitives for the authoritative deprecation signal.
 	outdatedResults = outdatedResults.filter(r => r.dep.scope !== "transitive");
 
+	// Consult our published records by package even when the operator already
+	// has a complete OSV seed. The saved consultation makes removals effective
+	// offline too, without downloading the global cache again.
+	if (!offline && require('./lib/providers').hasProxyRoute() && (options.sourceProfile === 'proxy' || require('./lib/providers').hasHostedProxy())) {
+		try { await require('./lib/vigievuln-advisories').refreshReviewed(resolved,cveStore,{ttlMs:options.advisoryQueryTtlMs}); }
+		catch (err) { scanWarnings.push({type:'source-unavailable',message:`VigieVuln: reviewed advisory refresh failed (${err.message}); cached records are used with incomplete coverage.`}); }
+	}
 	// 4b. OSV.dev — Maven-native CVE+GHSA feed (huge recall win over raw CVEProject)
 	if (willOsv) {
 		const st = progress.start("OSV.dev");
 		try {
 			const { queryOsvForDeps } = require("./lib/osv");
-			const osvMatches = await queryOsvForDeps(resolved, { verbose, offline,
+			const osvMatches = await queryOsvForDeps(resolved, { verbose, offline, allowStaleFallback:true, queryTtlMs:options.osvDbRefresh ? 0 : options.advisoryQueryTtlMs, useStoredRanges:options.osvDb !== false,
 				onProgress: (p, t) => st.tick(p, t), onWarning: w => scanWarnings.push(w) });
 			const before = cveMatches.length;
 			cveMatches = mergeBySource(cveMatches, osvMatches);
 			st.done(`${osvMatches.length} vulns · +${cveMatches.length - before} after merge`);
 		} catch (err) {
 			st.fail(err.message);
-			if (err.code === "OSV_INCOMPLETE") {
-				scanWarnings.push({type:"source-unavailable",message:`OSV: ${err.message}; advisory coverage is incomplete. Existing package caches were preserved.`});
-			}
+			scanWarnings.push({type:"source-unavailable",message:`OSV: ${err.message}; advisory coverage is incomplete. Existing advisory data was preserved.`});
 		}
+	}
+	else {
+		try { cveMatches=mergeBySource(cveMatches,require('./lib/osv').queryReviewedForDeps(resolved,{store:cveStore,queryTtlMs:options.advisoryQueryTtlMs,onWarning:w=>scanWarnings.push(w)})); }
+		catch(err) { scanWarnings.push({type:'source-unavailable',message:`VigieVuln: reviewed advisory matching failed (${err.message}); coverage is incomplete.`}); }
 	}
 
 	// 4b-bis. Packagist security advisories (Composer) — the database `composer audit`
@@ -1769,24 +1945,51 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		}
 	}
 
-	// 4b'. Local OSV database (Maven) — offline-COMPLETE recall. The per-dep OSV.dev
-	// queries above only cover deps cached online; the imported full OSV DB matches every
-	// dep offline, deterministically, regardless of cache warmth (the OSV-Scanner model).
-	if (willOsvDb) {
-		const st = progress.start("OSV database (local, Maven)");
+	// GCVE records are matched locally, including when imported in a cache seed.
+	// Online scans refresh the index through the configured proxy when one is active.
+	if (willGcve) {
+		const st = progress.start("GCVE (local index)");
 		try {
-			const { ensureOsvDb, matchOsvDbDeps } = require("./lib/osv-db");
-			if (!offline && !hasOsvDbIndex("maven")) st.tick("first run — importing the OSV Maven database (~9 MB)");
-			const index = await ensureOsvDb({ offline: offline || (!!options.vigievulnProxy && options.osvDb !== true && !options.osvDbRefresh), refresh: !!options.osvDbRefresh, verbose, ecosystem: "maven" });
-			if (!index) {
-				st.done(offline ? "no local OSV DB (run once online with --osv-db)" : "unavailable");
-			} else {
-				const dbMatches = matchOsvDbDeps(resolved, index);
-				const before = cveMatches.length;
-				cveMatches = mergeBySource(cveMatches, dbMatches);
-				st.done(`${index.count} advisories · ${dbMatches.length} matched · +${cveMatches.length - before} new`);
+			const path = require('node:path');
+			const { readGcveIndex } = require('./lib/gcve-index');
+			const store = require('./lib/advisory-store').openAdvisoryStore();
+			const file = path.join(require('./lib/cache-directory').getCacheDir(), 'gcve-data', 'index.json');
+			let index = null;
+			try { index = readGcveIndex(file); } catch {}
+			const nativeCoverage = store.getSourceCoverage('gcve','*');
+			const oldest = index?.coverage?.map(c => Date.parse(c.collectedAt)).filter(Number.isFinite) || (nativeCoverage?.fetchedAt ? [nativeCoverage.fetchedAt] : []);
+			let stale = !oldest.length || Date.now() - Math.min(...oldest) >= options.advisoryQueryTtlMs;
+			if ((!index && !nativeCoverage || stale || options.forceUpdate) && !offline && !options.gcveOffline) {
+				try {
+					const feed=require('./lib/gcve-feed');
+					index = (await feed.updateGcveIndex({cacheFile:file,
+						...(options.proxyCache?{fetcher:feed.proxyGcveFetcher}:{})})).index;
+					stale = false;
+				}
+				catch (err) {
+					if (!index && !nativeCoverage) throw err;
+					scanWarnings.push({type:'source-unavailable',message:`GCVE refresh failed: ${err.message}; previous index retained.`});
+				}
 			}
-		} catch (err) { st.fail(err.message); }
+			if (!index && !nativeCoverage) throw new Error(offline || options.gcveOffline
+				? 'GCVE has no local data for an offline scan; run an online scan first or import a GCVE cache seed'
+				: 'GCVE source returned no advisory data');
+			const asOf = oldest.length ? Math.min(...oldest) : 0;
+			if (index && (!nativeCoverage || nativeCoverage.fetchedAt < asOf)) await require('./lib/native-advisories').importGcveIndex(store,index,{provenance:{transport:'cache'}});
+			const result = require('./lib/native-advisories').matchGcveStore(resolved,store,index);
+			const before = cveMatches.length;
+			cveMatches = mergeBySource(cveMatches,result.matches);
+			if (stale) scanWarnings.push({type:'source-stale',message:'GCVE index is older than the advisory query TTL or lacks a source timestamp; advisory coverage may be outdated.'});
+			const skipped = index?.directory?.notCollected;
+			const unindexed = result.coverage.reduce((n,c)=>n+(c.unindexed || 0),0);
+			if (!result.sourceCoverage?.complete || (index && (!index.directory?.verified || !result.coverage.length || result.coverage.some(c=>!c.complete) || skipped || unindexed)))
+				noteSourceLimitation('GCVE',`Partial source coverage: ${skipped ?? 'unknown'} GNA source(s) not collected; ${unindexed} source records lack explicit package coordinates. These records are not necessarily relevant to this project.`);
+			if (result.unknown.length) scanWarnings.push({type:'source-unavailable',message:`GCVE: ${result.unknown.length} package/version comparison(s) are undecidable; advisory coverage is incomplete.`});
+			st.done(`${result.matches.length} matched · +${cveMatches.length-before} new`);
+		} catch (err) {
+			st.fail(err.message);
+			scanWarnings.push({type:'source-unavailable',message:`GCVE: ${err.message}; advisory coverage is incomplete.`});
+		}
 	}
 
 	// Application-provider findings enter the shared enrichment, priority and gate
@@ -1801,22 +2004,41 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// 4c. NVD enrichment — canonical description + full CVSS for matched CVEs.
 	if (willNvd) {
 		const st = progress.start("NVD enrichment");
-		if (!cveMatches.length) {
+		let nvdBindings = [];
+		if (willOsv && options.osvDb !== false) try {
+			nvdBindings = require('./lib/nvd-package-ranges').collectPackageNvdBindings(resolved, require('./lib/advisory-store').openAdvisoryStore());
+		} catch (err) {
+			scanWarnings.push({type:'source-unavailable',message:`NVD package candidates: ${err.message}; additional range coverage is incomplete.`});
+		}
+		if (!cveMatches.length && !nvdBindings.length) {
 			st.skip("no CVE to enrich");
 		} else {
 			try {
-				const { enrichMatches } = require("./lib/nvd");
-				await enrichMatches(cveMatches, { verbose, offline, mirror: options.nvdMirror !== false, onProgress: (p, t) => st.tick(p, t) });
+				const { enrichMatches, hasCachedAbsence } = require("./lib/nvd");
+				const nvdCandidates = [...cveMatches, ...nvdBindings];
+				await enrichMatches(nvdCandidates, { verbose, offline, mirror: options.nvdMirror !== false, onProgress: (p, t) => st.tick(p, t) });
+				const unavailableBindings = new Set(nvdBindings.filter(m => !m.source.split('+').includes('nvd') && !hasCachedAbsence(m.cve.id)).map(m => m.cve.id));
+				const absentBindings = new Set(nvdBindings.filter(m => !m.source.split('+').includes('nvd') && hasCachedAbsence(m.cve.id)).map(m => m.cve.id));
+				if (unavailableBindings.size) scanWarnings.push({type:'source-unavailable',message:`NVD: ${unavailableBindings.size} package-bound CVE record(s) unavailable; additional version-range coverage is incomplete.`});
+				if (absentBindings.size) noteSourceLimitation('NVD',`NVD returned no record for ${absentBindings.size} package-linked CVE(s) at the last consultation.`);
 
-				// 4c-bis. NVD CPE ranges as an ADDITIVE tier, curated coordinates only.
-				// OSV/GHSA declare affected ranges per release BRANCH; NVD declares them for
-				// every affected branch. For CVE-2020-9546, OSV covers 2.9.0–2.9.10.4 while
-				// NVD also covers 2.0.0–2.7.9.7, so jackson-databind 2.5.2 is affected and
-				// never got a fix. The data was already in the NVD cache and only ever used
-				// to FILTER. Bounded on purpose: `data/cpe-coord-map.json` coordinates only
-				// (no name heuristics — that is what makes CPE-driven scanners noisy), and
-				// only CVEs already enriched, so this adds no network path of its own.
+				// 4c-bis. Complement OSV's ranges with NVD only when both sources
+				// identify the same artifact. Stored OSV package bindings can supply
+				// candidates even when this scan has no OSV hit for that CVE. Those
+				// candidates become findings only after an artifact-level CPE/range
+				// match; neither generic framework CPEs nor guessed names qualify.
 				let nvdAdded = 0;
+				const {matchBoundNvdRanges,matchNvdAffected} = require('./lib/nvd-package-ranges');
+				let nativeNvdUncertain = false, nativeNvdCandidates = false;
+				const needsReview=require('./lib/coverage-diagnostics').needsMavenReview;
+				const boundNvd = [...matchNvdAffected(resolved, nvdCandidates, {onUncertain:candidate=>{nativeNvdCandidates=true;if(needsReview(candidate,cveStore,{ttlMs:options.advisoryQueryTtlMs}))nativeNvdUncertain=true;}}), ...matchBoundNvdRanges(resolved, nvdCandidates)];
+				if (nativeNvdUncertain) scanWarnings.push({type:'source-unavailable',message:'NVD: some native affected entries have unverified package identities or version applicability; those candidates were not reported and coverage is incomplete.'});
+				else if (nativeNvdCandidates) noteSourceLimitation('NVD','Some product-only candidates lack a reliable Maven package identity; independent OSV evidence is used when available.');
+				if (boundNvd.length) {
+					const before = cveMatches.length;
+					cveMatches = mergeBySource(cveMatches, boundNvd);
+					nvdAdded += cveMatches.length - before;
+				}
 				if (options.nvdCpeMatch) try {
 					const { matchDepsAgainstNvdCpe } = require("./lib/cpe");
 					const records = {};
@@ -1828,7 +2050,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 					if (extra.length) {
 						const before = cveMatches.length;
 						cveMatches = mergeBySource(cveMatches, extra);
-						nvdAdded = cveMatches.length - before;
+						nvdAdded += cveMatches.length - before;
 					}
 				} catch (err) { ui.warn(`NVD CPE matching skipped: ${err.message}`); }
 				// 4d. CPE refinement — use NVD's CPE configurations to upgrade match
@@ -1840,8 +2062,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 					filtered = cveMatches.filter(m => m.cpeFiltered).length;
 				} catch (err) { ui.warn(`CPE refinement skipped: ${err.message}`); }
 				const uniqueCves = new Set(cveMatches.map(m => m.cve?.id)).size;
-				st.done(`${uniqueCves} CVE${nvdAdded ? ` · +${nvdAdded} via CPE ranges` : ""}${filtered ? ` · ${filtered} false-positive(s) filtered` : ""}${hasNvdKey || options.vigievulnProxy ? "" : " · no key (slow)"}`);
-			} catch (err) { st.fail(err.message); }
+				st.done(`${uniqueCves} CVE${nvdAdded ? ` · +${nvdAdded} via NVD ranges` : ""}${filtered ? ` · ${filtered} false-positive(s) filtered` : ""}${hasNvdKey || options.vigievulnProxy ? "" : " · no key (slow)"}`);
+			} catch (err) {
+				st.fail(err.message);
+				scanWarnings.push({type:'source-unavailable',message:`NVD: ${err.message}; enrichment and additional version-range coverage are incomplete.`});
+			}
 		}
 	}
 
@@ -1886,7 +2111,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		else {
 			try {
 				const { enrichEuvd } = require("./lib/euvd");
-				await enrichEuvd(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy });
+				await enrichEuvd(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy, onStale: date => sourceHealth.markStale('euvd', date) });
 				const ids = new Set(cveMatches.filter(m => m.cve?.euvd?.id).map(m => m.cve.id)).size;
 				const exploited = new Set(cveMatches.filter(m => m.cve?.euvd?.exploitedSince != null).map(m => m.cve.id)).size;
 				st.done(`${ids} EUVD id(s) · ${exploited} exploited per ENISA`);
@@ -1928,7 +2153,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		else if (!options.src) { st.skip("no source tree (descriptor import)"); }
 		else {
 			try {
-				const r = await sc.scan(resolved, { src: options.src, verbose, retireRefresh: !!options.retireRefresh, offline, excludePath, defaultExcludes });
+				const r = await sc.scan(resolved, { src: options.src, verbose, retireRefresh: !!(options.retireRefresh || options.forceUpdate), offline, excludePath, defaultExcludes });
 				retireMatches = r.matches || [];
 				if (options.vendoredJsInventory !== false) vendoredJsInventory = r.meta?.inventory || [];
 				const invN = vendoredJsInventory.length;
@@ -2165,6 +2390,8 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		if (retireMatches.length > 8) console.log(chalk.dim(`    …and ${retireMatches.length - 8} more`));
 	}
 
+	const durableIssues = require('./lib/package-versions').drainIssues();
+	if (durableIssues.length) scanWarnings.push({type:'source-unavailable', message:`${durableIssues.length} package version observation(s) are conflicting or invalid; dependency coverage may be incomplete.`,items:durableIssues});
 	if (scanWarnings.length) {
 		console.log();
 		ui.warn(`${scanWarnings.length} scan-completeness note(s) — a real Maven/Snyk run may surface more:`);
@@ -2216,7 +2443,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// the JSON export's `provenance` block.
 	try {
 		const { buildScanProvenance } = require("./lib/provenance");
-		projectInfo.provenance = buildScanProvenance({ toolVersion: pkg.version, generatedAt: projectInfo.generatedAt, options });
+		projectInfo.provenance = buildScanProvenance({ toolVersion: pkg.version, generatedAt: projectInfo.generatedAt, options,
+			ecosystems:new Set([...resolved.values()].filter(d=>d.provenance!=='binary').map(d=>d.ecosystem)) });
+		if (sourceLimitations.length) projectInfo.provenance.sourceLimitations=sourceLimitations;
+		if (mavenDepthLimited) projectInfo.provenance.mavenDepthLimitReached=true;
 	} catch (err) { if (verbose) ui.warn(`provenance manifest skipped: ${err.message}`); }
 
 	// --- Output target resolution -------------------------------------------------
@@ -2256,7 +2486,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		...sourceHealth.degraded().map(s => ({type:"source-unavailable",count:1,
 			message:`${s.id}: source unavailable (${s.codes.join(", ") || "no response"}); coverage may be incomplete.`})),
 		...sourceHealth.stale().map(s => ({ type:"source-stale", count:1,
-			message:`${s.id}: the source could not be refreshed; cached data${s.at ? ` from ${new Date(s.at).toISOString()}` : " of unknown age"} was used. Coverage may be incomplete.` })),
+			message:`${s.id}: cached data${s.at ? ` from ${new Date(s.at).toISOString()}` : " of unknown age"} was used and may be outdated. Coverage may be incomplete.` })),
 		// A project already on a vendor build of an open-source-EOL cycle: covered by the paid
 		// support that build comes from, so it is a note, not an EOL finding.
 		...commercialBuildNotes.map(e => ({ type: "commercial-build",
@@ -2312,10 +2542,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			const { buildPrivateItems } = require("./lib/private-deps");
 			const mavenItems = privateLibIds.map(id => {
 				const dep = resolved.get(id);
-				const paths = (dep?.pomPaths || []).map(p => path.relative(options.src, p));
+				const paths = options.src ? (dep?.pomPaths || []).map(p => path.relative(options.src, p)) : [];
 				return { id, ecosystem: "maven", manifestPaths: paths };
 			});
-			const otherItems = buildPrivateItems(registryPrivateHits, { relativise: p => path.relative(options.src, p) });
+			const otherItems = buildPrivateItems(registryPrivateHits, { relativise: p => options.src ? path.relative(options.src, p) : '' });
 			const items = [...mavenItems, ...otherItems];
 			if (!items.length) return [];
 			const ecos = [...new Set(items.map(i => i.ecosystem))].sort().join(", ");
@@ -2327,6 +2557,18 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			}];
 		})(),
 	];
+	// Freshness is provenance, not a source outage. Keep the evidence in JSON
+	// and chapter 0, while preserving it for the explicit strict-coverage gate.
+	const freshnessNotices = [];
+	const { freshnessNotice } = require('./lib/cve-report');
+	for (let i = reportWarnings.length - 1; i >= 0; i--) {
+		const info = freshnessNotice(reportWarnings[i], !offline);
+		if (info) { freshnessNotices.unshift(info); reportWarnings.splice(i, 1); }
+	}
+	if (freshnessNotices.length) {
+		projectInfo.provenance ||= { mode: offline ? 'offline' : 'online' };
+		projectInfo.provenance.freshnessNotices = freshnessNotices;
+	}
 
 	// Differential audit vs --baseline: build the current findings doc once, diff it
 	// against the prior export → a `diff` block for the report + JSON export, and a
@@ -2433,7 +2675,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		for (const [label, p] of wrote) ui.ok(`${label} → ${chalk.white(p)}`);
 	} else if (options.report === false) {
 		ui.info(chalk.dim(options.importAnonymized
-			? "import-anonymized: caches warmed, no report written (pair with --export-cache, then report offline from the real source tree)"
+			? (options.prepareOffline ? "descriptor prepared; building the offline archive" : "import-anonymized: caches warmed, no report written (pair with --export-cache, then report offline from the real source tree)")
 			: "--no-report: no files written (scan + gate only)"));
 	}
 	console.log();
@@ -2478,13 +2720,14 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		if (!required.length || required.some(x => !known.has(x))) {
 			console.error(chalk.red(`❌  invalid --fail-on-incomplete capabilities: ${raw}`));
 			process.exitCode = 2;
-		} else if ((required.includes("sources") && (sourceHealth.degraded().length || sourceHealth.stale().length || reportWarnings.some(w => w.type === "source-unavailable" || w.type === "source-stale"))) || !requiredCoverageComplete(appState.coverage, required.filter(x => x !== "sources"))) {
+		} else if (((required.includes("inventory") || required.includes("sources")) && (mavenDepthLimited || reportWarnings.some(w => w.type === "dependency-coverage" || w.type === "go-coverage"))) || (required.includes("sources") && (sourceLimitations.length || freshnessNotices.length || sourceHealth.degraded().length || sourceHealth.stale().length || reportWarnings.some(w => w.type === "source-unavailable" || w.type === "source-stale" || w.type === "osv-coverage"))) || !requiredCoverageComplete(appState.coverage, required.filter(x => x !== "sources"))) {
 			ui.section("Coverage gate");
 			console.log(chalk.red(`✗ required application checks incomplete: ${required.join(", ")}`));
 			process.exitCode = 2;
 		}
 	}
 	if (xlsxFailed) process.exitCode = 2;
+	return {cveIds:[...new Set(cveMatches.map(m=>m.cve?.id).filter(id=>/^CVE-\d{4}-\d{4,7}$/.test(id||'')))]};
 }
 
 // mergeBySource now lives in lib/merge-sources.js (extracted to be unit-testable,

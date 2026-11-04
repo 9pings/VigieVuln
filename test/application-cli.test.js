@@ -17,10 +17,12 @@ test("Wordfence live scanning requires a key and explains how to provide it", ()
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wordfence-key-"));
 	try {
 		const out = path.join(temp, "findings.json");
+		const config = path.join(temp, "direct.json");
+		fs.writeFileSync(config, JSON.stringify({ proxyCache: null, proxyCacheToken: null }));
 		const { WORDFENCE_PRODUCTION_URL } = require("../lib/application-providers/live-snapshot");
 		const env = { ...process.env, FORCE_COLOR: "0" };
 		delete env.WORDFENCE_API_KEY;
-		const run = spawnSync(process.execPath, [CLI, "-s", path.join(__dirname, "fixtures", "wordpress-custom"),
+		const run = spawnSync(process.execPath, [CLI, "--config", config, "-s", path.join(__dirname, "fixtures", "wordpress-custom"),
 			"--ecosystem", "composer", "--app-plugins", "wordpress", "--wordfence-feed-url", WORDFENCE_PRODUCTION_URL,
 			"--report-json", out, "--no-checksums"], { encoding: "utf8", timeout: 30000, env });
 		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);

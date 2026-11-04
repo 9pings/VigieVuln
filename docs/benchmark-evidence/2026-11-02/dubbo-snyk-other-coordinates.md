@@ -1,0 +1,22 @@
+# Dubbo Snyk: verdicts for 58 cases with a different OSV Maven coordinate
+
+On 2 November 2026, [58 unmatched Snyk records](dubbo-snyk-other-coordinates.json) had a declared CVE/GHSA identity in the OSV Maven snapshot, but its Maven coordinate differed from Snyk's. Each record contains a verdict and rationale, the CNA record and affected metadata, the tested package/version, Snyk ranges, the exact source JAR and its SHA-256, upstream patch evidence where available, and any finding for the same CVE in the VigieVuln benchmark report.
+
+| Verdict | Records | Meaning |
+| --- | ---: | --- |
+| Affected artifact and version supported | 27 | The CNA or maintainer confirms the affected product/version, and upstream source evidence connects the artifact to the affected code. The broader report contains the same CVE or independently linked advisory for 13 records; the other 14 have no finding for that CVE in the tested report. |
+| Version not affected according to CNA | 5 | The CNA's explicit ranges and default status exclude the tested product version. This does not exclude a separately bundled or native component. |
+| Vulnerable feature absent | 1 | Spring WebFlux was introduced after the tested Spring 4.3.16 version. |
+| Indeterminate | 25 | The record identifies the missing decisive evidence, including cases where exact code, version introduction or artifact ownership still needs proof. |
+
+These are **package/version findings**, not conclusions about whether the application reaches vulnerable code. The measurements use the [benchmark configuration](dubbo-snyk-method.md), including exclusion of Dubbo reactor artifacts. A subsequent scan with CVEProject, OSV and GCVE enabled, then a schema-v2 rebuild, produced the same 758 findings and source-unavailable warnings for partial CVEProject and GCVE data; it does not establish complete default online coverage. The source-only comparison does not prove all other configured sources lack these alerts.
+
+Among the supported cases, the Apache CNA explicitly identifies Hessian Lite <=3.2.11 for CVE-2021-43297; `com.alibaba:hessian-lite:3.2.8` contains the patched source, and both tested reports have no CVE-2021-43297. The Red Hat CNA covers RESTEasy before 3.11.1.Final for CVE-2020-10688; the `resteasy-jaxrs:3.0.19.Final` source contains the unencoded calls changed by the upstream fix. The CNA identifies `resteasy-netty4` versions before 6.2.10 for CVE-2024-9622. Seven `tomcat-embed-core:8.5.31` records are supported by Apache's 8.5 version ranges and affected code in the published source JAR. Their CVEs were not found elsewhere in the benchmark report. XML-RPC 3.1.3 CVE-2016-5003 likewise names the affected version, and the exact `xmlrpc-common` source contains the deserialization code. None of these observations verifies the default scan mode.
+
+The supported records already represented in the broader report include Netty `netty-all` and `netty-codec-http`, Logback, and Spring `spring-web`; their distinction is attribution to an additional package/version, not a globally absent CVE. For example, Spring's [CVE-2018-15756 advisory](https://spring.io/security/cve-2018-15756/) covers 4.3.16 under stated MVC/WebFlux conditions; the upstream fix changes `HttpRange` in `spring-web`, and the benchmark already reports that CVE for `spring-core` 4.3.16.
+
+The five CNA-excluded records comprise Tomcat 8.5.31 for CVE-2026-29145 and CVE-2026-34500, Spring 4.3.16 for CVE-2026-22735 and CVE-2025-41242, and Logback 1.2.2 for CVE-2023-6481. In the Tomcat Native case, the separate native product has separate affected ranges; this check only excludes the Tomcat embed-core version.
+
+## Source verification and limitations
+
+All 52 distinct CVE CNA records were retrieved successfully. All 25 distinct source JARs were retrieved successfully from Maven Central. Upstream patch comparisons found at least one matching source file in 39 of the 58 records and one or more deleted patch lines also present in 24 of them. These counts are investigation leads, not a classifier: patches can refactor unrelated code, and a matching source line is not proof of the vulnerable execution path. For the 27 supported cases, the rationale also connects the CNA version information and the specific code or component. The remaining records are left open where this connection is not established. Referenced scripts are in `scripts/`; they use local paths and do not preserve private Snyk reports.

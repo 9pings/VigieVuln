@@ -1,0 +1,35 @@
+[
+  {
+    "package": "symfony/expression-language",
+    "version": "v4.4.25",
+    "id": "CVE-2026-109449",
+    "trivy_source": "php-security-advisories",
+    "vigievuln_packagist": {
+      "online": true,
+      "offline": true
+    },
+    "classification": "already reported through Packagist in tested configuration; difference against OSV-only profile"
+  },
+  {
+    "package": "twig/twig",
+    "version": "v2.13.1",
+    "id": "CVE-2026-46627",
+    "trivy_source": "php-security-advisories",
+    "vigievuln_packagist": {
+      "online": true,
+      "offline": true
+    },
+    "classification": "already reported through Packagist in tested configuration; difference against OSV-only profile"
+  },
+  {
+    "package": "twig/twig",
+    "version": "v2.13.1",
+    "id": "CVE-2026-46636",
+    "trivy_source": "php-security-advisories",
+    "vigievuln_packagist": {
+      "online": true,
+      "offline": true
+    },
+    "classification": "already reported through Packagist in tested configuration; difference against OSV-only profile"
+  }
+]

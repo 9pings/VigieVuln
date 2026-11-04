@@ -26,6 +26,8 @@ test("GCVE: a CVE id lives in the reserved GNA 0 namespace, and nothing else map
 	const ms = enrichGcve([{ cve: { id: "CVE-2021-44228" } }, { cve: { id: "GHSA-x" } }]);
 	assert.equal(ms[0].cve.gcve, "GCVE-0-2021-44228");
 	assert.equal(ms[1].cve.gcve, undefined);
+	const native = enrichGcve([{ cve: { id: "CVE-2021-44228", gcve: "GCVE-1-2021-12" } }]);
+	assert.equal(native[0].cve.gcve, "GCVE-1-2021-12", "a native GNA identifier is not replaced by the GNA-0 alias");
 });
 
 // ---------------------------------------------------------------- EUVD
@@ -63,17 +65,17 @@ test("EUVD: bulk reads only — the project's CVE ids are never sent; then offli
 
 		const off = await enrichEuvd(matchesFor("CVE-2021-44228"), { offline: true, fetcher: tripwire, cacheDir: dir });
 		assert.equal(off[0].cve.euvd.id, "EUVD-2021-34768");
-	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("EUVD: a failed refresh keeps serving the stale snapshot", async () => {
 	const dir = tmp();
 	try {
-		fs.writeFileSync(path.join(dir, "euvd-cache.json"), JSON.stringify({ _fetchedAt: 0,
-			body: { byCve: { "CVE-2021-44228": "EUVD-2021-34768" }, exploited: {}, count: 1 } }));
+		require('../lib/cache-repository').createCacheRepository(dir).put('catalogue','euvd',{ _fetchedAt: 0,
+			body: { byCve: { "CVE-2021-44228": "EUVD-2021-34768" }, exploited: {}, count: 1 } });
 		const ms = await enrichEuvd(matchesFor("CVE-2021-44228"), { fetcher: async () => new Response("", { status: 503 }), cacheDir: dir });
 		assert.equal(ms[0].cve.euvd.id, "EUVD-2021-34768");
-	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ---------------------------------------------------------------- CERT-FR
@@ -120,20 +122,20 @@ test("CERT-FR: cold run indexes every advisory, a later run fetches only what wa
 		assert.ok(calls.every(u => !/CVE-/.test(u)), "no CVE id of the project is sent");
 
 		// Expire the listing stamp; one advisory revised, one new one that has no JSON (404).
-		const file = path.join(dir, "certfr-cache.json");
-		const data = JSON.parse(fs.readFileSync(file, "utf8"));
+		const repo = require('../lib/cache-repository').createCacheRepository(dir);
+		const data = repo.get('catalogue','certfr').value;
 		data.meta.fetchedAt = 0;
-		fs.writeFileSync(file, JSON.stringify(data));
+		repo.put('catalogue','certfr',data);
 		const revised = [{ ...LISTING_AVIS[0], last_revision_date: "2022-02-01T00:00:00" }, LISTING_AVIS[1],
 			{ reference: "CERTFR-2026-AVI-0001", last_revision_date: "2026-01-01T00:00:00", title: "x" }];
 		const again = [];
 		await enrichCertFr(matchesFor("CVE-2021-44228"), { fetcher: certfrFetcher(again, { avis: revised, alerte: LISTING_ALERTE }), cacheDir: dir });
 		const fetched = again.filter(u => /\/CERT/.test(u)).map(u => /\/(CERT[^/]+)\//.exec(u)[1]).sort();
 		assert.deepEqual(fetched, ["CERTFR-2021-AVI-951", "CERTFR-2026-AVI-0001"]);
-		const after = JSON.parse(fs.readFileSync(file, "utf8"));
+		const after = repo.get('catalogue','certfr').value;
 		assert.deepEqual(after.entries["CERTFR-2026-AVI-0001"].cves, [], "a 404 is an answer: recorded, not retried");
 		assert.ok(after.meta.fetchedAt > 0);
-	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("CERT-FR: offline reads the index and never touches the network", async () => {
@@ -145,8 +147,8 @@ test("CERT-FR: offline reads the index and never touches the network", async () 
 		// Cold offline: no index, no finding, no error.
 		const cold = tmp();
 		try { assert.equal((await enrichCertFr(matchesFor("CVE-2021-44228"), { offline: true, fetcher: tripwire, cacheDir: cold }))[0].cve.certfr, undefined); }
-		finally { fs.rmSync(cold, { recursive: true, force: true }); }
-	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
+		finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cold, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ---------------------------------------------------------------- providers

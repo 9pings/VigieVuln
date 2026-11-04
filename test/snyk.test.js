@@ -78,11 +78,12 @@ test("snykOutputError surfaces snyk's error-shaped JSON instead of a silent '0 f
 	assert.equal(snykOutputError(null), null);
 });
 
-test("mergeWithFadResults tags overlap as 'both' and keeps Snyk-only as 'snyk'", () => {
+test("mergeWithFadResults retains original sources and adds Snyk on overlap", () => {
 	const fadMatches = [
 		{
 			dep: { groupId: "org.apache.logging.log4j", artifactId: "log4j-core", version: "2.14.0" },
 			cve: { id: "CVE-2021-44228", severity: "CRITICAL" },
+			source: "CVEProject+osv",
 			confidence: "exact",
 		},
 	];
@@ -90,7 +91,7 @@ test("mergeWithFadResults tags overlap as 'both' and keeps Snyk-only as 'snyk'",
 	const merged = mergeWithFadResults(fadMatches, snykMatches);
 	assert.equal(merged.length, 2);
 	const log4j = merged.find(m => m.cve.id === "CVE-2021-44228");
-	assert.equal(log4j.source, "both");
+	assert.equal(log4j.source, "CVEProject+osv+snyk");
 	const jackson = merged.find(m => m.cve.id === "CVE-2022-42003");
 	assert.equal(jackson.source, "snyk");
 });

@@ -18,6 +18,21 @@ const packagistFinding = { dep: { ...dep }, cve: {
 	id: "GHSA-8rr7-cvq3-gmfh", severity: "UNKNOWN", score: null, description: "the Packagist record has no cve field",
 	aliases: ["PKSA-zyf5-hrxv-hrd7"], ghsa: "GHSA-8rr7-cvq3-gmfh" }, source: "packagist", confidence: "exact" };
 
+test("missing provenance uses the cache fallback instead of fabricating an upstream source", () => {
+	const a = { dep: { ...dep }, cve: { id: "CVE-2020-1" } };
+	assert.equal(mergeBySource([a], [])[0].source, "cache");
+	assert.equal(mergeBySource([], [a])[0].source, "cache");
+	const known = { ...a, source: 'osv' };
+	assert.equal(mergeBySource([a], [known])[0].source, 'cache+osv');
+	assert.equal(mergeBySource([known], [a])[0].source, 'cache+osv');
+});
+
+test('merging a source without a fix retains the known advisory fix', () => {
+	const a = {dep:{...dep},source:'osv',cve:{id:'CVE-2020-1',fixVersion:'2.5.0'}};
+	const b = {dep:{...dep},source:'GCVE:GNA-1',cve:{id:'CVE-2020-1',fixVersion:null}};
+	assert.equal(mergeBySource([a],[b])[0].cve.fixVersion,'2.5.0');
+});
+
 test("an addition keyed by an existing finding's GHSA merges, never duplicates", () => {
 	const merged = mergeBySource([osvFinding], [packagistFinding]);
 	assert.equal(merged.length, 1);

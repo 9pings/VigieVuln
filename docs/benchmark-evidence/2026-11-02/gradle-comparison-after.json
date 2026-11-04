@@ -1,0 +1,23 @@
+{
+  "ecosystem": "gradle",
+  "raw": {
+    "vv": 85,
+    "osv": 85,
+    "trivy": 85,
+    "grype": 85
+  },
+  "normalized": {
+    "vv": 85,
+    "osv": 85,
+    "trivy": 85,
+    "grype": 85,
+    "all": 85
+  },
+  "missing": [],
+  "extra": [],
+  "grypeMissing": [],
+  "grypeExtra": [],
+  "warnings": {
+    "source-unavailable": 3
+  }
+}

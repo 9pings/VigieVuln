@@ -96,17 +96,15 @@ const get = url => {
 test("store: set/get roundtrip, TTL freshness, persistence across instances", () => {
 	const dir = tmpDir();
 	const s1 = createCacheStore(dir);
-	const tmpBody = path.join(dir, "seed");
-	fs.writeFileSync(tmpBody, "hello");
-	s1.commit(URL_NPM, tmpBody, { fetchedAt: Date.now(), ttlMs: 60_000, contentType: "text/plain", bytes: 5 });
+	s1.put(URL_NPM, Buffer.from('hello'), { fetchedAt: Date.now(), ttlMs: 60_000, contentType: "text/plain", bytes: 5 });
 	const e = s1.get(URL_NPM);
-	assert.equal(fs.readFileSync(e.bodyPath, "utf8"), "hello");
+	assert.equal(s1.readBody(e).toString(), "hello");
 	assert.equal(e.contentType, "text/plain");
 	assert.ok((Date.now() - e.fetchedAt) < e.ttlMs);
 
 	// a second store over the same dir sees the entry (the multi-instance contract)
 	const s2 = createCacheStore(dir);
-	assert.equal(fs.readFileSync(s2.get(URL_NPM).bodyPath, "utf8"), "hello");
+	assert.equal(s2.readBody(s2.get(URL_NPM)).toString(), "hello");
 
 	assert.equal(s2.size(), 1);
 	s2.clear();
@@ -116,38 +114,25 @@ test("store: set/get roundtrip, TTL freshness, persistence across instances", ()
 
 test("store: refresh publishes a new body atomically and keeps active readers alive", () => {
 	const dir = tmpDir(), store = createCacheStore(dir);
-	const seed = path.join(dir, "seed"), update = path.join(dir, "update");
-	fs.writeFileSync(seed, "old");
-	store.commit(URL_NPM, seed, { fetchedAt: 1, ttlMs: 1, contentType: "text/plain", bytes: 3 });
+	store.put(URL_NPM, Buffer.from('old'), { fetchedAt: 1, ttlMs: 1, contentType: "text/plain", bytes: 3 });
 	const old = store.get(URL_NPM);
 	const release = store.acquire(old);
-	fs.writeFileSync(update, "new value");
-	store.commit(URL_NPM, update, { fetchedAt: 2, ttlMs: 1, contentType: "text/plain", bytes: 9 });
+	store.put(URL_NPM, Buffer.from('new value'), { fetchedAt: 2, ttlMs: 1, contentType: "text/plain", bytes: 9 });
 	const current = store.get(URL_NPM);
-	assert.notEqual(current.bodyPath, old.bodyPath);
-	assert.equal(fs.readFileSync(old.bodyPath, "utf8"), "old", "an in-flight response can finish");
-	assert.equal(fs.readFileSync(current.bodyPath, "utf8"), "new value");
-	assert.equal(fs.readFileSync(createCacheStore(dir).get(URL_NPM).bodyPath, "utf8"), "new value");
+	assert.notEqual(current.bodyId, old.bodyId);
+	assert.equal(store.readBody(old).toString(), "old", "an in-flight response can finish");
+	assert.equal(store.readBody(current).toString(), "new value");
+	assert.equal(store.readBody(createCacheStore(dir).get(URL_NPM)).toString(), "new value");
 	release();
-	assert.equal(fs.existsSync(old.bodyPath), false, "the retired body is removed after its last reader");
+	assert.equal(store.readBody(old).length,0,"the retired body is removed after its last reader");
 });
 
 test("store: failed metadata publication preserves the previous cached body", () => {
 	const dir = tmpDir(), store = createCacheStore(dir);
-	const first = path.join(dir, "first"), second = path.join(dir, "second");
-	fs.writeFileSync(first, "old");
-	store.commit(URL_NPM, first, { fetchedAt: 1, ttlMs: 1, contentType: "text/plain", bytes: 3 });
-	fs.writeFileSync(second, "new");
-	const originalRename = fs.renameSync;
-	try {
-		fs.renameSync = (from, to) => {
-			if (to === store.metaPath(store.hash(URL_NPM))) throw new Error("disk publication failed");
-			return originalRename(from, to);
-		};
-		assert.throws(() => store.commit(URL_NPM, second,
-			{ fetchedAt: 2, ttlMs: 1, contentType: "text/plain", bytes: 3 }), /disk publication failed/);
-	} finally { fs.renameSync = originalRename; }
-	assert.equal(fs.readFileSync(createCacheStore(dir).get(URL_NPM).bodyPath, "utf8"), "old");
+	store.put(URL_NPM, Buffer.from('old'), { fetchedAt: 1, ttlMs: 1, contentType: "text/plain", bytes: 3 });
+	assert.throws(() => store.put(URL_NPM, Buffer.from('new'),
+		{ fetchedAt: 0, ttlMs: 1, contentType: "text/plain", bytes: 3 }), /CHECK constraint/);
+	assert.equal(store.readBody(createCacheStore(dir).get(URL_NPM)).toString(), "old");
 });
 
 test("ttlForUrl: per-source table + override + default", () => {
@@ -312,14 +297,14 @@ test("server: 40 concurrent readers survive an offline upstream; a cold miss fai
 		const seed = await get(target);
 		assert.equal(seed.status, 200);
 		const entry = p.server.fadStore.get(require("../lib/providers").providerKey("npm", "package", { name: "express" }));
-		const saved = fs.readFileSync(entry.bodyPath);
+		const saved = p.server.fadStore.readBody(entry);
 		online = false;
 		await new Promise(r => setTimeout(r, 60));
 		const results = await Promise.all(Array.from({ length: 40 }, () => get(target)));
 		assert.ok(results.every(r => r.status === 200 && r.body === seed.body));
 		assert.ok(results.every(r => r.tag === "stale"));
 		assert.ok(attempts <= 3, `offline stale reads should not hammer upstream (${attempts} attempts)`);
-		assert.deepEqual(fs.readFileSync(p.server.fadStore.get(require("../lib/providers").providerKey("npm", "package", { name: "express" })).bodyPath), saved);
+		assert.deepEqual(p.server.fadStore.readBody(p.server.fadStore.get(require("../lib/providers").providerKey("npm", "package", { name: "express" }))), saved);
 		assert.equal(p.server.fadStore.size(), 1, "no outage may delete the cached entry");
 
 		const cold = URL_NPM + "-uncached";

@@ -112,18 +112,18 @@ test("a valid --fail-on level is accepted", () => {
 // 2026-06 index that way, but a fixture keeps the signal without the flake).
 test("--no-report still runs the gate (and fails on a high finding)", () => {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "fad-home-"));
-	const cveDir = path.join(home, ".vigie-vuln", "cve-data");
-	fs.mkdirSync(cveDir, { recursive: true });
+	const cacheDir = path.join(home, ".vigie-vuln");
 	const entry = {
-		id: "CVE-2099-0001", severity: "HIGH", score: 8.8, description: "gate sentinel",
+		id: "CVE-2099-0001", coordinateEvidence: "explicit-coordinate", exactPackageName: "org.apache.logging.log4j:log4j-core", severity: "HIGH", score: 8.8, description: "gate sentinel",
 		fixVersion: "2.15.0", vendor: "apache", product: "apache log4j2",
 		ranges: [{ version: "2.0", status: "affected", lessThan: "2.15.0" }],
 	};
-	fs.writeFileSync(path.join(cveDir, "maven-cve-index.json"), JSON.stringify({
-		meta: { builtAt: new Date().toISOString(), cveCount: 1 },
-		byPackageName: { "org.apache.logging.log4j:log4j-core": [entry] },
-		byProduct: {},
-	}));
+	const db=require('../lib/cache-db').openCacheDb({cacheDir});
+	db.prepare('INSERT INTO cve_lookup(kind,lookup_key,source,cve,affected_key,projection_json) VALUES (?,?,?,?,?,?)')
+	 .run('package','org.apache.logging.log4j:log4j-core','CVEProject',entry.id,require('node:crypto').createHash('sha256').update(JSON.stringify(entry)).digest('hex'),JSON.stringify(entry));
+	db.prepare('INSERT INTO cache_snapshots(namespace,fetched_at,complete,stale,record_count,metadata_json) VALUES (?,?,?,?,?,?)')
+	 .run('cve_lookup',Date.now(),1,0,1,JSON.stringify({builtAt:new Date().toISOString(),cveCount:1,indexVersion:require('../lib/cve-download').MAVEN_INDEX_VERSION}));
+	db.close();
 	const src = path.join(__dirname, "fixtures", "polyglot");
 	const res = run(["-s", src, "--offline", "--no-report", "--fail-on", "high"],
 		{ env: { ...process.env, HOME: home, USERPROFILE: home } });

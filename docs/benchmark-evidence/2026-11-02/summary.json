@@ -1,0 +1,139 @@
+{
+  "date": "2026-11-02",
+  "tools": {
+    "vigievuln": "1.2.0 development tree",
+    "osvScanner": "2.3.8 live OSV API",
+    "trivy": "0.76.1 database updated 2026-11-02T07:17:05Z",
+    "grype": "0.121.0 database built 2026-11-02T06:26:52Z"
+  },
+  "seed": {
+    "_schema": 1,
+    "source": "osv",
+    "_builtAt": 1793615206977,
+    "recordCount": 288568,
+    "sha256": "b71ced5e5f537181703181a28bab348d9dbd3ceb8eb16c3014db97f4d8d133ad",
+    "ecosystems": [
+      "Maven",
+      "npm",
+      "PyPI",
+      "Packagist",
+      "NuGet",
+      "Go",
+      "RubyGems"
+    ],
+    "complete": true
+  },
+  "notes": [
+    "Trivy and Grype figures are raw findings, not deduplicated groups. OSV comparisons use matching package, version and advisory identifiers/declared aliases.",
+    "Go OSV stdlib inferred from the language version is excluded from comparison to dependency advisories; CLI root scan also includes a nested go.sum.",
+    "OSV-only CLI profile disables other sources. npm and RubySec external source gaps are documented separately.",
+    "TTL=0 makes warm offline source-stale warnings expected."
+  ],
+  "projects": [
+    {
+      "name": "nodegoat",
+      "repo": "OWASP/NodeGoat",
+      "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+      "scope": "package-lock.json",
+      "vvOnline": 320,
+      "vvWarmOffline": 320,
+      "onlineOnly": [],
+      "offlineOnly": [],
+      "offlineWarnings": {
+        "source-stale": 1138
+      },
+      "trivyRaw": 334,
+      "grypeRaw": 108,
+      "artifacts": "/tmp/vv-bench-multi/results/nodegoat-*"
+    },
+    {
+      "name": "prometheus",
+      "repo": "prometheus/prometheus",
+      "commit": "37468d88dce85ac507f3fb7864c7d1c078e3e27d",
+      "scope": "go.mod + go.sum",
+      "vvOnline": 127,
+      "vvWarmOffline": 127,
+      "onlineOnly": [],
+      "offlineOnly": [],
+      "offlineWarnings": {
+        "source-stale": 202
+      },
+      "trivyRaw": 53,
+      "grypeRaw": 75,
+      "artifacts": "/tmp/vv-bench-multi/results/prometheus-*"
+    },
+    {
+      "name": "poetry",
+      "repo": "python-poetry/poetry",
+      "commit": "46bf7fd3d1797b75ad9b07adc280039d93414e07",
+      "scope": "poetry.lock (excludes tests/**)",
+      "vvOnline": 90,
+      "vvWarmOffline": 90,
+      "onlineOnly": [],
+      "offlineOnly": [],
+      "offlineWarnings": {
+        "source-stale": 93,
+        "osv-coverage": 2
+      },
+      "trivyRaw": 83,
+      "grypeRaw": 83,
+      "artifacts": "/tmp/vv-bench-multi/results/poetry-*"
+    },
+    {
+      "name": "mastodon",
+      "repo": "mastodon/mastodon",
+      "commit": "fbcbf7898f000d9d1a21d52e8a8d3ed4602aa7db",
+      "scope": "Gemfile.lock",
+      "vvOnline": 158,
+      "vvWarmOffline": 158,
+      "onlineOnly": [],
+      "offlineOnly": [],
+      "offlineWarnings": {
+        "source-stale": 293
+      },
+      "trivyRaw": 182,
+      "grypeRaw": 159,
+      "artifacts": "/tmp/vv-bench-multi/results/mastodon-*"
+    },
+    {
+      "name": "phpmyadmin",
+      "repo": "phpmyadmin/phpmyadmin",
+      "commit": "ed65cd2d8b26073d30311163f8e25e722a9aef0f",
+      "scope": "composer.lock",
+      "vvOnline": 36,
+      "vvWarmOffline": 36,
+      "onlineOnly": [],
+      "offlineOnly": [],
+      "offlineWarnings": {
+        "source-stale": 87
+      },
+      "trivyRaw": 39,
+      "grypeRaw": 31,
+      "artifacts": "/tmp/vv-bench-multi/results/phpmyadmin-*"
+    }
+  ],
+  "extraScopes": [
+    {
+      "project": "mastodon",
+      "scope": "yarn.lock only",
+      "vv": 273,
+      "osv": 273
+    },
+    {
+      "project": "vite",
+      "commit": "566d4c7bb51cf56550a5374ee46e1e1cbea1cf1f",
+      "scope": "pnpm-lock.yaml only (v5.4)",
+      "vv": 235,
+      "osv": 235,
+      "trivy": "unsupported/unrecognized lockfile, no comparison"
+    }
+  ],
+  "evidence": {
+    "nodeWg": "/tmp/vv-bench-multi/results/nodegoat-trivy-classified.json",
+    "rubysec": "/tmp/vv-bench-multi/results/mastodon-rubysec-classified.json",
+    "composerOsvBefore": "/tmp/vv-bench-multi/results/phpmyadmin-osv-only.json",
+    "packagistOnline": "/tmp/vv-bench-multi/results/phpmyadmin-packagist-online.json",
+    "packagistOffline": "/tmp/vv-bench-multi/results/phpmyadmin-packagist-offline.json",
+    "goOracle": "/tmp/vv-bench-multi/results/prometheus-go-list.json"
+  }
+}

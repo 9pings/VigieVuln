@@ -98,13 +98,13 @@ itself — so it carries what they need:
    identities (private components never leave the enclave; a module inventoried from its
    `.info.yml` without a lock entry is included, because the Drupal feed is keyed by
    package identity).
-2. **Phase 2 (online)** — `--import-anonymized` warms **every** advisory snapshot the
+2. **Phase 2 (online)** — `cache prepare deps.json --output cache.tar.gz` warms the advisory snapshots the
    descriptor justifies, in one run: the Drupal feed (union of lock coordinates and
    inventoried identities — exactly the set the live source would query), the
    PrestaShop/TYPO3 repository feeds, the SPIP NVD product snapshot, one WordPress checksums reference per declared core
    version, and the Wordfence catalogue **with a client API key, or `--wordfence-live` and a key on the proxy** (the
    key itself never travels). Each snapshot is validated with its provider's schema before
-   being written. `--export-cache` then bundles everything.
+   being written. The same command writes the project archive.
 3. **Phase 3 (offline)** — `--import-cache` + the plain `--offline` scan. Cached snapshots
    are consumed **automatically, with no advisory flag** — in every mode, so the air-gapped
    scan can reuse the same publisher data as its online reference. This does not

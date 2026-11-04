@@ -1,0 +1,11 @@
+{
+  "name": "jquery-ui",
+  "version": "1.11.4",
+  "jarUrl": "https://maven-central.storage-download.googleapis.com/maven2/org/webjars/jquery-ui/1.11.4/jquery-ui-1.11.4.jar",
+  "jarSha256": "3c932cfd6ddb3ff3e3a4edfb5180e4d803d875746cf46b9153f3b443572f97a6",
+  "jarPath": "META-INF/resources/webjars/jquery-ui/1.11.4/jquery-ui.js",
+  "jarFileSha256": "0c8e8d7408611519ceda4e759ae9987834a17addc8f0028241ffed7fb0113612",
+  "upstreamUrl": "https://code.jquery.com/ui/1.11.4/jquery-ui.js",
+  "upstreamSha256": "0c8e8d7408611519ceda4e759ae9987834a17addc8f0028241ffed7fb0113612",
+  "exactMatch": true
+}

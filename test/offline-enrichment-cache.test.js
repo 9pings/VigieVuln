@@ -17,9 +17,10 @@ const stamp = Date.now() - 72 * 3600e3;
 const body = kind === "kev"
 	? { _fetchedAt: stamp, body: { byId: { [id]: { dateAdded: "2099-01-01", dueDate: "2099-02-01", ransomware: true } } } }
 	: { _fetchedAt: stamp, entries: { [hash]: identity } };
-fs.mkdirSync(path.dirname(mod.CACHE_PATH), { recursive: true });
-fs.writeFileSync(mod.CACHE_PATH, JSON.stringify(body));
-const bytes = fs.readFileSync(mod.CACHE_PATH, "utf8"), modified = fs.statSync(mod.CACHE_PATH).mtimeMs;
+const repo=require(path.resolve('lib/cache-repository')).createCacheRepository(path.join(process.argv[2],'.vigie-vuln'));
+const namespace=kind==='kev'?'catalogue':'auxiliary',key=kind==='kev'?'kev':'hash-id';
+repo.put(namespace,key,body,{fetchedAt:stamp});
+const before=repo.get(namespace,key);
 let calls = 0;
 const fetcher = async () => {
 	calls++;
@@ -46,8 +47,7 @@ const fetcher = async () => {
 		assert.deepEqual(deps.get("binary").identity, identity);
 	}
 	assert.equal(calls, 0);
-	assert.equal(fs.readFileSync(mod.CACHE_PATH, "utf8"), bytes);
-	assert.equal(fs.statSync(mod.CACHE_PATH).mtimeMs, modified);
+	assert.deepEqual(repo.get(namespace,key),before);
 	if (kind === "kev") {
 		const matches = [{ cve: { id } }];
 		await mod.enrichKev(matches, { fetcher });
@@ -57,8 +57,8 @@ const fetcher = async () => {
 		assert.equal(value.name, "refreshed-binary");
 	}
 	assert.equal(calls, 1, "online still refreshes expired snapshots");
-	assert.ok(JSON.parse(fs.readFileSync(mod.CACHE_PATH))._fetchedAt > stamp);
-	fs.unlinkSync(mod.CACHE_PATH);
+	assert.ok(repo.get(namespace,key).value._fetchedAt > stamp);
+	repo.delete(namespace,key);
 	if (kind === "kev") {
 		const matches = [{ cve: { id } }];
 		await mod.enrichKev(matches, { offline: true, fetcher });
@@ -67,7 +67,7 @@ const fetcher = async () => {
 		assert.equal(await mod.lookupHash({ sha256: hash }, { offline: true, fetcher }), null);
 	}
 	assert.equal(calls, 1);
-	assert.equal(fs.existsSync(mod.CACHE_PATH), false, "cold offline reads never create a cache");
+	assert.equal(repo.get(namespace,key), null, "cold offline reads never create a cache entry");
 })().catch(error => { console.error(error); process.exitCode = 1; });
 `, kind, root], { cwd: path.resolve(__dirname, ".."), encoding: "utf8" });
 		assert.equal(fs.existsSync(path.join(root, ".vigie-vuln", `${kind}-cache.json`)), false);

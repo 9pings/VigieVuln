@@ -44,7 +44,7 @@ test("offline: a cached Drupal advisory snapshot is consumed without --drupal-ad
 			"provenance reports the tool-fetched stamp, not a declaration the operator never made");
 		assert.equal(core.sourceSnapshot.sourceUrl, STAMP.sourceUrl, "the stamp's source URL travels with the coverage");
 		assert.equal(core.sourceSnapshot.collectedAt, STAMP.collectedAt);
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("online: the cached Drupal snapshot is consumed too — the lanes follow the cache, not the mode", async () => {
@@ -62,7 +62,7 @@ test("online: the cached Drupal snapshot is consumed too — the lanes follow th
 		const core = result.coverage.find(c => c.occurrenceId?.endsWith(":core"));
 		assert.equal(core.execution, "completed");
 		assert.equal(core.sourceSnapshot.completeness, "tool-fetched");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("offline: an explicit --drupal-advisories flag wins over the cached snapshot", async () => {
@@ -84,7 +84,7 @@ test("offline: an explicit --drupal-advisories flag wins over the cached snapsho
 		assert.equal(core.sourceSnapshot.sha256, crypto.createHash("sha256").update(fs.readFileSync(explicit)).digest("hex"));
 		assert.equal(core.sourceSnapshot.completeness, "operator-declared");
 		assert.ok(cachedFile.length > 0);
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("offline: a corrupt cached Drupal snapshot fails the scan like an invalid explicit one would", async () => {
@@ -97,7 +97,7 @@ test("offline: a corrupt cached Drupal snapshot fails the scan like an invalid e
 		await assert.rejects(() => runApplicationPlugins(root, { plugins: [drupal], selection: "drupal",
 			resolvedDeps: deps, activeCodecIds: ["composer"], offline: true, advisoryCacheDir: cacheDir }),
 		/Drupal advisory snapshot needs an advisories object/);
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("offline: a cached snapshot past --max-advisory-age is rejected (the fallback honors freshness)", async () => {
@@ -111,7 +111,7 @@ test("offline: a cached snapshot past --max-advisory-age is rejected (the fallba
 			resolvedDeps: deps, activeCodecIds: ["composer"], offline: true, advisoryCacheDir: cacheDir,
 			maxAdvisoryAgeMs: 3600 * 1000, now: Date.parse("2026-09-24T12:00:00.000Z") }),
 		/is stale/);
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("offline: a cached Drupal snapshot is not consumed when its plugin is not selected", async () => {
@@ -125,7 +125,7 @@ test("offline: a cached Drupal snapshot is not consumed when its plugin is not s
 		assert.equal(result.applications.length, 1, "the WordPress instance is scanned");
 		assert.ok(!result.coverage.some(c => c.sourceId === "drupal-security-advisories"),
 			"the Drupal source stays silent instead of failing the run");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("offline: a cached WordPress checksums reference for the instance's version is reused per instance", async () => {
@@ -148,7 +148,7 @@ test("offline: a cached WordPress checksums reference for the instance's version
 		assert.match(integrity.sourceSnapshot.sourceUrl, /^https:\/\/api\.wordpress\.org/);
 		// The wrong md5 for wp-admin/index.php is a divergence the reference must surface.
 		assert.equal(integrity.result, "affected");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("offline: a cached WordPress checksums reference for ANOTHER version is not reused", async () => {
@@ -164,7 +164,7 @@ test("offline: a cached WordPress checksums reference for ANOTHER version is not
 		const integrity = result.coverage.find(c => c.capability === "integrity");
 		assert.equal(integrity.execution, "not-run", "no reference for 6.6.2 → the lane stays honest");
 		assert.equal(integrity.diagnostic, "CMS_PROVIDER_UNCONFIGURED");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("a cached Wordfence catalogue is consumed without a flag and without an API key", async () => {
@@ -197,5 +197,5 @@ test("a cached Wordfence catalogue is consumed without a flag and without an API
 		assert.equal(advisory.sourceSnapshot.completeness, "tool-fetched",
 			"the warmed catalogue reports its fetch stamp — the air-gapped side never saw the key");
 		assert.match(advisory.sourceSnapshot.sourceUrl, /wordfence\.com/);
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });

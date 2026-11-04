@@ -1,0 +1,47 @@
+{
+  "project": "petclinic",
+  "unit": "Exact case-sensitive Maven coordinate/version and declared common advisory ID",
+  "comparisonInputs": "Scanners rerun on 2026-11-02; OSV live API, Trivy/Grype pinned databases; see inventories and warnings in BENCHMARK.md",
+  "vigievuln": 174,
+  "scanners": {
+    "osv": {
+      "observations": 161,
+      "missingFromVigievuln": 0,
+      "missing": []
+    },
+    "trivy": {
+      "observations": 155,
+      "missingFromVigievuln": 0,
+      "missing": []
+    },
+    "grype": {
+      "observations": 6,
+      "missingFromVigievuln": 0,
+      "missing": []
+    }
+  },
+  "unidentifiedObservations": {
+    "vigievuln": 0,
+    "osv": 0,
+    "trivy": 0,
+    "grype": 0
+  },
+  "artifacts": {
+    "vigievuln": {
+      "file": "/tmp/vigie-benchmark-20261102/output/petclinic-vv-field-debug-offline.json",
+      "sha256": "7c3b146e020013f72b1c4ba46fc4b3c908eae60aaa5e17bfc82b8c6c2d51a137"
+    },
+    "osv": {
+      "file": "petclinic-osv.json",
+      "sha256": "f263cabc5d89145aa5377220e52286c0a2d773f9e1962e0ca6a0731e355d66f5"
+    },
+    "trivy": {
+      "file": "petclinic-trivy.json",
+      "sha256": "cd9ffc04b5c64e4a89b1584ea1bd2a32a8122944b75a87a4c727ff29332fbcf5"
+    },
+    "grype": {
+      "file": "petclinic-grype.json",
+      "sha256": "634147d2ff1a741d96309b4e88eb491199fa03814963610cf6fb67cf9cf849a6"
+    }
+  }
+}

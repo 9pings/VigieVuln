@@ -3,6 +3,20 @@ const assert = require("node:assert");
 const { serializeDeps, deserializeDeps, SCHEMA } = require("../lib/deps-descriptor");
 const { makeDepRecord } = require("../lib/dep-record");
 
+test('legacy descriptors classify Maven provided dependencies as potentially production', () => {
+	const dep=makeDepRecord({ecosystem:'maven',namespace:'example',name:'provided',version:'1.0',scope:'provided',isDev:true});
+	const descriptor=serializeDeps(new Map([['example:provided',dep]]));
+	const restored=[...deserializeDeps(descriptor).resolved.values()][0];
+	assert.strictEqual(restored.scope,'provided');assert.strictEqual(restored.isDev,false);
+});
+
+test('legacy descriptors classify optional npm dependencies as potentially production', () => {
+	const dep=makeDepRecord({ecosystem:'npm',name:'optional',version:'1.0.0',scope:'optional',isDev:true});
+	const descriptor=serializeDeps(new Map([['npm:optional',dep]]));
+	const restored=[...deserializeDeps(descriptor).resolved.values()][0];
+	assert.strictEqual(restored.scope,'optional');assert.strictEqual(restored.isDev,false);
+});
+
 // Build a resolved map carrying sensitive environment fields.
 function sampleMap() {
 	const m = new Map();

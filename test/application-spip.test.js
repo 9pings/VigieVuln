@@ -49,7 +49,7 @@ test("detection is conjunctive: the markers AND a readable version constant, nev
 		fs.writeFileSync(path.join(temp, "composer.json"), JSON.stringify({ name: "acme/plain-lib", require: { "spip/spip": "4.1.2" } }));
 		const plain = await runApplicationPlugins(temp, { plugins: [spip], selection: "spip" });
 		assert.equal(plain.applications.length, 0, "a composer.json requiring spip/spip is not a SPIP instance");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require("../lib/cache-db").closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("inventory: official dist plugins read paquet.xml, user plugins legacy plugin.xml, private paths stay private", async () => {
@@ -140,8 +140,8 @@ test("the lane runs from a local snapshot, a live fetch, and a warmed cache with
 			fetchImpl: async () => jsonResponse({ totalResults: 3, vulnerabilities: nvdSnapshot().vulnerabilities }) });
 		assert.equal(live.findings.length, 1);
 		const cachedFile = path.join(cacheDir, "spip-security-advisories.json");
-		assert.ok(fs.existsSync(cachedFile), "the live fetch writes the snapshot for offline reuse");
-		assert.equal(JSON.parse(fs.readFileSync(cachedFile, "utf8"))._fadSnapshot.completeness, "tool-fetched");
+		assert.ok(require('../lib/application-providers/snapshot-cache').exists(cachedFile), "the live fetch writes the snapshot for offline reuse");
+		assert.equal(JSON.parse(require('../lib/application-providers/snapshot-cache').read(cachedFile).bytes)._fadSnapshot.completeness, "tool-fetched");
 		assert.equal(live.coverage.find(c => c.capability === "advisories" && c.occurrenceId?.endsWith(":core")).sourceSnapshot.completeness, "tool-fetched");
 
 		// The warmed cache is consumed with NO flag and NO key — the air-gap phase 3.
@@ -151,7 +151,7 @@ test("the lane runs from a local snapshot, a live fetch, and a warmed cache with
 		const reuseRow = reuse.coverage.find(c => c.capability === "advisories" && c.occurrenceId?.endsWith(":core"));
 		assert.equal(reuseRow.execution, "completed");
 		assert.equal(reuseRow.sourceSnapshot.completeness, "tool-fetched");
-	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+	} finally { require("../lib/cache-db").closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
 test("an unconfigured lane is an honest not-run, and the lifecycle row says not-qualified", async () => {

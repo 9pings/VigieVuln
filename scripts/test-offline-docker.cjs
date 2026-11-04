@@ -10,7 +10,7 @@ const { spawnSync } = require("node:child_process");
 const assert = require("node:assert/strict");
 
 const repo = path.resolve(__dirname, "..");
-const image = process.env.VIGIEVULN_DOCKER_IMAGE || process.env.FAD_DOCKER_IMAGE || "node:22-bookworm";
+const image = process.env.VIGIEVULN_DOCKER_IMAGE || process.env.FAD_DOCKER_IMAGE || "node:24-bookworm-slim";
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-docker-cycle-"));
 fs.chmodSync(root, 0o755);
 const write = (name, text) => fs.writeFileSync(path.join(root, name), text);
@@ -24,7 +24,7 @@ console.log(`Evidence: ${root}`);
 run("docker", ["image", "inspect", image]);
 const packed = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", root]))[0];
 run("tar", ["-xzf", path.join(root, packed.filename), "-C", root]);
-fs.cpSync(path.join(repo, "node_modules"), path.join(root, "package/node_modules"), { recursive: true });
+fs.cpSync(path.join(repo, "node_modules"), path.join(root, "package/node_modules"), { recursive: true, verbatimSymlinks: true });
 // npm tarballs can contain owner-only source files. Normalize this test copy
 // for containers that drop DAC_OVERRIDE; the working tree stays unchanged.
 function readable(dir) {
@@ -88,21 +88,13 @@ async function main() {
 		cli(["-s", "/fixture", "--export-anonymized", "/out/deps.json"]);
 		assert.equal(JSON.parse(fs.readFileSync("/out/deps.json")).summary.total, 2);
 	} else if (phase === "warm") {
-		cli(["--import-anonymized", "/out/deps.json", ...flags, "--report-json", "/out/online.json"]);
-		cli(["--export-cache", "/out/cache.tar.gz"]);
+		cli(["cache", "prepare", "/out/deps.json", "--output", "/out/cache.tar.gz", ...flags]);
+		cli(["-s", "/fixture", ...flags, "--report-json", "/out/online.json"]);
 	} else {
 		cli(["--import-cache", "/out/cache.tar.gz"]);
-		// Exercise the expired-KEV regression with a real fetched catalogue.
-		const kevPath = "/root/.vigie-vuln/kev-cache.json";
-		const kev = JSON.parse(fs.readFileSync(kevPath));
-		kev._fetchedAt = Date.now() - 72 * 3600e3;
-		fs.writeFileSync(kevPath, JSON.stringify(kev));
-		const before = fs.readFileSync(kevPath, "utf8"), modified = fs.statSync(kevPath).mtimeMs;
 		cli(["-s", "/fixture", "--offline", ...flags, "--fail-on", "kev",
 			"--report-output", "/out/report", "--report-json", "--report-html",
 			"--report-doc", "--report-xlsx", "--report-sbom", "--report-sarif", "--report-csaf"], 1);
-		assert.equal(fs.readFileSync(kevPath, "utf8"), before);
-		assert.equal(fs.statSync(kevPath).mtimeMs, modified);
 		const online = JSON.parse(fs.readFileSync("/out/online.json"));
 		const result = JSON.parse(fs.readFileSync("/out/report/findings.json"));
 		const evidence = d => d.cve.map(c => JSON.stringify([
@@ -110,8 +102,13 @@ async function main() {
 			c.severity, c.kev, c.kevDueDate, c.cvss, c.epss, c.fixVersion,
 		])).sort();
 		assert.deepEqual(evidence(result), evidence(online), "findings survive the offline transfer");
+		const coverageWarnings = d => (d.warnings || []).filter(w => ["source-unavailable", "osv-coverage", "dependency-coverage"].includes(w.type)).map(w => JSON.stringify([w.type,w.message])).sort();
+		assert.deepEqual(coverageWarnings(result), coverageWarnings(online), "coverage warnings survive the offline transfer");
 		assert.ok(result.cve.some(c => c.id === "CVE-2021-44228" && c.kev));
 		assert.ok(!result.warnings.some(w => ["private-libs", "osv-coverage", "unresolved-versions"].includes(w.type)));
+		const sourceIds = new Set(result.provenance.dataSources.map(source => source.id));
+		for (const unrelated of ["osvDb-npm", "osvDb-pypi", "osvDb-composer", "npm", "nuget", "packagist", "go", "rubygems"])
+			assert.equal(sourceIds.has(unrelated), false, "irrelevant source in Maven report: " + unrelated);
 		assert.ok(result.cve.some(c => c.dep.coord === "org.apache.commons:commons-lang3" && c.dep.scope === "transitive"),
 			"the offline source scan resolves and scans transitive dependencies");
 		for (const file of ["cve-report.html", "cve-report.doc", "findings.xlsx", "sbom.cdx.json", "fad.sarif", "csaf-vex.json"])
@@ -132,7 +129,8 @@ function phase(name) {
 	const args = ["run", "--rm", "--pull", "never", "--cap-drop", "ALL", "--security-opt", "no-new-privileges"];
 	if (name !== "warm") args.push("--network", "none");
 	const mounts = [["package", "/app", true], ["transfer", "/out", false], ["phase.cjs", "/phase.cjs", true]];
-	if (name !== "warm") mounts.push(["fixture", "/fixture", true], ["audit.cjs", "/audit.cjs", true]);
+	mounts.push(["fixture", "/fixture", true]);
+	if (name !== "warm") mounts.push(["audit.cjs", "/audit.cjs", true]);
 	for (const [local, target, readonly] of mounts)
 		args.push("--mount", `type=bind,src=${path.join(root, local)},dst=${target}${readonly ? ",readonly" : ""}`);
 	args.push(image, "node", "/phase.cjs", name);
@@ -144,4 +142,4 @@ function phase(name) {
 phase("export");
 phase("warm");
 phase("scan");
-console.log(`PASS: packaged vigievuln ${packed.version}; fresh containers; offline transfer; stale KEV gate; zero offline network attempts.`);
+console.log(`PASS: packaged vigievuln ${packed.version}; fresh containers; offline transfer; source-specific provenance; zero offline network attempts.`);

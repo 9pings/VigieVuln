@@ -46,7 +46,7 @@ test("licensesFromPomXml scrapes the <licenses> block", () => {
 
 test("collectMavenLicenses reads cached POMs from a given cache dir", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-pom-"));
-	fs.writeFileSync(path.join(dir, "org.apache.commons__commons-lang3__3.12.0.pom"),
+	require('../lib/maven-cache').write(path.join(dir, "org.apache.commons__commons-lang3__3.12.0.pom"),
 		"<project><licenses><license><name>Apache-2.0</name></license></licenses></project>");
 	const resolved = new Map([
 		["org.apache.commons:commons-lang3", { ecosystem: "maven", namespace: "org.apache.commons", name: "commons-lang3", version: "3.12.0" }],

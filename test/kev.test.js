@@ -22,14 +22,14 @@ test("indexKevCatalog builds a cveID → metadata map", () => {
 // enrichKev reads a TTL'd cache file. Back it up so a real cache doesn't shadow
 // the mock fetcher, and restore it afterwards (non-destructive to the user).
 function withFreshCache(fn) {
-	const bak = CACHE_PATH + ".testbak";
-	let had = false;
-	try { if (fs.existsSync(CACHE_PATH)) { fs.renameSync(CACHE_PATH, bak); had = true; } } catch { /* */ }
+	const repository=require('../lib/cache-repository').createCacheRepository(require('node:path').dirname(CACHE_PATH));
+	const backup=repository.get('catalogue','kev');
+	repository.delete('catalogue','kev');
 	return Promise.resolve()
 		.then(fn)
 		.finally(() => {
-			try { fs.existsSync(CACHE_PATH) && fs.unlinkSync(CACHE_PATH); } catch { /* */ }
-			try { if (had) fs.renameSync(bak, CACHE_PATH); } catch { /* */ }
+			repository.delete('catalogue','kev');
+			if(backup)repository.put('catalogue','kev',backup.value,{fetchedAt:backup.fetchedAt});
 		});
 }
 

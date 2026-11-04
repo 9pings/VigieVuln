@@ -116,11 +116,13 @@ test("go codec merges go.sum transitives for a pre-1.17 module", async () => {
 	fs.writeFileSync(path.join(dir, "go.mod"), "module ex.com/app\ngo 1.16\nrequire ex.com/direct v1.0.0\n");
 	fs.writeFileSync(path.join(dir, "go.sum"),
 		"ex.com/direct v1.0.0 h1:a=\nex.com/direct v1.0.0/go.mod h1:b=\nex.com/transitive v0.9.0 h1:c=\n");
-	const { deps } = await go.collect(dir);
+	const { deps, warnings } = await go.collect(dir);
 	assert.equal(deps.get("go:ex.com/direct").version, "1.0.0", "go.mod's selected version wins");
 	assert.equal(deps.get("go:ex.com/direct").scope, "compile");
 	assert.ok(deps.has("go:ex.com/transitive"), "go.sum-only transitive merged");
 	assert.equal(deps.get("go:ex.com/transitive").scope, "transitive");
+	assert.equal(warnings.filter(w => w.type === 'go-coverage').length, 1);
+	assert.match(warnings.find(w => w.type === 'go-coverage').message, /checksums rather than selected build dependencies/);
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -131,20 +133,18 @@ test("go codec does NOT merge go.sum for a >=1.17 module (pruned graph in go.mod
 	fs.writeFileSync(path.join(dir, "go.mod"), "module ex.com/app\ngo 1.21\nrequire ex.com/direct v1.0.0\n");
 	fs.writeFileSync(path.join(dir, "go.sum"),
 		"ex.com/direct v1.0.0 h1:a=\nex.com/stale-candidate v0.1.0 h1:c=\n");
-	const { deps } = await go.collect(dir);
+	const { deps, warnings } = await go.collect(dir);
 	assert.ok(deps.has("go:ex.com/direct"));
 	assert.equal(deps.has("go:ex.com/stale-candidate"), false, "go.sum candidates not in the pruned graph stay out");
+	assert.equal(warnings.some(w => w.type === 'go-coverage'), false);
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
 // go.sum records TWO kinds of line per module:
-//   mod ver h1:...          the module ZIP — it was downloaded, it is in the build
+//   mod ver h1:...          the module ZIP checksum
 //   mod ver/go.mod h1:...   only its go.mod was read, during minimal version selection
-// A module with only the second kind was CONSIDERED and rejected; it is on no classpath.
-// Measured on prometheus v2.30.0 (go 1.14): 187 modules have a zip hash, 391 have only a
-// go.mod hash — and scanning all of them put gin, echo AND go-restful in the same report,
-// three mutually exclusive web frameworks no single build uses. 70% of the Go production
-// findings on that project came from modules absent from the build graph.
+// Neither kind proves current build membership. Metadata-only records are not
+// included by the fallback, whose incomplete coverage is now made explicit.
 test("parseGoSum keeps only modules that were actually downloaded (zip hash present)", () => {
 	const sum = [
 		"example.com/used v1.2.0 h1:aaa=",
@@ -154,7 +154,7 @@ test("parseGoSum keeps only modules that were actually downloaded (zip hash pres
 	].join("\n");
 	const names = parseGoSum(sum).deps.map(d => d.name).sort();
 	assert.deepEqual(names, ["example.com/alsoused", "example.com/used"],
-		"a module with only a /go.mod hash was never in the build and must not be scanned");
+		"a metadata-only checksum does not establish a downloaded dependency");
 });
 
 test("parseGoSum picks the version that was downloaded, not the highest considered", () => {

@@ -25,7 +25,7 @@ test("buildRetireArgs uses --ignorefile (path-anchored) and adds --jsrepo only w
 
 test("ensureSignatures offline never reaches the network — returns existence boolean", async () => {
 	const fs = require("fs");
-	const present = fs.existsSync(R.RETIRE_SIG_FILE);
+	const present = !!require('../lib/cache-repository').createCacheRepository(path.dirname(R.RETIRE_SIG_DIR)).get('auxiliary','retire-signatures');
 	const r = await R.ensureSignatures({ offline: true });
 	assert.strictEqual(typeof r, "boolean");
 	assert.strictEqual(r, present);   // offline only reports what's already on disk
@@ -77,21 +77,21 @@ test("retire findings cache is versioned: legacy entry (no _schema) is a cache M
 	const fs = require("fs");
 	// Unique src path so the md5 cache key never collides with a real run.
 	const srcDir = "/tmp/fad-cache-version-test-" + process.pid;
-	const cachePath = path.join(R.RETIRE_CACHE_DIR, R.cacheKey(srcDir));
+	const repository=require('../lib/cache-repository').createCacheRepository(path.dirname(R.RETIRE_CACHE_DIR));
+	const cacheKey=R.cacheKey(srcDir);
 	const body = { data: [{ file: "/x/jquery.js", results: [{ component: "jquery", version: "3.7.1", vulnerabilities: [] }] }] };
 	try {
 		// (1) A legacy entry written by a pre-verbose version: fresh timestamp, NO _schema.
-		fs.mkdirSync(R.RETIRE_CACHE_DIR, { recursive: true });
-		fs.writeFileSync(cachePath, JSON.stringify({ _fetchedAt: Date.now(), body }));
+		repository.put('retire-results',cacheKey,{ _fetchedAt: Date.now(), body });
 		assert.strictEqual(R.readCache(srcDir), null, "legacy (no _schema) entry must be a cache miss");
 
 		// (2) writeCache stamps _schema:2 and the entry round-trips.
 		R.writeCache(srcDir, body);
-		const onDisk = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+		const onDisk = repository.get('retire-results',cacheKey).value;
 		assert.strictEqual(onDisk._schema, 2, "writeCache stamps _schema:2");
 		assert.deepStrictEqual(R.readCache(srcDir), body, "_schema:2 entry round-trips");
 	} finally {
-		try { fs.unlinkSync(cachePath); } catch { /* best effort */ }
+		repository.delete('retire-results',cacheKey);
 	}
 });
 
@@ -99,7 +99,7 @@ test("scanWithRetireFull surfaces a scan failure instead of silently returning e
 	const fs = require("fs");
 	// Needs local signatures to actually reach the scan path (offline). Mirrors the
 	// conditional style of the ensureSignatures test above.
-	if (!fs.existsSync(R.RETIRE_SIG_FILE)) return;
+	if (!require('../lib/cache-repository').createCacheRepository(path.dirname(R.RETIRE_SIG_DIR)).get('auxiliary','retire-signatures')) return;
 	// A non-existent source dir makes retire crash (walkdir ENOENT) → empty output.
 	// That must be reported, not turned into a clean "nothing found" (the bug that
 	// hid a vendored-JS chapter when the scan actually died).

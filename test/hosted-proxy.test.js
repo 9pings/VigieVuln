@@ -1,3 +1,4 @@
+const isolatedTestCache = require('./helpers/isolated-cache')('hosted-proxy');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
@@ -181,11 +182,33 @@ test('CLI rejects missing hosted credentials before starting a scan', () => {
   } finally { fs.rmSync(home,{recursive:true,force:true}); }
 });
 
-test('hosted mode refuses explicitly requested bulk OSV imports',()=>{
- const env={...process.env,VIGIEVULN_PROXY_CACHE_TOKEN:'test-key',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:'',FORCE_COLOR:'0'};
+test('hosted OSV database options perform only package lookups and never download a bulk archive',t=>{
+ const fs=require('node:fs'),os=require('node:os');
+ const home=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-hosted-osv-options-'));
+ t.after(()=>fs.rmSync(home,{recursive:true,force:true}));
+ const project=path.join(home,'project');fs.mkdirSync(project);
+ fs.writeFileSync(path.join(project,'pom.xml'),'<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>fixture</artifactId><version>1</version><dependencies><dependency><groupId>org.example</groupId><artifactId>widget</artifactId><version>1.0</version></dependency></dependencies></project>');
+ const hook=path.join(home,'fetch.cjs'),calls=path.join(home,'calls.jsonl');
+ fs.writeFileSync(hook,`require('node:os').homedir=()=>${JSON.stringify(home)};
+ globalThis.fetch=async(url,init={})=>{
+  const fs=require('node:fs');fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify({url,body:init.body})+'\\n');
+  if(url==='https://api.vigievuln.fr/v1/proxy/status')return Response.json({ok:true,service:'vigievuln-proxy'});
+  if(url!=='https://api.vigievuln.fr/v1/resource')throw Error('unexpected external request '+url);
+  const request=JSON.parse(init.body);
+  if(request.provider==='vigievuln'&&request.type==='advisories')return Response.json({records:[],complete:true},{headers:{'x-fad-proxy':'hit','x-fad-proxy-fetched-at':new Date().toISOString()}});
+  if(request.provider!=='osv'||request.type!=='packages')throw Error('unexpected provider operation '+request.provider+'.'+request.type);
+  return Response.json({results:request.params.queries.map(()=>({}))},{headers:{'x-fad-proxy':'hit','x-fad-proxy-fetched-at':new Date().toISOString()}});
+ };`);
+ const env={...process.env,HOME:home,USERPROFILE:home,NODE_OPTIONS:`--require=${hook}`,VIGIEVULN_PROXY_CACHE_TOKEN:'test-key',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:'',FORCE_COLOR:'0'};
+ const isolatedFlags=['--cve-offline','--no-gcve','--no-transitive','--no-all-libs','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0','--advisory-query-ttl','0'];
  for(const flags of [['--osv-db'],['-a','osv-db'],['--osv-db-refresh']]){
-  const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',__dirname,'--proxy-cache','default',...flags],{env,encoding:'utf8'});
-  assert.equal(r.status,2);assert.match(r.stderr,/bulk archive/);
+  fs.rmSync(calls,{force:true});
+  const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default',...isolatedFlags,...flags],{env,encoding:'utf8',timeout:15000});
+  assert.equal(r.status,0,r.stdout+r.stderr);
+  const requests=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);
+  assert.ok(requests.some(c=>c.body&&JSON.parse(c.body).provider==='osv'));
+  assert.ok(requests.every(c=>!c.url.includes('storage.googleapis.com')));
+  assert.ok(requests.filter(c=>c.body).every(c=>{const p=JSON.parse(c.body);return p.provider==='osv'&&p.type==='packages'||p.provider==='vigievuln'&&p.type==='advisories'}));
  }
 });
 
@@ -201,7 +224,7 @@ test('hosted online lookups cannot be bypassed by an explicitly supplied local s
   } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null});}
 });
 
-test('hosted cache reuses only proxy-confirmed data for at most one hour and warns on stale fallback', async () => {
+test('hosted cache reuses only proxy-confirmed data for at most four hours and warns on stale fallback', async () => {
   const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
   const {configureResourceRoute,getResource}=require('../lib/providers');
   const {createCacheStore}=require('../lib/proxy-cache');
@@ -218,16 +241,15 @@ test('hosted cache reuses only proxy-confirmed data for at most one hour and war
     assert.equal(calls,1);
     const key=require('../lib/providers').providerKey('epss','scores',params,{});
     const entry=store.get(key);
-    assert.ok(entry.ttlMs<=3600000);
-    const meta=store.metaPath(store.hash(key)), saved=JSON.parse(fs.readFileSync(meta,'utf8'));
-    saved.fetchedAt=Date.now()-3600001; fs.writeFileSync(meta,JSON.stringify(saved));
+    assert.ok(entry.ttlMs<=4*3600000);
+    require('../lib/cache-db').getCacheDb(dir).prepare('UPDATE resources SET fetched_at=? WHERE key=?').run(Date.now()-4*3600000-1,'serve-cache:'+key);
     fail=true;
     // Avoid delayed production retry behavior in this deterministic test.
     const result=await getResource('epss','scores',params,{noSourceRetry:true,retryProxyDenied:false});
     assert.equal(result.headers.get('x-fad-proxy'),'stale');
     assert.equal(calls,2);
     assert.equal(health.stale()[0].id,'epss');
-  } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,hostedStore:null,health:null});fs.rmSync(dir,{recursive:true,force:true});}
+  } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,hostedStore:null,health:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('hosted stale responses record the source and oldest cache date', async () => {
@@ -248,7 +270,7 @@ test('hosted Maven scanner requests only dependency keys and matches the returne
   const path = require('node:path');
   const { extractMavenRelevantCve } = require('../lib/cve-download');
   const { configureResourceRoute } = require('../lib/providers');
-  const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/cve-samples/cve-2021-44228-real.json'), 'utf8'));
+  const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/cve-samples/cve-with-packagename.json'), 'utf8'));
   const cve = extractMavenRelevantCve(fixture);
   const calls = [];
   configureResourceRoute({proxyUrl: 'https://proxy.invalid', token: 'test', store: null, health: null,
@@ -287,7 +309,10 @@ test('a hosted scan writes stale source warnings in HTML and JSON and supports a
     const files=fs.readdirSync(out).filter(x=>x.endsWith('.json'));assert.ok(files.length);
     const report=JSON.parse(fs.readFileSync(path.join(out,files[0]),'utf8'));
     assert.match(html,/2026-10-27T10:00:00/);
-    assert.ok(report.warnings.some(w=>w.type==='source-stale' && w.message.includes('2026-10-27T10:00:00')));
+    assert.ok(report.provenance.freshnessNotices.some(w=>w.message.includes('2026-10-27T10:00:00')));
+    assert.ok(!report.warnings.some(w=>w.type==='source-stale'));
+    assert.ok(!report.warnings.some(w=>w.message.includes('native or legacy source coverage is partial')));
+    assert.ok(report.provenance.sourceLimitations.some(w=>w.source==='CVEProject' && w.message.includes('partial native or legacy projection')));
     const missingOut=path.join(home,'missing');
     const missingArgs=args.slice(0,-2);missingArgs[missingArgs.indexOf('-o')+1]=missingOut;
     const missing=spawnSync(process.execPath,missingArgs,{env:{...env,VV_MISSING:'1'},encoding:'utf8',timeout:20000});
@@ -340,4 +365,27 @@ test('hosted KEV uses targeted CVE identifiers and preserves exploitation detail
   configureResourceRoute({proxyUrl:'https://proxy.invalid',token:'test',store:null,health:null,fetcher});
   try { const matches=[{cve:{id:'CVE-2021-44228'}}]; await enrichKev(matches,{hostedProxy:true,fetcher});assert.equal(matches[0].cve.kev,true);assert.equal(matches[0].cve.kevRansomware,true);assert.equal(calls.length,1); }
   finally { configureResourceRoute({proxyUrl:null,token:null,fetcher:null}); }
+});
+
+test('official proxy key fetches VV partial ranges without OSV and reuses them offline',t=>{
+ const fs=require('node:fs'),os=require('node:os');const home=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-reviewed-hosted-'));t.after(()=>fs.rmSync(home,{recursive:true,force:true}));
+ const project=path.join(home,'project');fs.mkdirSync(project);fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0',dependencies:{'uri-js':'4.4.1'}}));
+ const calls=path.join(home,'calls.jsonl'),hook=path.join(home,'fetch.cjs');
+ fs.writeFileSync(hook,`require('node:os').homedir=()=>${JSON.stringify(home)};
+ globalThis.fetch=async(url,init={})=>{
+  require('node:fs').appendFileSync(${JSON.stringify(calls)},JSON.stringify({url,token:new Headers(init.headers).get('x-fad-proxy-token'),authorization:new Headers(init.headers).get('authorization'),body:init.body})+'\\n');
+  if(url==='https://api.vigievuln.fr/v1/proxy/status')return Response.json({ok:true,service:'vigievuln-proxy'});
+  if(url!=='https://api.vigievuln.fr/v1/resource')throw Error('unexpected request '+url);
+  const request=JSON.parse(init.body);if(request.provider!=='vigievuln'||request.type!=='advisories')throw Error('unexpected provider '+request.provider);
+  return Response.json({complete:true,records:[{id:'VV:CVE-2026-103387',aliases:['CVE-2026-103387'],summary:'Test',details:'Evidence',affected:[{package:{ecosystem:'npm',name:'uri-js'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'4.4.0'},{last_affected:'4.4.1'}]}],versions:[],database_specific:{vigievuln_partial_versions:true,unaffected_versions:['4.4.2']}}],references:[{type:'ORIGINAL',url:'https://www.cve.org/CVERecord?id=CVE-2026-103387'}],curation:{method:'AI-assisted reconciliation'}}]},{headers:{'x-fad-proxy-fetched-at':new Date().toISOString()}});
+ };`);
+ const env={...process.env,HOME:home,USERPROFILE:home,NODE_OPTIONS:`--require=${hook}`,VIGIEVULN_PROXY_CACHE_TOKEN:'test-key',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:'',FORCE_COLOR:'0'};
+ const flags=['--cve-offline','--no-osv','--no-gcve','--no-transitive','--no-all-libs','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0'];
+ const run=(name,extra=[],runEnv=env)=>spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default',...flags,'--report-json',path.join(home,name),...extra],{env:runEnv,encoding:'utf8',timeout:20000});
+ const online=run('online.json');assert.equal(online.status,0,online.stdout+online.stderr);const report=JSON.parse(fs.readFileSync(path.join(home,'online.json')));assert.ok(report.cve.some(x=>x.id==='CVE-2026-103387'&&x.aliases.includes('VV:CVE-2026-103387')));
+ const requests=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse),resource=requests.find(x=>x.body&&JSON.parse(x.body).provider==='vigievuln');assert.equal(resource.token,'test-key');
+ const savedEnv={...env,VIGIEVULN_PROXY_CACHE_TOKEN:'',FAD_PROXY_CACHE_TOKEN:''};
+ const save=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'--set-proxy-cache-token','stored-key'],{env:savedEnv,encoding:'utf8'});assert.equal(save.status,0,save.stderr);
+ fs.rmSync(calls);const saved=run('saved.json',['--advisory-query-ttl','0'],savedEnv);assert.equal(saved.status,0,saved.stdout+saved.stderr);const savedCalls=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);assert.ok(savedCalls.some(x=>x.body&&JSON.parse(x.body).provider==='vigievuln'&&x.token==='stored-key'));
+ const before=fs.readFileSync(calls,'utf8');const offline=run('offline.json',['--offline']);assert.equal(offline.status,0,offline.stdout+offline.stderr);assert.equal(fs.readFileSync(calls,'utf8'),before);assert.ok(JSON.parse(fs.readFileSync(path.join(home,'offline.json'))).cve.some(x=>x.id==='CVE-2026-103387'));
 });

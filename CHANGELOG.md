@@ -1,5 +1,20 @@
 # Changelog — VigieVuln
 
+## [1.2.0] — Unreleased
+
+- Match VigieVuln Maven/npm advisories through the configured official proxy and offline cache, including partial ranges and `VV:CVE-…` identifiers.
+- Revalidate local caches after four hours, or on demand with `--force-update`; retain offline snapshots and avoid redownloading unchanged CVE releases.
+- Keep source-wide coverage limits and the Maven depth setting in methodology; report project-specific gaps separately.
+
+- Store local advisories, source catalogues, registry answers, resource bodies and proxy caches in SQLite. Bundles carry one preindexed database with compressed advisory bodies and a shared symbol dictionary; the transfer remains gzip-compressed. Old filesystem caches are removed on startup, while configuration and account sessions are preserved. Node.js 22.13+, 23.4+ and 24+ use the built-in SQLite module.
+- Add interactive `setup` for source policies, proxy login and authenticated cache initialisation; existing installations retain unrestricted sources by default.
+- Seed version-independent OSV and GCVE advisory data for matching at scan time, including offline scans, with source provenance and incomplete-coverage warnings.
+- Preserve observed public Maven POMs and npm manifests by version in the seed; refuse conflicting observations and retain existing private repository precedence.
+- Collect independent GCVE records conservatively, preserving typed relationships and reporting only supported package identities and version comparisons.
+- Show unverified PE version metadata in the native-binary inventory and document its CVE correlation limitations.
+- Preserve advisory source attribution through CVEProject, OSV and Snyk merges; use `cache` when the upstream source is unavailable.
+- Avoid treating inclusive affected-version bounds or advisories with no known fix as verified remediation targets.
+
 ## [1.1.3] — 2026-10-29
 
 - Reuse fresh proxy-confirmed responses locally for up to one hour, and preserve stale-source warnings when refresh fails.

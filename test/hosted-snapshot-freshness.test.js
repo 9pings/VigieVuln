@@ -32,7 +32,7 @@ async function drupalFixture(work) {
 		const opts = { plugins: [drupal], selection: 'drupal', activeCodecIds: ['composer'],
 			resolvedDeps: deps, advisoryCacheDir: directory, now: NOW };
 		await work({ file, root, opts });
-	} finally { resetRoute(); fs.rmSync(directory, { recursive: true, force: true }); }
+	} finally { resetRoute(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(directory, { recursive: true, force: true }); }
 }
 
 test('hosted Drupal revalidates a 48h implicit snapshot on every scan with only public package identities', async () => {
@@ -53,7 +53,7 @@ test('hosted Drupal revalidates a 48h implicit snapshot on every scan with only 
 			assert.equal(calls.length, i, 'even the newly saved snapshot cannot bypass proxy freshness');
 			assert.equal(result.coverage.find(c => c.sourceSnapshot)?.sourceSnapshot.collectedAt, new Date(NOW).toISOString());
 		}
-		assert.equal(JSON.parse(fs.readFileSync(file))._fadSnapshot.collectedAt, new Date(NOW).toISOString());
+		assert.equal(JSON.parse(require('../lib/application-providers/snapshot-cache').read(file,{preferCache:true}).bytes)._fadSnapshot.collectedAt, new Date(NOW).toISOString());
 		fs.writeFileSync(file, 'invalid old snapshot');
 		assert.equal((await runApplicationPlugins(root, opts)).findings.length, 0, 'corrupt implicit cache also goes through the proxy');
 		assert.equal(calls.length, 3);
@@ -108,21 +108,19 @@ function retireFixture(code) {
 		const script = `
 		const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 		const R=require(${JSON.stringify(path.join(CLI, 'lib/retire'))});
+		const dbCache=require(${JSON.stringify(path.join(CLI, 'lib/cache-repository'))}).createCacheRepository(path.join(process.env.HOME,'.vigie-vuln'));
 		const {configureResourceRoute}=require(${JSON.stringify(path.join(CLI, 'lib/providers'))});
 		const {createSourceHealth}=require(${JSON.stringify(path.join(CLI, 'lib/source-health'))});
 		const repo=${JSON.stringify(REPO)},old=${JSON.stringify(OLD)};
 		const src=path.join(process.env.HOME,'source');fs.mkdirSync(src);
 		fs.writeFileSync(path.join(src,'widget-1.0.0.js'),'// fixture');
-		fs.mkdirSync(R.RETIRE_SIG_DIR,{recursive:true});fs.writeFileSync(R.RETIRE_SIG_FILE,'{}');
-		fs.utimesSync(R.RETIRE_SIG_FILE,new Date(Date.now()-2*3600000),new Date(Date.now()-2*3600000));
-		fs.mkdirSync(R.RETIRE_CACHE_DIR,{recursive:true});
-		const cache=path.join(R.RETIRE_CACHE_DIR,R.cacheKey(src));
-		fs.writeFileSync(cache,JSON.stringify({_schema:2,_fetchedAt:Date.now()-2*3600000,body:{data:[]}}));
+		dbCache.put('auxiliary','retire-signatures','{}',{fetchedAt:Date.now()-2*3600000});
+		dbCache.put('retire-results',R.cacheKey(src),{_schema:2,_fetchedAt:Date.now()-2*3600000,body:{data:[]}});
 		(async()=>{${code}})().catch(e=>{console.error(e);process.exitCode=1});`;
 		const run = spawnSync(process.execPath, ['-e', script], { cwd: CLI, encoding: 'utf8', timeout: 20000,
 			env: { ...process.env, HOME: home, USERPROFILE: home, NODE_OPTIONS: `--require=${hook}` } });
 		assert.equal(run.status, 0, `${run.error || ''}\n${run.stderr}\n${run.stdout}`);
-	} finally { fs.rmSync(home, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); }
 }
 
 test('hosted Retire bypasses 2h findings/signatures and rescans with proxy signatures on every invocation', () => {
@@ -138,7 +136,7 @@ test('hosted Retire bypasses 2h findings/signatures and rescans with proxy signa
 			assert.equal(result.error,null);assert.equal(calls,i);
 			assert.equal(result.matches[0]?.cve.id,'CVE-2099-1234');assert.equal(result.inventory[0]?.component,'widget');
 		}
-		assert.deepEqual(JSON.parse(fs.readFileSync(R.RETIRE_SIG_FILE)),repo);
+		assert.deepEqual(JSON.parse(dbCache.get('auxiliary','retire-signatures').value),repo);
 	`);
 });
 
@@ -159,10 +157,10 @@ test('hosted Retire failed or invalid refresh preserves offline signatures and s
 			configureResourceRoute({hosted:true,proxyUrl:'https://proxy.invalid',store:null,health:null,fetcher});
 			const result=await R.scanWithRetireFull(src);
 			assert.match(result.error,/signatures.*hosted proxy/);assert.equal(result.matches.length,0);
-			assert.equal(fs.readFileSync(R.RETIRE_SIG_FILE,'utf8'),'{}');
-			assert.deepEqual(JSON.parse(fs.readFileSync(cache)).body,{data:[]});
+			assert.equal(dbCache.get('auxiliary','retire-signatures').value,'{}');
+			assert.deepEqual(dbCache.get('retire-results',R.cacheKey(src)).value.body,{data:[]});
 		}
-		fs.unlinkSync(R.RETIRE_SIG_FILE);
+		dbCache.delete('auxiliary','retire-signatures');
 		assert.match((await R.scanWithRetireFull(src)).error,/no direct fallback/);
 	`);
 });
@@ -170,11 +168,11 @@ test('hosted Retire failed or invalid refresh preserves offline signatures and s
 test('Retire offline honors cached findings, forced local scans and cold-cache zero-network even with hosted route', () => {
 	retireFixture(`
 		let calls=0;configureResourceRoute({hosted:true,proxyUrl:'https://proxy.invalid',store:null,health:null,fetcher:async()=>{calls++;throw Error('network')}});
-		fs.writeFileSync(R.RETIRE_SIG_FILE,JSON.stringify(repo));
+		dbCache.put('auxiliary','retire-signatures',JSON.stringify(repo));
 		assert.equal((await R.scanWithRetireFull(src,{offline:true})).matches.length,0,'findings cache stays available offline');
 		assert.equal((await R.warmRetireSignatures({offline:true,force:true})).ok,true);
 		assert.equal((await R.scanWithRetireFull(src,{offline:true,force:true})).matches.length,1);
-		fs.unlinkSync(R.RETIRE_SIG_FILE);fs.unlinkSync(cache);
+		dbCache.delete('auxiliary','retire-signatures');dbCache.delete('retire-results',R.cacheKey(src));
 		assert.equal((await R.warmRetireSignatures({offline:true,force:true})).ok,false);
 		assert.equal(await R.runRetire(src,{offline:true}),null);
 		assert.equal(calls,0);
@@ -222,23 +220,23 @@ test('hosted Drupal/Retire stale warnings reach HTML/JSON and the strict sources
 		for (const stale of [true, false]) {
 			const output = path.join(home, stale ? 'stale-report' : 'fresh-report');
 			const args = [path.join(CLI, 'vigievuln.js'), '-s', src, '--proxy-cache', 'default', '--retries', '0',
-				'--no-transitive', '--no-all-libs', '--no-osv', '--no-nvd', '--no-epss', '--no-kev', '--no-euvd', '--no-certfr',
+				'--no-transitive', '--no-all-libs', '--no-osv', '--no-nvd', '--no-epss', '--no-kev', '--no-euvd', '--no-gcve', '--no-certfr',
 				'--no-eol', '--no-binaries', '--no-jars', '--no-certs', '--no-packagist-audit', '--app-plugins', 'drupal', '--scan-context', 'component',
 				'--report-html', '--report-json', '-o', output, '--fail-on-incomplete', 'sources'];
 			const run = spawnSync(process.execPath, args, { env: { ...env, VV_STALE: stale ? '1' : '0' }, encoding: 'utf8', timeout: 20000 });
 			assert.equal(run.status, stale ? 2 : 0, `${run.error || ''}\n${run.stderr}\n${run.stdout}`);
 			const report = JSON.parse(fs.readFileSync(path.join(output, 'findings.json')));
-			const warnings = report.warnings.filter(w => w.type === 'source-stale');
+			const warnings = report.provenance.freshnessNotices || [];
 			if (stale) {
 				for (const source of ['drupal', 'retire']) assert.ok(warnings.some(w => w.message.startsWith(source + ':') && w.message.includes(OLD)));
 				const html = fs.readFileSync(path.join(output, 'cve-report.html'), 'utf8');
 				assert.ok(html.includes(OLD));
-				assert.match(html, /drupal: the source could not be refreshed/);
-				assert.match(html, /retire: the source could not be refreshed/);
+				assert.match(html, /<strong>drupal<\/strong>/);
+				assert.match(html, /<strong>retire<\/strong>/);
 			} else assert.deepEqual(warnings, []);
 		}
 		const calls = fs.readFileSync(callsFile, 'utf8').trim().split('\n').map(JSON.parse);
 		assert.deepEqual(calls.map(q => q.provider + '.' + q.type), ['drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures']);
 		assert.ok(calls.filter(q => q.provider === 'drupal').every(q => JSON.stringify(q.params.packages) === '["drupal/webform"]'));
-	} finally { fs.rmSync(home, { recursive: true, force: true }); }
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); }
 });

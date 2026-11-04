@@ -1,0 +1,85 @@
+{
+  "name": "bootstrap",
+  "version": "3.3.6",
+  "jarUrl": "https://maven-central.storage-download.googleapis.com/maven2/org/webjars/bootstrap/3.3.6/bootstrap-3.3.6.jar",
+  "jarSha256": "27e4eb72ed1153541c3b8d1e57bf9dc6acb616002eae84c36b5e9ad6afd6009d",
+  "npmTarballUrl": "https://registry.npmjs.org/bootstrap/-/bootstrap-3.3.6.tgz",
+  "npmTarballSha256": "9a2797790a95dfe420cc8dc9166d1c1ac779c50c74ba94099ab6668888bce5ea",
+  "matches": [
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/affix.js",
+      "npmPath": "js/affix.js",
+      "sha256": "1ee8ac8eff7b2c225d85963ee6160f0071297a3fdaf1532688c4fe01cfc0fb94"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/alert.js",
+      "npmPath": "js/alert.js",
+      "sha256": "bf5bf7c66a7596b466425b03510276de2013f8da3d4eab474b544c323b40c9c9"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/bootstrap.js",
+      "npmPath": "dist/js/bootstrap.js",
+      "sha256": "defc39740ac1859d8e2785ed473208409627e87addd5f78f2deaacb93a12d51d"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/bootstrap.min.js",
+      "npmPath": "dist/js/bootstrap.min.js",
+      "sha256": "2979f9a6e32fc42c3e7406339ee9fe76b31d1b52059776a02b4a7fa6a4fd280a"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/button.js",
+      "npmPath": "js/button.js",
+      "sha256": "318791b8d45a0840fb365758254c88018813dc074a15816bbc34371e85b16f95"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/carousel.js",
+      "npmPath": "js/carousel.js",
+      "sha256": "8267c3df279fd9d3c5697fae952443782aa70ea97bfb18b9a4af9b8b1ae934a7"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/collapse.js",
+      "npmPath": "js/collapse.js",
+      "sha256": "7febc2b3ac8b8e30b18df2cb8cbfcef590a2788526a40ec9b039701096354a04"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/dropdown.js",
+      "npmPath": "js/dropdown.js",
+      "sha256": "92d4c20f5350f2ba58e5dd6dea20685850c0ed453eeaf4be0174ec300a19e7c1"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/modal.js",
+      "npmPath": "js/modal.js",
+      "sha256": "d52795b36f7aca99c78a0b84b17f425c8878dd44b87620b629521f388fa8b0a8"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/npm.js",
+      "npmPath": "dist/js/npm.js",
+      "sha256": "c7aa82a1aa7d45224a38d926d2adaff7fe4aef5bcdafa2a47bdac057f4422c2d"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/popover.js",
+      "npmPath": "js/popover.js",
+      "sha256": "9eafe4728dfc7e529f79efd40c66905b3c6eeffec39e7411c84aac54c5ed4cd1"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/scrollspy.js",
+      "npmPath": "js/scrollspy.js",
+      "sha256": "1271feec9ed30f0f41dfacd74a9203178ea9b97ae881e0e67f8f5b4584158657"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/tab.js",
+      "npmPath": "js/tab.js",
+      "sha256": "43e16be52d7c5353c317273b82e5c58d5ab30c85a567deaa0b52dfdc54deec9b"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/tooltip.js",
+      "npmPath": "js/tooltip.js",
+      "sha256": "3bc9620928f72c4e1181b208f0d8f63be31ae35a03e0de7c967c14b4d9360db7"
+    },
+    {
+      "jarPath": "META-INF/resources/webjars/bootstrap/3.3.6/js/transition.js",
+      "npmPath": "js/transition.js",
+      "sha256": "4c4992c0cea541a09ca27f2fff93f9b0cbb4ad28065af1ffccf711f53b67f976"
+    }
+  ]
+}

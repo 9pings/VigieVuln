@@ -12,9 +12,15 @@ const ID = '12345678-1234-1234-1234-123456789abc';
 const OTHER = 'aaaaaaaa-1234-1234-1234-123456789abc';
 const PROJECT = { id: ID, name: 'My Project', revision: 7 };
 
+test('cache prepare routes a descriptor and output into one invocation', () => {
+  assert.deepEqual(routeArguments(['cache','prepare','deps.json','--output','bundle.tar.gz']).args,
+    ['--prepare-offline','deps.json','--output','bundle.tar.gz']);
+  assert.throws(()=>routeArguments(['cache','prepare','deps.json','--export-cache','x']),/cannot be combined/);
+});
+
 function fixture(t, settings = {}) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-commands-'));
-  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  t.after(() => { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); });
   const src = path.join(home, 'private source'), capture = path.join(home, 'calls.jsonl');
   fs.mkdirSync(src);
   fs.writeFileSync(path.join(src, 'package.json'), JSON.stringify({ name: 'secret-root', dependencies: { demo: '1.2.3', '@private/hidden': '2.0.0' } }));
@@ -108,8 +114,10 @@ test('routing preserves old argv and maps scan/config/cache/auth without consumi
   assert.deepEqual(routeArguments(['config','show']).args, ['--show-config']);
   assert.deepEqual(routeArguments(['cache','import','a.tar.gz','--replace','--force']).args, ['--import-cache','a.tar.gz','--replace','--force']);
   assert.deepEqual(routeArguments(['cache','export','a.tar.gz','--include-config']).args, ['--export-cache','a.tar.gz','--include-config']);
+  assert.deepEqual(routeArguments(['cache','export','a.tar.gz','--source-profile','proxy','--proxy-cache=https://example.test','--config','settings.json']).args, ['--export-cache','a.tar.gz','--source-profile','proxy','--proxy-cache=https://example.test','--config','settings.json']);
+  assert.deepEqual(routeArguments(['cache','import','a.tar.gz','--vigievuln-proxy','fr']).args, ['--import-cache','a.tar.gz','--vigievuln-proxy','fr']);
   for (const [cmd, alias] of [['login','login'],['logout','logout'],['whoami','status']]) assert.deepEqual(routeArguments([cmd]).args, ['auth',alias]);
-  for (const args of [['scan','.','-s','other'],['scan','.','--source=other'],['cache','import'],['cache','export','out','--force'],['config','show','secret']]) assert.throws(() => routeArguments(args));
+  for (const args of [['scan','.','-s','other'],['scan','.','--source=other'],['cache','import'],['cache','export','out','--force'],['cache','export','out','--proxy-cache'],['cache','export','out','--source-profile='],['config','show','secret']]) assert.throws(() => routeArguments(args));
 });
 
 test('watch new project collects offline, then uploads sanitized inventory with a privacy warning', t => {
@@ -246,12 +254,13 @@ test('config and cache aliases execute existing masked config and archive handle
   const f=fixture(t,{noNetwork:true});
   const cache=path.join(f.home,'.vigie-vuln');fs.mkdirSync(cache);
   fs.writeFileSync(path.join(cache,'config.json'),JSON.stringify({proxyCacheToken:'secret-proxy'}));
-  fs.writeFileSync(path.join(cache,'sample.json'),JSON.stringify({hello:'world'}));
+  const repo=require('../lib/cache-repository').createCacheRepository(cache);
+  repo.put('fixture','sample',{hello:'world'});
   const shown=f.run(['config','show']);success(shown);assert.doesNotMatch(shown.stdout,/secret-proxy/);
   assert.equal(shown.stdout,f.run(['--show-config']).stdout);
   const archive=path.join(f.home,'cache.tar.gz');success(f.run(['cache','export',archive]));
-  fs.unlinkSync(path.join(cache,'sample.json'));success(f.run(['cache','import',archive]));
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(cache,'sample.json'))),{hello:'world'});
+  repo.delete('fixture','sample');success(f.run(['cache','import',archive]));
+  assert.deepEqual(repo.get('fixture','sample').value,{hello:'world'});
   assert.equal(f.calls().length,0);
 });
 
@@ -281,7 +290,7 @@ test('login uses the configured custom proxy and binds its session and proxy key
   const dir=path.join(f.home,'.vigie-vuln');fs.mkdirSync(dir);
   fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({proxyCache:'https://proxy.example.test'}));
   success(f.run(['login']));
-  assert.deepEqual(f.calls().map(c=>c.url),['https://proxy.example.test/v1/accounts/login','https://proxy.example.test/v1/accounts/proxy-keys']);
+  assert.deepEqual(f.calls().map(c=>c.url),['https://proxy.example.test/v1/proxy/capabilities','https://proxy.example.test/v1/accounts/login','https://proxy.example.test/v1/accounts/proxy-keys']);
   const config=JSON.parse(fs.readFileSync(path.join(dir,'config.json')));
   assert.equal(config.proxyCacheTokenOrigin,'https://proxy.example.test');
   assert.equal(config.proxyCacheToken,'custom_proxy_key');

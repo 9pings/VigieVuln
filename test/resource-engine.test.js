@@ -434,3 +434,15 @@ test("engine: transforms run at most transformConcurrency at a time; the project
 		assert.equal(gets, 16);
 	} finally { await s.close(); }
 });
+
+test('engine: live Maven HEAD responses carry their observation timestamp', async () => {
+ const methods=[];const engine=createResourceEngine({store:memoryStore(),fetcher:async(url,opts)=>{methods.push(opts.method);return new Response(null,{status:200});}});
+ const s=await serve(engine);
+ try {
+  for(const payload of [{provider:'maven',type:'preflight',params:{}},{provider:'maven',type:'artifact',params:{path:'org/example/demo/1/demo-1.pom',method:'HEAD'}}]) {
+   const before=Date.now(),r=await s.ask(payload),stamp=Date.parse(r.headers.get('x-fad-proxy-fetched-at'));
+   assert.equal(r.status,200);assert.equal(r.headers.get('x-fad-proxy'),'pass');assert.ok(stamp>=before&&stamp<=Date.now());
+  }
+  assert.deepEqual(methods,['HEAD','HEAD']);
+ } finally {await s.close();}
+});
