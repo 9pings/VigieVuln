@@ -64,6 +64,51 @@ test('project export retains bulk NVD records for findings without package advis
  finally {output.close()}
 });
 
+test('project export keeps relevant native records, not the global CVE corpus',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-native-cve-')),source=path.join(root,'online'),target=path.join(root,'offline');
+ t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const {cveEnvelope,matchNativeNpmCves}=require('../lib/native-advisories'),at=Date.now();
+ const raw=(id,name)=>({cveMetadata:{cveId:id,state:'PUBLISHED',dateUpdated:'2026-01-01T00:00:00Z'},containers:{cna:{affected:[{packageURL:`pkg:npm/${name}`,defaultStatus:'unaffected',versions:[{version:'0',lessThan:'2.0.0',versionType:'semver',status:'affected'}]}]}}});
+ const dep=makeDepRecord({ecosystem:'npm',name:'kept',version:'1.0.0'}),resolved=new Map([[dep.coordKey,dep]]),store=openAdvisoryStore({cacheDir:source});
+ store.commit({records:[cveEnvelope(raw('CVE-2026-10001','kept'),{fetchedAt:at}),cveEnvelope(raw('CVE-2026-10002','other'),{fetchedAt:at}),cveEnvelope(raw('CVE-2026-10003','other'),{fetchedAt:at})]});
+ assert.equal(matchNativeNpmCves(resolved,store).matches.length,1);store.close();
+ const db=openCacheDb({cacheDir:source});
+ db.prepare('INSERT INTO cve_lookup VALUES(?,?,?,?,?,?)').run('product','other','CVEProject','CVE-2026-10003','a','{}');
+ const insert=db.prepare("INSERT INTO nvd_records VALUES(?,'live',?,NULL,?,1,'{}')");
+ for(const id of ['CVE-2026-10001','CVE-2026-10002','CVE-2026-10003'])insert.run(id,at,Buffer.from([1]));db.close();
+ buildProjectSnapshot(source,target,buildProjectScope(resolved));
+ const offline=openAdvisoryStore({cacheDir:target});
+ try{
+  assert.equal(matchNativeNpmCves(resolved,offline).matches.length,1);
+  assert.ok(offline.getRecord('cveproject','CVE-2026-10001'));
+  assert.equal(offline.getRecord('cveproject','CVE-2026-10002'),null);
+  assert.equal(offline.getRecord('cveproject','CVE-2026-10003'),null);
+  assert.deepEqual(offline.db.prepare('SELECT cve FROM nvd_records ORDER BY cve').all().map(row=>row.cve),['CVE-2026-10001']);
+ }finally{offline.close()}
+});
+
+test('project indexes merge by covered bucket without pretending to be global',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-index-')),source=path.join(root,'source'),target=path.join(root,'target');
+ t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const db=openCacheDb({cacheDir:source}),at=Date.now();
+ db.prepare("INSERT INTO cache_snapshots VALUES('cve_lookup',?,1,0,2,'{}')").run(at);
+ const put=db.prepare('INSERT INTO cve_lookup VALUES(?,?,?,?,?,?)');
+ put.run('package','example:one','CVEProject','CVE-2026-10001','a','{}');
+ put.run('package','example:two','CVEProject','CVE-2026-10002','b','{}');db.close();
+ const {exportCache,importCache}=require('../lib/cache-archive-sqlite');
+ for(const name of ['one','two']){
+  const dep=makeDepRecord({ecosystem:'maven',namespace:'example',name,version:'1.0'}),archive=path.join(root,`${name}.tar.gz`);
+  await exportCache(archive,{sourceDir:source,project:buildProjectScope(new Map([[name,dep]]))});
+  await importCache(archive,{targetDir:target});
+ }
+ const result=openCacheDb({cacheDir:target});
+ try{
+  assert.deepEqual(result.prepare('SELECT lookup_key FROM cve_lookup ORDER BY lookup_key').all().map(r=>r.lookup_key),['example:one','example:two']);
+  assert.equal(result.prepare("SELECT complete FROM cache_snapshots WHERE namespace='cve_lookup'").get().complete,0);
+  assert.deepEqual(result.prepare("SELECT key FROM cache_entries WHERE namespace='airgap-cve-index' AND key LIKE 'p:%' ORDER BY key").all().map(r=>r.key),['p:example:one','p:example:two']);
+ }finally{result.close()}
+});
+
 test('project export excludes other projects from prewarmed EPSS and EUVD enrichments',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-enrichment-')),source=path.join(root,'online'),target=path.join(root,'offline');t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
  const repo=require('../lib/cache-repository').createCacheRepository(source),kept='CVE-2026-10001',other='CVE-2026-10002',at=Date.now()-3600000;
