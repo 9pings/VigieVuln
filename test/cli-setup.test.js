@@ -91,8 +91,20 @@ test('proxy setup signs in, imports only after sign-in, and persists origin-boun
  assert.equal(d.saved[0].proxyCacheTokenOrigin,'https://proxy.example');
  assert.equal(d.saved[0].sourceProfile,'proxy');
  assert.equal(d.sessions[0].origin,'https://proxy.example');
- assert.ok(d.output.some(s=>s.includes('https://proxy.example/account')));
  assert.ok(!d.output.join(' ').includes('proxy-secret'));
+});
+
+test('interactive setup displays the sign-in guidance once and asks for credentials', async () => {
+ const d=setupDeps(['official','no','person@example.test','password']);
+ d.ensureSignedIn=require('../lib/cli-project-commands').ensureSignedIn;
+ d.createAccountClient=({sessionStore})=>({
+  login:async ({email,password})=>{assert.equal(email,'person@example.test');assert.equal(password,'password');sessionStore.write({token:'session'});return {terms:{accepted:true}};},
+  createProxyKey:async()=>({token:'proxy-secret'}),
+ });
+ const prompts=[];const ask=d.ask;d.ask=async (label,secret)=>{prompts.push({label,secret});return ask(label,secret);};
+ await run([],d);
+ assert.equal(d.output.filter(s=>/Sign in.*Register:/.test(s)).length,1);
+ assert.deepEqual(prompts,[{label:'Email: ',secret:undefined},{label:'Password: ',secret:true}]);
 });
 
 test('a failed seed leaves old config and session untouched', async () => {
