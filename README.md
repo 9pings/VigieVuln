@@ -54,48 +54,28 @@ A free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) (instan
 
 ### Monitor a project
 
-Create and verify your [account](https://www.vigievuln.fr/account), then sign in and explicitly accept the [terms of service dated 2026-10-28](https://www.vigievuln.fr/terms) when prompted:
+Monitor your project's direct dependencies for new high, critical or known exploited vulnerabilities. Create and verify a [Vigie Vuln account](https://www.vigievuln.fr/account) first.
 
 ```bash
-vigievuln login
-vigievuln whoami
-vigievuln watch ./project --name 'My Project'
-vigievuln project status
-vigievuln logout
+vigievuln login                                  # sign in and accept the terms
+vigievuln watch ./project --export deps.json     # optional: review the inventory locally
+vigievuln watch ./project --name 'My Project'     # upload or update the project
+vigievuln project status                         # check the monitoring status
 ```
 
-`watch` collects the inventory locally and uploads it once. Run it again with the same unique project name to update that project's inventory; it does not run a background watcher. `login` selects the official proxy if none is configured; an existing proxy remains selected.
-
-The free tier watches **one project, up to 100 direct dependencies and a 0.5 MB descriptor**, for **one month renewed by each upload**; expiry deletes the monitoring data and triggers an email.
-
-If the current terms have not been accepted, the CLI displays their link and asks for explicit acceptance in an interactive terminal. For non-interactive use, run `vigievuln login` interactively and accept the terms first.
-
-To review the inventory before uploading, export it locally:
-
-```bash
-vigievuln watch ./project --export fichier.json
-```
-
-`--export` writes an offline descriptor without uploading; review package names and versions, including private packages, before sharing it.
-
-Enable alerts in your account to receive new high, critical or known exploited vulnerabilities affecting your direct dependencies; refresh the inventory when dependencies change. [Monitoring guide](docs/USAGE.md#project-monitoring).
-
-Existing commands remain supported: `vigievuln -s ./code`, `auth login|status|logout`, `--prepare-project` and `project push`.
+Review the inventory before sharing, enable alerts in your account and upload again when dependencies change. The free tier covers one project, 100 direct coordinates and a 0.5 MB descriptor; each upload renews monitoring for one month. [Monitoring guide](docs/USAGE.md#project-monitoring).
 
 ### Official Vigie Vuln proxy cache
 
-[Vigie Vuln DB](https://www.vigievuln.fr/) hosts vulnerability data and the official proxy cache in Europe.
-
-Configure the proxy once, then sign in with your verified [Vigie Vuln account](https://www.vigievuln.fr/account) when prompted:
+Use [Vigie Vuln DB](https://www.vigievuln.fr/) as a European-hosted source for scans, including reviewed VigieVuln advisories for Maven and npm.
 
 ```bash
-vigievuln login  # selects the official proxy if none is configured
-vigievuln scan ./code
+vigievuln login                 # sign in and select the official proxy if none is configured
+vigievuln scan ./code           # scan using the saved proxy and key
+vigievuln setup --mode direct --sources all  # switch back to direct sources
 ```
 
-The selection and the proxy key created during proxy sign-in are saved in `~/.vigie-vuln/config.json` and reused on subsequent scans. This proxy key is separate from the account session used by `watch`. Alternatively, save an existing key with `vigievuln --set-proxy-cache-token <key>`, or provide it via `VIGIEVULN_PROXY_CACHE_TOKEN` (useful in CI). Remove the selection or key with `--unset-proxy-cache` or `--unset-proxy-cache-token`. `--proxy-cache <url>` overrides the saved selection for one scan. The hosted proxy receives requested package coordinates and CVE identifiers; it does not receive your source code. [Proxy documentation](docs/USAGE.md#hosted-vigievuln-proxy).
-
-With the official proxy, scans also match published [VigieVuln advisories](https://www.vigievuln.fr/advisories/vigievuln?lang=en) for Maven and npm packages, including when OSV is disabled. Their `VV:CVE-…` identifier and sources are retained; AI-assisted reconciliation and review are disclosed on each advisory. Partial version evidence leaves other versions unknown. Cached advisories are available offline.
+The proxy receives package coordinates and CVE identifiers, not source code. Cached advisories remain usable offline; partial version evidence leaves other versions unknown. [Proxy guide](docs/USAGE.md#hosted-vigievuln-proxy).
 
 ### Interactive HTML samples
 
@@ -203,97 +183,21 @@ Every advisory snapshot a live lane fetches is stamped and cached in the local S
 
 ## Air-gapped audits
 
-Run `vigievuln setup` in an interactive terminal to select all sources (the default), US-operated services, European-operated services, or a proxy only. Setup can sign in to an official or custom instance and initialise the local cache from its authenticated bundle. Regions describe the service operator, not the origin of every advisory it aggregates.
-
-Before downloading a bundle, setup displays its compressed size and estimated disk requirements when available, then lets you skip it.
-
-For unattended setup, use `vigievuln setup --mode direct --sources all` or `vigievuln setup --mode server --server-url https://server.example --seed`. The modes are `direct`, `official`, and `server`; direct mode also accepts `--sources us` or `--sources eu` and `--seed-url` with `--seed`. Authentication reuses a saved session or reads `VIGIEVULN_EMAIL` and `VIGIEVULN_PASSWORD` from the environment. To accept terms after reviewing them, pass `--accept-terms <exact-version>`; a different server version is rejected.
-
-A local server can explicitly allow anonymous access, including seed downloads. An HTTP server requires confirmation before the first connection because credentials and keys are not encrypted. In unattended setup use, for example, `vigievuln setup --mode server --server-url http://192.168.1.10:8322 --seed --allow-insecure-http`; the confirmation is remembered for that exact origin. Prefer HTTPS on untrusted networks.
-
-Stored OSV and GCVE advisories are matched against dependency versions during the scan. An online scan can collect GCVE data through the configured proxy without a seed; offline matching uses the local cache or an imported bundle. Check the report's coverage warnings: a collection can be incomplete or stale, and some advisory version formats cannot be evaluated reliably. A bundle checksum detects corruption but does not authenticate its origin.
-
-Online scans add downloaded advisories to the same local store, so they can also match other affected versions offline. `--advisory-query-ttl <hours>` controls when source queries are refreshed (default: 4 hours; `0` requests revalidation on every online scan). `--force-update` revalidates consulted online sources, using conditional requests when available. A proxy may itself serve cached data; the report indicates known freshness and coverage limits. Selecting a seed in direct mode does not enable a proxy for subsequent scans.
-
-The global seed can include previously observed public Maven POMs and npm manifests by version, but is not a complete registry mirror. Other ecosystems are not yet covered by this durable metadata store. Offline transitive resolution for a new project still depends on lockfiles, manifests and previously warmed local package data; the vulnerability seed alone cannot guarantee it.
-
-> **Zero-data-sent guarantee.** Under `--offline`, vigievuln makes **no network calls
-> whatsoever**; it reads only the warmed `~/.vigie-vuln/` caches and never transmits a
-> dependency, path or finding off the machine. It is regression-tested
-> (`test/offline-guarantee.test.js`, a tripwire fetcher that throws if touched) and
-> auditor-reproducible: `unshare -rn node vigievuln.js -s ./proj --offline …` runs it in a
-> namespace with **no network interface** and yields byte-identical findings. With warmed
-> POM caches, VigieVuln can also resolve the **Maven transitive graph** offline.
-
-When the audited system is **offline / confidential** (typical of a regulated or air-gapped audit) it
-can't reach OSV / NVD / Maven Central / npm. Split the work across machines using a
-descriptor of **dependency coordinates and filtered version hints**, with manifest paths
-and registry URLs removed. Offline collection cannot distinguish private package names
-from public ones: exclude internal dependencies and review the descriptor, including
-parent/BOM coordinates, before transfer. The **detailed report is produced back on the
-offline machine**.
-
-The online step warms transferable package data and advisory records. The offline scan
-matches available advisories against the dependencies it finds and reports known coverage
-and freshness limitations.
+Scan a confidential or disconnected project by preparing its advisory and dependency cache on an online machine. The source code and detailed report stay offline.
 
 ```bash
-# ── Phase 1; OFFLINE (audited machine): export the anonymized descriptor ──
-# Exclude private/internal packages with -e (offline we can't tell private from public).
+# Offline: export coordinates, excluding internal packages; review before transfer
 vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
-#   → deps.json: dependency coordinates and version hints. Review before transfer.
 
-# ── Phase 2; ONLINE (any machine, no source needed): warm the caches ──
-vigievuln cache prepare deps.json --output vigievuln-cache.tar.gz  # add --force-update to revalidate cached online sources
-# Resolves and warms the descriptor, then writes its project-scoped SQLite archive.
-# A configured proxy may initialise the local OSV catalogue if it is missing.
-# CMS snapshots and Retire signatures are prepared during the same command.
+# Online: prepare a project-specific cache from the reviewed descriptor
+vigievuln cache prepare deps.json --output vigievuln-cache.tar.gz
 
-# ── Phase 3; OFFLINE (audited machine): full report, all local context ──
-vigievuln --import-cache vigievuln-cache.tar.gz   # merged into the enclave's own cache
-vigievuln -s ./proj --offline               # re-collect locally (real paths) + cache hits
-#   → full HTML/.doc report with manifests & structure, generated inside the enclave.
-#   CMS advisory snapshots (Drupal/PrestaShop/TYPO3 feeds, WP checksums) fetched live by
-#   the online phase ride the same archive and are consumed automatically — no flags.
+# Offline: import the cache and generate the report locally
+vigievuln --import-cache vigievuln-cache.tar.gz
+vigievuln -s ./proj --offline
 ```
 
-`cache prepare` includes advisories for resolved packages and the data needed for
-offline matching. If an offline scan discovers an unprepared package, its OSV
-coverage is reported as incomplete. CMS and native-binary descriptors retain the
-full NVD cache when their requirements cannot be narrowed to package coordinates.
-`--export-cache` separately exports the complete local cache.
-
-For Maven projects, regenerate descriptors made by an older build before preparing
-the archive: the descriptor now includes path-free per-module resolution hints.
-Review those coordinates and version hints before transferring the JSON.
-
-Descriptor imports also warm Maven registry presence (unless
-`--no-all-libs` is set). Legacy negative presence entries are discarded automatically:
-older versions could confuse network errors with missing packages. Until verified
-online, those entries remain **unknown**, including after a cache merge. Other warmed
-analysis data is retained.
-
-Unverified empty OSV cache entries are not trusted, because a failed request may have
-been stored as “no vulnerabilities”. Re-warm and export the cache to verify these entries; until then offline reports warn about incomplete
-OSV coverage. Existing cached advisory IDs remain usable. Offline KEV and binary identity
-lookups reuse the last available snapshot even after four hours, without changing its date.
-
-The [offline Docker integration check](docs/USAGE.md#offline-docker-integration-check) exercises this workflow in an isolated container.
-
-What the descriptor (`fad-deps/1`) contains vs. drops:
-
-| Kept (needed to scan) | Dropped (environment) |
-| --- | --- |
-| ecosystem, ecosystemType | manifest paths / pom paths |
-| namespace, name | resolved registry URLs |
-| version, versions | integrity hashes |
-| scope, isDev | parent chains, lockfile type |
-| application type + core version + inventoried **public** component identities | private component identities |
-
-The online phase report is itself path-free; vendored-JavaScript (retire.js) findings are
-produced **offline in phase 3**, since retire needs the actual `.js` files; its signature
-DB is warmed online and included by `cache prepare` (phase 2). Full offline/cache control →
-[`docs/USAGE.md`](docs/USAGE.md).
+Review the descriptor before sharing and the report's coverage and freshness information after scanning. An incomplete or outdated cache can limit results. [Offline workflow and cache options](docs/USAGE.md).
 
 ## Docs
 
