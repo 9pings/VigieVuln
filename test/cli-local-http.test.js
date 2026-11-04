@@ -22,9 +22,16 @@ test('anonymous HTTP setup, seed and online scan require consent and never send 
  seeded.commit({records:[{source:'osv',document,fetchedAt}],coverages:[{source:'osv',ecosystem:'npm',fetchedAt,complete:true}]});seeded.close();
  const tar=path.join(root,'seed.tar.gz');
  const hits=[];
- const server=http.createServer((req,res)=>{hits.push({path:req.url,authorization:req.headers.authorization,token:req.headers['x-fad-proxy-token']});
+ const server=http.createServer((req,res)=>{hits.push({path:req.url,method:req.method,range:req.headers.range,authorization:req.headers.authorization,token:req.headers['x-fad-proxy-token']});
   if(req.url==='/v1/proxy/capabilities'){res.writeHead(200,{'content-type':'application/json'});return res.end(JSON.stringify({service:'vigievuln-proxy',schema:1,authenticationRequired:false}));}
-  if(req.url==='/dumps/vigievuln-cli-cache.tar.gz'){res.writeHead(200,{'content-type':'application/gzip'});return res.end(fs.readFileSync(tar));}
+  if(req.url==='/dumps/vigievuln-cli-cache.tar.gz'){
+   const data=fs.readFileSync(tar),headers={'content-type':'application/gzip','content-length':data.length};
+   if(req.method==='HEAD'){res.writeHead(200,headers);return res.end();}
+   if(req.headers.range==='bytes=0-16383'){
+    const prefix=data.subarray(0,16384);res.writeHead(206,{...headers,'content-length':prefix.length,'content-range':`bytes 0-${prefix.length-1}/${data.length}`});return res.end(prefix);
+   }
+   res.writeHead(200,headers);return res.end(data);
+  }
   if(req.url==='/v1/resource'){let input='';req.on('data',c=>input+=c);req.on('end',()=>{const p=JSON.parse(input);let data={};
     if(p.provider==='osv' && p.type==='packages')data={results:(p.params.queries||[p.params]).map(()=>({vulns:[{id:document.id}]}))};
     else if(p.provider==='osv' && p.type==='vuln')data=document;
@@ -39,7 +46,12 @@ test('anonymous HTTP setup, seed and online scan require consent and never send 
  const setup=['setup','--mode','server','--server-url',origin,'--seed'];
  const denied=await run(setup,root);assert.notEqual(denied.status,0);assert.match(denied.stderr,/--allow-insecure-http/);assert.equal(hits.length,0);
  const done=await run([...setup,'--allow-insecure-http'],root);assert.equal(done.status,0,done.stderr);assert.match(done.stderr,/not encrypt/i);
- assert.deepEqual(hits.map(x=>x.path),['/v1/proxy/capabilities','/dumps/vigievuln-cli-cache.tar.gz']);
+ assert.deepEqual(hits.map(({path,method,range})=>({path,method,...(range?{range}:{})})),[
+  {path:'/v1/proxy/capabilities',method:'GET'},
+  {path:'/dumps/vigievuln-cli-cache.tar.gz',method:'HEAD'},
+  {path:'/dumps/vigievuln-cli-cache.tar.gz',method:'GET',range:'bytes=0-16383'},
+  {path:'/dumps/vigievuln-cli-cache.tar.gz',method:'GET'},
+ ]);
  const config=JSON.parse(fs.readFileSync(path.join(root,'.vigie-vuln','config.json')));assert.equal(config.insecureHttpOrigin,origin);assert.equal(config.proxyAnonymousOrigin,origin);
  const identity=await run(['whoami'],root);assert.equal(identity.status,0,identity.stdout+identity.stderr);assert.match(identity.stdout,/anonymous access; login is not required/i);
  const project=path.join(root,'project');fs.mkdirSync(project);fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0',dependencies:{lodash:'4.17.20'}}));
