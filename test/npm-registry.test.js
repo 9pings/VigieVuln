@@ -62,3 +62,10 @@ test("packumentToFindings tolerates a missing version entry", () => {
 	assert.ok(outdated, "1.5.0 < 2.0.0 so still outdated");
 	assert.equal(outdated.latest, "2.0.0");
 });
+
+test('outdated includes prerelease to stable upgrades, but never ranks build metadata', () => {
+ const stable={'dist-tags':{latest:'1.0.0'},versions:{'1.0.0':{}}};
+ assert.equal(packumentToFindings(stable,dep('lib','1.0.0-rc.1')).outdated.latest,'1.0.0');
+ assert.equal(packumentToFindings({'dist-tags':{latest:'1.0.0-rc.1'},versions:{}},dep('lib','1.0.0')).outdated,null);
+ assert.equal(packumentToFindings({'dist-tags':{latest:'1.0.0+build.2'},versions:{}},dep('lib','1.0.0+build.1')).outdated,null);
+});

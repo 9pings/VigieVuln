@@ -270,3 +270,24 @@ test("collectNpmDeps accumulates every distinct nested version", () => {
 	assert.deepEqual([...lodash.versions].sort(), ["3.10.1", "4.17.21"]);
 	fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('npm representative version uses full SemVer precedence and retains all observed versions', () => {
+ const {semverCompare}=require('../lib/codecs/npm/collect');
+ const chain=['1.0.0-alpha','1.0.0-alpha.1','1.0.0-alpha.beta','1.0.0-beta','1.0.0-beta.2','1.0.0-beta.11','1.0.0-rc.1','1.0.0'];
+ for(let i=1;i<chain.length;i++) {
+  assert.equal(semverCompare(chain[i-1],chain[i]),-1);
+  assert.equal(semverCompare(chain[i],chain[i-1]),1);
+ }
+ assert.equal(semverCompare('1.0.0+build.2','1.0.0+build.1'),0);
+ assert.equal(semverCompare('9007199254740993.0.0','9007199254740992.0.0'),1);
+ for(const invalid of ['latest','^1.0.0','1.0.0-01','1.0.0-'])assert.equal(semverCompare(invalid,'1.0.0'),null);
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'vv-npm-precedence-'));
+ try {
+  for(const [name,version] of [['a','1.0.0-rc.1'],['b','1.0.0']]) {
+   const dir=path.join(temp,name);fs.mkdirSync(dir);fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name,dependencies:{lib:version}}));
+  }
+  const dep=collectNpmDeps(temp).get('npm:lib');
+  assert.equal(dep.version,'1.0.0');assert.deepEqual([...dep.versions].sort(),['1.0.0','1.0.0-rc.1']);
+ } finally {fs.rmSync(temp,{recursive:true,force:true});}
+});

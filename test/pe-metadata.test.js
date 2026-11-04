@@ -44,3 +44,19 @@ test('malformed and truncated PE files do not produce metadata or throw', () => 
 	assert.equal(extractPeMetadata(b), null);
 	assert.equal(extractPeMetadata(Buffer.from('MZ\0\0')), null);
 });
+
+test('file-backed metadata reader preserves VERSIONINFO in a distant resource without full-file allocation', t => {
+	const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-pe-resource-'));
+	t.after(() => fs.rmSync(dir, {recursive:true,force:true}));
+	const original = fixture(), moved = Buffer.from(original);
+	const offset = 16 * 1024 * 1024;
+	moved.writeUInt32LE(offset, 0x98 + 224 + 20);
+	const fp = path.join(dir, 'distant.dll'), fd = fs.openSync(fp, 'w+');
+	try {
+		fs.writeSync(fd, moved.subarray(0, 512), 0, 512, 0);
+		fs.writeSync(fd, original.subarray(512), 0, original.length - 512, offset);
+		const { extractPeMetadataFile } = require('../lib/codecs/binary/pe-metadata');
+		assert.deepEqual(extractPeMetadataFile(fd, fs.fstatSync(fd).size), extractPeMetadata(original));
+	} finally { fs.closeSync(fd); }
+});

@@ -72,3 +72,10 @@ test("runner enforces max advisory age before any inventory runs", async () => {
 			/does not declare.*collection date/i);
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
+
+test('future collection dates fail closed beyond the five-minute clock-skew allowance', () => {
+ for(const date of [NOW+300001,Date.parse('2099-01-01T00:00:00Z')])
+  for(const snapshot of [{collectedAt:new Date(date).toISOString()},{generatedAt:new Date(date).toISOString()},{_fadSnapshot:{collectedAt:new Date(date).toISOString()}}])
+   assert.throws(()=>assertFresh(snapshot,'fixture',86400000,NOW),/in the future/);
+ for(const delta of [0,300000])assert.equal(assertFresh({collectedAt:new Date(NOW+delta).toISOString()},'fixture',86400000,NOW).collectedAt,new Date(NOW+delta).toISOString());
+});

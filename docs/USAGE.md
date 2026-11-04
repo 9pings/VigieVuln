@@ -61,6 +61,8 @@ vigievuln -s . --cert-expiry-days 30        # warn on certs expiring within 30 d
 
 > **Committed native binaries**: `.dll`/`.exe`/`.so`/`.dylib` files are detected by extension **and** magic-byte confirmation (PE/ELF/Mach-O — images/fonts/assets are rejected even with a spoofed extension), hashed (SHA-1 + SHA-256) and **identified by checksum** online: **deps.dev** maps the hash to an exact package coordinate (byte-identical to a published artifact → *pristine*, and a candidate to declare as a real dependency); **CIRCL hashlookup** recognises known OS/distro/CDN/NSRL files (*known-good*) and carries a free `KnownMalicious` flag. Files no source knows are *unknown*; a filename disagreeing with the resolved identity is *name≠checksum*. Reported in the **Unmanaged / vendored binaries** section and the JSON export (`unmanaged` array). Cached + `--offline`-aware; the binary scan is on by default in `auto` mode and disabled with `--no-binaries`. No malware/AV lane.
 
+Native files over 512 MiB and unreadable files produce a coverage warning with their path; other files remain scanned. Hashing uses bounded buffers. Failed POM parsing likewise marks dependency coverage incomplete and does not count the failed module as parsed.
+
 > **Certificates & key material**: committed cryptographic files are inventoried in the unmanaged-components chapter and the JSON export (`certificates` array) + SARIF (`FAD-*` rules). Detected by extension (`.pem`/`.crt`/`.cer`/`.der`/`.key`/`.pub`/`.p12`/`.pfx`/`.jks`/`.keystore`/`.ppk`/`.asc`/`.gpg`) **and** conventional SSH filenames (`id_rsa`/`id_ed25519`/…/`authorized_keys`/`known_hosts`), then classified by content: **X.509 certificates** (parsed with Node's built-in `crypto.X509Certificate` — flagged `expired`, `expiring` within `--cert-expiry-days` (default 90), `weak key` RSA<2048 / weak EC curve, `weak signature` MD5/SHA1, `self-signed`); **keys** — every one labelled **private** (a committed secret → *critical*) or **public** (*low*, inventory) — covering PEM (PKCS#1/PKCS#8/SEC1), **OpenSSH of every algorithm** (RSA/DSA/ECDSA/Ed25519 incl. FIDO `-sk`), PuTTY `.ppk`, PGP, and one-line SSH public keys; and **keystores** (JKS/JCEKS by magic, PKCS#12 by extension — contents not decrypted, hashed + flagged *medium*). **100% offline** — no network, no decryption. On by default; `--no-certs` disables it, `--cert-expiry-days <n>` sets the expiry window. (Inventory only — these findings don't affect the `--fail-on` gate.)
 
 > **PHP runtime**: for every Composer project the declared PHP constraint is read (`composer.lock` `platform-overrides.php` › `composer.json` `config.platform.php` › `composer.lock` `platform.php` › `composer.json` `require.php`). A finding is emitted **only** when the constraint proves an end-of-life runtime — an exact pin, or a bounded range such as `^7.4` (= `<8.0`) whose newest allowed PHP is EOL. An open constraint (`>=7.2.5`) proves nothing about the deployed runtime and produces no finding and no warning — the deployed PHP must be checked against endoflife.date/php outside the scan. Symfony/Laravel components are reported as **one row per framework** (the anchor package + a component count), never one row per component.
@@ -253,6 +255,8 @@ signals may describe the same gap. The component counts are available as
 `summary.applicationCoverageIncomplete` and `summary.coverageWarnings`; see
 `coverage[]` and `warnings[]` for details.
 
+JSON source locations use the project basename and relative paths; structured paths outside the source root are marked `[external]/<basename>`. Advisory text, identifiers and URLs remain unchanged: this is not an anonymized export. Excel cells exceeding 32,767 characters are truncated with an explicit marker; export JSON alongside the workbook to retain their full values.
+
 ```bash
 # default: HTML + findings.json into ./vigievuln-report
 vigievuln -s ./proj
@@ -271,12 +275,16 @@ All honour `--offline` (they render from whatever the scan already resolved).
 
 | Flag | Effect |
 | --- | --- |
-| `--fail-on <level>` | Exit non-zero when a **production or embedded-binary** finding meets the level: `low`/`medium`/`high`/`critical` (severity) or `kev` (only CISA-known-exploited). Default `none`. Outputs are written first, so artifacts always land. An invalid level hard-fails (exit 2) rather than silently disabling the gate. |
+| `--fail-on <level>` | Exit non-zero when a **production or embedded-binary** finding meets the level: `low`/`medium`/`high`/`critical` (severity) or `kev` (only CISA-known-exploited). Default `none`. Requested outputs are attempted before the gate result. An invalid level hard-fails (exit 2) rather than silently disabling the gate. |
 | `--fail-on-new` | Exit non-zero when the scan introduces any **new production CVE finding** vs `--baseline` (see *Differential audits*). Combinable with `--fail-on` — either condition fails the build. |
 | `--ignore <file>` | Suppress findings. One rule per line: `CVE-2021-44228` (anywhere), `CVE-… org.apache.*` (coord/purl glob), `* npm:lodash` (any CVE for a coord); text after `#` is the reason. |
 | `--vex <file>` | Ingest a **CSAF VEX**: CVEs marked `known_not_affected` / `fixed` are suppressed (products mapped back to coords by purl — round-trips fad's own `--report-csaf`). |
 
 Suppressed findings are dropped from the report chapters, SARIF and `--fail-on`, but retained with triage metadata in JSON/XLSX/SBOM/CSAF, and the count is noted in chapter 0. SBOM carries component-scoped `vigievuln:triage` properties; CSAF carries triage notes and preserves explicit VEX `fixed` / `known_not_affected` assertions. An ignore rule accepts or hides a finding; it does not assert that the product is unaffected. A VEX without explicit, mapped clearance never suppresses a finding.
+
+`--ignore` also matches recorded advisory aliases such as GHSA IDs, while retaining the package scope. A global `*` rule is allowed but emits a warning in the terminal and report. VEX exemptions continue to require an exact advisory ID and product PURL.
+
+Exit `1` means a blocking finding; exit `2` means a scan/output error or a failed coverage requirement and takes precedence when both occur. A failed report destination does not prevent other requested formats from being written. Unexpected scan errors show a concise message; `--verbose` also includes the diagnostic stack. Findings with `UNKNOWN` severity do not meet a severity threshold, including `low`; they remain in the report and can still block `--fail-on kev` or `--fail-on-new` when applicable.
 
 ```bash
 # Fail the pipeline only on exploited-in-the-wild vulns, minus accepted risks
@@ -298,6 +306,8 @@ chapter, the JSON export gains a `diff` block, and CI can gate on *new* findings
 A finding's identity is `CVE id + ecosystem + coordinate + version`, so a version bump
 shows the old finding *resolved* and the new one *added*. Suppressed / CPE-filtered CVEs
 and development findings are diffed but excluded from the `--fail-on-new` signal (embedded binaries still count). A missing or invalid baseline, including `--fail-on-new` without `--baseline`, returns code 2. Findings absent during a source outage or incomplete inventory are marked unassessed rather than fixed. Any failed requested machine-readable export also returns code 2.
+
+Different project names in the baseline and current report produce a warning. Comparison continues because a renamed checkout may still be the same project.
 
 ```bash
 # CI: fail only when this build introduces NEW vulnerabilities vs main's last report
@@ -553,7 +563,7 @@ FAD_PROXY_CACHE_TOKEN=s3cret vigievuln -s ./proj --proxy-cache http://cache-host
 | `--port <n>` / `--host <h>` | Listen address (default `127.0.0.1:8321`; `0.0.0.0` to share — use `--token`) |
 | `--cache-dir <dir>` | Store location (default `~/.vigie-vuln-proxy-cache/` — its own root, never inside the scan's `~/.vigie-vuln/` caches) |
 | `--ttl <seconds>` | Override every per-source TTL (defaults: OSV 12h, NVD + endoflife.date 7d, registries/EPSS/KEV/deps.dev 24h) |
-| `--swr` / `--no-swr` | An expired entry is served stale while a refresh runs in the background (default ON; `--no-swr` makes expiry a blocking refetch) |
+| `--no-swr` | Disable serving an expired entry while refreshing it in the background (enabled by default); expiry becomes a blocking refetch |
 | `--max-body-mb <n>` | Persistence limit per response (default 32 MiB); larger responses use a temporary spool, retired after 30 s when readers finish. CVE archives have a separate 1 GiB persistence limit |
 | `--max-transfer-mb <n>` | Hard upstream body limit, including chunked bodies (default 1024 MiB); JSON batches additionally cap at 32 MiB |
 | `--max-store-mb <n>` | Combined metadata, body and spool budget (default 2048 MiB); evicts the oldest collected unpinned entries, refuses writes if space cannot be freed |
@@ -705,7 +715,7 @@ Run `node scripts/test-offline-docker.cjs` with dependencies installed and the
 `node:22-bookworm` image available locally. Set `VIGIEVULN_DOCKER_IMAGE` to use a
 different image; `FAD_DOCKER_IMAGE` remains supported. The check exports a public
 Maven fixture offline, warms its caches online, then scans it in a fresh container
-with `--network none`. It verifies direct and transitive findings, report formats,
+with Docker's `--network none`. It verifies direct and transitive findings, report formats,
 the expired-KEV gate and the absence of offline network attempts. It mounts no host
 cache and excludes the full CVE index, EUVD and CERT-FR downloads; logs and reports
 are retained in the printed temporary directory.

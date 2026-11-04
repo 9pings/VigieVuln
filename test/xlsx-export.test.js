@@ -42,16 +42,35 @@ test("XLSX is a valid OOXML package with typed audit rows and inert advisory tex
 	assert.match(coverageXml, /CMS_PROVIDER_UNCONFIGURED/);
 });
 
-test("XLSX writer preserves bytes and rejects Excel's cell limit instead of silently truncating", () => {
+test("XLSX writer preserves short values and marks long cells without losing the workbook", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-xlsx-"));
 	try {
 		const file = path.join(dir, "findings.xlsx");
 		writeXlsx({ cveMatches: [match] }, file);
 		const original = fs.readFileSync(file);
 		assert.equal(original.subarray(0, 2).toString(), "PK");
-		assert.throws(() => buildXlsx({ cveMatches: [{ ...match, cve: { ...match.cve, description: "x".repeat(32768) } }] }), /exceeds 32767/);
-		assert.throws(() => writeXlsx({ cveMatches: [{ ...match, cve: { ...match.cve, description: "x".repeat(32768) } }] }, file), /exceeds 32767/);
-		assert.deepEqual(fs.readFileSync(file), original, "a failed export preserves the prior workbook");
+		writeXlsx({ cveMatches: [{ ...match, cve: { ...match.cve, description: "x".repeat(32768) } }] }, file);
+		const zip = unzipSync(fs.readFileSync(file));
+		assert.match(strFromU8(zip["xl/worksheets/sheet2.xml"]), /TRUNCATED: Excel cell limit/);
+		assert.notDeepEqual(fs.readFileSync(file), original, "the complete workbook is regenerated");
 		assert.throws(() => writeXlsx({}, path.join(dir, "mislabelled.xls")), /must end in \.xlsx/);
 	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('oversized cells remain within Excel limits, keep Unicode intact and cannot create formulas', async () => {
+	for (const text of ['x'.repeat(32767), '=HYPERLINK("x")' + '😀'.repeat(20000), 'z'.repeat(100000)]) {
+		const zip = unzipSync(buildXlsx({ cveMatches: [{ ...match, cve: { ...match.cve, description: text } }, { ...match, findingId: 'second-finding' }] }));
+		const sheet = await parseStringPromise(strFromU8(zip['xl/worksheets/sheet2.xml']));
+		const rows = sheet.worksheet.sheetData[0].row;
+		assert.equal(rows.length, 3, 'the rest of the workbook survives a long cell');
+		const cell = rows[1].c.find(c => c.$.r === 'U2');
+		assert.equal(cell.$.t, 'inlineStr');
+		assert.equal(cell.f, undefined);
+		const value = cell.is[0].t[0]._;
+		assert.ok(value.length <= 32767);
+		assert.equal(value.isWellFormed(), true);
+		assert.ok(!value.includes('\uFFFD'), 'no split surrogate is introduced');
+		if (text.length <= 32767) assert.equal(value, text);
+		else assert.match(value, /\[TRUNCATED: Excel cell limit; export JSON for the full value\]$/);
+	}
 });

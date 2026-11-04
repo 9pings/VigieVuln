@@ -173,3 +173,44 @@ test("scan finds a representative mix and rejects non-candidates", () => {
 	const RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 	for (let i = 1; i < items.length; i++) assert.equal(RANK[items[i - 1].severity] >= RANK[items[i].severity], true);
 });
+
+test('weak signature detection reads only the certificate signature algorithm, not arbitrary DER bytes', () => {
+	const crypto = require('node:crypto');
+	const raw = Buffer.from(new crypto.X509Certificate(buf('valid-leaf.crt')).raw);
+	// Signature bytes may contain any byte sequence. This changes the signature
+	// value, not its declared algorithm, and must never be labelled SHA1.
+	const sha1Oid = Buffer.from([0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x05]);
+	sha1Oid.copy(raw, raw.length - sha1Oid.length);
+	assert.equal(detectWeakSig(raw), null);
+	const item = analyzeBuffer({ name: 'oid-in-signature.der', path: '/p', buf: raw })[0];
+	assert.equal(item.kind, 'certificate');
+	assert.equal(hasIssue(item, 'cert-weak-signature'), false);
+	for (const malformed of [sha1Oid, Buffer.from([0x30, 0x80]), Buffer.from([0x30, 0x84, 255, 255, 255, 255]), raw.subarray(0, raw.length - 1)])
+		assert.equal(detectWeakSig(malformed), null);
+});
+
+test('unknown OpenSSH and PGP encryption is reported as unknown, never asserted encrypted or plaintext', () => {
+	for (const [label, body] of [['OPENSSH PRIVATE KEY', 'aW52YWxpZA=='], ['PGP PRIVATE KEY BLOCK', 'aW52YWxpZA==']]) {
+		const item = analyzeBuffer({ name: 'key.pem', path: '/p', buf: Buffer.from(`-----BEGIN ${label}-----\n${body}\n-----END ${label}-----`) })[0];
+		assert.equal(item.kind, 'private-key');
+		assert.equal(item.encrypted, null);
+		assert.equal(item.severity, 'critical');
+		assert.match(item.issues[0].message, /encryption unknown/);
+		assert.doesNotMatch(item.issues[0].message, /\(encrypted\)|UNENCRYPTED/);
+	}
+});
+
+test('OpenSSH header parsing rejects truncated length-prefixed data instead of guessing plaintext', () => {
+	const body = buf('id_ed25519').toString('latin1').match(/-----BEGIN OPENSSH PRIVATE KEY-----\r?\n([\s\S]*?)-----END/)[1];
+	const raw = Buffer.from(body.replace(/\s/g, ''), 'base64');
+	for (const end of [15, 19, 23, raw.length - 1]) assert.equal(parseOpensshPrivate(raw.subarray(0, end).toString('base64')), null);
+	const invalidLength = Buffer.from(raw); invalidLength.writeUInt32BE(0xffffffff, 15);
+	assert.equal(parseOpensshPrivate(invalidLength.toString('base64')), null);
+	assert.equal(parseOpensshPrivate(body).encrypted, false);
+});
+
+test('PuTTY key without an Encryption header retains unknown encryption', () => {
+	const item = analyzeBuffer({ name: 'key.ppk', path: '/p', buf: Buffer.from('PuTTY-User-Key-File-3: ssh-ed25519\nPrivate-Lines: 1\nAAAA\n') })[0];
+	assert.equal(item.encrypted, null);
+	assert.equal(item.severity, 'critical');
+});

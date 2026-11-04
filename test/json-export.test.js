@@ -191,3 +191,74 @@ test("JSON headline counts unique physical findings while application exposure c
 	assert.equal(doc.summary.cve.kev, 1);
 	assert.deepEqual(doc.findingSummary.byApplication, { "site-a": 1, "site-b": 1 });
 });
+
+test('JSON uses portable source locations throughout the report without mutating evidence or payload', () => {
+	for (const root of ['/home/private-user/clients/SecretProject', 'C:\\Users\\private-user\\clients\\SecretProject']) {
+		const separator = root.startsWith('C:') ? '\\' : '/';
+		const manifest = root + separator + 'nested' + separator + 'composer.lock';
+		const dep = { ecosystem: 'composer', namespace: 'vendor', name: 'lib', version: '1', manifestPaths: [manifest] };
+		const payload = { projectInfo: { name: 'SecretProject', src: root },
+			cveMatches: [{ dep, findingId: 'unchanged-id', cve: { id: 'CVE-1', description: 'Evidence remains verbatim', osvRefs: [{ url: 'https://example.test/advisory' }] } }],
+			certFindings: [{ path: root + separator + 'keys' + separator + 'server.pem' }],
+			applicationRelations: [{ manifestPath: manifest }],
+			warnings: [{ type: 'parse-error', manifestPath: manifest, message: 'Failed to parse ' + manifest }],
+		};
+		const doc = buildFindings(payload);
+		assert.equal(doc.project.src, 'SecretProject');
+		assert.deepEqual(doc.cve[0].dep.manifestPaths, ['nested/composer.lock']);
+		assert.equal(doc.certificates[0].path, 'keys/server.pem');
+		assert.equal(doc.applicationRelations[0].manifestPath, 'nested/composer.lock');
+		assert.ok(!JSON.stringify(doc).includes('private-user'));
+		assert.equal(doc.cve[0].findingId, 'unchanged-id');
+		assert.equal(doc.cve[0].description, 'Evidence remains verbatim');
+		assert.deepEqual(doc.cve[0].references, ['https://example.test/advisory']);
+		assert.equal(payload.certFindings[0].path, root + separator + 'keys' + separator + 'server.pem');
+		assert.equal(payload.cveMatches[0].dep.manifestPaths[0], manifest);
+	}
+});
+
+test('JSON preserves anonymized markers and avoids exposing external paths', () => {
+	assert.equal(buildFindings({ projectInfo: { src: '(anonymized descriptor — source path withheld)' } }).project.src,
+		'(anonymized descriptor — source path withheld)');
+	assert.equal(buildFindings({ projectInfo: { src: '/work/project' }, certificates: [],
+		certFindings: [{ path: '/home/operator/outside.pem' }] }).certificates[0].path, '[external]/outside.pem');
+});
+
+test('JSON redacts standalone roots in warnings without matching sibling names or altering advisory text', () => {
+	const root = '/home/private-user/project';
+	const doc = buildFindings({ projectInfo: { src: root },
+		warnings: [{ message: `Cannot read '${root}'` }, { message: `Read ${root}/pom.xml` }, { message: 'Unrelated /home/private-user/project-other' }],
+		cveMatches: [{ dep: { ecosystem: 'npm', name: 'lib', version: '1' }, cve: { id: 'CVE-1', description: `Literal advisory evidence ${root}` } }],
+	});
+	assert.equal(doc.warnings[0].message, "Cannot read '.'");
+	assert.equal(doc.warnings[1].message, 'Read pom.xml');
+	assert.equal(doc.warnings[2].message, 'Unrelated /home/private-user/project-other');
+	assert.equal(doc.cve[0].description, `Literal advisory evidence ${root}`);
+});
+
+test('JSON handles filesystem roots and UNC roots without drive-relative resolution or damaged URLs', () => {
+	for (const [root, file, label] of [
+		['/', '/etc/cert.pem', '.'],
+		['C:\\', 'C:\\etc\\cert.pem', '.'],
+		['\\\\server\\share\\', '\\\\server\\share\\etc\\cert.pem', 'share'],
+	]) {
+		const url = 'https://example.test/advisory?file=/etc/cert.pem';
+		const warning = `Cannot read '${file}'; see ${url} or //example.test/advisory`;
+		const payload = { projectInfo: { src: root }, certFindings: [{ path: file }], warnings: [{ message: warning }, { message: `Cannot read '${root}'` }] };
+		const doc = buildFindings(payload);
+		assert.equal(doc.project.src, label);
+		assert.equal(doc.certificates[0].path, 'etc/cert.pem');
+		assert.ok(doc.warnings[0].message.includes(root === '/' ? "'etc/cert.pem'" : "'etc\\cert.pem'"));
+		assert.ok(doc.warnings[0].message.includes(url));
+		assert.ok(doc.warnings[0].message.includes('//example.test/advisory'));
+		assert.equal(doc.warnings[1].message, "Cannot read '.'");
+		assert.equal(payload.warnings[0].message, warning);
+	}
+});
+
+test('warning redaction never changes URL query values that contain the project root', () => {
+	const url = 'https://example.test/?file=/work/project/pom.xml';
+	const message = `Failed /work/project/pom.xml; see ${url}`;
+	const doc = buildFindings({ projectInfo: { src: '/work/project' }, warnings: [{ message }] });
+	assert.equal(doc.warnings[0].message, `Failed pom.xml; see ${url}`);
+});

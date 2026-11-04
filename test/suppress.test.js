@@ -148,3 +148,32 @@ test('VEX contradictory assertions in separate vulnerability entries do not clea
 		assert.deepEqual(parseVex(vex), []);
 	}
 });
+
+test('ignore rules match merged aliases and GHSA while preserving coordinate scopes', () => {
+ const matches=[
+  {dep:log4j,cve:{id:'CVE-2024-1234',aliases:['GHSA-aaaa-bbbb-cccc']}},
+  {dep:lodash,cve:{id:'CVE-2024-1234',aliases:['GHSA-aaaa-bbbb-cccc']}},
+  {dep:lodash,cve:{id:'CVE-2024-5678',ghsa:'GHSA-dddd-eeee-ffff'}},
+ ];
+ assert.equal(applySuppressions(matches,parseIgnoreFile('GHSA-aaaa-bbbb-cccc org.apache.*')),1);
+ assert.equal(matches[1].suppressed,undefined);
+ assert.equal(applySuppressions([matches[2]],parseIgnoreFile('GHSA-dddd-eeee-ffff')),1);
+ assert.equal(applySuppressions([{dep:lodash,cve:{id:'GHSA-test',aliases:['CVE-2024-9999']}}],parseIgnoreFile('CVE-2024-9999')),1);
+ assert.equal(applySuppressions([{dep:lodash,cve:{id:'CVE-2024-1',aliases:'GHSA-aaaa-bbbb-cccc'}}],parseIgnoreFile('GHSA-aaaa-bbbb-cccc')),0);
+});
+
+test('VEX alias clearance cannot bypass affected primary-id assertions or exact product scope', () => {
+ const {purlFor}=require('../lib/purl');
+ const vex={product_tree:{full_product_names:[{product_id:'P',product_identification_helper:{purl:purlFor(log4j)}}]},vulnerabilities:[
+  {cve:'GHSA-aaaa-bbbb-cccc',product_status:{fixed:['P']}},
+  {cve:'CVE-2024-1234',product_status:{known_affected:['P']}},
+ ]};
+ const matches=[{dep:log4j,cve:{id:'CVE-2024-1234',aliases:['GHSA-aaaa-bbbb-cccc']}},{dep:lodash,cve:{id:'GHSA-aaaa-bbbb-cccc'}}];
+ assert.equal(applySuppressions(matches,parseVex(vex)),0);
+});
+
+test('global ignore detection flags unrestricted stars but preserves scoped policies', () => {
+ const {hasGlobalIgnoreRule}=require('../lib/suppress');
+ for(const text of ['*','* # accepted deliberately','* *','* **'])assert.equal(hasGlobalIgnoreRule(parseIgnoreFile(text)),true);
+ for(const text of ['','CVE-2024-1234','* org.apache.*','* pkg:npm/*'])assert.equal(hasGlobalIgnoreRule(parseIgnoreFile(text)),false);
+});

@@ -298,7 +298,7 @@ if (process.argv.includes("--export-cache") || process.argv.includes("--import-c
 // Standalone differential audit between two findings JSON exports. Mirrors the other
 // pre-parse intercepts so it never collides with the main option set (which requires -s).
 if (process.argv[2] === "diff") {
-	const { diffFindings, summarizeDiff, newProductionCveCount, isProductionCve, validateFindingsDocument } = require("./lib/diff");
+	const { diffFindings, summarizeDiff, newProductionCveCount, isProductionCve, validateFindingsDocument, baselineProjectWarning } = require("./lib/diff");
 	const rest = process.argv.slice(3);
 	const positionals = rest.filter(a => !a.startsWith("-"));
 	const [basePath, curPath] = positionals;
@@ -314,6 +314,8 @@ if (process.argv[2] === "diff") {
 	catch (e) { console.error(chalk.red(`❌  cannot read baseline ${basePath}: ${e.message}`)); process.exit(2); }
 	try { curDoc = validateFindingsDocument(JSON.parse(fs.readFileSync(curPath, "utf8"))); }
 	catch (e) { console.error(chalk.red(`❌  cannot read current ${curPath}: ${e.message}`)); process.exit(2); }
+	const baselineWarning = baselineProjectWarning(baseDoc, curDoc);
+	if (baselineWarning) console.error(chalk.yellow(`⚠  ${baselineWarning.message}`));
 	const d = diffFindings(baseDoc, curDoc);
 	const s = summarizeDiff(d);
 	const newProd = newProductionCveCount(d);
@@ -327,9 +329,15 @@ if (process.argv[2] === "diff") {
 	for (const f of newCves.slice(0, 25)) console.log(`    ${chalk.red("•")} ${f.id}  ${chalk.dim((f.severity || "") + " · " + ((f.dep && f.dep.coord) || "") + "@" + ((f.dep && f.dep.version) || ""))}`);
 	if (newCves.length > 25) console.log(chalk.dim(`    …and ${newCves.length - 25} more`));
 	if (jsonOut) {
-		const out = { tool: "vigievuln", kind: "fad-diff/1", baseline: basePath, current: curPath, summary: s, diff: d };
-		try { fs.mkdirSync(path.dirname(path.resolve(jsonOut)), { recursive: true }); } catch { /* ignore */ }
-		fs.writeFileSync(jsonOut, JSON.stringify(out, null, 2) + "\n");
+		const out = { tool: "vigievuln", kind: "fad-diff/1", baseline: basePath, current: curPath, summary: s, diff: d,
+			warnings: baselineWarning ? [baselineWarning] : [] };
+		try {
+			fs.mkdirSync(path.dirname(path.resolve(jsonOut)), { recursive: true });
+			fs.writeFileSync(jsonOut, JSON.stringify(out, null, 2) + "\n");
+		} catch (err) {
+			console.error(chalk.red(`❌  cannot write diff report to ${jsonOut}: ${err.message}`));
+			process.exit(2);
+		}
 		console.log(chalk.green(`\n✅ diff written → ${jsonOut}`));
 	}
 	console.log();
@@ -1463,7 +1471,11 @@ async function timedPhase(label, fn) {
 		ui.info(`run Snyk on the cleaned tree:`);
 		console.log("    " + chalk.white(`cd ${options.target} && snyk test --json --all-projects | snyk-to-html -o ../snyk-deps-check.html`));
 	}
-})();
+})().catch(err => {
+	console.error(chalk.red(`❌  scan failed: ${err.message || String(err)}`));
+	if (verbose && err.stack) console.error(err.stack);
+	process.exitCode = 2;
+});
 
 async function runReportFlow(resolved, ecoFlags = {}) {
 	if (!options.proxyCache && !options.importAnonymized) {
@@ -2302,12 +2314,18 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// Marked in place; kept in the machine exports (flagged) but dropped from the
 	// human report's active chapters and from CI gating.
 	let suppressedCount = 0;
+	const triageWarnings = [];
 	if (options.ignore || options.vex) {
 		try {
-			const { parseIgnoreFile, parseVex, applySuppressions } = require("./lib/suppress");
+			const { parseIgnoreFile, parseVex, applySuppressions, hasGlobalIgnoreRule } = require("./lib/suppress");
 			const rules = [];
 			if (options.ignore) rules.push(...parseIgnoreFile(fs.readFileSync(options.ignore, "utf8")));
 			if (options.vex) rules.push(...parseVex(JSON.parse(fs.readFileSync(options.vex, "utf8"))));
+			if (hasGlobalIgnoreRule(rules)) {
+				const warning = { type: "global-ignore", message: "The --ignore file contains a global wildcard: all CVE findings are suppressed, including CI gates. Use an advisory ID or package scope to narrow it." };
+				triageWarnings.push(warning);
+				ui.warn(warning.message);
+			}
 			suppressedCount = applySuppressions(cveMatches, rules);
 			const via = [options.ignore && "--ignore", options.vex && "--vex"].filter(Boolean).join(" + ");
 			if (suppressedCount) ui.info(chalk.dim(`triage: ${suppressedCount} finding(s) suppressed by ${via}`));
@@ -2511,6 +2529,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 
 	const reportWarnings = [
+		...triageWarnings,
 		...sourceHealth.degraded().map(s => ({type:"source-unavailable",count:1,
 			message:`${s.id}: source unavailable (${s.codes.join(", ") || "no response"}); coverage may be incomplete.`})),
 		...sourceHealth.stale().map(s => ({ type:"source-stale", count:1,
@@ -2610,7 +2629,9 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				excludedDirs, resolvedDeps: resolved, projectInfo, toolVersion: pkg.version, typosquats,
 				applications: appState.applications, applicationInventory: appState.inventory,
 				applicationRelations, coverage: appState.coverage, warnings: reportWarnings });
-			const { diffFindings, summarizeDiff } = require("./lib/diff");
+			const { diffFindings, summarizeDiff, baselineProjectWarning } = require("./lib/diff");
+			const warning = baselineProjectWarning(baseDoc, curDoc);
+			if (warning) { reportWarnings.push(warning); ui.warn(warning.message); }
 			const dd = diffFindings(baseDoc, curDoc);
 			diff = { ...dd, summary: summarizeDiff(dd) };
 			jsonDiff = { summary: diff.summary, cve: { added: dd.cve.added, removed: dd.cve.removed, unassessed: dd.cve.unassessed } };
@@ -2621,18 +2642,23 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	let exportFailed = false;
 	// Announce coverage gaps for every output combination, including JSON-only.
 	warnIfDegraded();
-	if (out.html || out.doc) {
-		await ensureDir(out.html); await ensureDir(out.doc);
-		// Include collection/registry outages even when they preceded step progress.
-		const { htmlPath, docPath } = await writeReports({
-			cveMatches: prodMatches, devCveMatches: devMatches, embeddedMatches, retireMatches, vendoredJsInventory, certFindings,
-			eolResults, obsoleteResults, outdatedResults, licenseResults, excludedDirs,
-			resolvedDeps: resolved, projectInfo, warnings: reportWarnings, parsedManifests, diff, locale: options.lang,
-			applications: appState.applications, applicationInventory: appState.inventory, applicationRelations, coverage: appState.coverage,
-			htmlPath: out.html, docPath: out.doc,
-		});
-		if (htmlPath) wrote.push(["HTML report", htmlPath]);
-		if (docPath) wrote.push(["Word .doc", docPath]);
+	for (const [format, label] of [["html", "HTML report"], ["doc", "Word .doc"]]) {
+		if (!out[format]) continue;
+		try {
+			// Write formats independently: a failed destination must not prevent
+			// the remaining requested artifacts or the gate summary from running.
+			await writeReports({
+				cveMatches: prodMatches, devCveMatches: devMatches, embeddedMatches, retireMatches, vendoredJsInventory, certFindings,
+				eolResults, obsoleteResults, outdatedResults, licenseResults, excludedDirs,
+				resolvedDeps: resolved, projectInfo, warnings: reportWarnings, parsedManifests, diff, locale: options.lang,
+				applications: appState.applications, applicationInventory: appState.inventory, applicationRelations, coverage: appState.coverage,
+				htmlPath: format === "html" ? out.html : null, docPath: format === "doc" ? out.doc : null,
+			});
+			wrote.push([label, out[format]]);
+		} catch (err) {
+			exportFailed = true;
+			ui.warn(`${label} export failed (${out[format]}): ${err.message}`);
+		}
 	}
 
 	// Machine-readable exports. Use the full match set (prod + dev + cpe-filtered) so

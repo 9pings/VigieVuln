@@ -150,3 +150,15 @@ test('provenance freshness and source limits survive JSON export and prevent fal
 	} } });
 	assert.equal(diffFindings(doc([old]), healthy).cve.removed.length, 1);
 });
+
+test('baseline project mismatch is a warning hint, never a reason to refuse a diff', () => {
+ const {baselineProjectWarning}=require('../lib/diff');
+ const base={...doc([cve('CVE-1','g:a','1')]),project:{name:'old-project'}};
+ const current={...doc([cve('CVE-1','g:a','1')]),project:{name:'renamed-project'}};
+ assert.equal(baselineProjectWarning(base,current).type,'baseline-project-mismatch');
+ assert.match(baselineProjectWarning(base,current).message,/comparison continues/);
+ assert.equal(diffFindings(base,current).cve.unchanged.length,1);
+ for(const project of [undefined,{}, {name:''},{name:'old-project'},{name:' old-project '}])
+  assert.equal(baselineProjectWarning(base,{project}),null);
+ assert.doesNotMatch(baselineProjectWarning(base,{project:{name:'malicious\nname\x1b'}}).message,/[\r\n\x1b]/);
+});

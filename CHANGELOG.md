@@ -2,6 +2,10 @@
 
 ## [1.2.1] — 2026-11-04
 
+- Report unreadable Maven manifests and native binaries as incomplete coverage, preserve other inventory entries, and bound binary hashing and PE metadata reads.
+- Keep JSON source locations relative; preserve Excel workbooks with explicitly truncated oversized cells; report output failures clearly while continuing sibling exports.
+- Recognize ignore-rule advisory aliases, warn about global ignores and mismatched baseline projects, reject future-dated snapshots, and compare npm prereleases correctly.
+- Read certificate signature algorithms structurally and distinguish unknown private-key encryption; suppress only Node's known SQLite initialization notice while preserving other warnings.
 - Require explicit, unambiguous product exemptions in VEX; preserve scoped triage in CSAF and SBOM exports.
 - Fail CI when its baseline cannot be read or a requested report cannot be written; distinguish incomplete reassessment from resolved findings and exclude development dependencies from production-only diffs.
 - Apply Go workspace replacements, preserve conditional Python and NuGet versions, and collect Python dependency groups with explicit coverage warnings.
