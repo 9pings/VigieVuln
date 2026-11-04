@@ -205,6 +205,8 @@ Every advisory snapshot a live lane fetches is stamped and cached in the local S
 
 Run `vigievuln setup` in an interactive terminal to select all sources (the default), US-operated services, European-operated services, or a proxy only. Setup can sign in to an official or custom instance and initialise the local cache from its authenticated bundle. Regions describe the service operator, not the origin of every advisory it aggregates.
 
+Before downloading a bundle, setup displays its compressed size and estimated disk requirements when available, then lets you skip it.
+
 For unattended setup, use `vigievuln setup --mode direct --sources all` or `vigievuln setup --mode server --server-url https://server.example --seed`. The modes are `direct`, `official`, and `server`; direct mode also accepts `--sources us` or `--sources eu` and `--seed-url` with `--seed`. Authentication reuses a saved session or reads `VIGIEVULN_EMAIL` and `VIGIEVULN_PASSWORD` from the environment. To accept terms after reviewing them, pass `--accept-terms <exact-version>`; a different server version is rejected.
 
 A local server can explicitly allow anonymous access, including seed downloads. An HTTP server requires confirmation before the first connection because credentials and keys are not encrypted. In unattended setup use, for example, `vigievuln setup --mode server --server-url http://192.168.1.10:8322 --seed --allow-insecure-http`; the confirmation is remembered for that exact origin. Prefer HTTPS on untrusted networks.

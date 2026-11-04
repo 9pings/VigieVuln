@@ -2,7 +2,7 @@ const isolatedTestCache = require('./helpers/isolated-cache')('setup-http');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { run, proxyOrigin, downloadSeed, authenticationRequired } = require('../lib/cli-setup');
+const { run, proxyOrigin, downloadSeed, estimateSeed, authenticationRequired } = require('../lib/cli-setup');
 
 function setupDeps(answers, cfg = {}) {
   const output = [], saved = [], sessions = [];
@@ -208,6 +208,43 @@ test('anonymous seed omits authorization and keeps redirect protection', async (
  await downloadSeed({origin:'http://127.0.0.1:12345',anonymous:true,fetcher:async (url,options)=>{request={url,options};return new Response(Buffer.from('seed'),{headers:{'content-type':'application/gzip'}});},importFn:async()=>{}});
  assert.equal(request.options.headers.authorization,undefined);assert.equal(request.options.redirect,'error');
  await assert.rejects(downloadSeed({origin:'http://127.0.0.1:12345',fetcher:()=>{throw Error('must not fetch');}}),/Sign in/);
+});
+
+test('bundle preview reads the authenticated HEAD and bounded gzip prefix before consent', async () => {
+ const zlib=require('node:zlib'), manifest=Buffer.from(JSON.stringify({format:'vigievuln-sqlite-cache',payload:{file:'cache.sqlite',bytes:2873364480}}));
+ const tar=Buffer.alloc(2048);tar.write('.vigie-vuln/cli-bundle-meta.json',0);tar.write(manifest.length.toString(8).padStart(11,'0')+'\0',124);manifest.copy(tar,512);
+ const prefix=zlib.gzipSync(tar),calls=[],estimates=[];
+ const fetcher=async (url,opts)=>{calls.push({url,method:opts.method,range:opts.headers.range,auth:opts.headers.authorization});
+  if(opts.method==='HEAD')return new Response(null,{headers:{'content-length':'1147622372'}});
+  if(opts.headers.range)return new Response(prefix,{status:206,headers:{'content-range':`bytes 0-${prefix.length-1}/1147622372`}});
+  throw Error('full download must not start');};
+ const result=await downloadSeed({origin:'https://proxy.example',token:'secret',fetcher,onEstimate:e=>estimates.push(e),confirm:async()=>false});
+ assert.deepEqual(result,{cancelled:true});
+ assert.deepEqual(estimates,[{downloadBytes:1147622372,sqliteBytes:2873364480}]);
+ assert.deepEqual(calls.map(c=>c.method),['HEAD','GET']);
+ assert.equal(calls[1].range,'bytes=0-16383');assert.ok(calls.every(c=>c.auth==='Bearer secret'));
+});
+
+test('interactive setup shows bundle sizes before offering to skip the transfer', async () => {
+ const d=setupDeps(['official','yes','no']);let calls=0;
+ d.fetcher=async(_url,opts)=>{calls++;if(opts.method==='HEAD')return new Response(null,{headers:{'content-length':'1147622372'}});return new Response('',{status:404});};
+ const prompts=[];const select=d.select;d.select=async (message,choices)=>{prompts.push(message);return select(message,choices);};
+ await run([],d);
+ assert.equal(calls,2);assert.ok(prompts.includes('Continue with bundle download?'));
+ assert.ok(d.output.some(s=>s.includes('1.15 GB') && s.includes('compressed')));
+ assert.ok(d.output.some(s=>s.includes('Disk usage is unknown')));
+ assert.ok(d.output.some(s=>s.includes('Bundle download skipped')));
+ assert.equal(d.saved[0].sourceProfile,'proxy');
+});
+
+test('bundle preview remains safe when ranges are ignored or metadata is unavailable', async () => {
+ let cancelled=false;
+ const body=new ReadableStream({cancel(){cancelled=true;}});
+ const info=await estimateSeed({origin:'https://proxy.example',anonymous:true,fetcher:async(_url,opts)=>opts.method==='HEAD'
+  ? new Response(null,{headers:{'content-length':'1000'}}) : new Response(body,{status:200})});
+ assert.deepEqual(info,{downloadBytes:1000,sqliteBytes:null});assert.equal(cancelled,true);
+ const unknown=await estimateSeed({origin:'https://proxy.example',anonymous:true,fetcher:async()=>{throw Error('unavailable');}});
+ assert.deepEqual(unknown,{downloadBytes:null,sqliteBytes:null});
 });
 
 test('seed reports connection, downloaded bytes and archive import progress', async () => {
