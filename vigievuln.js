@@ -719,6 +719,10 @@ if (!options.src && options.source) options.src = options.source;
 		process.exit(2);
 	}
 }
+if (options.offline && options.snyk) {
+	console.error(chalk.red('❌  --snyk requires network access and cannot be combined with --offline.'));
+	process.exit(1);
+}
 if (options.advisoryQueryTtl !== undefined && (!/^(?:0|[1-9]\d*)$/.test(String(options.advisoryQueryTtl)) || Number(options.advisoryQueryTtl) > 8760)) {
 	console.error(chalk.red('❌  --advisory-query-ttl must be an integer from 0 to 8760 hours.'));
 	process.exit(2);
@@ -2199,16 +2203,23 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	let snykMatches = [];
 	if (options.snyk) {
 		if (!options.target) {
-			ui.warn("--snyk requires --target (snyk runs on cleaned POMs)");
+			const message="--snyk requires --target (snyk runs on cleaned POMs)";
+			ui.warn(message);scanWarnings.push({type:'source-unavailable',message});
 		} else {
 			const snyk = require("./lib/snyk");
 			try {
 				const raw = await snyk.runSnykTest(options.target, { verbose });
+				const errors = raw.filter(project => project?.ok === false && project.error).map(project => String(project.error));
+				if (errors.length) {
+					const message = `Snyk could not scan ${errors.length} project(s): ${[...new Set(errors)].join('; ')}`;
+					ui.warn(message);scanWarnings.push({ type: 'source-unavailable', message });
+				}
 				snykMatches = snyk.parseSnykResults(raw);
-				cveMatches = snyk.mergeWithFadResults(cveMatches, snykMatches);
+				cveMatches = snyk.mergeWithFadResults(cveMatches, snykMatches, resolved);
 				ui.ok(`Snyk: ${snykMatches.length} findings merged`);
 			} catch (err) {
-				ui.warn(`Snyk run failed: ${err.message}`);
+				const message=`Snyk run failed: ${err.message}`;
+				ui.warn(message);scanWarnings.push({ type: 'source-unavailable', message });
 			}
 		}
 	}
