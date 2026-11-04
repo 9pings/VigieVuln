@@ -6,7 +6,7 @@ const os=require('node:os');
 const path=require('node:path');
 const {vulnVerdict}=require('../lib/osv-db');
 const {makeDepRecord}=require('../lib/dep-record');
-const {queryBatch}=require('../lib/osv');
+const {queryBatch,queryReviewedForDeps,vulnToMatch}=require('../lib/osv');
 const {openAdvisoryStore}=require('../lib/advisory-store');
 
 const affected={package:{ecosystem:'Maven',name:'org.example:widget'},versions:['1.0','1.1'],ranges:[],database_specific:{vigievuln_partial_versions:true,unaffected_versions:['2.0']}};
@@ -38,8 +38,44 @@ test('offline reviewed evidence reports a match or a partial-coverage warning',a
  const dep=version=>makeDepRecord({ecosystem:'maven',namespace:'org.example',name:'widget',version});
  const warnings=[];const result=await queryBatch([dep('1.0'),dep('1.5'),dep('2.0')],{offline:true,store,cacheDir:root,onWarning:w=>warnings.push(w)});
  assert.equal(result.length,1);assert.equal(result[0].source,'vigievuln');assert.equal(result[0].dep.version,'1.0');
+ assert.equal(result[0].cve.fixVersion,'2.0');assert.equal(result[0].cve.fixEvidence,'explicit-unaffected-version');
+ const standalone=queryReviewedForDeps(new Map([[dep('1.0').coordKey,dep('1.0')]]),{store,cacheDir:root});
+ assert.equal(standalone.length,1);assert.equal(standalone[0].cve.fixVersion,'2.0');assert.equal(standalone[0].cve.fixEvidence,'explicit-unaffected-version');
  const partial=warnings.filter(w=>w.message.includes('partial version evidence'));
  assert.equal(partial.length,1);assert.match(partial[0].message,/@1\.5/);
+});
+
+test('only VV explicit safe releases can become advisory candidates, with every applicable entry checked',()=>{
+ const dep=makeDepRecord({ecosystem:'maven',namespace:'org.example',name:'widget',version:'1.0'});
+ const vv=v=>vulnToMatch(dep,v,{source:'vigievuln'}).cve;
+ assert.equal(vulnToMatch(dep,record).cve.fixVersion,null,'external OSV must ignore VV metadata');
+ assert.equal(vv(record).fixVersion,'2.0');
+ assert.equal(vv({...record,affected:[affected,{...affected,versions:['2.0'],database_specific:{vigievuln_partial_versions:true,unaffected_versions:['3.0']}}]}).fixVersion,null,'conflicting applicable entry blocks candidate');
+ assert.equal(vv({...record,affected:[affected,{...affected,versions:['1.0'],database_specific:{vigievuln_partial_versions:true,unaffected_versions:['3.0']}}]}).fixVersion,null,'candidate unknown in another entry');
+ assert.equal(vv({...record,affected:[affected,{...affected,package:{ecosystem:'Maven',name:'org.other:widget'},versions:['2.0']}]}).fixVersion,'2.0','other package does not interfere');
+ assert.equal(vv({...record,affected:[{...affected,database_specific:{vigievuln_partial_versions:true,unaffected_versions:['1.0','0.9']}}]}).fixVersion,null,'same or older version is not an upgrade');
+ assert.equal(vv({...record,affected:[{...affected,ranges:[{type:'GIT',events:[{introduced:'0'}]}]}]}).fixVersion,null,'unknown range blocks candidate');
+});
+
+test('VV candidate survives enrichment, but conflicting or unverified advisory fixes suppress it',()=>{
+ const {mergeBySource}=require('../lib/merge-sources');
+ const {buildFindings}=require('../lib/json-export');
+ const {generateHtmlReport}=require('../lib/cve-report');
+ const dep=makeDepRecord({ecosystem:'maven',namespace:'org.example',name:'widget',version:'1.0'});
+ const vv=vulnToMatch(dep,record,{source:'vigievuln'});vv.source='vigievuln';
+ const nvd={dep,source:'nvd',cve:{id:'CVE-2026-1234',description:'NVD enrichment'}};
+ for(const order of [[vv,nvd],[nvd,vv]]){
+  const merged=mergeBySource([],order);assert.equal(merged.length,1);assert.equal(merged[0].cve.fixVersion,'2.0');assert.equal(merged[0].cve.fixEvidence,'explicit-unaffected-version');
+  const json=buildFindings({cveMatches:merged,projectInfo:{name:'fixture'}});assert.equal(json.cve[0].fixVersion,'2.0');assert.equal(json.cve[0].fixEvidence,'explicit-unaffected-version');assert.equal(json.cve[0].packageFixVerified,false);
+  const html=generateHtmlReport({cveMatches:merged,projectInfo:{name:'fixture'},warnings:[],locale:'fr'});assert.match(html,/Cette version précise a été vérifiée comme non affectée/);assert.match(html,/L’absence d’autres vulnérabilités/);
+ }
+ for(const other of [
+  {dep,source:'osv',cve:{id:'CVE-2026-1234',fixVersion:'3.0',fixEvaluation:'verified'}},
+  {dep,source:'CVEProject',cve:{id:'CVE-2026-1234',fixVersion:null,fixEvaluation:'unknown'}},
+  {dep,source:'nvd',cve:{id:'CVE-2026-1234',fixVersion:null,fixEvaluation:'unknown'}}
+ ]) for(const order of [[vv,other],[other,vv]]){
+  const merged=mergeBySource([],order)[0];assert.equal(merged.cve.fixVersion,null);assert.equal(merged.cve.fixEvidence,undefined);assert.ok(merged.cve.fixConflict);
+ }
 });
 
 test('reviewed npm evidence matches only its package and ecosystem, offline',async t=>{
