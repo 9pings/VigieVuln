@@ -28,10 +28,13 @@ test('proxy offline scan reads an imported advisory from its isolated cache with
  const seedDir = path.join(dir,'seed','.vigie-vuln');
  const advisory = {id:'GHSA-test',aliases:['CVE-2024-12345'],affected:[{package:{ecosystem:'npm',name:'lodash'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'4.17.21'}]}]}]};
  const fetchedAt=Date.now();
- require('../lib/advisory-store').openAdvisoryStore({cacheDir:seedDir}).commit({
-  records:[{source:'osv',document:advisory,fetchedAt,provenance:{transport:'seed'}}],
-  coverages:[{source:'osv',ecosystem:'npm',fetchedAt,complete:true,provenance:{transport:'seed'}}],
- });
+ const seedStore = require('../lib/advisory-store').openAdvisoryStore({cacheDir:seedDir});
+ try {
+  seedStore.commit({
+   records:[{source:'osv',document:advisory,fetchedAt,provenance:{transport:'seed'}}],
+   coverages:[{source:'osv',ecosystem:'npm',fetchedAt,complete:true,provenance:{transport:'seed'}}],
+  });
+ } finally { seedStore.close(); }
  const archive = path.join(dir,'seed.tar.gz');
  const packed = spawnSync('tar',['-czf',archive,'-C',path.join(dir,'seed'),'.vigie-vuln'],{encoding:'utf8'});
  assert.equal(packed.status,0,packed.stderr);
