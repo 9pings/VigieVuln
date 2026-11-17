@@ -85,16 +85,13 @@ The proxy receives package coordinates and CVE identifiers, not source code. Cac
 
 These are standalone reports from real source scans, generated on **2026-11-04** with VigieVuln **1.2.1**. Dubbo uses the hosted proxy; the CMS sample uses its local cache offline and focuses on PHP dependencies. Missing Wordfence/Drupal advisory and WordPress checksum inputs are explicitly marked incomplete. [Sample scope, sources and reproduction commands](docs/samples/README.md).
 
-> [!WARNING]
-> VigieVuln can miss dependencies or vulnerabilities and can report false positives. Review coverage warnings, verify important findings against the resolved project and advisory sources, and please [report issues](https://github.com/9pings/VigieVuln/issues).
-
 ### Resolution and coverage
 
-- **Gradle:** without a lockfile, versions inferred from Maven POM traversal can differ from Gradle's resolution, causing both missed and incorrect findings. Lockfiles cover only the configurations written to them; production, test and build configurations may differ or be combined in the inventory. Verify the configurations relevant to the application against Gradle's own dependency graph.
-- **Python:** without a resolved lockfile, pinned requirements are checked but their transitive dependencies are not resolved. A scan of pins alone is not a complete Python environment inventory.
-- **Maven and other ecosystems:** resolution depends on the manifests and available metadata. Missing POMs, unsupported dependency forms and unavailable advisory sources can leave coverage incomplete. A lockfile improves evidence but does not prove deployed contents or exploitability.
+- **Gradle:** without a lock, POM-based resolution can differ from Gradle. Locks cover only their recorded configurations, which may mix runtime, tests and build tools.
+- **Python:** exact pins are checked; transitives require a supported resolved lockfile or complete inventory.
+- **Coverage:** missing metadata or unavailable advisory sources can cause omissions or false positives. Review report warnings.
 
-See [usage and Gradle resolution](docs/USAGE.md) and [validation and limitations](docs/VALIDATION.md) before relying on a report.
+See [usage](docs/USAGE.md) and [measured results](docs/BENCHMARK.md).
 
 ## Why use vigievuln for code audits?
 

@@ -21,9 +21,7 @@ their historical `fad` prefix; do not infer cache-format compatibility from that
 - Gradle lockfiles record resolved versions for the configurations actually locked; the
   inventory can combine compile, runtime, test and tool configurations. Without a lock,
   the static POM walk is not Gradle resolution and may pick wrong versions or miss
-  dependencies. The real Traccar v6.6 check observed 18 runtime version differences and
-  two confirmed version-based false positives; this example does not establish coverage
-  for other builds. See `docs/USAGE.md` and `docs/ARCHITECTURE.md`.
+  dependencies. See `docs/USAGE.md` and `docs/ARCHITECTURE.md`.
 - Without a Python lockfile, requirements and project manifests are parsed best-effort;
   the scanner does not run pip or resolve a complete Python dependency graph.
 - CycloneDX exports retain each known version for Maven, npm and PyPI coordinate records;

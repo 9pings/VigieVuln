@@ -87,35 +87,16 @@ Native files over 512 MiB and unreadable files produce a coverage warning with t
 > skipped. The scanner does not execute pip or resolve the transitive Python dependency
 > graph. Use a supported resolved lockfile or independently inspect the installed environment.
 
-> **Gradle**: a Gradle dependency *is* a Maven coordinate, so Gradle findings flow through
-> the **same** Maven services (CVE index, OSV `Maven`, transitive resolution, outdated, EOL)
-> and get their **own "Gradle" report chapter + `constraints { }` fix recipe**. Sources, in
-> order of authority: **`gradle.lockfile`** (resolved versions for the configurations written to it — enable
-> Gradle [dependency locking](https://docs.gradle.org/current/userguide/dependency_locking.html)
-> for the best coverage); **`gradle/libs.versions.toml`** version catalogs; and a
-> **best-effort** parse of `build.gradle`/`build.gradle.kts` (Groovy **and** Kotlin DSL — string
-> & map notation, `libs.*` catalog accessors, `$var`/`gradle.properties` resolution),
-> including the `buildSrc/` convention plugins. Top-level Groovy `ext` literal versions are
-> resolved when unambiguous; dynamic or reassigned values remain unresolved. Without a
-> lockfile or native Gradle resolution, POM-based traversal can choose versions different
-> from Gradle and omit dependencies, leading to incorrect vulnerability alerts. A lockfile
-> improves version coverage but includes only locked configurations; build, test and runtime
-> configurations can have different versions and the inventory may combine them. A `platform("…")` / `enforcedPlatform("…")`
-> BOM (e.g. `spring-boot-dependencies`) is resolved exactly like a Maven `<scope>import</scope>`
-> BOM, **backfilling the versions of the versionless starters** declared against it. A
-> backfilled dep's resolved version isn't written anywhere in your source, so the report
-> discloses where it came from: under the dep's `defined in:` footer it shows
-> **`version managed by: <bom-coord> (BOM)`** (e.g. `org.springframework.boot:spring-boot-dependencies:4.0.6`),
-> and the findings JSON carries it as `dep.versionSource = { via: "bom", bom: "<coord>" }`. Versions
-> that can't be resolved statically (programmatic/dynamic deps) are listed in chapter 0 and
-> excluded from CVE matching (never assumed vulnerable); `--no-gradle` disables the codec.
-
-> The distinction matters in practice: a comparison with Traccar v6.6 at commit
-> `fc5ae14952a44c85894e470cad04d4f91e6a3bd2` found 18 runtime version differences and
-> two confirmed version-based false positives in the unlocked scan. A Gradle-generated
-> lock for four Java classpaths contained all 265 observed runtime library versions, but
-> also combined compile/test versions and BOMs. This is one experiment, not a guarantee
-> for other projects, configurations, plugins or variants.
+> **Gradle:** reads `gradle.lockfile`, version catalogs and supported Groovy/Kotlin
+> declarations. Literal variables and supported BOMs supply managed versions;
+> unresolved versions are reported and excluded from CVE matching. Findings use Maven
+> advisory sources and appear in a dedicated Gradle chapter; `--no-gradle` disables it.
+>
+> Without a lock, POM traversal can differ from native Gradle resolution and produce
+> omissions or false positives. Locks cover only recorded configurations and can mix
+> runtime, tests and tooling. Use [Gradle dependency locking](https://docs.gradle.org/current/userguide/dependency_locking.html)
+> for the relevant classpaths. See [architecture](ARCHITECTURE.md) for inference rules
+> and [benchmarks](BENCHMARK.md) for measured coverage.
 
 ## Filtering deps
 

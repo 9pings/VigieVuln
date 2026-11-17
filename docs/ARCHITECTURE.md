@@ -175,9 +175,7 @@ resolveEolProduct(dep), recipe, nativeScanners
   actual classpath and lead to missing or incorrect findings. A Gradle-generated lockfile
   covers only configurations actually resolved and may combine compile, runtime, test and
   build-tool versions in the scan inventory; it is not an exact runtime-only SBOM.
-  Traccar v6.6 (`fc5ae14952a44c85894e470cad04d4f91e6a3bd2`) exposed 18 unlocked
-  runtime version differences and two confirmed version-based false positives. This
-  observation is a case study, not a general accuracy measurement.
+  Measured comparisons are in [BENCHMARK.md](BENCHMARK.md).
   A backfilled dep is stamped
   `versionSource = { via: "bom", bom: "<g:a:v>" }` (the top-level platform/import BOM coord), which
   the report renders as a `version managed by: <bom> (BOM)` line and the findings JSON carries on

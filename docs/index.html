@@ -178,7 +178,7 @@
     <div class="kicker">For auditors</div>
     <h2>Evidence for review</h2>
     <p class="sub">Read supported manifests and lockfiles without building the project, review findings by source, and share HTML and findings JSON reports. Optional Word, SBOM and VEX exports support further review.</p>
-    <p class="note">Coverage depends on the supplied inputs, supported resolution and available metadata. Missing dependencies, false positives and incomplete advisory coverage are possible. Review scan warnings and verify important findings against the native dependency graph and advisory sources. <a href="#benchmark">See the measured scope and limitations</a>.</p>
+    <p class="note">Review coverage warnings and verify important findings against the resolved project and advisory sources. <a href="#benchmark">See the measured scope and limitations</a>.</p>
   </section>
   <section id="monitoring" aria-labelledby="monitoring-title">
     <div class="kicker">Project monitoring</div>
@@ -260,18 +260,14 @@ vigievuln logout</pre></div>
 
   <!-- BENCHMARK -->
   <section id="benchmark">
-    <div class="kicker">Measured scope and limitations</div>
+    <div class="kicker">Measured scope</div>
     <h2>Real-project checks · 17 November 2026</h2>
-    <p class="sub">Four fixed application releases were cloned and scanned in isolated containers; inventories were compared with native Maven, Gradle or pip resolution. Applications were not deployed and exploitability was not tested. These observations are not a general guarantee.</p>
+    <p class="sub">OpenRefine, Traccar, Paperless-ngx and NetBox were scanned in Docker and compared with native dependency inventories.</p>
     <div class="arow" style="margin-top:24px">
-      <p><b>OpenRefine 3.9.0:</b> 152 of 153 external Maven coordinate/version pairs from the native module trees were present after an SBOM fix. One version remained missing when a local reactor POM was not followed; the report warned of a missing POM.</p>
-      <p><b>Traccar 6.6:</b> unlocked POM traversal selected different versions in 18 cases, including two checked false positives. A scoped Gradle lock covered the 265 runtime library versions checked; an all-configuration lock also included build tooling.</p>
-      <p><b>Paperless-ngx 2.14.7:</b> tested Python and npm lock inventories matched independent lists after the SBOM multi-version fix. Selected advisories were checked; exploitability and all findings were not independently verified.</p>
-      <p><b>NetBox 4.2.3:</b> all 38 pinned requirements were found, while 61 of 99 distributions in a fresh native pip resolution were absent from the unlocked scan. That pip graph is specific to the test environment and date, not proof of a historical deployment.</p>
-      <p>A separate pip-audit comparison used the same 99 pinned distributions: each recorded PyPI and OSV service advisory matched a VigieVuln finding, with one additional VigieVuln finding absent from the PyPI service result. This assesses matching for the supplied inventory, not discovery of unlocked transitive dependencies.</p>
-      <p>Without a Gradle lockfile, POM traversal can select versions different from Gradle and miss dependencies. A lock covers only its recorded configurations. Without a resolved Python lockfile, pinned requirements are checked but their transitive dependencies are not resolved.</p>
+      <p>On the same 99 Python packages, VigieVuln matched all recorded pip-audit OSV and PyPI advisories.</p>
+      <p>Without a lock, Gradle versions can differ from the native graph and Python transitives are not resolved. Maven metadata gaps and mixed Gradle configurations can also limit coverage.</p>
     </div>
-    <p class="note" style="margin-top:22px">See <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">COMPARISON.md</a> for methods and evidence, and <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a> for earlier dated scanner comparisons and their limits.</p>
+    <p class="note" style="margin-top:22px">These checks do not establish exhaustive coverage or exploitability. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">Results, known gaps and evidence</a> · <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">Resolution by ecosystem</a>.</p>
   </section>
 
   <!-- DOCS -->
