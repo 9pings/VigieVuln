@@ -359,3 +359,16 @@ test("CLI --wordfence-live works without a client key through the shared server"
 		assert.equal(JSON.stringify(report).includes("server-secret"), false);
 	} finally { await new Promise(ok => running.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(source, { recursive: true, force: true }); }
 });
+
+test('force update revalidates individual proxy records while retaining stale evidence on denied refresh',async t=>{
+ const dir=tmp();let calls=0,deny=false;const server=await startProxyCacheServer({port:0,host:'127.0.0.1',store:createCacheStore(dir),fetcher:async()=>{calls++;return deny?new Response('',{status:503}):Response.json({id:'EUVD-2024-123',description:`revision-${calls}`});}});
+ t.after(async()=>{configureResourceRoute({proxyUrl:null,hosted:false,store:null,fetcher:null,resetRateLimit:true});require('../lib/cache-policy').setForceUpdate(false);await new Promise(ok=>server.server.close(ok));require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ configureResourceRoute({proxyUrl:server.url,hosted:false,store:null,health:null,fetcher:globalThis.fetch,resetRateLimit:true});
+ const get=()=>getResource('euvd','vulnerability',{id:'EUVD-2024-123'});
+ assert.equal((await (await get()).json()).description,'revision-1');assert.equal((await (await get()).json()).description,'revision-1');assert.equal(calls,1);
+ require('../lib/cache-policy').setForceUpdate(true);
+ const refreshed=await get();assert.equal((await refreshed.json()).description,'revision-2');assert.equal(calls,2);
+ deny=true;const fallback=await get();assert.equal((await fallback.json()).description,'revision-2');assert.equal(fallback.headers.get('x-fad-proxy'),'stale');assert.equal(fallback.headers.get('x-fad-proxy-reason'),'refresh-failed');assert.equal(calls,3);
+ const invalid=await fetch(server.url+'/v1/resource',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({provider:'euvd',type:'vulnerability',params:{id:'EUVD-2024-123'},revalidate:'true'})});assert.equal(invalid.status,400);
+ const bulk=await fetch(server.url+'/v1/resource',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({provider:'euvd',type:'cve-mapping',params:{},revalidate:true})});assert.equal(bulk.status,400);
+});

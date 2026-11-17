@@ -1,0 +1,528 @@
+{
+  "generatedAt": "2026-11-05T11:43:13.207Z",
+  "inputs": {
+    "baselineComparisonSha256": "e6fc35b07ea39480d8c6cdceac8cb908603bec496b243b472dfc2dcf981a5f66",
+    "newFindingsSha256": "e403752f9c1be7437300058b781da9a23a74e096e68dc08c08985249be168f86",
+    "grypeSha256": "7eb447fdf571756a387e1f4c18cec69f76afedec9b44343ace04b1e2605af5ec"
+  },
+  "scope": {
+    "platformManifest": "sha256:903f89ddacc3059657565d3e5b3b8e8dcba4cc3b8af08183dad6fdc415459111",
+    "binaryPath": "usr/local/bin/traefik",
+    "binarySha256": "943bc67bf11a668636e1f5c505017e6bb024e01dfbce8e96b0500117b081afe5",
+    "goModule": "github.com/traefik/traefik/v2",
+    "version": "v2.11.0",
+    "proof": {
+      "binaryPath": "usr/local/bin/traefik",
+      "source": "go-vcs-and-module-proxy",
+      "binarySha256": "943bc67bf11a668636e1f5c505017e6bb024e01dfbce8e96b0500117b081afe5",
+      "original": {
+        "kind": "mod",
+        "path": "github.com/traefik/traefik/v2",
+        "version": "(devel)",
+        "sum": null
+      },
+      "revision": "0c8778639a3cade0cf73aa26f56f822a4fb835e8",
+      "modified": false,
+      "configDigest": "sha256:c1ef9171e9d171746404b3deec2a4c9902a34ab090be5e0af6292cf46d578b35",
+      "declaredSource": "https://github.com/traefik/traefik",
+      "declaredVersion": "v2.11.0",
+      "proxyOrigin": {
+        "VCS": "git",
+        "URL": "https://github.com/traefik/traefik",
+        "Ref": "refs/tags/v2.11.0",
+        "Hash": "0c8778639a3cade0cf73aa26f56f822a4fb835e8"
+      },
+      "observedAt": 1793878504525,
+      "stale": false,
+      "verification": "vcs-metadata-consistent",
+      "symbolReachability": "unknown"
+    }
+  },
+  "baselineExact": {
+    "observations": 208,
+    "matched": 157,
+    "missing": 51
+  },
+  "currentExact": {
+    "grypeObservations": 208,
+    "grypeMatched": 157
+  },
+  "sameBinaryComparison": {
+    "grypeObservations": 47,
+    "mainGoFindings": 55,
+    "matched": 38,
+    "unmatched": [
+      {
+        "observation": "CVE-2026-85595",
+        "ids": [
+          "CVE-2026-85595"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-85594",
+        "ids": [
+          "CVE-2026-85594"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-85597",
+        "ids": [
+          "CVE-2026-85597"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-114639",
+        "ids": [
+          "CVE-2026-114639"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-112778",
+        "ids": [
+          "CVE-2026-112778"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-114642",
+        "ids": [
+          "CVE-2026-114642"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-114635",
+        "ids": [
+          "CVE-2026-114635"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-114656",
+        "ids": [
+          "CVE-2026-114656"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-114641",
+        "ids": [
+          "CVE-2026-114641"
+        ],
+        "matched": []
+      }
+    ],
+    "observations": [
+      {
+        "observation": "CVE-2026-85595",
+        "ids": [
+          "CVE-2026-85595"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2024-45410",
+        "ids": [
+          "CVE-2024-45410"
+        ],
+        "matched": [
+          "CVE-2024-45410"
+        ]
+      },
+      {
+        "observation": "CVE-2025-54386",
+        "ids": [
+          "CVE-2025-54386"
+        ],
+        "matched": [
+          "CVE-2025-54386"
+        ]
+      },
+      {
+        "observation": "CVE-2026-71324",
+        "ids": [
+          "CVE-2026-71324"
+        ],
+        "matched": [
+          "CVE-2026-71324"
+        ]
+      },
+      {
+        "observation": "CVE-2025-32431",
+        "ids": [
+          "CVE-2025-32431"
+        ],
+        "matched": [
+          "CVE-2025-32431"
+        ]
+      },
+      {
+        "observation": "CVE-2024-28869",
+        "ids": [
+          "CVE-2024-28869"
+        ],
+        "matched": [
+          "CVE-2024-28869"
+        ]
+      },
+      {
+        "observation": "CVE-2025-47952",
+        "ids": [
+          "CVE-2025-47952"
+        ],
+        "matched": [
+          "CVE-2025-47952"
+        ]
+      },
+      {
+        "observation": "CVE-2026-48020",
+        "ids": [
+          "CVE-2026-48020"
+        ],
+        "matched": [
+          "CVE-2026-48020"
+        ]
+      },
+      {
+        "observation": "CVE-2026-40912",
+        "ids": [
+          "CVE-2026-40912"
+        ],
+        "matched": [
+          "CVE-2026-40912"
+        ]
+      },
+      {
+        "observation": "CVE-2026-25949",
+        "ids": [
+          "CVE-2026-25949"
+        ],
+        "matched": [
+          "CVE-2026-25949"
+        ]
+      },
+      {
+        "observation": "CVE-2026-53622",
+        "ids": [
+          "CVE-2026-53622"
+        ],
+        "matched": [
+          "CVE-2026-53622"
+        ]
+      },
+      {
+        "observation": "CVE-2026-88007",
+        "ids": [
+          "CVE-2026-88007"
+        ],
+        "matched": [
+          "CVE-2026-88007"
+        ]
+      },
+      {
+        "observation": "CVE-2026-26999",
+        "ids": [
+          "CVE-2026-26999"
+        ],
+        "matched": [
+          "CVE-2026-26999"
+        ]
+      },
+      {
+        "observation": "CVE-2024-39321",
+        "ids": [
+          "CVE-2024-39321"
+        ],
+        "matched": [
+          "CVE-2024-39321"
+        ]
+      },
+      {
+        "observation": "CVE-2026-39858",
+        "ids": [
+          "CVE-2026-39858"
+        ],
+        "matched": [
+          "CVE-2026-39858"
+        ]
+      },
+      {
+        "observation": "CVE-2026-85594",
+        "ids": [
+          "CVE-2026-85594"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-44774",
+        "ids": [
+          "CVE-2026-44774"
+        ],
+        "matched": [
+          "CVE-2026-44774"
+        ]
+      },
+      {
+        "observation": "CVE-2026-65600",
+        "ids": [
+          "CVE-2026-65600"
+        ],
+        "matched": [
+          "CVE-2026-65600"
+        ]
+      },
+      {
+        "observation": "CVE-2026-33433",
+        "ids": [
+          "CVE-2026-33433"
+        ],
+        "matched": [
+          "CVE-2026-33433"
+        ]
+      },
+      {
+        "observation": "CVE-2026-88009",
+        "ids": [
+          "CVE-2026-88009"
+        ],
+        "matched": [
+          "CVE-2026-88009"
+        ]
+      },
+      {
+        "observation": "CVE-2026-32695",
+        "ids": [
+          "CVE-2026-32695"
+        ],
+        "matched": [
+          "CVE-2026-32695"
+        ]
+      },
+      {
+        "observation": "CVE-2026-85597",
+        "ids": [
+          "CVE-2026-85597"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-88011",
+        "ids": [
+          "CVE-2026-88011"
+        ],
+        "matched": [
+          "CVE-2026-88011"
+        ]
+      },
+      {
+        "observation": "CVE-2026-88012",
+        "ids": [
+          "CVE-2026-88012"
+        ],
+        "matched": [
+          "CVE-2026-88012"
+        ]
+      },
+      {
+        "observation": "CVE-2026-54761",
+        "ids": [
+          "CVE-2026-54761"
+        ],
+        "matched": [
+          "CVE-2026-54761"
+        ]
+      },
+      {
+        "observation": "CVE-2025-66490",
+        "ids": [
+          "CVE-2025-66490"
+        ],
+        "matched": [
+          "CVE-2025-66490"
+        ]
+      },
+      {
+        "observation": "CVE-2026-32305",
+        "ids": [
+          "CVE-2026-32305"
+        ],
+        "matched": [
+          "CVE-2026-32305"
+        ]
+      },
+      {
+        "observation": "CVE-2026-41181",
+        "ids": [
+          "CVE-2026-41181"
+        ],
+        "matched": [
+          "CVE-2026-41181"
+        ]
+      },
+      {
+        "observation": "CVE-2026-22045",
+        "ids": [
+          "CVE-2026-22045"
+        ],
+        "matched": [
+          "CVE-2026-22045"
+        ]
+      },
+      {
+        "observation": "CVE-2026-26998",
+        "ids": [
+          "CVE-2026-26998"
+        ],
+        "matched": [
+          "CVE-2026-26998"
+        ]
+      },
+      {
+        "observation": "CVE-2026-35051",
+        "ids": [
+          "CVE-2026-35051"
+        ],
+        "matched": [
+          "CVE-2026-35051"
+        ]
+      },
+      {
+        "observation": "CVE-2026-88878",
+        "ids": [
+          "CVE-2026-88878"
+        ],
+        "matched": [
+          "CVE-2026-88012"
+        ]
+      },
+      {
+        "observation": "CVE-2026-114639",
+        "ids": [
+          "CVE-2026-114639"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2024-52003",
+        "ids": [
+          "CVE-2024-52003"
+        ],
+        "matched": [
+          "CVE-2024-52003"
+        ]
+      },
+      {
+        "observation": "CVE-2026-54763",
+        "ids": [
+          "CVE-2026-54763"
+        ],
+        "matched": [
+          "CVE-2026-54763"
+        ]
+      },
+      {
+        "observation": "CVE-2026-88879",
+        "ids": [
+          "CVE-2026-88879"
+        ],
+        "matched": [
+          "CVE-2026-88011"
+        ]
+      },
+      {
+        "observation": "CVE-2026-29777",
+        "ids": [
+          "CVE-2026-29777"
+        ],
+        "matched": [
+          "CVE-2026-29777"
+        ]
+      },
+      {
+        "observation": "CVE-2026-54764",
+        "ids": [
+          "CVE-2026-54764"
+        ],
+        "matched": [
+          "CVE-2026-54764"
+        ]
+      },
+      {
+        "observation": "CVE-2026-32595",
+        "ids": [
+          "CVE-2026-32595"
+        ],
+        "matched": [
+          "CVE-2026-32595"
+        ]
+      },
+      {
+        "observation": "CVE-2026-112778",
+        "ids": [
+          "CVE-2026-112778"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-114642",
+        "ids": [
+          "CVE-2026-114642"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-41263",
+        "ids": [
+          "CVE-2026-41263"
+        ],
+        "matched": [
+          "CVE-2026-41263"
+        ]
+      },
+      {
+        "observation": "CVE-2026-114635",
+        "ids": [
+          "CVE-2026-114635"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-41174",
+        "ids": [
+          "CVE-2026-41174"
+        ],
+        "matched": [
+          "CVE-2026-41174"
+        ]
+      },
+      {
+        "observation": "CVE-2026-114656",
+        "ids": [
+          "CVE-2026-114656"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-114641",
+        "ids": [
+          "CVE-2026-114641"
+        ],
+        "matched": []
+      },
+      {
+        "observation": "CVE-2026-71325",
+        "ids": [
+          "CVE-2026-71325"
+        ],
+        "matched": [
+          "CVE-2026-71325"
+        ]
+      }
+    ]
+  },
+  "warnings": []
+}

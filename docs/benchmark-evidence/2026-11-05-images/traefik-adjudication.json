@@ -1,0 +1,1895 @@
+{
+  "capturedAt": "2026-11-05T07:49:53.071Z",
+  "comparison": {
+    "observations": 208,
+    "matched": 157,
+    "missing": [
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-85595"
+        ],
+        "primaryId": "CVE-2026-85595",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.55",
+          "3.7.11"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2024-45410"
+        ],
+        "primaryId": "CVE-2024-45410",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.9",
+          "3.1.3"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2025-54386"
+        ],
+        "primaryId": "CVE-2025-54386",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.28",
+          "3.4.5",
+          "3.5.0-rc2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-71324"
+        ],
+        "primaryId": "CVE-2026-71324",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.53",
+          "3.6.24",
+          "3.7.9"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2025-32431"
+        ],
+        "primaryId": "CVE-2025-32431",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.24",
+          "3.3.6",
+          "3.3.6",
+          "3.4.0-rc2",
+          "3.4.0-rc2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2024-28869"
+        ],
+        "primaryId": "CVE-2024-28869",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.2",
+          "3.0.0-rc5"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2025-47952"
+        ],
+        "primaryId": "CVE-2025-47952",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.25",
+          "3.4.1"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-48020"
+        ],
+        "primaryId": "CVE-2026-48020",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.48",
+          "3.6.19",
+          "3.7.3"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-40912"
+        ],
+        "primaryId": "CVE-2026-40912",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.43",
+          "3.6.14",
+          "3.7.0-rc.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-25949"
+        ],
+        "primaryId": "CVE-2026-25949",
+        "severity": "High",
+        "fixedVersion": [
+          "3.6.8"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-53622"
+        ],
+        "primaryId": "CVE-2026-53622",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.51",
+          "3.6.18",
+          "3.7.3"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-88007"
+        ],
+        "primaryId": "CVE-2026-88007",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.56",
+          "3.7.12"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-26999"
+        ],
+        "primaryId": "CVE-2026-26999",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.38",
+          "3.6.9"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2024-39321"
+        ],
+        "primaryId": "CVE-2024-39321",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.6",
+          "3.0.4",
+          "3.1.0-rc3"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-39858"
+        ],
+        "primaryId": "CVE-2026-39858",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.43",
+          "3.6.14",
+          "3.7.0-rc.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-85594"
+        ],
+        "primaryId": "CVE-2026-85594",
+        "severity": "Critical",
+        "fixedVersion": [
+          "3.7.11"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-44774"
+        ],
+        "primaryId": "CVE-2026-44774",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.46",
+          "3.6.17",
+          "3.7.1"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-65600"
+        ],
+        "primaryId": "CVE-2026-65600",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.52",
+          "3.6.23",
+          "3.7.7"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-33433"
+        ],
+        "primaryId": "CVE-2026-33433",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.42",
+          "3.6.11",
+          "3.7.0-ea.3"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-88009"
+        ],
+        "primaryId": "CVE-2026-88009",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.57",
+          "3.7.13"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-32695"
+        ],
+        "primaryId": "CVE-2026-32695",
+        "severity": "High",
+        "fixedVersion": [
+          "3.6.11",
+          "3.7.0-ea.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-85597"
+        ],
+        "primaryId": "CVE-2026-85597",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.55",
+          "3.7.11"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-88011"
+        ],
+        "primaryId": "CVE-2026-88011",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.56",
+          "3.7.12"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-88012"
+        ],
+        "primaryId": "CVE-2026-88012",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.56",
+          "3.7.12"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-54761"
+        ],
+        "primaryId": "CVE-2026-54761",
+        "severity": "High",
+        "fixedVersion": [
+          "3.6.21",
+          "3.7.5"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2025-66490"
+        ],
+        "primaryId": "CVE-2025-66490",
+        "severity": "Medium",
+        "fixedVersion": [
+          "1.7.34",
+          "2.11.32",
+          "2.11.32",
+          "3.6.3",
+          "3.6.3"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-32305"
+        ],
+        "primaryId": "CVE-2026-32305",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.41",
+          "3.6.11",
+          "3.7.0-ea.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-41181"
+        ],
+        "primaryId": "CVE-2026-41181",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.43",
+          "3.6.14",
+          "3.7.0-rc.3"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-22045"
+        ],
+        "primaryId": "CVE-2026-22045",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.35",
+          "3.6.7"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-26998"
+        ],
+        "primaryId": "CVE-2026-26998",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.38",
+          "3.6.9"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-35051"
+        ],
+        "primaryId": "CVE-2026-35051",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.43",
+          "3.6.14",
+          "3.7.0-rc.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-88878"
+        ],
+        "primaryId": "CVE-2026-88878",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.56",
+          "3.7.12"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-114639"
+        ],
+        "primaryId": "CVE-2026-114639",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.58",
+          "3.7.14"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2024-52003"
+        ],
+        "primaryId": "CVE-2024-52003",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.14",
+          "3.2.1"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-54763"
+        ],
+        "primaryId": "CVE-2026-54763",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.51",
+          "3.6.22",
+          "3.7.6"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-88879"
+        ],
+        "primaryId": "CVE-2026-88879",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.56",
+          "3.7.12"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "apk",
+        "name": "busybox",
+        "version": "1.36.1-r15",
+        "ids": [
+          "CVE-2025-60876"
+        ],
+        "primaryId": "CVE-2025-60876",
+        "severity": "Medium",
+        "fixedVersion": [],
+        "source": "nvd:cpe",
+        "coordinateInventoried": true
+      },
+      {
+        "ecosystem": "apk",
+        "name": "busybox-binsh",
+        "version": "1.36.1-r15",
+        "ids": [
+          "CVE-2025-60876"
+        ],
+        "primaryId": "CVE-2025-60876",
+        "severity": "Medium",
+        "fixedVersion": [],
+        "source": "nvd:cpe",
+        "coordinateInventoried": true
+      },
+      {
+        "ecosystem": "apk",
+        "name": "ssl_client",
+        "version": "1.36.1-r15",
+        "ids": [
+          "CVE-2025-60876"
+        ],
+        "primaryId": "CVE-2025-60876",
+        "severity": "Medium",
+        "fixedVersion": [],
+        "source": "nvd:cpe",
+        "coordinateInventoried": true
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-29777"
+        ],
+        "primaryId": "CVE-2026-29777",
+        "severity": "Medium",
+        "fixedVersion": [
+          "3.6.10"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-54764"
+        ],
+        "primaryId": "CVE-2026-54764",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.51",
+          "3.6.22",
+          "3.7.6"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-32595"
+        ],
+        "primaryId": "CVE-2026-32595",
+        "severity": "Low",
+        "fixedVersion": [
+          "2.11.41",
+          "3.6.11",
+          "3.7.0-ea.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-112778"
+        ],
+        "primaryId": "CVE-2026-112778",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.46",
+          "3.6.17",
+          "3.7.1"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-114642"
+        ],
+        "primaryId": "CVE-2026-114642",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.58",
+          "3.7.14"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-41263"
+        ],
+        "primaryId": "CVE-2026-41263",
+        "severity": "Low",
+        "fixedVersion": [
+          "2.11.43",
+          "3.6.14",
+          "3.7.0-rc.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-114635"
+        ],
+        "primaryId": "CVE-2026-114635",
+        "severity": "High",
+        "fixedVersion": [
+          "2.11.58",
+          "3.7.14"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-41174"
+        ],
+        "primaryId": "CVE-2026-41174",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.43",
+          "3.7.0-rc.2"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-114656"
+        ],
+        "primaryId": "CVE-2026-114656",
+        "severity": "Critical",
+        "fixedVersion": [
+          "2.11.58",
+          "3.7.13"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-114641"
+        ],
+        "primaryId": "CVE-2026-114641",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.58",
+          "3.7.14"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      },
+      {
+        "ecosystem": "apk",
+        "name": "zlib",
+        "version": "1.3.1-r0",
+        "ids": [
+          "CVE-2026-27171"
+        ],
+        "primaryId": "CVE-2026-27171",
+        "severity": "Medium",
+        "fixedVersion": [],
+        "source": "nvd:cpe",
+        "coordinateInventoried": true
+      },
+      {
+        "ecosystem": "binary",
+        "name": "traefik",
+        "version": "2.11.0",
+        "ids": [
+          "CVE-2026-71325"
+        ],
+        "primaryId": "CVE-2026-71325",
+        "severity": "Medium",
+        "fixedVersion": [
+          "2.11.54",
+          "3.6.25",
+          "3.7.10"
+        ],
+        "source": "nvd:cpe",
+        "coordinateInventoried": false
+      }
+    ]
+  },
+  "goRecords": [
+    {
+      "id": "GO-2022-0635",
+      "modified": "2026-02-04T02:41:58.893164Z",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/aws/aws-sdk-go",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/aws/aws-sdk-go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/aws/aws-sdk-go/service/s3/s3crypto",
+                "symbols": [
+                  "NewDecryptionClient",
+                  "NewEncryptionClient"
+                ]
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2022-0635.json"
+          }
+        }
+      ],
+      "aliases": [
+        "CVE-2020-8912",
+        "GHSA-7f33-f4f5-xwgw"
+      ]
+    },
+    {
+      "id": "GO-2022-0646",
+      "modified": "2026-02-04T02:16:32.066930Z",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/aws/aws-sdk-go",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/aws/aws-sdk-go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/aws/aws-sdk-go/service/s3/s3crypto",
+                "symbols": [
+                  "NewDecryptionClient",
+                  "NewEncryptionClient"
+                ]
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2022-0646.json"
+          }
+        }
+      ],
+      "aliases": [
+        "CVE-2020-8911",
+        "GHSA-f5pg-7wfw-84q9"
+      ]
+    },
+    {
+      "id": "GO-2026-4887",
+      "modified": "2026-04-03T20:59:19.226161232Z",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/docker/docker",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/docker/docker"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {},
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2026-4887.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/moby/moby",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/moby/moby"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {},
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2026-4887.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/moby/moby/v2",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/moby/moby/v2"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.0.0-beta.8"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {},
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2026-4887.json"
+          }
+        }
+      ],
+      "aliases": [
+        "CVE-2026-34040",
+        "GHSA-x744-4wpc-v9h2"
+      ]
+    },
+    {
+      "id": "GO-2025-3540",
+      "modified": "2026-02-04T03:06:24.656292Z",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/redis/go-redis",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "custom_ranges": [
+              {
+                "events": [
+                  {
+                    "introduced": "9.6.0b1"
+                  }
+                ],
+                "type": "ECOSYSTEM"
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "custom_ranges": [
+              {
+                "events": [
+                  {
+                    "introduced": "9.6.0b1"
+                  }
+                ],
+                "type": "ECOSYSTEM"
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "custom_ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "9.6.0b1"
+                  }
+                ]
+              }
+            ],
+            "imports": [
+              {
+                "path": "github.com/redis/go-redis/v9",
+                "symbols": [
+                  "baseClient.initConn",
+                  "redis.ClusterOptions",
+                  "redis.FailoverOptions",
+                  "redis.RingOptions",
+                  "redis.UniversalOptions"
+                ]
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v7",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v7"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {},
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v8",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v8"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {},
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v9",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v9"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "9.5.1"
+                },
+                {
+                  "fixed": "9.5.5"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/redis/go-redis/v9",
+                "symbols": [
+                  "baseClient.initConn",
+                  "redis.ClusterOptions",
+                  "redis.FailoverOptions",
+                  "redis.RingOptions",
+                  "redis.UniversalOptions"
+                ]
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v9",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v9"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "9.6.3"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/redis/go-redis/v9",
+                "symbols": [
+                  "baseClient.initConn",
+                  "redis.ClusterOptions",
+                  "redis.FailoverOptions",
+                  "redis.RingOptions",
+                  "redis.UniversalOptions"
+                ]
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v9",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v9"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "9.7.0-beta.1"
+                },
+                {
+                  "fixed": "9.7.3"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "github.com/redis/go-redis/v9",
+                "symbols": [
+                  "baseClient.initConn",
+                  "redis.ClusterOptions",
+                  "redis.FailoverOptions",
+                  "redis.RingOptions",
+                  "redis.UniversalOptions"
+                ]
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2025-3540.json"
+          }
+        }
+      ],
+      "aliases": [
+        "CVE-2025-29923",
+        "GHSA-92cp-5422-2mw7"
+      ]
+    },
+    {
+      "id": "GO-2026-6107",
+      "modified": "2026-08-19T21:41:59.273853582Z",
+      "affected": [
+        {
+          "package": {
+            "name": "go.etcd.io/etcd/client/pkg/v3",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/go.etcd.io/etcd/client/pkg/v3"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.5.33"
+                },
+                {
+                  "introduced": "3.6.0"
+                },
+                {
+                  "fixed": "3.6.14"
+                },
+                {
+                  "introduced": "3.7.0-alpha.0"
+                },
+                {
+                  "fixed": "3.7.1"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "go.etcd.io/etcd/client/pkg/v3/transport",
+                "symbols": [
+                  "NewListener",
+                  "NewListenerWithOpts",
+                  "NewTLSListener",
+                  "NewTimeoutListener",
+                  "tlsListener.acceptLoop"
+                ]
+              }
+            ]
+          },
+          "database_specific": {
+            "source": "https://vuln.go.dev/ID/GO-2026-6107.json"
+          }
+        }
+      ],
+      "aliases": [
+        "BIT-etcd-2026-73500",
+        "CVE-2026-73500",
+        "GHSA-6vch-q96h-7gc3"
+      ]
+    }
+  ],
+  "distro": {
+    "snapshot": {
+      "fetchedAt": 1793864547610,
+      "complete": true,
+      "stale": false,
+      "recordCount": 10667,
+      "metadata": {
+        "ecosystem": "Alpine:v3.19",
+        "packageCount": 631,
+        "source": "https://osv-vulnerabilities.storage.googleapis.com/Alpine/all.zip"
+      }
+    },
+    "busybox": {
+      "count": 27,
+      "ids": [
+        "ALPINE-CVE-2017-15873",
+        "ALPINE-CVE-2017-15874",
+        "ALPINE-CVE-2017-16544",
+        "ALPINE-CVE-2018-1000500",
+        "ALPINE-CVE-2018-20679",
+        "ALPINE-CVE-2019-5747",
+        "ALPINE-CVE-2021-28831",
+        "ALPINE-CVE-2021-42374",
+        "ALPINE-CVE-2021-42375",
+        "ALPINE-CVE-2021-42378",
+        "ALPINE-CVE-2021-42379",
+        "ALPINE-CVE-2021-42380",
+        "ALPINE-CVE-2021-42381",
+        "ALPINE-CVE-2021-42382",
+        "ALPINE-CVE-2021-42383",
+        "ALPINE-CVE-2021-42384",
+        "ALPINE-CVE-2021-42385",
+        "ALPINE-CVE-2021-42386",
+        "ALPINE-CVE-2022-28391",
+        "ALPINE-CVE-2022-30065",
+        "ALPINE-CVE-2022-48174",
+        "ALPINE-CVE-2023-42363",
+        "ALPINE-CVE-2023-42364",
+        "ALPINE-CVE-2023-42365",
+        "ALPINE-CVE-2023-42366",
+        "ALPINE-CVE-2024-58251",
+        "ALPINE-CVE-2025-46394"
+      ],
+      "hasCandidate": false
+    },
+    "zlib": {
+      "count": 2,
+      "ids": [
+        "ALPINE-CVE-2018-25032",
+        "ALPINE-CVE-2022-37434"
+      ],
+      "hasCandidate": false
+    }
+  },
+  "grypeBinary": {
+    "count": 47,
+    "example": {
+      "vulnerability": {
+        "id": "CVE-2026-85595",
+        "dataSource": "https://nvd.nist.gov/vuln/detail/CVE-2026-85595",
+        "namespace": "nvd:cpe",
+        "severity": "Critical",
+        "urls": [
+          "https://github.com/traefik/traefik/security/advisories/GHSA-5w68-77r2-r64c",
+          "https://www.vulncheck.com/advisories/traefik-before-2.11.55-authentication-bypass-via-digestauth"
+        ],
+        "description": "Traefik versions before v2.11.55 and versions v3.0.0 through v3.7.10 contain an authentication bypass vulnerability in the digestAuth middleware where unknown usernames receive an empty secret instead of rejection. Attackers can compute a valid digest response using the empty secret and arbitrary credentials to bypass authentication on any digestAuth-protected route without a valid username or password.",
+        "cvss": [
+          {
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "version": "3.1",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "metrics": {
+              "baseScore": 9.8,
+              "exploitabilityScore": 3.9,
+              "impactScore": 5.9
+            },
+            "vendorMetadata": {}
+          },
+          {
+            "source": "disclosure@vulncheck.com",
+            "type": "Secondary",
+            "version": "4.0",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N/E:X/CR:X/IR:X/AR:X/MAV:X/MAC:X/MAT:X/MPR:X/MUI:X/MVC:X/MVI:X/MVA:X/MSC:X/MSI:X/MSA:X/S:X/AU:X/R:X/V:X/RE:X/U:X",
+            "metrics": {
+              "baseScore": 9.3
+            },
+            "vendorMetadata": {}
+          }
+        ],
+        "epss": [
+          {
+            "cve": "CVE-2026-85595",
+            "epss": 0.02451,
+            "percentile": 0.84435,
+            "date": "2026-11-04"
+          }
+        ],
+        "cwes": [
+          {
+            "cve": "CVE-2026-85595",
+            "cwe": "CWE-287",
+            "source": "disclosure@vulncheck.com",
+            "type": "Secondary"
+          }
+        ],
+        "fix": {
+          "versions": [
+            "2.11.55",
+            "3.7.11"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "2.11.55",
+              "date": "2026-09-17",
+              "kind": "first-observed"
+            },
+            {
+              "version": "3.7.11",
+              "date": "2026-09-17",
+              "kind": "first-observed"
+            }
+          ]
+        },
+        "advisories": [],
+        "risk": 2.2733025000000002
+      },
+      "relatedVulnerabilities": [],
+      "matchDetails": [
+        {
+          "type": "cpe-match",
+          "matcher": "stock-matcher",
+          "searchedBy": {
+            "namespace": "nvd:cpe",
+            "cpes": [
+              "cpe:2.3:a:traefik:traefik:2.11.0:*:*:*:*:*:*:*"
+            ],
+            "package": {
+              "name": "traefik",
+              "version": "2.11.0"
+            }
+          },
+          "found": {
+            "vulnerabilityID": "CVE-2026-85595",
+            "versionConstraint": "< 2.11.55||>= 3.0.0, < 3.7.11 (unknown)",
+            "cpes": [
+              "cpe:2.3:a:traefik:traefik:*:*:*:*:*:*:*:*"
+            ]
+          },
+          "fix": {
+            "suggestedVersion": "2.11.55"
+          }
+        }
+      ],
+      "artifact": {
+        "id": "21b6e30c566b7fed",
+        "name": "traefik",
+        "version": "2.11.0",
+        "type": "binary",
+        "locations": [
+          {
+            "path": "/usr/local/bin/traefik",
+            "layerID": "sha256:02b6c42791ea7c4e22277839989b109d9894820309da30aa70a518c417002f8e",
+            "accessPath": "/usr/local/bin/traefik",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ],
+        "language": "",
+        "licenses": [],
+        "cpes": [
+          "cpe:2.3:a:traefik:traefik:2.11.0:*:*:*:*:*:*:*"
+        ],
+        "purl": "pkg:generic/traefik@2.11.0",
+        "upstreams": []
+      }
+    }
+  },
+  "primarySources": {
+    "syftClassifier": "https://github.com/anchore/syft/blob/v1.55.0/syft/pkg/cataloger/binary/classifiers.go",
+    "traefikMaintainer": "https://github.com/traefik/traefik/security/advisories/GHSA-5w68-77r2-r64c",
+    "alpineBusybox": "https://security.alpinelinux.org/vuln/CVE-2025-60876",
+    "alpineZlib": "https://security.alpinelinux.org/vuln/CVE-2026-27171"
+  },
+  "currentGhsa": [
+    {
+      "id": "GHSA-7f33-f4f5-xwgw",
+      "url": "https://api.osv.dev/v1/vulns/GHSA-7f33-f4f5-xwgw",
+      "status": 200,
+      "modified": "2026-09-10T03:49:11.698758886Z",
+      "aliases": [
+        "CVE-2020-8912",
+        "GO-2022-0635"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/aws/aws-sdk-go",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/aws/aws-sdk-go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.34.0"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2022/02/GHSA-7f33-f4f5-xwgw/GHSA-7f33-f4f5-xwgw.json"
+          }
+        }
+      ]
+    },
+    {
+      "id": "GHSA-f5pg-7wfw-84q9",
+      "url": "https://api.osv.dev/v1/vulns/GHSA-f5pg-7wfw-84q9",
+      "status": 200,
+      "modified": "2026-09-10T03:49:12.054080312Z",
+      "aliases": [
+        "CVE-2020-8911",
+        "GO-2022-0646"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/aws/aws-sdk-go",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/aws/aws-sdk-go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.34.0"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2022/02/GHSA-f5pg-7wfw-84q9/GHSA-f5pg-7wfw-84q9.json"
+          }
+        }
+      ]
+    },
+    {
+      "id": "GHSA-x744-4wpc-v9h2",
+      "url": "https://api.osv.dev/v1/vulns/GHSA-x744-4wpc-v9h2",
+      "status": 200,
+      "modified": "2026-09-08T05:15:04.303637708Z",
+      "aliases": [
+        "CVE-2026-34040",
+        "GO-2026-4887"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/moby/moby",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/moby/moby"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "29.3.1"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/03/GHSA-x744-4wpc-v9h2/GHSA-x744-4wpc-v9h2.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/moby/moby/v2",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/moby/moby/v2"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.0.0-beta.8"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/03/GHSA-x744-4wpc-v9h2/GHSA-x744-4wpc-v9h2.json"
+          }
+        }
+      ]
+    },
+    {
+      "id": "GHSA-92cp-5422-2mw7",
+      "url": "https://api.osv.dev/v1/vulns/GHSA-92cp-5422-2mw7",
+      "status": 200,
+      "modified": "2026-09-10T03:50:23.028323094Z",
+      "aliases": [
+        "CVE-2025-29923",
+        "GO-2025-3540"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v9",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v9"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "9.7.0-beta.1"
+                },
+                {
+                  "fixed": "9.7.3"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "last_known_affected_version_range": "<= 9.7.1",
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/03/GHSA-92cp-5422-2mw7/GHSA-92cp-5422-2mw7.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v9",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v9"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "9.6.0b1"
+                },
+                {
+                  "fixed": "9.6.3"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/03/GHSA-92cp-5422-2mw7/GHSA-92cp-5422-2mw7.json"
+          }
+        },
+        {
+          "package": {
+            "name": "github.com/redis/go-redis/v9",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/redis/go-redis/v9"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "9.5.1"
+                },
+                {
+                  "fixed": "9.5.5"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/03/GHSA-92cp-5422-2mw7/GHSA-92cp-5422-2mw7.json"
+          }
+        }
+      ]
+    },
+    {
+      "id": "GHSA-6vch-q96h-7gc3",
+      "url": "https://api.osv.dev/v1/vulns/GHSA-6vch-q96h-7gc3",
+      "status": 200,
+      "modified": "2026-09-10T03:51:10.799208997Z",
+      "aliases": [
+        "BIT-etcd-2026-73500",
+        "CVE-2026-73500",
+        "GO-2026-6107"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "go.etcd.io/etcd/v3",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/go.etcd.io/etcd/v3"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "3.7.0-alpha.0"
+                },
+                {
+                  "fixed": "3.7.1"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-6vch-q96h-7gc3/GHSA-6vch-q96h-7gc3.json"
+          }
+        },
+        {
+          "package": {
+            "name": "go.etcd.io/etcd/v3",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/go.etcd.io/etcd/v3"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "3.6.0"
+                },
+                {
+                  "fixed": "3.6.14"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-6vch-q96h-7gc3/GHSA-6vch-q96h-7gc3.json"
+          }
+        },
+        {
+          "package": {
+            "name": "go.etcd.io/etcd/v3",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/go.etcd.io/etcd/v3"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.5.33"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-6vch-q96h-7gc3/GHSA-6vch-q96h-7gc3.json"
+          }
+        }
+      ]
+    }
+  ],
+  "ociConfig": {
+    "digest": "sha256:c1ef9171e9d171746404b3deec2a4c9902a34ab090be5e0af6292cf46d578b35",
+    "labels": {
+      "org.opencontainers.image.description": "A modern reverse-proxy",
+      "org.opencontainers.image.documentation": "https://docs.traefik.io",
+      "org.opencontainers.image.source": "https://github.com/traefik/traefik",
+      "org.opencontainers.image.title": "Traefik",
+      "org.opencontainers.image.url": "https://traefik.io",
+      "org.opencontainers.image.vendor": "Traefik Labs",
+      "org.opencontainers.image.version": "v2.11.0"
+    }
+  },
+  "goMain": [
+    {
+      "kind": "mod",
+      "path": "github.com/traefik/traefik/v2",
+      "version": "(devel)",
+      "sum": null
+    }
+  ],
+  "vvOnlyVsTrivy": [
+    {
+      "ecosystem": "golang",
+      "name": "github.com/aws/aws-sdk-go",
+      "version": "1.44.327",
+      "ids": [
+        "CVE-2020-8912",
+        "GHSA-7f33-f4f5-xwgw"
+      ],
+      "primaryId": "CVE-2020-8912",
+      "upstream": [],
+      "severity": "UNKNOWN",
+      "coordinateInventoried": true
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/aws/aws-sdk-go",
+      "version": "1.44.327",
+      "ids": [
+        "CVE-2020-8911",
+        "GHSA-f5pg-7wfw-84q9"
+      ],
+      "primaryId": "CVE-2020-8911",
+      "upstream": [],
+      "severity": "UNKNOWN",
+      "coordinateInventoried": true
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/docker/docker",
+      "version": "24.0.7+incompatible",
+      "ids": [
+        "CVE-2026-34040",
+        "GHSA-x744-4wpc-v9h2"
+      ],
+      "primaryId": "CVE-2026-34040",
+      "upstream": [],
+      "severity": "UNKNOWN",
+      "coordinateInventoried": true
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/redis/go-redis/v9",
+      "version": "9.2.1",
+      "ids": [
+        "CVE-2025-29923",
+        "GHSA-92cp-5422-2mw7"
+      ],
+      "primaryId": "CVE-2025-29923",
+      "upstream": [],
+      "severity": "UNKNOWN",
+      "coordinateInventoried": true
+    },
+    {
+      "ecosystem": "golang",
+      "name": "go.etcd.io/etcd/client/pkg/v3",
+      "version": "3.5.6",
+      "ids": [
+        "CVE-2026-73500",
+        "BIT-etcd-2026-73500",
+        "GHSA-6vch-q96h-7gc3"
+      ],
+      "primaryId": "CVE-2026-73500",
+      "upstream": [],
+      "severity": "UNKNOWN",
+      "coordinateInventoried": true
+    }
+  ]
+}

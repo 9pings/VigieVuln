@@ -1,0 +1,47 @@
+{
+  "cli": {
+    "tests": 2313,
+    "passed": 2302,
+    "skipped": 11,
+    "failed": 0
+  },
+  "server": {
+    "tests": 599,
+    "passed": 599,
+    "failed": 0
+  },
+  "offlineNginx": {
+    "networkAttempts": 0,
+    "findings": 707,
+    "standaloneCveRowsIdentical": true,
+    "standalonePath": "/nonexistent",
+    "validatedRelease": "source-resilience-v7-20261105"
+  },
+  "scope": [
+    "proxy Retry-After shared bounded retries",
+    "individual record stable reuse enabled by default, opt-out and force precedence",
+    "fleet and hosted forced revalidation",
+    "EUVD paginated mirror checkpoint and source observation provenance",
+    "SQL cache export/import and offline enrichment",
+    "HTTP 200 stale quota responses retry without discarding usable cached body",
+    "15 retries with minimum three-second spacing and shared default 45-second deadline",
+    "TTY skip stops subsequent transient retries without preventing new lookups",
+    "network failure retains cached response; explicit cancellation propagates"
+  ],
+  "interactiveRetry": {
+    "keys": [
+      "S",
+      "Escape"
+    ],
+    "cachedBodyRetained": true,
+    "rawStateRestored": true
+  },
+  "stableReuseDefaults": {
+    "enabled": true,
+    "thresholdDays": 365,
+    "ageReference": "last source modification",
+    "optOut": "--no-reuse-stable-advisories",
+    "forceOverride": "--force-update",
+    "targetedTests": 58
+  }
+}

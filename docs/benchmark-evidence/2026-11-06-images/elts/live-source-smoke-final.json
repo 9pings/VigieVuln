@@ -1,0 +1,61 @@
+{
+  "checkedAt": "2026-11-06T07:01:24.823Z",
+  "requests": [
+    {
+      "status": 200,
+      "elapsedMs": 47494,
+      "headers": {
+        "x-fad-proxy": "projection",
+        "x-fad-proxy-fetched-at": "2026-11-06T06:58:03.324Z",
+        "x-vigievuln-source-sha256": "208de0d5287aac610d5211cc1c9a939429fcc69fa61526d67cf6986266c628de"
+      },
+      "bodyBytes": 29528,
+      "packages": [
+        "apt"
+      ],
+      "advisories": 23
+    },
+    {
+      "status": 200,
+      "elapsedMs": 23185,
+      "headers": {
+        "x-fad-proxy": "projection",
+        "x-fad-proxy-fetched-at": "2026-11-06T06:58:03.324Z",
+        "x-vigievuln-source-sha256": "208de0d5287aac610d5211cc1c9a939429fcc69fa61526d67cf6986266c628de"
+      },
+      "bodyBytes": 383823,
+      "packages": [
+        "curl"
+      ],
+      "advisories": 241
+    }
+  ],
+  "health": [
+    {
+      "host": "www.vigievuln.fr",
+      "status": 200,
+      "body": {
+        "ok": true,
+        "draining": false,
+        "service": "vigievuln-server",
+        "version": "1.0.0",
+        "region": "fr",
+        "store": "postgresql",
+        "uptimeMs": 90932
+      }
+    },
+    {
+      "host": "api.vigievuln.fr",
+      "status": 200,
+      "body": {
+        "ok": true,
+        "draining": false,
+        "service": "vigievuln-server",
+        "version": "1.0.0",
+        "region": "fr",
+        "store": "postgresql",
+        "uptimeMs": 91074
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "cli": {
+    "passed": 2273,
+    "skipped": 11,
+    "failed": 0
+  },
+  "server": {
+    "passed": 590,
+    "failed": 0
+  },
+  "behaviors": [
+    "cache age alone is context",
+    "known refresh failure remains blocking",
+    "explicit NVD absence is not a transport failure",
+    "unknown native candidate applicability remains source context",
+    "global source warning deduplicated only by exact request identity",
+    "proxy refusal distinguished from origin HTTP failure"
+  ]
+}

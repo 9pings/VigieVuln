@@ -264,6 +264,14 @@ test('hosted stale responses record the source and oldest cache date', async () 
     assert.deepEqual(health.degraded(),[]);
   } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,health:null});}
 });
+test('cache age and revalidation do not imply a refresh failure, while explicit failure does',async()=>{
+ const {configureResourceRoute,getResource}=require('../lib/providers'),{createSourceHealth}=require('../lib/source-health'),health=createSourceHealth();let tag='hit',reason=null;
+ configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,hostedStore:null,health,fetcher:async()=>Response.json({data:[]},{headers:{'x-fad-proxy':tag,'x-fad-proxy-fetched-at':'2026-10-27T10:00:00.000Z',...(reason?{'x-fad-proxy-reason':reason}:{})}})});
+ try{const opts={streaming:true,noStore:true};await getResource('npm','package',{name:'demo'},opts);assert.equal(health.stale().length,0);
+  tag='stale';reason='revalidating';await getResource('npm','package',{name:'demo'},opts);assert.equal(health.stale()[0].blocking,undefined);
+  reason='refresh-failed';await getResource('npm','package',{name:'demo'},opts);assert.equal(health.stale()[0].blocking,true);
+ }finally{configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null,health:null});}
+});
 
 test('hosted Maven scanner requests only dependency keys and matches the returned CVEs', async () => {
   const fs = require('node:fs');
@@ -297,11 +305,12 @@ test('a hosted scan writes stale source warnings in HTML and JSON and supports a
   const project=path.join(home,'project');fs.mkdirSync(project);
   fs.writeFileSync(path.join(project,'pom.xml'),'<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>demo</artifactId><version>1</version><dependencies><dependency><groupId>org.example</groupId><artifactId>demo</artifactId><version>1.0</version></dependency></dependencies></project>');
   const hook=path.join(home,'hook.cjs');
-  fs.writeFileSync(hook,`globalThis.fetch=async (url,init={})=>{if(String(url).endsWith('/v1/proxy/status'))return Response.json({ok:true,service:'vigievuln-proxy'});if(String(url).endsWith('/v1/resource'))return process.env.VV_MISSING ? new Response('',{status:503}) : Response.json({cves:[],builtAt:'2026-10-27'},{headers:{'x-fad-proxy':'stale','x-fad-proxy-fetched-at':'2026-10-27T10:00:00.000Z'}});throw Error('unexpected network')}`);
+  fs.writeFileSync(hook,`globalThis.fetch=async (url,init={})=>{if(String(url).endsWith('/v1/proxy/status'))return Response.json({ok:true,service:'vigievuln-proxy'});if(String(url).endsWith('/v1/resource'))return process.env.VV_MISSING ? new Response('',{status:503}) : Response.json({cves:[],builtAt:'2026-10-27'},{headers:{'x-fad-proxy':'stale','x-fad-proxy-reason':'refresh-failed','x-fad-proxy-fetched-at':'2026-10-27T10:00:00.000Z'}});throw Error('unexpected network')}`);
   const env={...process.env,HOME:home,USERPROFILE:home,VIGIEVULN_PROXY_CACHE_TOKEN:'test-key',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:'',NODE_OPTIONS:`--require=${hook}`,FORCE_COLOR:'0'};
   const out=path.join(home,'out');
   try {
-    const args=[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default','--retries','0','--no-transitive','--no-all-libs','--no-osv','--no-nvd','--no-epss','--no-kev','--no-euvd','--no-certfr','--no-eol','--no-binaries','--no-jars','--no-certs','--report-html','--report-json','-o',out,'--fail-on-incomplete','sources'];
+    // This checks reporting after exhaustion; retry timing has dedicated throttle tests.
+    const args=[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default','--retries','0','--proxy-rate-limit-wait-ms','0','--no-transitive','--no-all-libs','--no-osv','--no-nvd','--no-epss','--no-kev','--no-euvd','--no-certfr','--no-eol','--no-binaries','--no-jars','--no-certs','--report-html','--report-json','-o',out,'--fail-on-incomplete','sources'];
     const r=spawnSync(process.execPath,args,{env,encoding:'utf8',timeout:20000});
     assert.equal(r.status,2,r.stderr+'\n'+r.stdout);
     assert.match(r.stdout,/proxy\s+https:\/\/api\.vigievuln\.fr/);
@@ -309,17 +318,20 @@ test('a hosted scan writes stale source warnings in HTML and JSON and supports a
     const files=fs.readdirSync(out).filter(x=>x.endsWith('.json'));assert.ok(files.length);
     const report=JSON.parse(fs.readFileSync(path.join(out,files[0]),'utf8'));
     assert.match(html,/2026-10-27T10:00:00/);
-    assert.ok(report.provenance.freshnessNotices.some(w=>w.message.includes('2026-10-27T10:00:00')));
-    assert.ok(!report.warnings.some(w=>w.type==='source-stale'));
+    assert.equal(report.provenance.configuration.reuseStableAdvisories,true);
+    assert.ok(report.warnings.some(w=>w.type==='source-stale' && w.message.includes('2026-10-27T10:00:00')));
+    assert.ok(!(report.provenance.freshnessNotices || []).some(w=>w.message.includes('2026-10-27T10:00:00')));
     assert.ok(!report.warnings.some(w=>w.message.includes('native or legacy source coverage is partial')));
     assert.ok(report.provenance.sourceLimitations.some(w=>w.source==='CVEProject' && w.message.includes('partial native or legacy projection')));
     const missingOut=path.join(home,'missing');
     const missingArgs=args.slice(0,-2);missingArgs[missingArgs.indexOf('-o')+1]=missingOut;
+    missingArgs.push('--no-reuse-stable-advisories');
     const missing=spawnSync(process.execPath,missingArgs,{env:{...env,VV_MISSING:'1'},encoding:'utf8',timeout:20000});
     assert.equal(missing.status,0,missing.stderr+'\n'+missing.stdout);
     const missingFile=fs.readdirSync(missingOut).find(x=>x.endsWith('.json'));
     const missingReport=JSON.parse(fs.readFileSync(path.join(missingOut,missingFile),'utf8'));
     assert.ok(missingReport.warnings.some(w=>w.type==='source-unavailable'));
+    assert.equal(missingReport.provenance.configuration.reuseStableAdvisories,false);
   } finally {fs.rmSync(home,{recursive:true,force:true})}
 });
 

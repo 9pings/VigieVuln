@@ -12,7 +12,7 @@ test('regional profiles exclude the opposite vulnerability sources and ambiguous
  const eu = applySourceProfile({...base,sourceProfile:'eu'});
  assert.equal(eu.options.osv,false); assert.equal(eu.options.osvDb,false);assert.equal(eu.options.nvd,false);
  assert.equal(eu.options.euvd,true);assert.equal(eu.options.disableCveProject,true);
- assert.equal(eu.options.appPlugins,'none');assert.equal(eu.options.binaries,true);assert.equal(eu.options.disableBinaryId,true);assert.equal(eu.warnings.length,1);
+ assert.equal(eu.options.appPlugins,'none');assert.equal(eu.options.binaries,true);assert.equal(eu.options.disableBinaryId,true);assert.equal(eu.warnings.length,0);assert.equal(eu.notices[0].severity,'info');
  const us = applySourceProfile({...base,sourceProfile:'us'});
  assert.equal(us.options.euvd,false);assert.equal(us.options.certfr,false);assert.equal(us.options.packagistAudit,false);
  assert.equal(us.options.osv,true);assert.equal(us.options.disableGcve,true);

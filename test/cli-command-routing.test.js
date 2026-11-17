@@ -304,3 +304,9 @@ test('legacy auth login and project status also prompt when a terminal needs aut
     assert.equal(f.calls()[0].url,'https://www.vigievuln.fr/v1/accounts/login');
   }
 });
+test('cache prepare routes artifact inventories into native image cache warming',t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-inventory-route-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));const file=path.join(dir,'inventory.json');
+ fs.writeFileSync(file,JSON.stringify({schema:'vigievuln-artifact-inventory/1',targets:[]}));
+ assert.deepEqual(routeArguments(['cache','prepare',file,'--output','bundle.tar.gz','--source-profile','proxy']).args,['image','--inventory',file,'--no-report','--prepare-cache','bundle.tar.gz','--source-profile','proxy']);
+ assert.throws(()=>routeArguments(['cache','prepare',file]),/--output/);
+});

@@ -1,0 +1,207 @@
+{
+  "maven_tree_modules": 12,
+  "maven_occurrences": 908,
+  "maven_unique_all": 157,
+  "maven_unique_internal": 4,
+  "maven_unique_external": 153,
+  "sbom_maven_unique": 151,
+  "exact_shared": 147,
+  "missing_from_sbom": [
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.17.2",
+      "occurrences": [
+        {
+          "module": "wikibase",
+          "depth": 2,
+          "group": "com.fasterxml.jackson.datatype",
+          "name": "jackson-datatype-jdk8",
+          "version": "2.17.2",
+          "scope": "compile",
+          "type": "jar",
+          "classifier": ""
+        }
+      ]
+    },
+    {
+      "coordinate": "com.github.ben-manes.caffeine:caffeine:2.9.3",
+      "occurrences": [
+        {
+          "module": "database",
+          "depth": 3,
+          "group": "com.github.ben-manes.caffeine",
+          "name": "caffeine",
+          "version": "2.9.3",
+          "scope": "compile",
+          "type": "jar",
+          "classifier": ""
+        }
+      ]
+    },
+    {
+      "coordinate": "com.google.protobuf:protobuf-java:3.19.4",
+      "occurrences": [
+        {
+          "module": "database",
+          "depth": 2,
+          "group": "com.google.protobuf",
+          "name": "protobuf-java",
+          "version": "3.19.4",
+          "scope": "compile",
+          "type": "jar",
+          "classifier": ""
+        }
+      ]
+    },
+    {
+      "coordinate": "commons-io:commons-io:2.16.1",
+      "occurrences": [
+        {
+          "module": "packaging",
+          "depth": 3,
+          "group": "commons-io",
+          "name": "commons-io",
+          "version": "2.16.1",
+          "scope": "provided",
+          "type": "jar",
+          "classifier": ""
+        }
+      ]
+    },
+    {
+      "coordinate": "org.checkerframework:checker-qual:3.42.0",
+      "occurrences": [
+        {
+          "module": "database",
+          "depth": 2,
+          "group": "org.checkerframework",
+          "name": "checker-qual",
+          "version": "3.42.0",
+          "scope": "compile",
+          "type": "jar",
+          "classifier": ""
+        }
+      ]
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:1.7.36",
+      "occurrences": [
+        {
+          "module": "benchmark",
+          "depth": 2,
+          "group": "org.slf4j",
+          "name": "slf4j-api",
+          "version": "1.7.36",
+          "scope": "provided",
+          "type": "jar",
+          "classifier": ""
+        },
+        {
+          "module": "pc-axis",
+          "depth": 2,
+          "group": "org.slf4j",
+          "name": "slf4j-api",
+          "version": "1.7.36",
+          "scope": "provided",
+          "type": "jar",
+          "classifier": ""
+        },
+        {
+          "module": "jython",
+          "depth": 2,
+          "group": "org.slf4j",
+          "name": "slf4j-api",
+          "version": "1.7.36",
+          "scope": "provided",
+          "type": "jar",
+          "classifier": ""
+        }
+      ]
+    }
+  ],
+  "extra_in_sbom": [
+    "org.openrefine:core:3.9.0",
+    "org.openrefine:grel:3.9.0",
+    "org.openrefine:main:3.9.0",
+    "org.openrefine:server:3.9.0"
+  ],
+  "scope_occurrences": {
+    "compile": 263,
+    "provided": 559,
+    "runtime": 1,
+    "test": 85
+  },
+  "note": "Coordinate union, types/classifiers and module paths ignored in matching; source POM declared and resolved versions can differ. SBOM extra may include parent/build/direct versions or module-specific static evidence.",
+  "project": {
+    "repository": "https://github.com/OpenRefine/OpenRefine",
+    "tag": "3.9.0",
+    "commit": "a448d936606388140c30336e938156577d36dfdf",
+    "release": "2025-02-13",
+    "releaseSource": "https://openrefine.org/blog/2025/02/13/version-3-9-0"
+  },
+  "scan": {
+    "cveProject": "snapshot 2026-11-17 08:52 UTC; --cve-offline",
+    "otherSources": "default online; EUVD partially unavailable HTTP 403",
+    "retries": 0,
+    "findings": 126,
+    "sbomComponents": 397,
+    "sbomVulnerabilities": 123,
+    "errors": [
+      "1 unresolved Maven POM",
+      "1 Maven type/classifier collision",
+      "CVEProject npm coverage incomplete",
+      "78 EUVD detail requests failed HTTP 403"
+    ],
+    "excludedDevRequirements": "unlocked 2 ranges skipped"
+  },
+  "versionAnalysis": {
+    "fiveOlderVersionsPresentInOfflineReactorRecord": [
+      "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.17.2",
+      "com.github.ben-manes.caffeine:caffeine:2.9.3",
+      "com.google.protobuf:protobuf-java:3.19.4",
+      "org.checkerframework:checker-qual:3.42.0",
+      "org.slf4j:slf4j-api:1.7.36"
+    ],
+    "resolverMismatch": "commons-io:commons-io:2.16.1 is present in Maven packaging provided via server -> butterfly but absent from scanner reactor reconstruction; packaging resolution reports missing POM org.openrefine:server:3.9.0 and has zero transitives. Matching coverage incomplete; no specific missed CVE established.",
+    "limitation": "The offline reconstruction is separate from scan, using its warmed isolated cache, not captured original in-memory record; only protobuf old version is independently visible in findings."
+  },
+  "spotChecks": [
+    {
+      "component": "com.google.protobuf:protobuf-java:3.19.4",
+      "id": "CVE-2022-3509",
+      "result": "finding present; Maven database module compile dependency tree confirms version; vendor bounds 3.19.0 to before 3.19.6",
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2022-3509",
+      "sbom": "version omitted; vulnerability has empty affects"
+    },
+    {
+      "component": "com.google.protobuf:protobuf-java:3.24.3",
+      "id": "CVE-2022-3509",
+      "result": "finding correctly absent; fixed in earlier branch",
+      "source": "https://github.com/advisories/GHSA-g5ww-5jh7-63cx"
+    },
+    {
+      "component": "org.apache.commons:commons-lang3:3.17.0",
+      "id": "CVE-2025-48924",
+      "result": "finding present; affected range 3.0 before 3.18.0",
+      "source": "https://svn.apache.org/repos/infra/websites/production/commons/content/proper/commons-lang/security.html"
+    }
+  ],
+  "postFix": {
+    "report": "report-after/sbom.cdx.json",
+    "mavenComponentsBefore": 151,
+    "mavenComponentsAfter": 156,
+    "addedVersions": 5,
+    "mavenTreeMissingVersions": [
+      "commons-io:commons-io:2.16.1"
+    ],
+    "orphanAffects": 0,
+    "duplicateComponentRefs": 0,
+    "CVE-2022-3509": [
+      "pkg:maven/com.google.protobuf/protobuf-java@3.19.4"
+    ],
+    "CVE-2024-7254": [
+      "pkg:maven/com.google.protobuf/protobuf-java@3.19.4",
+      "pkg:maven/com.google.protobuf/protobuf-java@3.24.3"
+    ],
+    "profile": "same isolated cache and options as original; online sources can change"
+  }
+}

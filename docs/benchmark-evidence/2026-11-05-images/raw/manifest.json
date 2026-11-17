@@ -1,0 +1,86 @@
+[
+  {
+    "project": "traefik",
+    "kind": "vv",
+    "file": "traefik-vv.json.gz",
+    "uncompressedBytes": 959720,
+    "sha256": "25311febfa78e01ca46c716cec02968ddfe33bfddbb3f0aaf4ceb0c6e6f187be"
+  },
+  {
+    "project": "traefik",
+    "kind": "offline",
+    "file": "traefik-offline.json.gz",
+    "uncompressedBytes": 959778,
+    "sha256": "ce07b762ed168b2dad643ae7345e5279becaa0870da8bde2f1676686c0cb03bc"
+  },
+  {
+    "project": "traefik",
+    "kind": "trivy",
+    "file": "traefik-trivy.json.gz",
+    "uncompressedBytes": 1266005,
+    "sha256": "44092132260907b9ca834ab5d82423494b67cc9c4bf8cea082c0d5bc3d6462bb"
+  },
+  {
+    "project": "traefik",
+    "kind": "grype",
+    "file": "traefik-grype.json.gz",
+    "uncompressedBytes": 1314580,
+    "sha256": "7eb447fdf571756a387e1f4c18cec69f76afedec9b44343ace04b1e2605af5ec"
+  },
+  {
+    "project": "traefik",
+    "kind": "grypeInventory",
+    "file": "traefik-grypeInventory.json.gz",
+    "uncompressedBytes": 1382400,
+    "sha256": "7f838b149820e32aad8e4897e89f9d82b813fbdd8ca3eef795a14345f156e81a"
+  },
+  {
+    "project": "traefik",
+    "kind": "inventory",
+    "file": "traefik-inventory.json.gz",
+    "uncompressedBytes": 659170,
+    "sha256": "f8192ecc2069beaca95b98f7b14db11a6f1b55ff040ba8c7f5d7086cc9068c55"
+  },
+  {
+    "project": "nginx",
+    "kind": "vv",
+    "file": "nginx-vv.json.gz",
+    "uncompressedBytes": 776361,
+    "sha256": "4cd46a1e9ccaaa6ce9c943a63d2f068d43bc7fed7fc6e37eb7afd022ee7bc40f"
+  },
+  {
+    "project": "nginx",
+    "kind": "offline",
+    "file": "nginx-offline.json.gz",
+    "uncompressedBytes": 776419,
+    "sha256": "e2eb7e85cfadc4bf542f20d59590ea9dafbd0b8f8cf6e41355b4898bf5f001ef"
+  },
+  {
+    "project": "nginx",
+    "kind": "trivy",
+    "file": "nginx-trivy.json.gz",
+    "uncompressedBytes": 3695085,
+    "sha256": "4e929bf5a1f903e2c9b55f9c06d30f05a3cc7b4df565850bd4ec714763fa3b7c"
+  },
+  {
+    "project": "nginx",
+    "kind": "grype",
+    "file": "nginx-grype.json.gz",
+    "uncompressedBytes": 2825146,
+    "sha256": "4c8e65e312af983f1161fe9c63ce9f6895327106072b11b470e30c44acf86477"
+  },
+  {
+    "project": "nginx",
+    "kind": "grypeInventory",
+    "file": "nginx-grypeInventory.json.gz",
+    "uncompressedBytes": 2703056,
+    "sha256": "d4a9e836c49a0a228ac6aeb6b78ed029ec846556e83027a4f6de01c5a8432a0a"
+  },
+  {
+    "project": "nginx",
+    "kind": "inventory",
+    "file": "nginx-inventory.json.gz",
+    "uncompressedBytes": 2113472,
+    "sha256": "4d28469d1cf186e4393174dcc0f1e7ef9100a670e8388008dd34d9f885559a5e"
+  }
+]

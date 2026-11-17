@@ -114,10 +114,12 @@ test('project export excludes other projects from prewarmed EPSS and EUVD enrich
  const repo=require('../lib/cache-repository').createCacheRepository(source),kept='CVE-2026-10001',other='CVE-2026-10002',at=Date.now()-3600000;
  repo.put('catalogue','epss',{meta:{fetchedAt:at},entries:{[kept]:{score:0.3},[other]:{score:0.8}}},{fetchedAt:at});
  repo.put('catalogue','euvd-targeted',{entries:{[kept]:{item:{id:'EUVD-2026-1'},fetchedAt:at,stale:true},[other]:{item:{id:'EUVD-2026-2'},fetchedAt:at,stale:false}}},{fetchedAt:at});
+ repo.put('catalogue','certfr-targeted',{entries:{[kept]:{items:[{ref:'CERTFR-2026-AVI-1'}],fetchedAt:at,stale:true},[other]:{items:[],fetchedAt:at,stale:false}}},{fetchedAt:at});
+ repo.put('catalogue','kev-targeted',{entries:{[kept]:{item:{dateAdded:'2026-01-01'},fetchedAt:at,stale:false},[other]:{item:null,fetchedAt:at,stale:false}}},{fetchedAt:at});
  const d=makeDepRecord({ecosystem:'npm',name:'example',version:'1.0.0'});
  buildProjectSnapshot(source,target,buildProjectScope(new Map([['example',d]]),{cves:[kept]}));
  const out=require('../lib/cache-repository').createCacheRepository(target);
- for(const key of ['epss','euvd-targeted']){const r=out.get('catalogue',key);assert.deepEqual(Object.keys(r.value.entries),[kept]);assert.equal(r.fetchedAt,at)}
+ for(const key of ['epss','euvd-targeted','certfr-targeted','kev-targeted']){const r=out.get('catalogue',key);assert.deepEqual(Object.keys(r.value.entries),[kept]);assert.equal(r.fetchedAt,at)}
  assert.equal(out.get('catalogue','euvd-targeted').value.entries[kept].stale,true);
 });
 

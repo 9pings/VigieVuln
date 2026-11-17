@@ -10,7 +10,7 @@
 [![CI](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml)
 
 
-**VigieVuln** is a polyglot dependency auditor built for **professional code audits**.
+**VigieVuln 1.3.0** is a polyglot dependency auditor for code audits.
 
 It scans dependencies and **9 CMS/frameworks** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
 
@@ -31,6 +31,7 @@ It scans dependencies and **9 CMS/frameworks** in one pass without build tools, 
 - **CMS & frameworks audited as instances**; Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP with per-instance inventory (core, plugins, themes, bundles, components) → [the dedicated guide](docs/CMS-FRAMEWORKS.md)
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
 - **Air-gapped flow**; **zero network under `--offline`** → [Benchmark](docs/BENCHMARK.md) · [Air-gapped](#air-gapped-audits)
+- **Native image audits**; Docker/OCI archives, registries and rootfs inventories without Docker; Linux packages, ELF/Go metadata and publisher SBOMs, with explicit coverage. Image analysis in source scans is off by default; use `--images` or the separate `vigievuln image` command → [image guide](docs/IMAGES.md)
 - **Hosted proxy with a verified account**; `--set-proxy-cache vigievuln` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
 - **Project monitoring**; `vigievuln watch ./project --name 'My Project'` — one free project with up to **100 distinct direct dependency coordinates** → [monitoring guide](docs/USAGE.md#project-monitoring)
 - **Shared cache for a scanner fleet**; `vigievuln serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
@@ -85,7 +86,15 @@ The proxy receives package coordinates and CVE identifiers, not source code. Cac
 These are standalone reports from real source scans, generated on **2026-11-04** with VigieVuln **1.2.1**. Dubbo uses the hosted proxy; the CMS sample uses its local cache offline and focuses on PHP dependencies. Missing Wordfence/Drupal advisory and WordPress checksum inputs are explicitly marked incomplete. [Sample scope, sources and reproduction commands](docs/samples/README.md).
 
 > [!WARNING]
-> vigievuln is new and may still contain ( rare ) bugs. Treat its output as a strong first pass, **double-check anything critical**, and please [report issues](https://github.com/9pings/VigieVuln/issues); they get fixed fast.
+> VigieVuln can miss dependencies or vulnerabilities and can report false positives. Review coverage warnings, verify important findings against the resolved project and advisory sources, and please [report issues](https://github.com/9pings/VigieVuln/issues).
+
+### Resolution and coverage
+
+- **Gradle:** without a lockfile, versions inferred from Maven POM traversal can differ from Gradle's resolution, causing both missed and incorrect findings. Lockfiles cover only the configurations written to them; production, test and build configurations may differ or be combined in the inventory. Verify the configurations relevant to the application against Gradle's own dependency graph.
+- **Python:** without a resolved lockfile, pinned requirements are checked but their transitive dependencies are not resolved. A scan of pins alone is not a complete Python environment inventory.
+- **Maven and other ecosystems:** resolution depends on the manifests and available metadata. Missing POMs, unsupported dependency forms and unavailable advisory sources can leave coverage incomplete. A lockfile improves evidence but does not prove deployed contents or exploitability.
+
+See [usage and Gradle resolution](docs/USAGE.md) and [validation and limitations](docs/VALIDATION.md) before relying on a report.
 
 ## Why use vigievuln for code audits?
 
@@ -166,7 +175,7 @@ The HTML report opens in any browser, contains every detail (CVSS vectors, refer
 See the [CMS coverage limits](docs/CMS-FRAMEWORKS.md#coverage-and-its-current-limits)
 and [shared-cache operating limits](docs/USAGE.md#shared-proxy-cache-server-serve-cache--proxy-cache).
 
-vigievuln doesn't just read the `composer.json` under a WordPress or Drupal site — it inventories the **instance**: core, plugins, themes, bundles and framework components with their observed versions, attributes every dependency CVE to the component that ships it, and reports each instance in its own sub-chapter — synthesis included even when it comes out clean. Any recognized layout is activated by the default `--app-plugins auto`; `none` opts out.
+vigievuln doesn't just read the `composer.json` under a WordPress or Drupal site — it inventories the **instance**: core, plugins, themes, bundles and framework components with their observed versions, attributes dependency findings where ownership is established, and reports each instance in its own sub-chapter — synthesis included even when it comes out clean. Any recognized layout is activated by the default `--app-plugins auto`; `none` opts out.
 
 | Product | Inventory | Advisory lane |
 | --- | --- | --- |

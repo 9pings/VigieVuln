@@ -1,0 +1,14 @@
+{
+  "reference": "docker.io/library/nginx:1.24.0",
+  "currentTag": "1.24.0",
+  "branch": "1.24",
+  "source": "registry-tags",
+  "verifiedFix": false,
+  "status": "current",
+  "targetTag": "1.24.0",
+  "targetReference": "docker.io/library/nginx:1.24.0",
+  "targetDigest": "sha256:f6daac2445b0ce70e64d77442ccf62839f3f1b4c24bf6746a857eff014e798c8",
+  "platformDigest": "sha256:2e26275ed7a47e8e93f264d39a09ca4bc3f4058c904c75087e237f4ea883f2a1",
+  "observedAt": "2026-11-05T10:40:01.941Z",
+  "reason": "Registry tag ordering does not establish that any vulnerability is fixed."
+}

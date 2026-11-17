@@ -1,0 +1,118 @@
+{
+  "coverage": [
+    {
+      "capability": "sources",
+      "collector": "euvd-details",
+      "execution": "partial",
+      "result": "enriched",
+      "count": 168,
+      "consulted": 168,
+      "missing": 8,
+      "stale": 0,
+      "failures": [
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2026-31396"
+          ],
+          "attemptedAt": 1793873383960
+        },
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2024-1094"
+          ],
+          "attemptedAt": 1793873384012
+        },
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2026-19363"
+          ],
+          "attemptedAt": 1793873384138
+        },
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2026-31388"
+          ],
+          "attemptedAt": 1793873384170
+        },
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2025-206445"
+          ],
+          "attemptedAt": 1793873384434
+        },
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2026-31451"
+          ],
+          "attemptedAt": 1793873384982
+        },
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2026-13830"
+          ],
+          "attemptedAt": 1793873385136
+        },
+        {
+          "code": "source-request-failed",
+          "source": "euvd-details",
+          "status": null,
+          "reason": "EUVD metadata exceeds configured limit",
+          "resources": [
+            "EUVD-2026-28420"
+          ],
+          "attemptedAt": 1793873386232
+        }
+      ],
+      "reason": "8 EUVD detail request(s) failed: EUVD metadata exceeds configured limit"
+    }
+  ],
+  "warnings": [
+    {
+      "type": "source-unavailable",
+      "capability": "sources",
+      "source": "euvd-details",
+      "code": "source-request-failed",
+      "status": null,
+      "resources": [
+        "EUVD-2026-31396",
+        "EUVD-2024-1094",
+        "EUVD-2026-19363",
+        "EUVD-2026-31388",
+        "EUVD-2025-206445",
+        "EUVD-2026-31451",
+        "EUVD-2026-13830",
+        "EUVD-2026-28420"
+      ],
+      "reason": "8 EUVD detail request(s) failed: EUVD metadata exceeds configured limit",
+      "message": "EUVD-DETAILS: 8 EUVD detail request(s) failed: EUVD metadata exceeds configured limit"
+    }
+  ]
+}

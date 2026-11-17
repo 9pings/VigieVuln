@@ -1,0 +1,871 @@
+{
+  "project": "https://github.com/traccar/traccar",
+  "tag": "v6.6",
+  "commit": "fc5ae14952a44c85894e470cad04d4f91e6a3bd2",
+  "mode": "unlocked default transitive scan, cve-offline public snapshot; other sources default online",
+  "runtimeComparison": {
+    "configuration": "runtimeClasspath",
+    "gradleCount": 265,
+    "scannerCount": 275,
+    "matching": 247,
+    "different": [
+      {
+        "coord": "com.fasterxml.jackson.core:jackson-annotations",
+        "gradle": "2.18.2",
+        "vigievuln": [
+          "2.18.0"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "com.fasterxml.jackson.core:jackson-databind",
+        "gradle": "2.18.2",
+        "vigievuln": [
+          "2.18.0"
+        ],
+        "scannerFindings": [
+          {
+            "id": "CVE-2026-110879",
+            "reportedVersion": "2.18.0",
+            "source": "CVEProject+nvd"
+          },
+          {
+            "id": "CVE-2026-54512",
+            "reportedVersion": "2.18.0",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2026-54513",
+            "reportedVersion": "2.18.0",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2026-68497",
+            "reportedVersion": "2.18.0",
+            "source": "CVEProject+nvd+osv"
+          },
+          {
+            "id": "CVE-2026-91776",
+            "reportedVersion": "2.18.0",
+            "source": "CVEProject+nvd+osv"
+          },
+          {
+            "id": "CVE-2026-91777",
+            "reportedVersion": "2.18.0",
+            "source": "CVEProject+nvd+osv"
+          },
+          {
+            "id": "CVE-2026-19032",
+            "reportedVersion": "2.18.0",
+            "source": "CVEProject+nvd+osv"
+          },
+          {
+            "id": "CVE-2026-54514",
+            "reportedVersion": "2.18.0",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2026-54515",
+            "reportedVersion": "2.18.0",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2026-59888",
+            "reportedVersion": "2.18.0",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2026-59889",
+            "reportedVersion": "2.18.0",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2026-77310",
+            "reportedVersion": "2.18.0",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2026-83557",
+            "reportedVersion": "2.18.0",
+            "source": "CVEProject+nvd+osv"
+          },
+          {
+            "id": "GHSA-mhm7-754m-9p8w",
+            "reportedVersion": "2.18.0",
+            "source": "osv"
+          }
+        ]
+      },
+      {
+        "coord": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+        "gradle": "2.18.2",
+        "vigievuln": [
+          "2.17.2"
+        ],
+        "scannerFindings": [
+          {
+            "id": "CVE-2026-106554",
+            "reportedVersion": "2.17.2",
+            "source": "CVEProject+nvd"
+          },
+          {
+            "id": "CVE-2026-68495",
+            "reportedVersion": "2.17.2",
+            "source": "CVEProject+nvd"
+          }
+        ]
+      },
+      {
+        "coord": "com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations",
+        "gradle": "2.18.2",
+        "vigievuln": [
+          "2.18.0"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "com.google.auth:google-auth-library-credentials",
+        "gradle": "1.30.1",
+        "vigievuln": [
+          "1.30.0"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "com.google.errorprone:error_prone_annotations",
+        "gradle": "2.36.0",
+        "vigievuln": [
+          "2.7.1"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "com.google.guava:failureaccess",
+        "gradle": "1.0.2",
+        "vigievuln": [
+          "1.0.1"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "com.google.guava:guava",
+        "gradle": "33.3.1-jre",
+        "vigievuln": [
+          "31.0.1-jre"
+        ],
+        "scannerFindings": [
+          {
+            "id": "CVE-2026-102554",
+            "reportedVersion": "31.0.1-jre",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2023-2976",
+            "reportedVersion": "31.0.1-jre",
+            "source": "nvd+osv"
+          },
+          {
+            "id": "CVE-2020-8908",
+            "reportedVersion": "31.0.1-jre",
+            "source": "nvd+osv"
+          }
+        ]
+      },
+      {
+        "coord": "com.google.http-client:google-http-client-apache-v2",
+        "gradle": "1.45.3",
+        "vigievuln": [
+          "1.45.2"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "com.google.http-client:google-http-client-gson",
+        "gradle": "1.45.3",
+        "vigievuln": [
+          "1.45.2"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "com.google.j2objc:j2objc-annotations",
+        "gradle": "3.0.0",
+        "vigievuln": [
+          "1.3"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "org.apache.commons:commons-lang3",
+        "gradle": "3.17.0",
+        "vigievuln": [
+          "3.12.0"
+        ],
+        "scannerFindings": [
+          {
+            "id": "CVE-2025-48924",
+            "reportedVersion": "3.12.0",
+            "source": "CVEProject+nvd+osv"
+          }
+        ]
+      },
+      {
+        "coord": "org.apache.httpcomponents:httpclient",
+        "gradle": "4.5.14",
+        "vigievuln": [
+          "4.5.12"
+        ],
+        "scannerFindings": [
+          {
+            "id": "CVE-2020-13956",
+            "reportedVersion": "4.5.12",
+            "source": "nvd+osv"
+          }
+        ]
+      },
+      {
+        "coord": "org.checkerframework:checker-qual",
+        "gradle": "3.48.3",
+        "vigievuln": [
+          "3.42.0"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "org.glassfish.hk2.external:aopalliance-repackaged",
+        "gradle": "3.1.1",
+        "vigievuln": [
+          "3.0.6"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "org.glassfish.hk2:hk2-utils",
+        "gradle": "3.1.1",
+        "vigievuln": [
+          "3.0.6"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "org.slf4j:jcl-over-slf4j",
+        "gradle": "2.0.7",
+        "vigievuln": [
+          "1.7.30"
+        ],
+        "scannerFindings": []
+      },
+      {
+        "coord": "org.slf4j:slf4j-api",
+        "gradle": "2.0.16",
+        "vigievuln": [
+          "1.7.36"
+        ],
+        "scannerFindings": []
+      }
+    ],
+    "additionalVersions": [
+      {
+        "coord": "com.fasterxml.jackson.core:jackson-annotations",
+        "gradle": "2.18.2",
+        "additionalScannerVersions": [
+          "2.18.0"
+        ]
+      },
+      {
+        "coord": "com.fasterxml.jackson.core:jackson-databind",
+        "gradle": "2.18.2",
+        "additionalScannerVersions": [
+          "2.18.0"
+        ]
+      },
+      {
+        "coord": "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor",
+        "gradle": "2.18.2",
+        "additionalScannerVersions": [
+          "2.17.2"
+        ]
+      },
+      {
+        "coord": "com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations",
+        "gradle": "2.18.2",
+        "additionalScannerVersions": [
+          "2.18.0"
+        ]
+      },
+      {
+        "coord": "com.google.auth:google-auth-library-credentials",
+        "gradle": "1.30.1",
+        "additionalScannerVersions": [
+          "1.30.0"
+        ]
+      },
+      {
+        "coord": "com.google.errorprone:error_prone_annotations",
+        "gradle": "2.36.0",
+        "additionalScannerVersions": [
+          "2.7.1"
+        ]
+      },
+      {
+        "coord": "com.google.guava:failureaccess",
+        "gradle": "1.0.2",
+        "additionalScannerVersions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "coord": "com.google.guava:guava",
+        "gradle": "33.3.1-jre",
+        "additionalScannerVersions": [
+          "31.0.1-jre"
+        ]
+      },
+      {
+        "coord": "com.google.http-client:google-http-client-apache-v2",
+        "gradle": "1.45.3",
+        "additionalScannerVersions": [
+          "1.45.2"
+        ]
+      },
+      {
+        "coord": "com.google.http-client:google-http-client-gson",
+        "gradle": "1.45.3",
+        "additionalScannerVersions": [
+          "1.45.2"
+        ]
+      },
+      {
+        "coord": "com.google.j2objc:j2objc-annotations",
+        "gradle": "3.0.0",
+        "additionalScannerVersions": [
+          "1.3"
+        ]
+      },
+      {
+        "coord": "org.apache.commons:commons-lang3",
+        "gradle": "3.17.0",
+        "additionalScannerVersions": [
+          "3.12.0"
+        ]
+      },
+      {
+        "coord": "org.apache.httpcomponents:httpclient",
+        "gradle": "4.5.14",
+        "additionalScannerVersions": [
+          "4.5.12"
+        ]
+      },
+      {
+        "coord": "org.checkerframework:checker-qual",
+        "gradle": "3.48.3",
+        "additionalScannerVersions": [
+          "3.42.0"
+        ]
+      },
+      {
+        "coord": "org.glassfish.hk2.external:aopalliance-repackaged",
+        "gradle": "3.1.1",
+        "additionalScannerVersions": [
+          "3.0.6"
+        ]
+      },
+      {
+        "coord": "org.glassfish.hk2:hk2-utils",
+        "gradle": "3.1.1",
+        "additionalScannerVersions": [
+          "3.0.6"
+        ]
+      },
+      {
+        "coord": "org.slf4j:jcl-over-slf4j",
+        "gradle": "2.0.7",
+        "additionalScannerVersions": [
+          "1.7.30"
+        ]
+      },
+      {
+        "coord": "org.slf4j:slf4j-api",
+        "gradle": "2.0.16",
+        "additionalScannerVersions": [
+          "1.7.36"
+        ]
+      }
+    ],
+    "missing": [],
+    "scannerOnly": [
+      {
+        "coord": "net.bytebuddy:byte-buddy",
+        "versions": [
+          "1.15.11"
+        ]
+      },
+      {
+        "coord": "net.bytebuddy:byte-buddy-agent",
+        "versions": [
+          "1.15.11"
+        ]
+      },
+      {
+        "coord": "org.apiguardian:apiguardian-api",
+        "versions": [
+          "1.1.2"
+        ]
+      },
+      {
+        "coord": "org.junit.jupiter:junit-jupiter-api",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.jupiter:junit-jupiter-engine",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.platform:junit-platform-commons",
+        "versions": [
+          "1.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.platform:junit-platform-engine",
+        "versions": [
+          "1.11.4"
+        ]
+      },
+      {
+        "coord": "org.mockito:mockito-core",
+        "versions": [
+          "5.15.2"
+        ]
+      },
+      {
+        "coord": "org.objenesis:objenesis",
+        "versions": [
+          "3.3"
+        ]
+      },
+      {
+        "coord": "org.opentest4j:opentest4j",
+        "versions": [
+          "1.3.0"
+        ]
+      }
+    ]
+  },
+  "reviewedCases": [
+    {
+      "coord": "com.google.guava:guava",
+      "actual": "33.3.1-jre",
+      "scanner": "31.0.1-jre",
+      "cve": "CVE-2023-2976",
+      "assessment": "false positive for selected Gradle runtime version; published fix 32.0.0",
+      "source": "https://github.com/google/guava/security/advisories/GHSA-7g45-4rm6-3mm3"
+    },
+    {
+      "coord": "org.apache.httpcomponents:httpclient",
+      "actual": "4.5.14",
+      "scanner": "4.5.12",
+      "cve": "CVE-2020-13956",
+      "assessment": "false positive for selected Gradle runtime version; fixed in 4.5.13",
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2020-13956"
+    },
+    {
+      "coord": "org.apache.commons:commons-lang3",
+      "actual": "3.17.0",
+      "scanner": "3.12.0",
+      "cve": "CVE-2025-48924",
+      "assessment": "wrong version but both versions are within the advisory affected range",
+      "source": "https://github.com/advisories/GHSA-j288-q9x7-2f5v"
+    },
+    {
+      "coord": "org.postgresql:postgresql",
+      "actual": "42.7.4",
+      "scanner": "42.7.4",
+      "cve": "CVE-2025-49146",
+      "assessment": "selected version lies in affected range; exploit applicability depends on channelBinding=require",
+      "source": "https://github.com/pgjdbc/pgjdbc/security/advisories/GHSA-hq9p-pm7w-8p54"
+    },
+    {
+      "coord": "io.netty:netty-handler",
+      "actual": "4.1.116.Final",
+      "scanner": "4.1.116.Final",
+      "cve": "CVE-2025-24970",
+      "assessment": "selected version lies in affected range; exploit applicability depends on affected TLS usage",
+      "source": "https://github.com/netty/netty/security/advisories/GHSA-4g8c-wm8x-jfhw"
+    }
+  ],
+  "caution": "A reported CVE for an incorrectly selected version is not automatically false or true for the actual version. Only the reviewed cases are classified; the remaining mappings need advisory range review.",
+  "fullLockRuntimeComparison": {
+    "configuration": "runtimeClasspath",
+    "gradleCount": 265,
+    "scannerCount": 294,
+    "matching": 265,
+    "different": [],
+    "additionalVersions": [
+      {
+        "coord": "com.google.guava:guava",
+        "gradle": "33.3.1-jre",
+        "additionalScannerVersions": [
+          "33.4.0-jre"
+        ]
+      },
+      {
+        "coord": "commons-codec:commons-codec",
+        "gradle": "1.17.2",
+        "additionalScannerVersions": [
+          "1.15"
+        ]
+      },
+      {
+        "coord": "org.apache.commons:commons-compress",
+        "gradle": "1.22",
+        "additionalScannerVersions": [
+          "1.21"
+        ]
+      },
+      {
+        "coord": "org.apache.commons:commons-lang3",
+        "gradle": "3.17.0",
+        "additionalScannerVersions": [
+          "3.8.1"
+        ]
+      },
+      {
+        "coord": "org.apache.commons:commons-text",
+        "gradle": "1.10.0",
+        "additionalScannerVersions": [
+          "1.3"
+        ]
+      },
+      {
+        "coord": "org.apache.httpcomponents.client5:httpclient5",
+        "gradle": "5.3.1",
+        "additionalScannerVersions": [
+          "5.1.3"
+        ]
+      },
+      {
+        "coord": "org.apache.httpcomponents.core5:httpcore5",
+        "gradle": "5.2.4",
+        "additionalScannerVersions": [
+          "5.1.3"
+        ]
+      },
+      {
+        "coord": "org.apache.httpcomponents.core5:httpcore5-h2",
+        "gradle": "5.2.4",
+        "additionalScannerVersions": [
+          "5.1.3"
+        ]
+      },
+      {
+        "coord": "org.apache.httpcomponents:httpclient",
+        "gradle": "4.5.14",
+        "additionalScannerVersions": [
+          "4.5.13"
+        ]
+      },
+      {
+        "coord": "org.apache.httpcomponents:httpcore",
+        "gradle": "4.4.16",
+        "additionalScannerVersions": [
+          "4.4.14"
+        ]
+      },
+      {
+        "coord": "org.javassist:javassist",
+        "gradle": "3.30.2-GA",
+        "additionalScannerVersions": [
+          "3.28.0-GA"
+        ]
+      }
+    ],
+    "missing": [],
+    "scannerOnly": [
+      {
+        "coord": "com.fasterxml.jackson:jackson-bom",
+        "versions": [
+          "2.18.2"
+        ]
+      },
+      {
+        "coord": "com.google.cloud:libraries-bom",
+        "versions": [
+          "26.48.0"
+        ]
+      },
+      {
+        "coord": "com.puppycrawl.tools:checkstyle",
+        "versions": [
+          "10.21.1"
+        ]
+      },
+      {
+        "coord": "info.picocli:picocli",
+        "versions": [
+          "4.7.6"
+        ]
+      },
+      {
+        "coord": "io.opentelemetry:opentelemetry-bom",
+        "versions": [
+          "1.42.1"
+        ]
+      },
+      {
+        "coord": "net.bytebuddy:byte-buddy",
+        "versions": [
+          "1.15.11"
+        ]
+      },
+      {
+        "coord": "net.bytebuddy:byte-buddy-agent",
+        "versions": [
+          "1.15.11"
+        ]
+      },
+      {
+        "coord": "net.sf.saxon:Saxon-HE",
+        "versions": [
+          "12.5"
+        ]
+      },
+      {
+        "coord": "org.antlr:antlr4-runtime",
+        "versions": [
+          "4.13.2"
+        ]
+      },
+      {
+        "coord": "org.apache.maven.doxia:doxia-core",
+        "versions": [
+          "1.12.0"
+        ]
+      },
+      {
+        "coord": "org.apache.maven.doxia:doxia-logging-api",
+        "versions": [
+          "1.12.0"
+        ]
+      },
+      {
+        "coord": "org.apache.maven.doxia:doxia-module-xdoc",
+        "versions": [
+          "1.12.0"
+        ]
+      },
+      {
+        "coord": "org.apache.maven.doxia:doxia-sink-api",
+        "versions": [
+          "1.12.0"
+        ]
+      },
+      {
+        "coord": "org.apache.xbean:xbean-reflect",
+        "versions": [
+          "3.7"
+        ]
+      },
+      {
+        "coord": "org.apiguardian:apiguardian-api",
+        "versions": [
+          "1.1.2"
+        ]
+      },
+      {
+        "coord": "org.codehaus.plexus:plexus-classworlds",
+        "versions": [
+          "2.6.0"
+        ]
+      },
+      {
+        "coord": "org.codehaus.plexus:plexus-component-annotations",
+        "versions": [
+          "2.1.0"
+        ]
+      },
+      {
+        "coord": "org.codehaus.plexus:plexus-container-default",
+        "versions": [
+          "2.1.0"
+        ]
+      },
+      {
+        "coord": "org.codehaus.plexus:plexus-utils",
+        "versions": [
+          "3.3.0"
+        ]
+      },
+      {
+        "coord": "org.junit.jupiter:junit-jupiter-api",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.jupiter:junit-jupiter-engine",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.platform:junit-platform-commons",
+        "versions": [
+          "1.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.platform:junit-platform-engine",
+        "versions": [
+          "1.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit:junit-bom",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.mockito:mockito-core",
+        "versions": [
+          "5.15.2"
+        ]
+      },
+      {
+        "coord": "org.objenesis:objenesis",
+        "versions": [
+          "3.3"
+        ]
+      },
+      {
+        "coord": "org.opentest4j:opentest4j",
+        "versions": [
+          "1.3.0"
+        ]
+      },
+      {
+        "coord": "org.reflections:reflections",
+        "versions": [
+          "0.10.2"
+        ]
+      },
+      {
+        "coord": "org.xmlresolver:xmlresolver",
+        "versions": [
+          "5.2.2"
+        ]
+      }
+    ]
+  },
+  "lockScopeLimit": "The full lock includes test, tool and platform configurations. The scanner combines them: 11 runtime coordinates have additional locked versions and 29 scanner coordinates are absent from runtime; checkstyleCopy commons-lang3:3.8.1 is reported with production scope even though runtime selects 3.17.0. No configuration is removed from the report.",
+  "scopedLockRuntimeComparison": {
+    "configuration": "runtimeClasspath",
+    "gradleCount": 265,
+    "scannerCount": 279,
+    "matching": 265,
+    "different": [],
+    "additionalVersions": [
+      {
+        "coord": "org.apache.commons:commons-compress",
+        "gradle": "1.22",
+        "additionalScannerVersions": [
+          "1.21"
+        ]
+      }
+    ],
+    "missing": [],
+    "scannerOnly": [
+      {
+        "coord": "com.fasterxml.jackson:jackson-bom",
+        "versions": [
+          "2.18.2"
+        ]
+      },
+      {
+        "coord": "com.google.cloud:libraries-bom",
+        "versions": [
+          "26.48.0"
+        ]
+      },
+      {
+        "coord": "io.opentelemetry:opentelemetry-bom",
+        "versions": [
+          "1.42.1"
+        ]
+      },
+      {
+        "coord": "net.bytebuddy:byte-buddy",
+        "versions": [
+          "1.15.11"
+        ]
+      },
+      {
+        "coord": "net.bytebuddy:byte-buddy-agent",
+        "versions": [
+          "1.15.11"
+        ]
+      },
+      {
+        "coord": "org.apiguardian:apiguardian-api",
+        "versions": [
+          "1.1.2"
+        ]
+      },
+      {
+        "coord": "org.junit.jupiter:junit-jupiter-api",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.jupiter:junit-jupiter-engine",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.platform:junit-platform-commons",
+        "versions": [
+          "1.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit.platform:junit-platform-engine",
+        "versions": [
+          "1.11.4"
+        ]
+      },
+      {
+        "coord": "org.junit:junit-bom",
+        "versions": [
+          "5.11.4"
+        ]
+      },
+      {
+        "coord": "org.mockito:mockito-core",
+        "versions": [
+          "5.15.2"
+        ]
+      },
+      {
+        "coord": "org.objenesis:objenesis",
+        "versions": [
+          "3.3"
+        ]
+      },
+      {
+        "coord": "org.opentest4j:opentest4j",
+        "versions": [
+          "1.3.0"
+        ]
+      }
+    ]
+  },
+  "scopedLockScopeLimit": "The lock generated only for four Java classpaths still merges compile and runtime: commons-compress 1.21 appears from compileClasspath while runtime selects 1.22. Additional scanner coordinates are test/compile components and BOMs.",
+  "lockReviewedFindings": "CVE-2023-2976 (Guava) and CVE-2020-13956 (HttpClient) from the unlocked POM-based scan are absent with the generated lockfile."
+}

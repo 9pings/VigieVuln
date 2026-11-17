@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-11-05T11:56:42.404559+00:00",
+  "cli": {
+    "pass": 2236,
+    "skipped": 11,
+    "fail": 0
+  },
+  "server": {
+    "pass": 585,
+    "skipped": 0,
+    "fail": 0
+  },
+  "browser": {
+    "totals": "COMPOSANTS\tPAQUETS AFFECT\u00c9S\tAVIS\tCVE DISTINCTES\n907\t44\t219\t176\n\nS\u00e9v\u00e9rit\u00e9s des lignes CVE\nCritiques 16 \u00c9lev\u00e9es 119 Moyennes 104 Faibles 14 Inconnues 1\nVoir les vuln\u00e9rabilit\u00e9s\n\u2192",
+    "overflow": false,
+    "timestamps": 1782,
+    "vendorEvidence": true,
+    "historicalEvidence": true,
+    "observations": true
+  },
+  "logs": {
+    "cli": {
+      "sha256": "ec9732a4527446f11ed7443c3c7ca77d18200f210b2edabbb741dd4637a46794",
+      "file": "cli-validation.log"
+    },
+    "server": {
+      "sha256": "238a1b218fae101486f4ff6c5ae1f946b0886ad08fb359ba99f5115a499fa82c",
+      "file": "server-validation.log"
+    },
+    "browser": {
+      "sha256": "4dbf9a749aff9d29506a79546d38d01dd74133071760cb6695da1f95cfdc09ef",
+      "file": "browser-validation.log"
+    },
+    "compiled": {
+      "sha256": "d0cd7752d736fa9e4b71297c1129dba9bf254e03eefb4633c448b2213c8cde56",
+      "file": "compiled-validation.log"
+    }
+  }
+}

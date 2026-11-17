@@ -1,0 +1,25 @@
+{
+  "schema": "vigievuln-osv-recordings/1",
+  "date": "2026-11-05",
+  "query": {
+    "url": "https://api.osv.dev/v1/querybatch",
+    "method": "POST",
+    "body": {
+      "queries": [
+        {
+          "package": {
+            "ecosystem": "Debian:12",
+            "name": "apt"
+          },
+          "version": "2.6.1"
+        }
+      ]
+    }
+  },
+  "detailsSource": "https://api.osv.dev/v1/vulns/{id}",
+  "files": {
+    "DEBIAN-CVE-2011-3374.json": "7c40c4d553ed98c811ee024355e3b32b7e2e26dbb724aa4685234e691bfdcb93",
+    "DEBIAN-CVE-2026-109518.json": "06d3a6e03c4d58cca1354f0cbec0880f82b91e5117184a05273423763416de5d",
+    "querybatch.json": "ddab2947ab32c13727479e09d6927579743e65d842b565005fee339b2e0ee79c"
+  }
+}

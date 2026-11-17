@@ -188,7 +188,7 @@ test('non-hosted Retire preserves its existing local cache behavior', () => {
 	`);
 });
 
-test('hosted Drupal/Retire stale warnings reach HTML/JSON and the strict sources gate despite warm local caches', () => {
+test('hosted Drupal/Retire distinguish confirmed refresh failures from normal revalidation', () => {
 	const home = temp();
 	try {
 		const src = path.join(home, 'source');
@@ -210,33 +210,33 @@ test('hosted Drupal/Retire stale warnings reach HTML/JSON and the strict sources
 			if(String(url)==='https://api.vigievuln.fr/v1/proxy/status')return Response.json({ok:true,service:'vigievuln-proxy'});
 			if(String(url)!=='https://api.vigievuln.fr/v1/resource')throw Error('unexpected endpoint');
 			const q=JSON.parse(init.body);fs.appendFileSync(${JSON.stringify(callsFile)},JSON.stringify(q)+'\\n');
-			const headers=process.env.VV_STALE==='1'?{'x-fad-proxy':'stale','x-fad-proxy-fetched-at':${JSON.stringify(OLD)}}:{};
+			const headers=process.env.VV_STALE!=='fresh'?{'x-fad-proxy':'stale','x-fad-proxy-reason':process.env.VV_STALE,'x-fad-proxy-fetched-at':${JSON.stringify(OLD)}}:{};
 			if(q.provider==='drupal' && q.type==='advisories')return Response.json({advisories:{}},{headers});
 			if(q.provider==='retire' && q.type==='signatures')return Response.json(${JSON.stringify(REPO)},{headers});
 			throw Error('unexpected resource: '+q.provider+'.'+q.type);
 		};`);
 		const env = { ...process.env, HOME: home, USERPROFILE: home, VIGIEVULN_PROXY_CACHE_TOKEN: 'test-key',
 			VIGIEVULN_ENV: '', FAD_CHECKER_ENV: '', NODE_OPTIONS: `--require=${hook}`, FORCE_COLOR: '0' };
-		for (const stale of [true, false]) {
-			const output = path.join(home, stale ? 'stale-report' : 'fresh-report');
+		for (const mode of ['refresh-failed', 'revalidating', 'fresh']) {
+			const output = path.join(home, mode+'-report');
 			const args = [path.join(CLI, 'vigievuln.js'), '-s', src, '--proxy-cache', 'default', '--retries', '0',
 				'--no-transitive', '--no-all-libs', '--no-osv', '--no-nvd', '--no-epss', '--no-kev', '--no-euvd', '--no-gcve', '--no-certfr',
 				'--no-eol', '--no-binaries', '--no-jars', '--no-certs', '--no-packagist-audit', '--app-plugins', 'drupal', '--scan-context', 'component',
 				'--report-html', '--report-json', '-o', output, '--fail-on-incomplete', 'sources'];
-			const run = spawnSync(process.execPath, args, { env: { ...env, VV_STALE: stale ? '1' : '0' }, encoding: 'utf8', timeout: 20000 });
-			assert.equal(run.status, stale ? 2 : 0, `${run.error || ''}\n${run.stderr}\n${run.stdout}`);
+			const run = spawnSync(process.execPath, args, { env: { ...env, VV_STALE: mode }, encoding: 'utf8', timeout: 20000 });
+			assert.equal(run.status, mode==='refresh-failed' ? 2 : 0, `${run.error || ''}\n${run.stderr}\n${run.stdout}`);
 			const report = JSON.parse(fs.readFileSync(path.join(output, 'findings.json')));
-			const warnings = report.provenance.freshnessNotices || [];
-			if (stale) {
+			const warnings = report.warnings.filter(w => w.type === 'source-stale');
+			if (mode==='refresh-failed') {
 				for (const source of ['drupal', 'retire']) assert.ok(warnings.some(w => w.message.startsWith(source + ':') && w.message.includes(OLD)));
 				const html = fs.readFileSync(path.join(output, 'cve-report.html'), 'utf8');
 				assert.ok(html.includes(OLD));
-				assert.match(html, /<strong>drupal<\/strong>/);
-				assert.match(html, /<strong>retire<\/strong>/);
-			} else assert.deepEqual(warnings, []);
+				assert.match(html, /drupal:/i);
+				assert.match(html, /retire:/i);
+			} else {assert.deepEqual(warnings, []);if(mode==='revalidating')for(const source of ['drupal','retire'])assert.ok(report.provenance.notices.some(n=>n.type==='source-stale'&&n.message.startsWith(source+':')&&n.message.includes(OLD)));}
 		}
 		const calls = fs.readFileSync(callsFile, 'utf8').trim().split('\n').map(JSON.parse);
-		assert.deepEqual(calls.map(q => q.provider + '.' + q.type), ['drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures']);
+		assert.deepEqual(calls.map(q => q.provider + '.' + q.type), ['drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures']);
 		assert.ok(calls.filter(q => q.provider === 'drupal').every(q => JSON.stringify(q.params.packages) === '["drupal/webform"]'));
 	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); }
 });

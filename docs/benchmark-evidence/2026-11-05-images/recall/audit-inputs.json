@@ -1,0 +1,22 @@
+{
+  "traefik-go-findings-input": {
+    "file": "traefik-go-findings-input.json.gz",
+    "uncompressedSha256": "e403752f9c1be7437300058b781da9a23a74e096e68dc08c08985249be168f86",
+    "compressedSha256": "bd429f9a5ded15b88b4fe5fea36fd9a71b894e92417cf95a8c3fc260d0a9e892"
+  },
+  "nginx-audit-findings-input": {
+    "file": "nginx-audit-findings-input.json.gz",
+    "uncompressedSha256": "9bdd38516749d9478ca2ba744f4bb64804a0b00e60d6a0df3c4fb2526fdc93fc",
+    "compressedSha256": "fe1af960e39ebbec49ebb72df9818fd046b1cf4d5d54a5ad23f235037cdc16bf"
+  },
+  "nginx-audit-comparison-input": {
+    "file": "nginx-audit-comparison-input.json.gz",
+    "uncompressedSha256": "2d53c2864b56d37c76a6564e2ae209a0a79ffa225914afd6c5e09de922e09e62",
+    "compressedSha256": "67a894ffc52022c1462bf8ece45896235107b057ebe48874299d2ff45b134529"
+  },
+  "nginx-audit-inventory-input": {
+    "file": "nginx-audit-inventory-input.json.gz",
+    "uncompressedSha256": "4d28469d1cf186e4393174dcc0f1e7ef9100a670e8388008dd34d9f885559a5e",
+    "compressedSha256": "46996f7efa1eedee24fe0a068ba3cda0463acd6675560a06dbc4c529f1a70fc8"
+  }
+}

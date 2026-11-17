@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-05T12:04:17.735194+00:00",
+  "responses": {
+    "https://www.vigievuln.fr/health": {
+      "status": 200,
+      "body": "{\"ok\":true,\"draining\":false,\"service\":\"vigievuln-server\",\"version\":\"1.0.0\",\"region\":\"fr\",\"store\":\"postgresql\",\"uptimeMs\":31112}"
+    },
+    "https://api.vigievuln.fr/health": {
+      "status": 200,
+      "body": "{\"ok\":true,\"draining\":false,\"service\":\"vigievuln-server\",\"version\":\"1.0.0\",\"region\":\"fr\",\"store\":\"postgresql\",\"uptimeMs\":31207}"
+    }
+  }
+}

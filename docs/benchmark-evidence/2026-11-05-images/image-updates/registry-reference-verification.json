@@ -1,0 +1,18 @@
+[
+  {
+    "reference": "docker.io/library/traefik:v2.11.0",
+    "observedAt": "2026-11-05T10:37:07.772759+00:00",
+    "indexDigest": "sha256:0a5157f742d2900389da6ce60ea80cc476801dc951917a993cd848d982f58265",
+    "linuxAmd64": [
+      "sha256:903f89ddacc3059657565d3e5b3b8e8dcba4cc3b8af08183dad6fdc415459111"
+    ]
+  },
+  {
+    "reference": "docker.io/library/nginx:1.24.0",
+    "observedAt": "2026-11-05T10:37:08.277964+00:00",
+    "indexDigest": "sha256:f6daac2445b0ce70e64d77442ccf62839f3f1b4c24bf6746a857eff014e798c8",
+    "linuxAmd64": [
+      "sha256:2e26275ed7a47e8e93f264d39a09ca4bc3f4058c904c75087e237f4ea883f2a1"
+    ]
+  }
+]

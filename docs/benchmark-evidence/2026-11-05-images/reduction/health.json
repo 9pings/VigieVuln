@@ -1,0 +1,26 @@
+{
+  "https://www.vigievuln.fr": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "draining": false,
+      "service": "vigievuln-server",
+      "version": "1.0.0",
+      "region": "fr",
+      "store": "postgresql",
+      "uptimeMs": 785556
+    }
+  },
+  "https://api.vigievuln.fr": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "draining": false,
+      "service": "vigievuln-server",
+      "version": "1.0.0",
+      "region": "fr",
+      "store": "postgresql",
+      "uptimeMs": 785650
+    }
+  }
+}

@@ -4,7 +4,7 @@
 
 | Source | What we use | License | API / endpoint |
 | --- | --- | --- | --- |
-| [CVEProject `cvelistV5`](https://github.com/CVEProject/cvelistV5) | Daily bulk CVE bundle, filtered to Maven-relevant entries | CC0-1.0 | GitHub release asset (zip) |
+| [CVEProject `cvelistV5`](https://github.com/CVEProject/cvelistV5) | CVE records used for Maven and explicitly identified native packages; coverage depends on collected records and package/version evidence | CC0-1.0 | GitHub release asset (zip), local index or configured proxy |
 | [VigieVuln advisories](https://www.vigievuln.fr/advisories/vigievuln?lang=en) | Reviewed Maven/npm package and version evidence; `VV:CVE-…` identifies each CVE | Sources and AI-assisted reconciliation disclosed per advisory | Official authenticated proxy; cached for offline scans |
 | [OSV.dev](https://osv.dev/) (Google + GitHub Security Lab) | Per-dep vulnerability lookup (Maven, npm, Packagist, PyPI, NuGet, …); full DB import via `--osv-db` | CC-BY 4.0 | `POST api.osv.dev/v1/querybatch`, `GET api.osv.dev/v1/vulns/{id}`, `Maven/all.zip` |
 | [NIST NVD](https://nvd.nist.gov/) | Canonical CVE description + CVSS vectors + CPE configurations + CWE | US-gov public domain | `GET services.nvd.nist.gov/rest/json/cves/2.0?cveId=…` — free [API key](https://nvd.nist.gov/developers/request-an-api-key) bumps the rate limit 10× |
@@ -26,7 +26,11 @@
 | [Packagist](https://packagist.org/) | Latest stable + `abandoned` flag | Free public service | `GET packagist.org/packages/<vendor>/<pkg>.json` |
 | [PyPI](https://pypi.org/) | Latest + `yanked` + "Inactive" classifier | Free public service | `GET pypi.org/pypi/<pkg>/json` |
 | [NuGet](https://www.nuget.org/) | Latest stable + per-version `deprecation` | Free public service | `GET api.nuget.org/v3/registration5-gz-semver2/<id>/index.json` |
-| [Go module proxy](https://proxy.golang.org/) | Latest module version (outdated) | Free public service | `GET proxy.golang.org/<module>/@latest` |
+| [Go module proxy](https://proxy.golang.org/) | Latest module version and module version information | Free public service | `GET proxy.golang.org/<module>/@latest` and `/@v/<version>.info` |
+| [Debian security tracker](https://security-tracker.debian.org/) and [Debian Sources](https://sources.debian.org/) | Distribution package advisories, historical tracker data and source-version evidence for image inventories | See each source's terms | Salsa security-tracker repository and `sources.debian.org/api/src/<name>/<version>/` |
+| [Alpine security tracker](https://security.alpinelinux.org/) | Source-package and CVE status for Alpine image inventories | See source terms | `GET security.alpinelinux.org/srcpkg/<name>` and `/vuln/<CVE>` |
+| [Freexian Extended LTS](https://deb.freexian.com/extended-lts/tracker/) | Extended-LTS tracker and ELA advisory evidence for eligible Debian image inventories | See source terms | `deb.freexian.com/extended-lts/tracker/` and `www.freexian.com/lts/extended/updates/` |
+| [NGINX security advisories](https://nginx.org/en/security_advisories.html) | Publisher advisory evidence for identified NGINX image components | See source terms | `raw.githubusercontent.com/nginx/nginx.org/master/xml/en/security_advisories.xml` |
 | [RubyGems](https://rubygems.org/) | Latest stable + licenses | Free public service | `GET rubygems.org/api/v1/gems/<gem>.json` |
 | [deps.dev](https://deps.dev/) | Native-binary identity by checksum (→ package coordinate) | Free public API (CC-BY) | `GET api.deps.dev/v3/query?hash.type=SHA1&hash.value=<base64>` |
 | [CIRCL hashlookup](https://hashlookup.circl.lu/) | Known-good file identity (NSRL/distro/CDN) + KnownMalicious | Free public service | `GET hashlookup.circl.lu/lookup/sha256/<hash>` |
@@ -38,6 +42,14 @@ Persistent caches (`~/.vigie-vuln/`) reduce source requests according to their T
 table → [`USAGE.md`](USAGE.md)). Requests use the named source or the configured proxy;
 the hosted proxy receives the requested package coordinates and vulnerability identifiers.
 `--offline` makes no network requests.
+
+Image scans may also consult the distribution and publisher sources above, Go module
+version information and upstream GitHub security advisories when applicable. Explicit
+registry acquisition or update checks contact the selected OCI registry and, when
+challenged, its authentication service. Registry requests reveal the requested image
+repository and reference; see [`IMAGES.md`](IMAGES.md) for authentication and offline
+inventory workflows. Source availability and the evidence actually consulted are
+recorded in the report; a source listed here is not necessarily consulted on every scan.
 
 Application inventory reads local files. Configured PrestaShop and TYPO3 advisory
 lanes also query the GitHub repository feeds listed above. SPIP core advisories use

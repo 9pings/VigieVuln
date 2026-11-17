@@ -1,20 +1,25 @@
-# Migration to VigieVuln 1.0.0
+# Migration from fad-checker to VigieVuln
+
+Current CLI version: **1.3.0**. The package rename below began with 1.0.0;
+cache handling changed again in 1.2.0. Use [USAGE.md](USAGE.md) for current
+commands and [RELEASING.md](RELEASING.md) for the current tag convention.
 
 ## Names and versions
 
 - `fad-checker@2.7.4` becomes `vigievuln@1.0.0` (product: **VigieVuln**).
 - `fad-service` becomes `vigievuln-server@1.0.0` (product: **VigieVuln-Server**).
 - `1.0.0` starts a new package/version series; it is not a rollback of fad-checker.
-- The retained `../../fad-checker` directory is retained as the legacy project, with
+- The sibling `../fad-checker` directory was retained as the legacy project, with
   transition release 2.7.5 and an explicit registry-deprecation procedure.
 
 ## CLI users
 
-After publication, uninstall the old global package before installing the new one:
+When installing from npm, uninstall the old global package before installing a
+published VigieVuln version:
 
 ```bash
 npm uninstall -g fad-checker
-npm install -g vigievuln@1.0.0
+npm install -g vigievuln
 vigievuln --version
 ```
 
@@ -23,9 +28,11 @@ first avoids competing global bin links. `vigievuln` is the primary command.
 Existing scripts can keep using the aliases. A `fad-checker.js` wrapper is also
 provided for integrations that invoke the JavaScript file directly.
 
-The CLI migrates `~/.fad-checker/` and `~/.fad-checker-proxy-cache/` to
-`~/.vigie-vuln/` and `~/.vigie-vuln-proxy-cache/` when the destination is absent.
-For 1.2.0, API keys, account sessions and registry settings are preserved. Legacy filesystem caches are removed on startup; regenerate them and create new SQLite cache archives. Older cache archives are not imported.
+Since 1.2.0, the active caches are SQLite under `~/.vigie-vuln/` and
+`~/.vigie-vuln-proxy-cache/`. Pre-1.2 filesystem caches are not migrated as
+advisory data; startup removes legacy cache data while preserving supported
+configuration and account sessions. Regenerate caches and export new SQLite
+archives. Older filesystem cache archives are not accepted.
 
 New configuration names:
 
@@ -39,7 +46,7 @@ The preferred environment name wins when both are set; explicit CLI flags still 
 Repository configuration files are never loaded automatically: pass `--config`
 explicitly only for files you trust.
 The default report directory becomes `vigievuln-report`; use `-o` for a fixed path.
-Human-facing titles/tool metadata identify VigieVuln 1.0.0. The `fad-findings/1`,
+Human-facing titles/tool metadata identify the running VigieVuln version. The `fad-findings/1`,
 `fad-deps/1`, `fad-diff/1`, `fad-dump/1` schemas, source IDs, SARIF rule IDs and HTTP
 headers keep their existing identifiers so consumers and audit baselines remain
 compatible. Integrations matching the old tool-name string must accept `VigieVuln`.
@@ -65,13 +72,11 @@ Detailed steps are in `docs/OPERATIONS.md` in the server repository.
 
 ## Repository and documentation links
 
-The CLI retains its original Git remote (`git@github.com:n8tz/fad-check.git`).
-The previously selected public branded URL is `https://github.com/9pings/VigieVuln`;
-renaming the remote repository is a separate operation. The server has its own Git
-repository and no configured remote until its destination is chosen.
-This local checkout retains predecessor Git history, but has no new release commit
-or tag yet. Old historical tags are not reused: new releases use
-`vigievuln-v1.0.0`, keeping the old `v1.0.0` lineage unambiguous.
+The public CLI repository is `https://github.com/9pings/VigieVuln`.
+Some checkouts retain the old redirected remote `git@github.com:n8tz/fad-check.git`.
+The server has its own repository and release lifecycle. Current CLI releases
+use a tag matching `package.json` exactly, for example `1.3.0`; the old
+`vigievuln-v1.0.0` tag is historical and is not the current workflow convention.
 
 If renaming the public repository, preserve GitHub's redirects and do not recreate
 a repository at the old URL. GitHub Pages URLs require separate handling; the

@@ -69,7 +69,18 @@ test('an old exact OSV consultation remains flagged despite a fresh catalogue', 
 	const warnings=[];
 	const matches=await queryBatch([d],{cacheDir:f.cacheDir,offline:true,onWarning:w=>warnings.push(w),fetcher:()=>assert.fail('network')});
 	assert.equal(matches.length,1);
-	assert.ok(warnings.some(w=>w.type==='source-stale'));
+	assert.ok(warnings.some(w=>w.type==='cache-freshness'));
+	assert.equal(warnings.find(w=>w.type==='cache-freshness').severity,'info');
+});
+test('offline age information stays separate from explicitly stale source warnings', async t => {
+	const f=fixture(t), aged=dep('aged'), stale=dep('stale'), missing=dep('missing'), fetchedAt=Date.now()-48*3600e3;
+	f.seed(aged,'FAD-AGED',fetchedAt);
+	f.store.commit({queries:[{...f.tuple(stale),ids:[],fetchedAt,complete:true,provenance:{stale:true,refreshFailure:{status:503}}}]});
+	const warnings=[];
+	await queryBatch([aged,stale,missing],{cacheDir:f.cacheDir,offline:true,onWarning:w=>warnings.push(w),fetcher:()=>assert.fail('network')});
+	assert.ok(warnings.some(w=>w.type==='cache-freshness' && w.severity==='info'));
+	assert.ok(warnings.some(w=>w.type==='source-stale' && w.severity!=='info'));
+	assert.ok(warnings.some(w=>w.type==='osv-coverage' && w.severity!=='info'));
 });
 test('multiple stale OSV consultations produce one bounded warning', async t => {
 	const f=fixture(t), deps=Array.from({length:8},(_,i)=>dep(`demo${i}`));
@@ -77,10 +88,12 @@ test('multiple stale OSV consultations produce one bounded warning', async t => 
 	const warnings=[];
 	const matches=await queryBatch(deps,{cacheDir:f.cacheDir,offline:true,onWarning:w=>warnings.push(w)});
 	assert.equal(matches.length,8);
-	assert.equal(warnings.filter(w=>w.type==='source-stale').length,1);
-	assert.match(warnings[0].message,/8 freshness notices/);
-	assert.match(warnings[0].message,/cached advisory data is used offline/);
-	assert.match(warnings[0].message,/Oldest saved data: \d{4}-\d\d-\d\dT/);
+	assert.equal(warnings.filter(w=>w.type==='cache-freshness').length,1);
+	assert.equal(warnings[0].count,8);
+	assert.equal(warnings[0].source,'osv');
+	assert.match(warnings[0].message,/saved consultations were used offline/);
+	assert.match(warnings[0].oldestFetchedAt,/^\d{4}-\d\d-\d\dT/);
+	assert.ok(warnings[0].queryTtlMs>0);
 	assert.doesNotMatch(warnings[0].message,/org\.example:demo/);
 });
 test("OSV pagination queries only unfinished packages and persists every unique advisory", async t => {
@@ -140,4 +153,18 @@ test("OSV legacy empty lists are unknown offline and refreshed online; new verif
 	assert.equal(f.store.getQuery(f.tuple(d)).complete, true);
 	assert.equal(JSON.parse(f.read(ck))._schema, undefined, 'an ambiguous legacy file is not promoted into verified evidence');
 	await queryBatch([d], { cacheDir: f.cacheDir, offline: true, onWarning: () => assert.fail("verified empty is complete") });
+});
+
+test('offline stale provenance alone or unknown date is context, explicit failed refresh remains warning', async t => {
+ const f=fixture(t), aged=dep('stale-context'),failed=dep('stale-failure'),unknown=dep('unknown-date'),warnings=[];
+ const at=Date.now()-48*3600e3;
+ f.store.commit({queries:[{...f.tuple(aged),ids:[],fetchedAt:at,complete:true,provenance:{stale:true}},{...f.tuple(failed),ids:[],fetchedAt:at,complete:true,provenance:{stale:true,refreshFailure:{status:503}}},{...f.tuple(unknown),ids:[],fetchedAt:1,complete:true,provenance:{stale:true}}]});
+ await queryBatch([aged,failed,unknown],{cacheDir:f.cacheDir,offline:true,onWarning:w=>warnings.push(w),fetcher:()=>assert.fail('network')});
+ const context=warnings.find(w=>w.type==='cache-freshness');assert.equal(context?.count,2);assert.equal(context.unknownAgeCount,1);assert.equal(context.severity,'info');
+ assert.equal(warnings.filter(w=>w.type==='source-stale').length,1);assert.match(warnings.find(w=>w.type==='source-stale').message,/stale-failure/);
+});
+test('an explicit maximum advisory age keeps an expired or unknown consultation as an alert',async t=>{
+ const f=fixture(t),d=dep('policy-expired'),warnings=[];f.seed(d,'FAD-POLICY',Date.now()-48*3600e3);
+ await queryBatch([d],{cacheDir:f.cacheDir,offline:true,maxAdvisoryAgeMs:3600000,onWarning:w=>warnings.push(w)});
+ assert.ok(warnings.some(w=>w.type==='source-stale'&&w.severity!=='info'));
 });

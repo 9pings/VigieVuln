@@ -1,0 +1,38 @@
+{
+  "image": "vigievuln-external:20261117",
+  "input": "inputs/netbox-resolved/requirements.txt",
+  "input_origin": "../python-apps/netbox-pip-resolved.json; exact 99 distributions from native pip dry-run, CPython3.11/Linux",
+  "pip_audit_version": "2.10.1",
+  "pip_audit_argv": [
+    "pip-audit",
+    "-r",
+    "/work/inputs/netbox-resolved/requirements.txt",
+    "--no-deps",
+    "--disable-pip",
+    "--vulnerability-service",
+    "pypi OR osv",
+    "--format",
+    "json",
+    "--aliases",
+    "on",
+    "--progress-spinner",
+    "off",
+    "--output",
+    "/work/pip-audit-SERVICE.json"
+  ],
+  "vigievuln_argv": [
+    "node",
+    "/tool/vigievuln.js",
+    "scan",
+    "/work/inputs/netbox-resolved",
+    "--report-output",
+    "/work/vigievuln-resolved",
+    "--report",
+    "html,json,sbom",
+    "--cve-offline",
+    "--retries",
+    "0"
+  ],
+  "comparison": "audit-venv/bin/python compare.py > comparison.json",
+  "note": "Both scans query live vulnerability services; advisory counts may change. pip-audit exit1 indicates findings (both service invocations exited1), not a scan failure. No service or package was skipped."
+}

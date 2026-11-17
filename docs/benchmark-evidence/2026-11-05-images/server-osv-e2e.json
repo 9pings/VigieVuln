@@ -1,0 +1,74 @@
+{
+  "schema": "vigievuln-server-osv-e2e/1",
+  "evidence": "actual localhost service APIs; recorded OSV upstream",
+  "recordedAt": "2026-11-05",
+  "results": [
+    {
+      "server": "server",
+      "clientLibrary": "checkout injected via fad.fad",
+      "ecosystem": "Debian:12",
+      "package": "apt",
+      "version": "2.6.1",
+      "upstreamCalls": 3,
+      "queryRoutedToUpstream": true,
+      "advisoryIds": [
+        "DEBIAN-CVE-2011-3374",
+        "DEBIAN-CVE-2026-109518"
+      ],
+      "onlineCoverage": {
+        "source": "system-osv-targeted",
+        "ecosystem": "Debian:12",
+        "status": "complete",
+        "result": "affected",
+        "scope": "consulted-package-versions",
+        "consulted": 1,
+        "unknown": 0
+      },
+      "offlineCoverage": {
+        "source": "system-osv-targeted",
+        "ecosystem": "Debian:12",
+        "status": "complete",
+        "result": "affected",
+        "scope": "consulted-package-versions",
+        "consulted": 1,
+        "unknown": 0
+      },
+      "offlineMatches": 2,
+      "unseenVersionCoverage": "incomplete"
+    },
+    {
+      "server": "server-main",
+      "clientLibrary": "checkout injected via fad.fad",
+      "ecosystem": "Debian:12",
+      "package": "apt",
+      "version": "2.6.1",
+      "upstreamCalls": 3,
+      "queryRoutedToUpstream": true,
+      "advisoryIds": [
+        "DEBIAN-CVE-2011-3374",
+        "DEBIAN-CVE-2026-109518"
+      ],
+      "onlineCoverage": {
+        "source": "system-osv-targeted",
+        "ecosystem": "Debian:12",
+        "status": "complete",
+        "result": "affected",
+        "scope": "consulted-package-versions",
+        "consulted": 1,
+        "unknown": 0
+      },
+      "offlineCoverage": {
+        "source": "system-osv-targeted",
+        "ecosystem": "Debian:12",
+        "status": "complete",
+        "result": "affected",
+        "scope": "consulted-package-versions",
+        "consulted": 1,
+        "unknown": 0
+      },
+      "offlineMatches": 2,
+      "unseenVersionCoverage": "incomplete",
+      "hostedBulkStatus": 410
+    }
+  ]
+}

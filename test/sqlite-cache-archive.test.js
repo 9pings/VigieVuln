@@ -133,25 +133,28 @@ test('cold import installs a SQLite database and old bundles are rejected',async
  assert.equal(createCacheRepository(f.target).get('fixture','value').value,'available offline');
 });
 
-test('cache import distinguishes an invalid archive from an unavailable tar process without exposing paths',async t=>{
+test('invalid archive errors are sanitized and cache transfer requires no PATH tools',async t=>{
  const f=fixture(t);fs.writeFileSync(f.archive,'not an archive');
- await assert.rejects(importCache(f.archive,{targetDir:f.target}),/unsupported cache bundle: tar exited with status/);
- const {spawnSync}=require('node:child_process');
- const modulePath=require.resolve('../lib/cache-archive-sqlite');
- const script=`require(${JSON.stringify(modulePath)}).importCache(${JSON.stringify(f.archive)},{targetDir:${JSON.stringify(f.target)}}).catch(e=>process.stdout.write(e.message));`;
+ await assert.rejects(importCache(f.archive,{targetDir:f.target}),/unsupported cache bundle: invalid gzip or tar data/);
+ createCacheRepository(f.source).put('fixture','key','value');
+ const {spawnSync}=require('node:child_process'),modulePath=require.resolve('../lib/cache-archive-sqlite');
+ const script=`const a=require(${JSON.stringify(modulePath)}); (async()=>{await a.exportCache(${JSON.stringify(f.archive)},{sourceDir:${JSON.stringify(f.source)}});await a.importCache(${JSON.stringify(f.archive)},{targetDir:${JSON.stringify(f.target)}})})().catch(e=>{console.error(e.message);process.exitCode=1});`;
  const child=spawnSync(process.execPath,['-e',script],{env:{...process.env,PATH:''},encoding:'utf8'});
- assert.equal(child.status,0);assert.match(child.stdout,/cannot inspect cache bundle: tar process failed \(ENOENT\)/);assert.ok(!child.stdout.includes(f.archive));
+ assert.equal(child.status,0,child.stderr);assert.equal(createCacheRepository(f.target).get('fixture','key').value,'value');
 });
 
-test('export enumerates allowed files and rejects an uncheckpointed WAL introduced during export',{skip:process.platform==='win32'},async t=>{
+test('export still rejects an uncheckpointed WAL introduced during native streaming',async t=>{
  const f=fixture(t),{spawnSync}=require('node:child_process');createCacheRepository(f.source).put('fixture','key','value');
- const tools=path.join(path.dirname(f.archive),'bin');fs.mkdirSync(tools);
- const tar=spawnSync('which',['tar'],{encoding:'utf8'}).stdout.trim();assert.ok(tar);
- const wrapper=path.join(tools,'tar');fs.writeFileSync(wrapper,`#!/bin/sh\nif [ "$1" = "-czf" ]; then printf injected > "$4/.vigie-vuln/cache.sqlite-$VV_SIDECAR"; fi\nexec "${tar}" "$@"\n`,{mode:0o700});
  const modulePath=require.resolve('../lib/cache-archive-sqlite');
- const run=(name,sidecar)=>{const dest=path.join(path.dirname(f.archive),name);const script=`require(${JSON.stringify(modulePath)}).exportCache(${JSON.stringify(dest)},{sourceDir:${JSON.stringify(f.source)}}).then(()=>process.stdout.write('ok')).catch(e=>{process.stdout.write(e.message);process.exitCode=1});`;return {dest,...spawnSync(process.execPath,['-e',script],{encoding:'utf8',env:{...process.env,PATH:tools+path.delimiter+process.env.PATH,VV_SIDECAR:sidecar}})};};
- const shm=run('with-shm.tar.gz','shm');assert.equal(shm.status,0,shm.stderr+shm.stdout);
- const listed=spawnSync(tar,['-tzf',shm.dest],{encoding:'utf8'});assert.equal(listed.status,0);assert.deepEqual(listed.stdout.trim().split('\n').sort(),['.vigie-vuln/cache.sqlite','.vigie-vuln/cli-bundle-meta.json']);
- await importCache(shm.dest,{targetDir:f.target});assert.equal(createCacheRepository(f.target).get('fixture','key').value,'value');
- const wal=run('with-wal.tar.gz','wal');assert.equal(wal.status,1);assert.match(wal.stdout,/uncheckpointed WAL/);assert.equal(fs.existsSync(wal.dest),false);
+ const script=`const fs=require('node:fs'), original=fs.createReadStream;fs.createReadStream=function(file,...args){if(String(file).endsWith('/.vigie-vuln/cache.sqlite'))fs.writeFileSync(file+'-wal','injected');return original.call(this,file,...args)};require(${JSON.stringify(modulePath)}).exportCache(${JSON.stringify(f.archive)},{sourceDir:${JSON.stringify(f.source)}}).catch(e=>{process.stdout.write(e.message);process.exitCode=1});`;
+ const child=spawnSync(process.execPath,['-e',script],{encoding:'utf8',env:{...process.env,PATH:''}});
+ assert.equal(child.status,1);assert.match(child.stdout,/uncheckpointed WAL/);assert.equal(fs.existsSync(f.archive),false);
+});
+
+test('native cache extraction rejects links, traversal and duplicate entries',async t=>{
+ const f=fixture(t),tar=require('tar-stream'),zlib=require('node:zlib');
+ async function bundle(entries){const pack=tar.pack(),chunks=[];const gzip=pack.pipe(zlib.createGzip());gzip.on('data',c=>chunks.push(c));const done=new Promise((r,j)=>{pack.on('error',j);gzip.on('error',j).on('end',r)});
+  for(const header of entries) await new Promise((r,j)=>pack.entry(header,'',e=>e?j(e):r()));pack.finalize();await done;await new Promise(r=>setImmediate(r));fs.writeFileSync(f.archive,Buffer.concat(chunks));}
+ for(const entry of [{name:'.vigie-vuln/cache.sqlite',type:'symlink',linkname:'/etc/passwd'},{name:'../escape',type:'file'},{name:'.vigie-vuln/cache.sqlite',type:'link',linkname:'elsewhere'}]){await bundle([entry]);await assert.rejects(importCache(f.archive,{targetDir:f.target}),/links or special|unexpected/);}
+ await bundle([{name:'.vigie-vuln/cache.sqlite'},{name:'.vigie-vuln/cache.sqlite'}]);await assert.rejects(importCache(f.archive,{targetDir:f.target}),/duplicate/);
 });

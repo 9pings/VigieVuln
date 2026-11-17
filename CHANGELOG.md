@@ -1,5 +1,22 @@
 # Changelog — VigieVuln
 
+## [1.3.0] — 2026-11-17
+
+- Preserve every inventoried Maven, npm and PyPI version in CycloneDX exports and link each vulnerability to the affected version, including multi-module and nested-lockfile cases.
+- Document measured inventory limitations on OpenRefine, Traccar, Paperless-ngx and NetBox, and a same-inventory comparison with pip-audit. Python requirements without a complete lock or resolved inventory do not trigger pip-style transitive resolution; Gradle POM expansion is not native Gradle mediation.
+- Resolve unambiguous literal versions in top-level Groovy `ext` blocks, while leaving dynamic or reassigned values unresolved. Warn that Gradle scans without a lockfile can report different transitive versions and miss dependencies.
+- Detect the implicit Spring Boot BOM when a single-script Gradle project applies both the Boot and dependency-management plugins, binding its managed versions to that script. Multiple scripts produce a coverage warning rather than sharing an inferred BOM. Cover Kotlin/Groovy declarations, catalog plugin aliases, unapplied plugins and lockfile precedence.
+- Recover versionless Gradle direct dependencies from transitive version requests in the same manifest and classpaths, retaining direct attribution and graph provenance in reports. Select the highest numeric request; keep incomplete graphs, ambiguous scopes, unsupported intermediate conflicts and unresolved expressions unassessed. Preserve configuration-specific exclusions. Maven mediation is unchanged.
+- Add native Docker/OCI registry, archive and root-filesystem inventory, plus publisher SBOM input, without requiring Docker, Trivy or Grype.
+- Match installed system packages and application components against distribution and advisory sources; improve Linux ELF metadata and Go binary identification.
+- Prepare image inventories and advisory data from anonymized dependency descriptors for offline replay, retaining digests, platforms and local source definitions in reports.
+- Add dedicated image inventory and vulnerability sections, concise image-update guidance, CVE/advisory links and source attribution; group actionable coverage failures separately from ordinary scan information.
+- Reuse individual advisory records unchanged for at least a year by default, with explicit refresh controls and `--force-update` support.
+- Disable image discovery and analysis by default in source scans and descriptor preparation; enable explicitly with `--images`, `-a images`, or configuration. Dedicated `image` commands remain explicit scans.
+- Reuse cached image inventories online when their digest is unchanged, and preserve inventories through air-gap cache preparation.
+- Keep image system components without advisories out of displayed inventories, place image vulnerabilities last in the CVE chapter, and embed the VV icon in Windows executables.
+- Apply proxy retry limits per request, preserve cached responses, and distinguish deferred refreshes from HTTP 429 rate limits.
+
 ## [1.2.1] — 2026-11-04
 
 - Report unreadable Maven manifests and native binaries as incomplete coverage, preserve other inventory entries, and bound binary hashing and PE metadata reads.
@@ -11,7 +28,7 @@
 - Apply Go workspace replacements, preserve conditional Python and NuGet versions, and collect Python dependency groups with explicit coverage warnings.
 - Suggest `vigievuln setup` during direct scans and refresh the committed report samples, terminal demo and screenshots.
 
-## [1.2.0] — Unreleased
+## [1.2.0] — 2026-11-04
 
 - Match VigieVuln Maven/npm advisories through the configured official proxy and offline cache, including partial ranges and `VV:CVE-…` identifiers.
 - Revalidate local caches after four hours, or on demand with `--force-update`; retain offline snapshots and avoid redownloading unchanged CVE releases.
@@ -36,7 +53,7 @@
 - Refresh the example audit reports and their screenshot.
 - Send the CLI version to the hosted proxy and explain how to update when the server requires a newer version.
 
-## [1.1.2] — Unreleased
+## [1.1.2] — 2026-10-28
 
 - Fix Windows account sessions when the home directory uses an 8.3 short path, including GitHub Actions temporary directories.
 - Require explicit `--config` for repository configuration and bound Composer validation and JAR decompression.

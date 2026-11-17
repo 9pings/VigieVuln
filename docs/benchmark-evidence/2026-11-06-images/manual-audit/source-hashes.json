@@ -1,0 +1,51 @@
+{
+  "checkedOn": "2026-11-06",
+  "method": "Publisher advisories, exact Debian packaging revisions and static source inspection. No exploit execution. Existing scanner counts are not rewritten.",
+  "downloads": [
+    {
+      "url": "https://salsa.debian.org/debian/curl/-/raw/debian/7.74.0-1.3+deb11u11/debian/patches/series",
+      "bytes": 1363,
+      "sha256": "026b1f3ef25a6bd232031918976db99406dc3988edc0c1f86c27ce19ef949b8b"
+    },
+    {
+      "url": "https://salsa.debian.org/debian/curl/-/raw/debian/7.74.0-1.3+deb11u11/debian/changelog",
+      "bytes": 95025,
+      "sha256": "53bc9d1300ac1f2dc3d5f8226a16e55538fe08a897a4e5a20577005c03bcb03d"
+    },
+    {
+      "url": "https://salsa.debian.org/debian/curl/-/raw/debian/7.74.0-1.3+deb11u11/debian/rules",
+      "bytes": 5221,
+      "sha256": "160c142291a7a3f1860ae670c448b21a868fa23eeb38e0ba46b7dd7b0ce36671"
+    },
+    {
+      "url": "https://archive.debian.org/debian/pool/main/o/openssl/openssl_1.1.1w-0+deb11u1.debian.tar.xz",
+      "bytes": 84088,
+      "sha256": "022636c62f183b6157b1a1c65a1365690b6e3db5b0db38a5258ec8f097a05998"
+    },
+    {
+      "url": "https://archive.debian.org/debian/pool/main/libx/libxml2/libxml2_2.9.10+dfsg-6.7+deb11u4.debian.tar.xz",
+      "bytes": 41904,
+      "sha256": "62037376765cc8e5961771d758b8efa9fddce3cce6fd67c31bc111ddff656654"
+    },
+    {
+      "url": "https://archive.debian.org/debian/pool/main/libx/libxml2/libxml2_2.9.10+dfsg.orig.tar.xz",
+      "bytes": 2503560,
+      "sha256": "65ee7a2f5e100c64ddf7beb92297c9b2a30b994a76cd1fab67470cf22db6b7d0"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/GNOME/libxml2/v2.9.10/catalog.c",
+      "bytes": 99246,
+      "sha256": "070507a77a11c0924046d7a9896b49c0cae7bdd6a349589d8c5d429bdd1975d2"
+    },
+    {
+      "url": "https://github.com/curl/curl/commit/90325ff0444cbdff368bda5d26d6405a0bb6ee43.patch",
+      "bytes": 984,
+      "sha256": "d40e6ee1f68094ba9ba3e1d78dd52aa07ae2bcd57825b9282edde62a436af0a0"
+    },
+    {
+      "url": "https://github.com/curl/curl/commit/7103a93b05bc69ea98ed9d05d02fa9eeba533f2f.patch",
+      "bytes": 68899,
+      "sha256": "91f8d06a151d8c1290fe42b43bd92e87bb5254e1575f10663698dff96282892e"
+    }
+  ]
+}

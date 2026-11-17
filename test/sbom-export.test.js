@@ -51,6 +51,47 @@ test("buildCycloneDx dedups one CVE across multiple affected components", () => 
 	assert.equal(bom.vulnerabilities[0].affects.length, 1);
 });
 
+test("CycloneDX exports each resolved Maven version and links findings to the affected version", () => {
+	const dep = makeDepRecord({ ecosystem: "maven", namespace: "com.google.protobuf", name: "protobuf-java", version: "3.24.3" });
+	dep.versions = ["3.24.3", "3.19.4", "3.19.4"];
+	const bom = buildCycloneDx(new Map([[dep.coordKey, dep]]), [
+		{ dep: { ...dep, version: "3.19.4" }, cve: { id: "CVE-2022-3509", severity: "HIGH" } },
+	]);
+	assert.deepEqual(bom.components.map(c => c.purl).sort(), [
+		"pkg:maven/com.google.protobuf/protobuf-java@3.19.4",
+		"pkg:maven/com.google.protobuf/protobuf-java@3.24.3",
+	]);
+	assert.deepEqual(bom.vulnerabilities[0].affects, [{ ref: "pkg:maven/com.google.protobuf/protobuf-java@3.19.4" }]);
+});
+
+test("CycloneDX preserves unversioned Maven and embedded artifact identities", () => {
+	const unknown = makeDepRecord({ ecosystem: "maven", namespace: "example", name: "unknown" });
+	const embedded = { ...makeDepRecord({ ecosystem: "maven", namespace: "example", name: "shaded", version: "1" }),
+		provenance: "embedded", coordKey: "embedded:/app/lib.jar", versions: ["1", "2"] };
+	const image = { ...makeDepRecord({ ecosystem: "maven", namespace: "example", name: "image-lib", version: "1" }),
+		artifactTargetId: "image-1", coordKey: "image-component-1", versions: ["1", "2"] };
+	const bom = buildCycloneDx(new Map([[unknown.coordKey, unknown], [embedded.coordKey, embedded], [image.coordKey, image]]), []);
+	assert.deepEqual(bom.components.map(c => c["bom-ref"]), ["pkg:maven/example/unknown", "embedded:/app/lib.jar", "image-component-1"]);
+});
+
+for (const [ecosystem, namespace, name, purl] of [
+	["npm", "", "example-package", "pkg:npm/example-package"],
+	["pypi", "", "example-package", "pkg:pypi/example-package"],
+]) test(`CycloneDX links ${ecosystem} findings to each scanned version`, () => {
+	const dep = makeDepRecord({ ecosystem, namespace, name, version: "2.0.0" });
+	dep.versions = ["2.0.0", "1.0.0"];
+	const bom = buildCycloneDx(new Map([[dep.coordKey, dep]]), [
+		{ dep: { ...dep, version: "1.0.0" }, cve: { id: "CVE-2099-0001" } },
+		{ dep: { ...dep, version: "2.0.0" }, cve: { id: "CVE-2099-0002" } },
+		{ dep: { ...dep, version: "1.0.0" }, cve: { id: "CVE-2099-0003" } },
+		{ dep: { ...dep, version: "2.0.0" }, cve: { id: "CVE-2099-0003" } },
+	]);
+	assert.deepEqual(bom.components.map(c => c.purl).sort(), [`${purl}@1.0.0`, `${purl}@2.0.0`]);
+	assert.deepEqual(bom.vulnerabilities.map(v => v.affects.map(a => a.ref).sort()), [
+		[`${purl}@1.0.0`], [`${purl}@2.0.0`], [`${purl}@1.0.0`, `${purl}@2.0.0`],
+	]);
+});
+
 test("buildCycloneDx attaches component licenses from licenseResults", () => {
 	const resolved = resolvedFixture();
 	const dep = resolved.get("npm:lodash");

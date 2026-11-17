@@ -20,7 +20,7 @@ for(const native of [false,true,'legacy']) test(`CLI finds an isolated release f
  const db=require('../lib/cache-db').getCacheDb(cache),nvdBytes=Buffer.from(JSON.stringify(nvd));
  const savedNvd=[nvd.id,'live',Date.now(),null,require('../lib/advisory-compression').compress(nvdBytes),nvdBytes.length,
   JSON.stringify({schema:require('../lib/nvd').NVD_CACHE_SCHEMA})];
- db.prepare('INSERT INTO nvd_records(cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)').run(...savedNvd);
+ db.prepare('INSERT OR REPLACE INTO nvd_records(cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)').run(...savedNvd);
  const preload=path.join(root,'preload.cjs'),calls=path.join(root,'calls.jsonl'),report=path.join(root,'report.json');
  fs.writeFileSync(preload,`
  require('node:os').homedir=()=>process.env.VV_NVD_TEST_HOME;
@@ -28,14 +28,15 @@ for(const native of [false,true,'legacy']) test(`CLI finds an isolated release f
   require('node:fs').appendFileSync(process.env.VV_NVD_TEST_CALLS,String(url)+'\\n');
   if(process.env.VV_NVD_TEST_OFFLINE==='1')throw Error('unexpected offline request');
   if(String(url)==='https://api.osv.dev/v1/querybatch')return Response.json({results:JSON.parse(init.body).queries.map(()=>({}))});
+  if(process.env.VV_NVD_TEST_ABSENT==='1' && String(url).includes('services.nvd.nist.gov'))return new Response(null,{status:404,headers:{'x-fad-proxy-fetched-at':'2020-01-01T00:00:00Z'}});
   if(init.method==='HEAD')return new Response(null,{status:200});
   throw Error('unexpected request '+url);
  };
  `);
  const flags=['--cve-offline','--no-gcve','--no-transitive','--no-all-libs','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0'];
- function scan(offline,extra=[]) {
+ function scan(offline,extra=[],absent=false) {
   fs.rmSync(calls,{force:true});fs.rmSync(report,{force:true});
-  const result=spawnSync(process.execPath,['--require',preload,path.join(__dirname,'../vigievuln.js'),'scan',src,...flags,...(offline?['--offline']:['--advisory-query-ttl','0']),'--report-json',report,...extra],{cwd:root,encoding:'utf8',timeout:15000,env:{...process.env,VV_NVD_TEST_HOME:home,VV_NVD_TEST_CALLS:calls,VV_NVD_TEST_OFFLINE:offline?'1':'0',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''}});
+  const result=spawnSync(process.execPath,['--require',preload,path.join(__dirname,'../vigievuln.js'),'scan',src,...flags,...(offline?['--offline']:['--advisory-query-ttl','0']),'--report-json',report,...extra],{cwd:root,encoding:'utf8',timeout:15000,env:{...process.env,VV_NVD_TEST_HOME:home,VV_NVD_TEST_CALLS:calls,VV_NVD_TEST_OFFLINE:offline?'1':'0',VV_NVD_TEST_ABSENT:absent?'1':'0',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''}});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   if(offline)assert.equal(fs.existsSync(calls),false,'offline performed no network requests');
   else assert.match(fs.readFileSync(calls,'utf8'),/api\.osv\.dev\/v1\/querybatch/);
@@ -50,7 +51,11 @@ for(const native of [false,true,'legacy']) test(`CLI finds an isolated release f
  db.prepare('DELETE FROM nvd_records WHERE cve=?').run(nvd.id);
  assert.deepEqual(scan(true),[]);
  assert.ok(JSON.parse(fs.readFileSync(report)).warnings.some(w=>w.type==='source-unavailable' && /NVD:.*package-bound/.test(w.message)),'missing NVD coverage is visible');
- db.prepare('INSERT INTO nvd_records(cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)').run(...savedNvd);
+ assert.deepEqual(scan(false,['--no-nvd-mirror'],true),[]);
+ const absentReport=JSON.parse(fs.readFileSync(report));
+ assert.ok(!absentReport.warnings.some(w=>/NVD:.*package-bound/.test(w.message)),'an answered NVD absence is not an outage');
+ assert.ok(absentReport.provenance.sourceLimitations.some(n=>n.source==='NVD'&&/returned no record/.test(n.message)),'absence remains visible in coverage context');
+ db.prepare('INSERT OR REPLACE INTO nvd_records(cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)').run(...savedNvd);
  store.commit({records:[{source:'osv',document:{...osv,withdrawn:new Date().toISOString()},fetchedAt:Date.now()}]});
  assert.deepEqual(scan(true),[],'withdrawn OSV identity cannot be revived by an NVD cache entry');
 });

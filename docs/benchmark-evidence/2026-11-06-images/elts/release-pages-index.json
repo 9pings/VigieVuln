@@ -1,0 +1,474 @@
+[
+  {
+    "id": "CVE-2026-102473",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-102473",
+    "status": 200,
+    "fetchedAt": 1793946515345,
+    "sha256": "327f725ee119811e3b3005efdeeae435ed44957dabe3ce5b094aa4fa26bd47db",
+    "bytes": 4907
+  },
+  {
+    "id": "CVE-2026-102474",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-102474",
+    "status": 200,
+    "fetchedAt": 1793946515337,
+    "sha256": "6211e169970134e1e97f96b394f8fd2aa53d0c0f6b33808f22884fe1d1eaa93c",
+    "bytes": 4390
+  },
+  {
+    "id": "CVE-2026-102633",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-102633",
+    "status": 200,
+    "fetchedAt": 1793946515351,
+    "sha256": "8c5f3c6c848c67513689e7545f88880acc2270c564a8589e3334cc4420c14e39",
+    "bytes": 6411
+  },
+  {
+    "id": "CVE-2026-103111",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-103111",
+    "status": 200,
+    "fetchedAt": 1793946515494,
+    "sha256": "e2a3a8099fe8517fff980939514274ef16bd80f0f12ef30564634a7b88f49cf4",
+    "bytes": 5452
+  },
+  {
+    "id": "CVE-2026-105712",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-105712",
+    "status": 200,
+    "fetchedAt": 1793946515502,
+    "sha256": "35cfe244584706632cb0a8821285664b0a250b1237160dd8792feb37dee2f8c2",
+    "bytes": 7113
+  },
+  {
+    "id": "CVE-2026-107708",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-107708",
+    "status": 200,
+    "fetchedAt": 1793946515506,
+    "sha256": "c65b0908e9e588a4c82266e2b8645f4a3182dc6ed4161a48dd460dd1eb920368",
+    "bytes": 5287
+  },
+  {
+    "id": "CVE-2026-107778",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-107778",
+    "status": 200,
+    "fetchedAt": 1793946515644,
+    "sha256": "67cacf141061a41afb4d8ec90e43621ddfca8e8a47234cb419c8692c8f266684",
+    "bytes": 5311
+  },
+  {
+    "id": "CVE-2026-107928",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-107928",
+    "status": 200,
+    "fetchedAt": 1793946515650,
+    "sha256": "62693ed1b8d4e58609facdae5e26bf4e9ff0eb01696247f925a829e38dd7f62d",
+    "bytes": 5892
+  },
+  {
+    "id": "CVE-2026-107929",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-107929",
+    "status": 200,
+    "fetchedAt": 1793946515656,
+    "sha256": "cc94f03f2ef1e9012b0eb5c275bbb63b3cf593b3b066e5adae82434ff028d11c",
+    "bytes": 5997
+  },
+  {
+    "id": "CVE-2026-113351",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-113351",
+    "status": 200,
+    "fetchedAt": 1793946515796,
+    "sha256": "343e6f9184a37a920d10f6fd07b9537fc27092008f3c68da82f03f2f6c90ec7a",
+    "bytes": 5278
+  },
+  {
+    "id": "CVE-2026-115506",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-115506",
+    "status": 200,
+    "fetchedAt": 1793946515802,
+    "sha256": "42e9f33b56cddda60ca0521db9b6f046d650bc72b7a0f9d718200da7a7f977a2",
+    "bytes": 5199
+  },
+  {
+    "id": "CVE-2026-13608",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-13608",
+    "status": 200,
+    "fetchedAt": 1793946515808,
+    "sha256": "d763f5792d3985f207d7005bde81a71b651c9eb9c87c9d540944c7d30404e736",
+    "bytes": 5817
+  },
+  {
+    "id": "CVE-2026-18495",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-18495",
+    "status": 200,
+    "fetchedAt": 1793946515953,
+    "sha256": "494ec46f3c1d1919495315fae97b2ba672386e586668da9709be4fe5010817b8",
+    "bytes": 4987
+  },
+  {
+    "id": "CVE-2026-18924",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-18924",
+    "status": 200,
+    "fetchedAt": 1793946515963,
+    "sha256": "39289b5849af8167aeef8c29110317c45abcb80d0550949aacb36c3d371eabb7",
+    "bytes": 5322
+  },
+  {
+    "id": "CVE-2026-19931",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-19931",
+    "status": 200,
+    "fetchedAt": 1793946515973,
+    "sha256": "f969e049df51f2b1248ac1911d5d35b0eeb129351f75c9e023f7113ffb5cc5cf",
+    "bytes": 5653
+  },
+  {
+    "id": "CVE-2026-35189",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-35189",
+    "status": 200,
+    "fetchedAt": 1793946516112,
+    "sha256": "818515e1cbae08ae2cd26d8b08f98c3dabd65ea869d2f26e9d845f7e6dd349c4",
+    "bytes": 6496
+  },
+  {
+    "id": "CVE-2026-35191",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-35191",
+    "status": 200,
+    "fetchedAt": 1793946516121,
+    "sha256": "23761c65e2127f6fa1eba5d75132a8d6f74689cff0bd9c7b630e9fdc95aadc8f",
+    "bytes": 7489
+  },
+  {
+    "id": "CVE-2026-42772",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-42772",
+    "status": 200,
+    "fetchedAt": 1793946516126,
+    "sha256": "32bdbea14a018006c852f1eaef94ee4f617477fc12887e8889e9d24c2624f818",
+    "bytes": 6955
+  },
+  {
+    "id": "CVE-2026-46675",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-46675",
+    "status": 200,
+    "fetchedAt": 1793946516270,
+    "sha256": "44e0d853eab34634619216d090b8597de69eae19072f526211aae10826f75f30",
+    "bytes": 5356
+  },
+  {
+    "id": "CVE-2026-54872",
+    "url": "https://deb.freexian.com/extended-lts/tracker/CVE-2026-54872",
+    "status": 200,
+    "fetchedAt": 1793946516276,
+    "sha256": "19cbbb9f1a9c3d2acfc05eb9d796fa22d2484837512695fdb7516a7c688af35c",
+    "bytes": 6813
+  },
+  {
+    "id": "CVE-2026-54873",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-54875",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-67693",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-72897",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-74860",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-75804",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-75805",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-75806",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-76642",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-76781",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-77696",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-78408",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-78409",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-78410",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-80229",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-80230",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-80255",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-82208",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-82209",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-82560",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-84243",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-84782",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-84784",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-85091",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-85231",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-85977",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86137",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86138",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86139",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86140",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86141",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86142",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86143",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86144",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86145",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86409",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86410",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86411",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86412",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86413",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86414",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86415",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-8674",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-86805",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-87861",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-87862",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-87863",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-87864",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-87865",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-87866",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-88647",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-88648",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-88806",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-89092",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-89156",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-89157",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-89158",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-89160",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-89161",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-89162",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-92386",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-92387",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-92388",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-92389",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-92390",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-92391",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-92392",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-94265",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-94266",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-94283",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-94284",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-94285",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-94287",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-95184",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-95210",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-95512",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-95818",
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+    "id": "CVE-2026-97399",
+    "error": "HTTP Error 429: Too Many Requests"
+  }
+]

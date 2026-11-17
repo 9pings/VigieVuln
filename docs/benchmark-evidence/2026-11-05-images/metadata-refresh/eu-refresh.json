@@ -1,0 +1,22 @@
+{
+  "started": "2026-11-05T09:10:03.758Z",
+  "sources": {
+    "euvd": {
+      "attempted": 19,
+      "blocked": 0,
+      "origins": [
+        "https://euvdservices.enisa.europa.eu"
+      ],
+      "outcome": "completed-or-retained-cache"
+    },
+    "certfr": {
+      "attempted": 2,
+      "blocked": 0,
+      "origins": [
+        "https://www.cert.ssi.gouv.fr"
+      ],
+      "outcome": "completed-or-retained-cache"
+    }
+  },
+  "finished": "2026-11-05T09:10:14.025Z"
+}

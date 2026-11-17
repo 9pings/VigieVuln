@@ -1,0 +1,76 @@
+[
+  {
+    "project": "traefik",
+    "equal": true,
+    "fields": [
+      "ecosystem",
+      "coord",
+      "version",
+      "id",
+      "severity",
+      "cvss",
+      "kev",
+      "epss",
+      "epssPercentile",
+      "fixVersion"
+    ],
+    "findings": 214,
+    "components": 327,
+    "reports": {
+      "direct": {
+        "path": "/tmp/vv-image-benchmark-20261105/traefik/vv-final/findings.json",
+        "sha256": "25311febfa78e01ca46c716cec02968ddfe33bfddbb3f0aaf4ceb0c6e6f187be"
+      },
+      "airgap": {
+        "path": "/tmp/vv-image-benchmark-20261105/traefik/vv-airgap/findings.json",
+        "sha256": "ce07b762ed168b2dad643ae7345e5279becaa0870da8bde2f1676686c0cb03bc"
+      },
+      "fleet": {
+        "path": "/tmp/vv-image-fleet-live/traefik-full/findings.json",
+        "sha256": "e7c20a431fbd903f6173c55201380f9e262db1bcc03f7c927a1adc616a79797e"
+      },
+      "fleetOffline": {
+        "path": "/tmp/vv-image-fleet-live/traefik-full-offline/findings.json",
+        "sha256": "8d0baf15b7fad91b0acddeaf7438efc75afd63c4287a4860482d08015f511430"
+      }
+    },
+    "tupleSha256": "53fb00276f65aa711eb3e8d2daa1494b803bcfefdf60465bc6babea9a314567b"
+  },
+  {
+    "project": "nginx",
+    "equal": true,
+    "fields": [
+      "ecosystem",
+      "coord",
+      "version",
+      "id",
+      "severity",
+      "cvss",
+      "kev",
+      "epss",
+      "epssPercentile",
+      "fixVersion"
+    ],
+    "findings": 80,
+    "components": 907,
+    "reports": {
+      "direct": {
+        "path": "/tmp/vv-image-benchmark-20261105/nginx/vv-final/findings.json",
+        "sha256": "4cd46a1e9ccaaa6ce9c943a63d2f068d43bc7fed7fc6e37eb7afd022ee7bc40f"
+      },
+      "airgap": {
+        "path": "/tmp/vv-image-benchmark-20261105/nginx/vv-airgap/findings.json",
+        "sha256": "e2eb7e85cfadc4bf542f20d59590ea9dafbd0b8f8cf6e41355b4898bf5f001ef"
+      },
+      "fleet": {
+        "path": "/tmp/vv-image-fleet-live/nginx-full/findings.json",
+        "sha256": "773b8cc4ca5d8a51e54792fc11ad3661bc68cca07377c3cc66307752cdc7551f"
+      },
+      "fleetOffline": {
+        "path": "/tmp/vv-image-fleet-live/nginx-full-offline/findings.json",
+        "sha256": "3de8a8da087449013cac63da54aa8b760b43ac615bd0623d7dc3d93c46ad7922"
+      }
+    },
+    "tupleSha256": "c97598ca47432897d644afcce4fcee79ab4d640149ef20ae59a9d546f2203852"
+  }
+]

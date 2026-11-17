@@ -2,6 +2,10 @@
 
 > This preserves the previous benchmark and its individual adjudications as they stood in Git. Its measurements, tool versions and conclusions are historical; see [the current benchmark](BENCHMARK.md) for the latest measurements. The historical text includes its own corrections and limitations.
 
+> Earlier statements below such as “none is a recall bug” are superseded by the
+> later source-by-source reviews and application checks in the current benchmark.
+> They must not be used as a current zero-omission or general accuracy claim.
+
 # Scanner benchmark: full capability, and with no network
 
 Five scanners on one public project, measured two ways. Everything here is reproducible — the

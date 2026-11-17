@@ -253,6 +253,17 @@ test("several descriptors but no critical/high → the components card renders i
 	assert.match(html, /No critical or high/i);
 });
 
+test("unattributed critical transitive findings do not imply production is clean", () => {
+	const payload = {
+		prodMatches: [{ cve: { severity: "CRITICAL" }, dep: { scope: "transitive" } }],
+		descriptorCount: 2,
+	};
+	const html = renderCharts(payload, { interactive: false });
+	assert.match(html, /No critical or high production findings attributed to a project descriptor\./);
+	const french = renderCharts(payload, { interactive: false, t: require("../lib/i18n").makeT("fr") });
+	assert.match(french, /Aucun résultat critique ou élevé en production attribué à un fichier de description du projet\./);
+});
+
 test("application scans rank exposed instances, counting shared occurrences in each", () => {
 	const { mostVulnerableApplications } = require("../lib/charts");
 	const apps = [
@@ -291,9 +302,9 @@ test("application scans render the instances chart, not the modules or scope cha
 	assert.match(html, /Most vulnerable instances/);
 	assert.match(html, /wordpress · site-a/);
 	// The donut legend shows per-instance exposure counts; the note explains overlap.
-	assert.match(html, /a shared[\s\S]*?occurrence counts in each/);
+	assert.match(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '), /a shared occurrence counts in each/);
 	assert.match(html.slice(html.indexOf('id="chart-instances"'), html.indexOf('id="chart-priority"')), /<circle\s+cx=/);
-	assert.match(html, /1 advisory check\(s\) incomplete/);
+	assert.match(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '), /1 advisory check\(s\) incomplete/);
 	assert.doesNotMatch(html, /chart-components/);
 	assert.doesNotMatch(html, /chart-scope/);
 	// no critical/high application finding → the empty card says so
@@ -302,7 +313,7 @@ test("application scans render the instances chart, not the modules or scope cha
 	assert.match(empty, /No critical or high application CVE\./);
 });
 
-test("application scans chart the CWEs of DIRECT application findings only", () => {
+test("application scans include direct application and standalone source CWEs", () => {
 	const { cweByCriticality } = require("../lib/charts");
 	const apps = [{ id: "wp", type: "wordpress", root: "wp" }];
 	const coreDirect = { ...m("v", "lib", "compile", "CRITICAL", ["CWE-79"]),
@@ -315,7 +326,7 @@ test("application scans chart the CWEs of DIRECT application findings only", () 
 	// libraries (chart 2's lane) nor the non-application findings (a different axis)
 	assert.match(html, /chart-cwe[\s\S]*?CWE-79/);
 	assert.doesNotMatch(html, /chart-cwe[\s\S]*?CWE-89/);
-	assert.doesNotMatch(html, /chart-cwe[\s\S]*?CWE-22/);
+	assert.match(html, /chart-cwe[\s\S]*?CWE-22/);
 	assert.equal(cweByCriticality([coreDirect, libIndirect, nonApp]).length, 3, "non-app aggregator unchanged");
 });
 
@@ -337,8 +348,70 @@ test("application scans group indirect CVEs by their introducing component", () 
 	assert.equal(chart.unknown, 1, "unattributed indirect CVEs are counted, never invented an origin for");
 	const html = renderCharts({ prodMatches: [indirect("wp:core"), indirect("wp:plugin:acme"), unknown],
 		applications: apps, applicationInventory: inventory, coverage: [] });
-	assert.match(html, /Indirect CVEs per direct dependency/);
-	assert.match(html, /plugin Acme/);
-	assert.match(html, /core WordPress/);
-	assert.match(html, /1 indirect CVE\(s\) with no proven origin/);
+	assert.match(html, /Findings per component/);
+	assert.match(html, /wordpress · wp/);
+});
+
+test('image-only charts group findings by image and omit source dependency scope',()=>{
+ const matches=[{dep:{artifactTargetId:'a',scope:'transitive'},cve:{id:'CVE-2024-10000',severity:'HIGH',cwes:['CWE-79']}},{dep:{artifactTargetId:'a',scope:'transitive'},cve:{id:'CVE-2024-10001',severity:'LOW'}},{dep:{artifactTargetId:'b'},cve:{id:'CVE-2024-10002',severity:'CRITICAL'}}];
+ const html=renderCharts({prodMatches:matches,artifacts:[{id:'a',metadata:{source:'image-a',platform:{os:'linux',architecture:'amd64'}}},{id:'b',metadata:{source:'image-b'}}]});
+ assert.match(html,/Findings per component/);assert.match(html,/image-a \(linux\/amd64\)/);assert.match(html,/image-b/);assert.match(html,/CWE-79/);assert.doesNotMatch(html,/Sub-dep CVEs per dependency|Direct vs transitive|no resolved root/);
+});
+test('mixed image and source charts never count image findings in source scope',()=>{
+ const matches=[{dep:{artifactTargetId:'a',scope:'transitive'},cve:{id:'CVE-2024-10000',severity:'HIGH'}},{dep:{scope:'direct'},cve:{id:'CVE-2024-10001',severity:'LOW'}}];
+ const html=renderCharts({prodMatches:matches,artifacts:[{id:'a',metadata:{source:'my-image'}}]});assert.match(html,/Findings per component/);assert.match(html,/Direct vs transitive/);assert.doesNotMatch(html,/transitive CVE\(s\) with no resolved root/);assert.match(html,/Direct · 1L · 1/);assert.doesNotMatch(html,/Transitive · 1H/);
+});
+
+test('component chart preserves images, applications, modules and shared or unknown ownership without double counting',()=>{
+ const {findingsByComponent}=require('../lib/charts');
+ const cv=(id,dep,extra={})=>({findingId:id,dep,cve:{id,severity:'HIGH'},...extra});
+ const matches=[cv('i1',{artifactTargetId:'a'}),cv('i2',{artifactTargetId:'b'}),
+  cv('wp',{manifestPaths:['/m1']},{applicationIds:['wp']}),cv('module',{manifestPaths:['/m1']}),
+  cv('shared-app',{},{applicationIds:['wp','drupal']}),cv('shared-module',{manifestPaths:['/m2','/m1']}),
+  cv('unknown',{}),cv('duplicate',{artifactTargetId:'a'}),cv('duplicate',{artifactTargetId:'a'})];
+ const opts={artifacts:[{id:'a',metadata:{source:'image-a'}},{id:'b',metadata:{source:'image-b'}}],
+  applications:[{id:'wp',type:'wordpress',root:'wp'},{id:'drupal',type:'drupal',root:'drupal'}],moduleNames:new Map([['/m1','module one'],['/m2','module two']]),topN:20};
+ const rows=findingsByComponent(matches,opts);assert.equal(rows.reduce((n,r)=>n+r.total,0),8);
+ for(const label of ['image-a','image-b','wordpress · wp','module one','Shared: drupal, wp','Shared: module one, module two','Unattributed']) assert.ok(rows.some(r=>r.label===label),label);
+ const html=renderCharts({prodMatches:matches,...opts,descriptorCount:2});
+ assert.match(html,/Findings per component/);assert.match(html,/image-a/);assert.match(html,/wordpress · wp/);assert.match(html,/module one/);
+});
+
+test('component chart folds excess groups into an explicitly counted remainder',()=>{
+ const {findingsByComponent}=require('../lib/charts');
+ const matches=Array.from({length:10},(_,i)=>({dep:{manifestPaths:[`/module${i}`]},cve:{id:`CVE-${i}`,severity:'LOW'}}));
+ const rows=findingsByComponent(matches,{topN:3});assert.equal(rows.length,4);assert.equal(rows.at(-1).label,'+7 more');assert.equal(rows.at(-1).total,7);assert.equal(rows.reduce((s,r)=>s+r.total,0),10);
+});
+
+test('synthetic mixed scan merges repeated physical finding IDs across proved owners',()=>{
+ const {findingsByComponent,mostVulnerableApplications,mostVulnerableComponents}=require('../lib/charts');
+ const f=(id,dep,applicationIds=[])=>({findingId:id,dep,applicationIds,cve:{id,severity:'HIGH'}});
+ const appA=f('same',{manifestPaths:['/one']},['a']),appB=f('same',{manifestPaths:['/two']},['b']);
+ const moduleA=f('module',{manifestPaths:['/one']}),moduleB=f('module',{manifestPaths:['/two']});
+ const image=f('image',{artifactTargetId:'img',manifestPaths:['/one']},['a']);
+ const stray=f('stray',{manifestPaths:['/dependency/package.json']});
+ const opts={applications:[{id:'a',root:'app-a'},{id:'b',root:'app-b'}],moduleNames:new Map([['/one','One'],['/two','Two']]),artifacts:[{id:'img',metadata:{source:'test-image'}}],topN:20};
+ const rows=findingsByComponent([appA,appB,moduleA,moduleB,image,stray],opts);
+ assert.equal(rows.reduce((sum,r)=>sum+r.total,0),4);
+ assert.deepEqual(rows.map(r=>r.label).sort(),['Shared: One, Two','Shared: app-a, app-b','Unattributed','test-image'].sort());
+ const apps=mostVulnerableApplications([appA,appB],opts.applications,[],{topN:20});
+ assert.equal(apps.unique,1);assert.equal(apps.rows.reduce((sum,r)=>sum+r.total,0),2);
+ const modules=mostVulnerableComponents([moduleA,moduleA,moduleB],opts.moduleNames,{topN:20});
+ assert.equal(modules.reduce((sum,r)=>sum+r.total,0),2);
+ const html=renderCharts({prodMatches:[appA,appB,moduleA,moduleB,image,stray],...opts,descriptorCount:2});
+ assert.equal((html.match(/class="chart-card"/g)||[]).length,4);
+ assert.match(html,/Findings per component/);assert.match(html,/test-image/);assert.match(html,/Shared: app-a, app-b/);assert.match(html,/Shared: One, Two/);assert.match(html,/Unattributed/);
+});
+
+test('image-only charts include a real severity chart rather than an inapplicable source-scope card',()=>{
+ const html=renderCharts({prodMatches:[{dep:{artifactTargetId:'a'},cve:{severity:'HIGH'}}],artifacts:[{id:'a',metadata:{source:'sample'}}]});
+ assert.equal((html.match(/class="chart-card"/g)||[]).length,4);
+ assert.match(html,/Findings by severity/);assert.doesNotMatch(html,/Not applicable to image findings/);
+});
+
+test('CWE chart labels folded categories with the readable remainder, not an internal key',()=>{
+ const matches=Array.from({length:9},(_,i)=>({dep:{scope:'direct'},cve:{id:`CVE-${i}`,severity:'HIGH',cwes:[`CWE-${1000+i}`]}}));
+ const html=renderCharts({prodMatches:matches});
+ const chart=html.slice(html.indexOf('id="chart-cwe"'),html.indexOf('id="chart-subdeps"'));
+ assert.match(chart,/\+2 more/);assert.doesNotMatch(chart,/__more__/);
 });

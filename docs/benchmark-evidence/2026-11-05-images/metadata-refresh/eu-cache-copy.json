@@ -1,0 +1,38 @@
+[
+  {
+    "target": "traefik",
+    "source": "<home>/.vigie-vuln",
+    "key": "euvd",
+    "fetchedAt": 1793809315805,
+    "stale": false,
+    "encoding": "json+deflate",
+    "payloadSha256": "990b868dc025b4bdbf0ce27f962fec8e64c4c33e568ee7412ddfd360c9509ad5"
+  },
+  {
+    "target": "traefik",
+    "source": "<home>/.vigie-vuln",
+    "key": "certfr",
+    "fetchedAt": 1793809316081,
+    "stale": false,
+    "encoding": "json+deflate",
+    "payloadSha256": "2bbfea68040b00bd6f3ce5d360a825835bfe50eadbe1df97f20c7f5a72f1fd4e"
+  },
+  {
+    "target": "nginx",
+    "source": "<home>/.vigie-vuln",
+    "key": "euvd",
+    "fetchedAt": 1793809315805,
+    "stale": false,
+    "encoding": "json+deflate",
+    "payloadSha256": "990b868dc025b4bdbf0ce27f962fec8e64c4c33e568ee7412ddfd360c9509ad5"
+  },
+  {
+    "target": "nginx",
+    "source": "<home>/.vigie-vuln",
+    "key": "certfr",
+    "fetchedAt": 1793809316081,
+    "stale": false,
+    "encoding": "json+deflate",
+    "payloadSha256": "2bbfea68040b00bd6f3ce5d360a825835bfe50eadbe1df97f20c7f5a72f1fd4e"
+  }
+]

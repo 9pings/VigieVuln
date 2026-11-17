@@ -1,0 +1,231 @@
+{
+  "generatedAt": "2026-11-05T07:52:52.247Z",
+  "commands": [
+    {
+      "project": "traefik",
+      "label": "vv-final",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "image",
+        "/tmp/vv-image-benchmark-20261105/traefik/oci",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/traefik/direct-cache",
+        "--export-inventory",
+        "/tmp/vv-image-benchmark-20261105/traefik/inventory.json",
+        "--report-output",
+        "/tmp/vv-image-benchmark-20261105/traefik/vv-final",
+        "--lang",
+        "fr"
+      ],
+      "exitCode": 0,
+      "durationMs": 10972,
+      "offline": false,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "75f5de0c9b58225f45625af112ea289e6a80b9cece518a52c2d824f5a38e4b81"
+    },
+    {
+      "project": "traefik",
+      "label": "cache-export",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "cache",
+        "export",
+        "/tmp/vv-image-benchmark-20261105/traefik/airgap-cache.tar.gz",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/traefik/direct-cache"
+      ],
+      "exitCode": 0,
+      "durationMs": 179,
+      "offline": true,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "65a2a6ddec282c3a446b6f74f23e1ee3a3205842bc59d1bb4a367b1733b13d63"
+    },
+    {
+      "project": "traefik",
+      "label": "cache-import",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "cache",
+        "import",
+        "/tmp/vv-image-benchmark-20261105/traefik/airgap-cache.tar.gz",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/traefik/airgap-cache"
+      ],
+      "exitCode": 0,
+      "durationMs": 129,
+      "offline": true,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "5bb8695b626e2bc7c42d6b63fbcb7fbf956e73f309207bcff7b3a7cb98675dd1"
+    },
+    {
+      "project": "traefik",
+      "label": "vv-airgap",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "image",
+        "/tmp/vv-image-benchmark-20261105/traefik/inventory.json",
+        "--inventory",
+        "--offline",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/traefik/airgap-cache",
+        "--report-output",
+        "/tmp/vv-image-benchmark-20261105/traefik/vv-airgap",
+        "--lang",
+        "fr"
+      ],
+      "exitCode": 0,
+      "durationMs": 246,
+      "offline": true,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "fa0980c95c057ae71e06bf001b7117503556dc6737d0371b5539b6459ad58b02"
+    },
+    {
+      "project": "nginx",
+      "label": "vv-final",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "image",
+        "/tmp/vv-image-benchmark-20261105/nginx/oci",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/nginx/direct-cache",
+        "--export-inventory",
+        "/tmp/vv-image-benchmark-20261105/nginx/inventory.json",
+        "--report-output",
+        "/tmp/vv-image-benchmark-20261105/nginx/vv-final",
+        "--lang",
+        "fr"
+      ],
+      "exitCode": 0,
+      "durationMs": 24204,
+      "offline": false,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "cc62cef1eef95a6a8763b0896c3bdb0e8436884cd890419c37bcb7dc2895936e"
+    },
+    {
+      "project": "nginx",
+      "label": "cache-export",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "cache",
+        "export",
+        "/tmp/vv-image-benchmark-20261105/nginx/airgap-cache.tar.gz",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/nginx/direct-cache"
+      ],
+      "exitCode": 0,
+      "durationMs": 116,
+      "offline": true,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "b7d0fede4b48355a35181c4e61cf6f2627e9a674c4f21aa4e396e9135a968b03"
+    },
+    {
+      "project": "nginx",
+      "label": "cache-import",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "cache",
+        "import",
+        "/tmp/vv-image-benchmark-20261105/nginx/airgap-cache.tar.gz",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/nginx/airgap-cache"
+      ],
+      "exitCode": 0,
+      "durationMs": 100,
+      "offline": true,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "f71a124cdf5e7a6bb643cf0e80ed8e5d3513879d72534c0478b765c8a6ea8897"
+    },
+    {
+      "project": "nginx",
+      "label": "vv-airgap",
+      "command": [
+        "<home>/.nvm/versions/node/v24.14.0/bin/node",
+        "--require",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/docs/benchmark-evidence/2026-11-05-images/scripts/tripwire.cjs",
+        "/mnt/wsl/WipDrive/_libs/VigieVuln/cli/vigievuln.js",
+        "image",
+        "/tmp/vv-image-benchmark-20261105/nginx/inventory.json",
+        "--inventory",
+        "--offline",
+        "--cache-dir",
+        "/tmp/vv-image-benchmark-20261105/nginx/airgap-cache",
+        "--report-output",
+        "/tmp/vv-image-benchmark-20261105/nginx/vv-airgap",
+        "--lang",
+        "fr"
+      ],
+      "exitCode": 0,
+      "durationMs": 183,
+      "offline": true,
+      "tripwire": {
+        "networkAttempts": 0,
+        "subprocessAttempts": 0
+      },
+      "logSha256": "de693174c68666ee7ae94badc61ac80638f24101bc41e4bae8690cc3b3f264df"
+    }
+  ],
+  "equality": [
+    {
+      "project": "traefik",
+      "components": 327,
+      "findings": 214,
+      "tupleCount": 214,
+      "equal": true,
+      "networkAttempts": 0,
+      "subprocessAttempts": 0,
+      "tupleSha256": "be11d4e7aeb84e8170e0d3022549df0078bfb3d52296892404009be73b4404de"
+    },
+    {
+      "project": "nginx",
+      "components": 907,
+      "findings": 80,
+      "tupleCount": 80,
+      "equal": true,
+      "networkAttempts": 0,
+      "subprocessAttempts": 0,
+      "tupleSha256": "d160faa6fc44a559525ca5802f8676aa866fd77cbf7068955d427a380068f15f"
+    }
+  ]
+}

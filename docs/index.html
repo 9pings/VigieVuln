@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VigieVuln — polyglot dependency CVE/EOL scanner, no build needed</title>
 <meta name="description" content="Scan Maven, Gradle, npm, Yarn, pnpm, Composer, PyPI, NuGet, Go and Ruby dependencies — plus embedded JARs (fat-jars/war/ear), committed native binaries (.dll/.so/.exe, identified by checksum via deps.dev + CIRCL) and cryptographic material (certificates, private/public keys, keystores) — for CVEs (prioritised by EPSS + CISA KEV), end-of-life, outdated versions and licenses in one shot — no build, no install. Audit-ready HTML/Word report, CycloneDX SBOM + CSAF VEX exports, and an air-gapped mode for confidential code.">
-<meta property="og:title" content="VigieVuln — audit every dependency, no build, no leaks">
+<meta property="og:title" content="VigieVuln — audit dependencies without a build">
 <meta property="og:description" content="Polyglot CVE / EOL / outdated / license scanner that reads your source tree directly. Merged sources, CPE filtering, EPSS + KEV priority, CycloneDX SBOM + CSAF VEX, HTML + findings JSON by default, optional Word report, application coverage and air-gapped mode.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://9pings.github.io/VigieVuln/">
@@ -47,8 +47,8 @@
     <div class="hero-copy">
       <div class="license-badge"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg> APACHE 2.0 · ZERO BUILD</div>
       <div class="hero-tags" aria-label="Supported ecosystems"><span>Maven</span><span>Gradle</span><span>npm</span><span>pnpm</span><span>Composer</span><span>PyPI</span><span>NuGet</span><span>Go</span><span>Ruby</span><span>CMS/Fmwk</span><span>Native bins</span></div>
-      <h1 id="hero-title">Audit every<br>dependency<span class="dot">.</span><span class="l2">No build. No leaks.</span></h1>
-      <p class="lead">A polyglot <b>CVE · EOL · outdated · license</b> scanner that reads your source tree directly — no mvn, no npm install, no Docker. Findings merged from <b>CVEProject, OSV, Packagist, NVD &amp; retire.js</b>, prioritised with <b>EPSS + CISA KEV</b>, an audit-ready <b>HTML + findings JSON</b> report with optional <b>Word, CycloneDX SBOM</b> and <b>CSAF VEX</b>, and an air-gapped mode for confidential code.</p>
+      <h1 id="hero-title">Audit your<br>dependencies<span class="dot">.</span><span class="l2">No build required.</span></h1>
+      <p class="lead">VigieVuln 1.3.0 is a polyglot <b>CVE · EOL · outdated · license</b> scanner that reads your source tree directly — no mvn, no npm install, no Docker. Findings merged from <b>CVEProject, OSV, Packagist, NVD &amp; retire.js</b>, prioritised with <b>EPSS + CISA KEV</b>, an <b>HTML + findings JSON</b> report with optional <b>Word, CycloneDX SBOM</b> and <b>CSAF VEX</b>, and an air-gapped mode for confidential code.</p>
       <div class="cta">
         <a class="btn primary" href="#start"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg>get started<svg class="icon " aria-hidden="true"><use href="#i-arrow"></use></svg></a>
         <a class="btn ghost" href="https://github.com/9pings/VigieVuln"><svg class="icon " aria-hidden="true"><use href="#i-github"></use></svg>Star on GitHub</a>
@@ -79,7 +79,7 @@
   <span class="warn">⚠ 7 Maven POM(s) could not be resolved; transitive dependency coverage may be incomplete.</span>
   · --no-report: no files written (scan + gate only)
 <span class="prompt">$</span> <span class="terminal-cursor" aria-hidden="true">▍</span></code></pre>
-        <p class="terminal-note" id="terminal-caption"><span>Real scan · excerpt</span><a href="#reports">Sample reports ↗</a></p>
+        <p class="terminal-note" id="terminal-caption"><span>Real scan · 1.2.1 excerpt</span><a href="#reports">Sample reports ↗</a></p>
       </div>
     </div>
   </div>
@@ -107,7 +107,7 @@
   <section>
     <div class="kicker">One tool, one pass</div>
     <h2 >Ten ecosystems + 9 CMS/frameworks + vendored JS + embedded JARs + native binaries</h2>
-    <p class="sub">Point it at any checkout — multi-module, monorepo, polyglot. It parses manifests and lockfiles directly, and falls back to best-effort (pinned versions) when there's no lockfile.</p>
+    <p class="sub">Point it at a checkout — multi-module, monorepo, polyglot. It parses manifests and lockfiles directly; coverage without a lockfile depends on the ecosystem and available metadata.</p>
     <div class="ecos">
       <span>Maven · pom.xml</span><span>Gradle · build.gradle(.kts) + libs.versions.toml</span><span>npm · package-lock</span><span>Yarn · v1 + Berry</span>
       <span>pnpm · v5/6/9</span><span>Composer · composer.lock</span><span>PyPI · poetry/uv/pdm/pip</span>
@@ -124,6 +124,7 @@
     <h2 >Built for audits, not just CI</h2>
     <div class="grid">
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg></div><h3>No build, polyglot</h3><p>Read manifests and lockfiles across <b>ten ecosystems</b>, without installing or executing project code. Resolve Maven modules individually and inspect embedded JARs, WARs and EARs.</p></div>
+      <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-layers"></use></svg></div><h3>Native image audits</h3><p>Inventory OCI/Docker images, root filesystems and publisher SBOMs. Image analysis is off by default in source scans; enable <span class="mono">--images</span> or use <span class="mono">vigievuln image</span>. <a href="https://github.com/9pings/VigieVuln/blob/main/docs/IMAGES.md">Image guide</a>.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-layers"></use></svg></div><h3>Merged sources, fewer false positives</h3><p><b>CVEProject, OSV, Packagist, NVD and retire.js</b> findings are merged and deduplicated. Version and CPE checks help reduce false positives.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-activity"></use></svg></div><h3>Risk-based priority</h3><p>See what needs attention first. <b>CISA KEV</b> highlights known exploitation, while <b>EPSS</b> adds exploit probability alongside CVSS severity.</p></div>
       <div class="card"><div class="ic"><svg class="icon " aria-hidden="true"><use href="#i-eye"></use></svg></div><h3>Beyond CVEs</h3><p>Spot <b>end-of-life frameworks</b>, deprecated or abandoned packages, outdated versions and license obligations. Trace each verdict to its evidence.</p></div>
@@ -175,37 +176,9 @@
 
   <section id="audit">
     <div class="kicker">For auditors</div>
-    <h2 >Why use VigieVuln for code audits?</h2>
-    <p class="sub">What it does for an audit that the others don't. Same column set and sourcing
-      discipline as <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md" style="color:var(--amber);text-decoration:underline">COMPARISON.md</a>
-      &mdash; an <span class="warn">amber</span> cell is <i>partial</i> and says how, and every cell is meant to be checkable.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>What an auditor actually needs to do</th><th class="me">VigieVuln</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
-        <tbody>
-          <tr><th>Audit a <b>100-module polyglot monorepo in one command</b>, with <b>no toolchain installed</b> <sup>1</sup></th><td class="f me yes">✓ 105 modules</td><td class="f warn">reactor skipped</td><td class="f warn">needs <span class='mono'>~/.m2</span></td><td class="f warn">opt-in</td><td class="f warn">Java build</td><td class="f warn"><span class='mono'>mvn</span> build</td></tr>
-          <tr><th><b>Scan offline / air-gapped with cached data</b> <sup>2</sup></th><td class="f me warn">cached metadata</td><td class="f warn">limited</td><td class="f warn"><span class='mono'>~/.m2</span></td><td class="f warn">opt-in</td><td class="f warn">mirror</td><td class="f no">✗</td></tr>
-          <tr><th><b>Identify the private/internal deps</b> across a big project <sup>3</sup></th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td></tr>
-          <tr><th><b>Extract cleaned deps descriptors</b> into an external directory <sup>4</sup></th><td class="f me yes">✓ <span class='mono'>-t</span></td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td></tr>
-          <tr><th><b>Report EOL / deprecated frameworks &amp; deps</b>, transitive ones included <sup>5</sup></th><td class="f me yes">✓</td><td class="f warn">deprecated only</td><td class="f warn">OS distros only</td><td class="f no">✗</td><td class="f no">✗</td><td class="f warn">web UI only</td></tr>
-          <tr><th><b>Report committed keys &amp; certificates</b> <sup>6</sup></th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f warn">key rule</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td></tr>
-          <tr><th><b>Spot committed binaries</b> (<span class='mono'>.dll</span>, <span class='mono'>.exe</span>, …) and check them against their checksums <sup>7</sup></th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f warn">some</td><td class="f warn">patterns</td><td class="f no">✗</td><td class="f no">✗</td></tr>
-          <tr><th><b>Clearly list what was <i>not</i> scanned</b> &mdash; before the client asks <sup>8</sup></th><td class="f me yes">✓ warnings + method</td><td class="f warn">log</td><td class="f warn">log</td><td class="f warn">log</td><td class="f warn">log</td><td class="f warn">log</td></tr>
-          <tr><th><b>Answer &ldquo;against what data?&rdquo; six months later</b> <sup>9</sup></th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f no">✗</td><td class="f warn">DB date</td><td class="f warn">NVD date</td><td class="f no">✗</td></tr>
-          <tr><th><b>Send a report, not a JSON dump</b> <sup>10</sup></th><td class="f me yes">✓ HTML + <span class='mono'>.doc</span></td><td class="f warn">HTML list</td><td class="f warn">template</td><td class="f no">✗</td><td class="f warn">HTML list</td><td class="f warn"><span class='mono'>snyk-to-html</span></td></tr>
-          <tr><th><b>Charts, per-CVE drill-down and a pasteable Word copy</b> <sup>11</sup></th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td></tr>
-          <tr><th><b>Make delta reports showing only what changed</b> <sup>12</sup></th><td class="f me yes">✓ <span class='mono'>--baseline</span></td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f warn">cloud</td></tr>
-          <tr><th><b>Audit CMS/framework instances as such</b> &mdash; plugins, themes, publisher advisories <sup>13</sup></th><td class="f me yes">✓ 9 products</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td></tr>
-          <tr><th><b>Share one cache across the fleet</b>, API keys server-side <sup>14</sup></th><td class="f me yes">✓ <span class='mono'>serve-cache</span></td><td class="f no">✗</td><td class="f warn">local DB</td><td class="f warn">local DB</td><td class="f warn">local DB</td><td class="f warn">cloud</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <ol class="auditnotes"><li>No <span class="mono">mvn</span>/<span class="mono">go</span>/<span class="mono">npm</span>/<span class="mono">pip</span>/<span class="mono">dotnet</span> &mdash; manifests parsed off disk, nothing installed or executed. 105 × <span class="mono">pom.xml</span> in one pass, with versions mediated <i>per module</i>. See the benchmark for the tested Maven inventory and its resolution limits.</li><li>Offline results depend on available advisory and dependency metadata. For Dubbo, a seed-only scan found 185 groups; the warm scan found 734. The seed-only scan warned of missing POMs and unresolved versions.</li><li>Chapter 0 names every coordinate that <b>every</b> configured registry answered 404 for &mdash; Maven, npm, PyPI, NuGet, Composer, Go and RubyGems &mdash; with the manifest(s) declaring it. A registry that timed out is never counted. <span class="mono">-e &lt;regex&gt;</span> then excludes them.</li><li><span class="mono">-t &lt;dir&gt;</span>: normalised POMs plus every non-Maven lockfile mirrored, private coordinates stripped. Archivable, and scannable by anything &mdash; <span class="mono">--snyk</span> included.</li><li>endoflife.date, split <b>direct vs transitive</b> so you know which dep to bump, plus deprecated / abandoned / yanked and outdated. Trivy covers OS distros only; Snyk's package health is web-only.</li><li>Inventory <i>and</i> verdicts: expiry, RSA&lt;2048, MD5/SHA1, self-signed; private <b>vs</b> public keys; JKS/PKCS#12. Offline parser. Trivy's secret rule finds the file, not the flaw.</li><li>Identified by <b>hash</b> via deps.dev + CIRCL → should-be-declared / name≠checksum / unknown / malicious. Syft's patterns name a version, not an identity.</li><li>Chapter 0 flags what <i>this</i> scan could not reach (missing lockfiles, unresolved versions, incomplete application checks); Methodology states what the tool never assesses. Elsewhere the first is a log line the audit never sees, the second isn't written down.</li><li>Provenance manifest: tool, runtime, mode, run configuration and cache freshness for <b>each consulted source</b>. Grype and Dependency-Check carry one source's date, not the run.</li><li>Chapters 0→6 with an executive summary and fix recipes, self-contained HTML + findings JSON by default, with optional Word <span class="mono">.doc</span>. None of the others emits Word.</li><li>Four inline-SVG charts &mdash; CWE by worst severity, vulnerable transitives per root dep, your most vulnerable modules, fix-priority bands &mdash; rendered in the <span class="mono">.doc</span> too, with one-click copy as PNG (or a table as rich HTML) that pastes into Word formatted. Every CVE keeps its CVSS vector, CWE, references, CPE config and via-path behind a drill-down, with zero external assets.</li><li><span class="mono">--baseline</span> adds a Δ chapter (new / fixed / unchanged); <span class="mono">--fail-on-new</span> gates on new findings only. Snyk tracks this on its platform, not as a local diff.</li><li>Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP inventoried <b>per instance</b> &mdash; core, plugins, themes, bundles, components, with direct/indirect attribution, publisher advisory feeds where they exist (Wordfence, packages.drupal.org, PrestaShop/TYPO3 GitHub) and WordPress core checksums. The others read lockfiles; none of them has a CMS-instance view. → <a href="#cms" style="color:var(--amber);text-decoration:underline">the dedicated section</a></li><li><span class="mono">vigievuln serve-cache</span> + <span class="mono">--proxy-cache</span>: one upstream call per provider resource per TTL for the whole fleet, single-flight coalescing, stale-if-error, and NVD/Wordfence/GitHub keys held by the server — use <span class="mono">--wordfence-live</span> to activate Wordfence with a server key. Trivy/Grype/DC cache a local DB; Snyk's lives on its platform.</li></ol>
-    <p class="note"><b>Where it loses</b> &mdash; containers/OS packages and auto-fix PRs. Advisory coverage depends on the sources and versions used: <a href="#benchmark">see the measured scope and limitations</a>.<br>
-      <b>Deliberately not a goal &mdash; reachability.</b> A finding is a vulnerable version on the
-      dependency graph, and the report says exactly that in Methodology instead of guessing at call
-      paths. Whether the vulnerable code is reachable in <i>this</i> application is the auditor's
-      call, made with application context no scanner has.</p>
+    <h2>Evidence for review</h2>
+    <p class="sub">Read supported manifests and lockfiles without building the project, review findings by source, and share HTML and findings JSON reports. Optional Word, SBOM and VEX exports support further review.</p>
+    <p class="note">Coverage depends on the supplied inputs, supported resolution and available metadata. Missing dependencies, false positives and incomplete advisory coverage are possible. Review scan warnings and verify important findings against the native dependency graph and advisory sources. <a href="#benchmark">See the measured scope and limitations</a>.</p>
   </section>
   <section id="monitoring" aria-labelledby="monitoring-title">
     <div class="kicker">Project monitoring</div>
@@ -279,43 +252,26 @@ vigievuln logout</pre></div>
 
   <!-- COMPARISON -->
   <section id="compare">
-    <div class="kicker">Honest positioning</div>
-    <h2 >Where it fits</h2>
-    <p class="sub">Not a Trivy/Grype replacement — those own containers and continuous CI. VigieVuln owns the <b>zero-setup source audit</b> with an air-gapped story (and now emits SBOM/VEX, flags licenses and prioritises by EPSS/KEV too).</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Capability</th><th class="me">VigieVuln</th><th>OSV-Scanner</th><th>Trivy</th><th>Grype+Syft</th><th>OWASP DC</th><th>Snyk OSS</th></tr></thead>
-        <tbody>
-          <tr><th>Reads lockfiles without build</th><td class="f me yes">✓</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f warn">~Java</td><td class="f warn">~Maven/pip build</td></tr>
-          <tr><th>Best-effort without a lockfile</th><td class="f me yes">✓</td><td class="f warn">~</td><td class="f no">✗</td><td class="f no">✗</td><td class="f warn">~</td><td class="f warn">~</td></tr>
-          <tr><th>EOL detection</th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f warn">~</td></tr>
-          <tr><th>Outdated / deprecated</th><td class="f me yes">✓</td><td class="f warn">~exp.</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f warn">~</td></tr>
-          <tr><th>EPSS / KEV prioritization</th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f no">✗</td><td class="f yes">✓</td><td class="f warn">KEV</td><td class="f warn">~web</td></tr>
-          <tr><th>License compliance</th><td class="f me yes">✓</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f warn">~</td><td class="f warn">~</td><td class="f yes">✓ paid</td></tr>
-          <tr><th>SBOM / VEX export</th><td class="f me yes">✓ CDX+CSAF</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f warn">~</td><td class="f warn">✓ Enterprise</td></tr>
-          <tr><th>HTML + optional Word report</th><td class="f me yes">✓</td><td class="f warn">HTML; no Word</td><td class="f warn">templates</td><td class="f warn">templates</td><td class="f warn">html</td><td class="f no">cloud</td></tr>
-          <tr><th>Air-gapped, code never exposed</th><td class="f me yes">✓</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td><td class="f no">✗</td></tr>
-          <tr><th>Containers / OS packages</th><td class="f me no">✗</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f yes">✓</td><td class="f no">✗</td><td class="f yes">✓</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="note">² For <span class="mono">pom.xml</span>, transitive resolution depends on cached Maven POMs and versions. An advisory seed alone does not provide every POM; missing metadata can limit offline results. Snyk needs a real build, Trivy needs the network or a populated <span class="mono">~/.m2</span>. Reach for Trivy or Grype+Syft for continuous CI, containers and SBOM pipelines.</p>
-    <p class="note">³ EOL row is scoped to <b>application</b> frameworks and libraries. Trivy does compute an end-of-service-life status, but only for OS distributions. Snyk's package-health signal exists on its website, not in the CLI or CI output. Cells re-verified against upstream docs on 2026-09-14 (OSV-Scanner 2.6.0, Trivy 0.74.0, Grype 0.118.0 + Syft 1.51.1, Dependency-Check 13.0.0, Snyk CLI 1.1307.2) — detail and sources in <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">COMPARISON.md</a>.</p>
+    <div class="kicker">Comparison</div>
+    <h2>Choose evidence for the task</h2>
+    <p class="sub">VigieVuln scans source checkouts and, when requested, container images. Other scanners can complement it with different inventories and advisory sources. Results depend on the input, tool version, configuration and date.</p>
+    <p class="note">Image scans are opt-in in source scans via <span class="mono">--images</span>, or available through <span class="mono">vigievuln image</span>. Findings cover the contents and sources acquired. Compare the dated <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">source-project results</a> and <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK-IMAGES.md">image benchmarks</a> before drawing conclusions about a particular workflow.</p>
   </section>
-
 
   <!-- BENCHMARK -->
   <section id="benchmark">
     <div class="kicker">Measured scope and limitations</div>
-    <h2>Scanner comparison · 3 November 2026</h2>
-    <p class="sub">These measurements are a dated snapshot and continue to evolve. On the Dubbo and Petclinic inputs, VigieVuln included all observations from the compared OSV-Scanner, Trivy and Grype runs. Reviewed VigieVuln advisories add evolving AI-assisted reconciliation. Coverage depends on the project and sources; this is not a general guarantee.</p>
+    <h2>Real-project checks · 17 November 2026</h2>
+    <p class="sub">Four fixed application releases were cloned and scanned in isolated containers; inventories were compared with native Maven, Gradle or pip resolution. Applications were not deployed and exploitability was not tested. These observations are not a general guarantee.</p>
     <div class="arow" style="margin-top:24px">
-      <h3>OSV advisory comparisons</h3>
-      <p>On the tested NodeGoat, Poetry, Mastodon and phpMyAdmin inputs, VigieVuln and OSV-Scanner reported the same sets of 320, 90, 158 and 36 package-version advisory groups respectively. VigieVuln produced the same sets online and warm offline. The comparison used OSV as the common source, with other enrichment disabled.</p>
-      <p>On Apache Dubbo, the latest online and warm offline scans reported 794 identical findings; Spring Petclinic reported 174 offline. Both retained every OSV-Scanner, Trivy and Grype observation in the preserved comparator reports. The seed-only cold scan was incomplete and warned about missing metadata.</p>
-      <p>Gradle and NuGet samples matched four scanners on the tested inputs, with coverage warnings in cold scans. The Go comparison identified an inventory limitation for an older module graph. Yarn and pnpm tests covered isolated lockfiles, not full monorepos.</p>
+      <p><b>OpenRefine 3.9.0:</b> 152 of 153 external Maven coordinate/version pairs from the native module trees were present after an SBOM fix. One version remained missing when a local reactor POM was not followed; the report warned of a missing POM.</p>
+      <p><b>Traccar 6.6:</b> unlocked POM traversal selected different versions in 18 cases, including two checked false positives. A scoped Gradle lock covered the 265 runtime library versions checked; an all-configuration lock also included build tooling.</p>
+      <p><b>Paperless-ngx 2.14.7:</b> tested Python and npm lock inventories matched independent lists after the SBOM multi-version fix. Selected advisories were checked; exploitability and all findings were not independently verified.</p>
+      <p><b>NetBox 4.2.3:</b> all 38 pinned requirements were found, while 61 of 99 distributions in a fresh native pip resolution were absent from the unlocked scan. That pip graph is specific to the test environment and date, not proof of a historical deployment.</p>
+      <p>A separate pip-audit comparison used the same 99 pinned distributions: each recorded PyPI and OSV service advisory matched a VigieVuln finding, with one additional VigieVuln finding absent from the PyPI service result. This assesses matching for the supplied inventory, not discovery of unlocked transitive dependencies.</p>
+      <p>Without a Gradle lockfile, POM traversal can select versions different from Gradle and miss dependencies. A lock covers only its recorded configurations. Without a resolved Python lockfile, pinned requirements are checked but their transitive dependencies are not resolved.</p>
     </div>
-    <p class="note" style="margin-top:22px">See <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a> for project commits, scanner and database versions, comparison methods, source differences and unresolved limitations.</p>
+    <p class="note" style="margin-top:22px">See <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">COMPARISON.md</a> for methods and evidence, and <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK.md">BENCHMARK.md</a> for earlier dated scanner comparisons and their limits.</p>
   </section>
 
   <!-- DOCS -->

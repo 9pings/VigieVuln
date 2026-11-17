@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="329x329" href="/static/site-icon.png?v=7ff71349a3">
+<meta name="robots" content="noindex, follow">
+<title>VigieVuln DB - DLA-3942-1</title>
+<meta name="description" content="openssl">
+
+
+
+<script src="/static/local-time.js" defer></script>
+<script src="/static/search-options.js?v=2601e59a1e" defer></script>
+<link rel="stylesheet" href="/static/site.css?v=3f725d46c0">
+
+
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+<a class="brand" href="/?lang=en" aria-label="Vigie Vuln DB"><img src="/static/site-icon.png" alt="" height="48"> <span class="brand-name"><span class="brand-wordmark">Vigie<strong>Vuln</strong>&nbsp;<em>DB</em></span><small>European-hosted Vulnerability DB</small></span></a>
+<div class="header-controls">
+<form class="search" action="/search" method="get" role="search">
+<label class="visually-hidden" for="query">Search database</label>
+<div class="search-controls"><input id="query" type="search" name="q" value="" placeholder="Find by identifier, product, keyword" minlength="4" maxlength="200" title="Enter at least 4 letters or digits.">
+<input type="hidden" name="lang" value="en"><details class="search-options"><summary aria-label="Search options" title="Search options"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 17h16M8 4v6m8 4v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary><fieldset><legend>Sources</legend><p>No selection searches all sources.</p><div class="search-source-grid"><label><input type="checkbox" name="src_cve" value="1"> <span>CVE</span></label><label><input type="checkbox" name="src_nvd" value="1"> <span>NVD</span></label><label><input type="checkbox" name="src_osv" value="1"> <span>OSV</span></label><label><input type="checkbox" name="src_gcve" value="1"> <span>GCVE</span></label><label><input type="checkbox" name="src_certfr" value="1"> <span>CERT-FR</span></label><label><input type="checkbox" name="src_euvd" value="1"> <span>EUVD</span></label><label><input type="checkbox" name="src_kev" value="1"> <span>CISA KEV</span></label><label><input type="checkbox" name="src_epss" value="1"> <span>EPSS</span></label><label><input type="checkbox" name="src_vigievuln" value="1"> <span>VigieVuln</span></label><label><input type="checkbox" name="src_registry" value="1"> <span>Packages</span></label><label><input type="checkbox" name="src_other" value="1"> <span>Other</span></label></div></fieldset></details><button type="submit" aria-label="Search"><svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg><span class="header-search-label">Search</span></button></div>
+
+</form>
+<nav class="desktop-navigation" aria-label="Main navigation"><div class="nav-links"><a href="/cves?list=critical&amp;lang=en">Latest critical</a><a href="/cves?list=exploited&amp;lang=en">Most exploited</a><a href="/advisories/vigievuln?lang=en">VigieVuln advisories</a><a href="https://9pings.github.io/VigieVuln/">CLI</a></div><div class="nav-actions"><a class="nav-icon language-icon" href="/advisory/osv/DLA-3942-1?lang=fr" hreflang="fr" lang="fr" aria-label="Language: French" title="French"><svg viewBox="0 0 24 16" width="24" height="16" aria-hidden="true"><path fill="#fff" d="M0 0h24v16H0z"/><path fill="#0055a4" d="M0 0h8v16H0z"/><path fill="#ef4135" d="M16 0h8v16h-8z"/></svg></a><a class="nav-icon" href="https://github.com/9pings/VigieVuln" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true" fill="currentColor"><path d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.76-.24.76-.54v-2.16c-3.12.68-3.78-1.32-3.78-1.32-.51-1.3-1.25-1.64-1.25-1.64-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 1.72 2.63 1.22 3.27.93.1-.73.39-1.22.71-1.5-2.49-.28-5.11-1.24-5.11-5.54 0-1.23.44-2.23 1.15-3.02-.12-.28-.5-1.43.11-2.98 0 0 .94-.3 3.08 1.15a10.7 10.7 0 0 1 5.6 0c2.14-1.45 3.08-1.15 3.08-1.15.61 1.55.23 2.7.11 2.98.72.79 1.15 1.79 1.15 3.02 0 4.31-2.63 5.25-5.13 5.53.4.35.76 1.03.76 2.08v3.15c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></svg></a><a class="nav-icon" href="/account" aria-label="My account" title="My account"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.4-4 3.1-6.5 7.5-6.5s7.1 2.5 7.5 6.5"/></svg></a></div></nav>
+<div class="mobile-navigation"><a class="nav-icon language-icon" href="/advisory/osv/DLA-3942-1?lang=fr" hreflang="fr" lang="fr" aria-label="Language: French" title="French"><svg viewBox="0 0 24 16" width="24" height="16" aria-hidden="true"><path fill="#fff" d="M0 0h24v16H0z"/><path fill="#0055a4" d="M0 0h8v16H0z"/><path fill="#ef4135" d="M16 0h8v16h-8z"/></svg></a><a class="nav-icon" href="https://github.com/9pings/VigieVuln" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true" fill="currentColor"><path d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.76-.24.76-.54v-2.16c-3.12.68-3.78-1.32-3.78-1.32-.51-1.3-1.25-1.64-1.25-1.64-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 1.72 2.63 1.22 3.27.93.1-.73.39-1.22.71-1.5-2.49-.28-5.11-1.24-5.11-5.54 0-1.23.44-2.23 1.15-3.02-.12-.28-.5-1.43.11-2.98 0 0 .94-.3 3.08 1.15a10.7 10.7 0 0 1 5.6 0c2.14-1.45 3.08-1.15 3.08-1.15.61 1.55.23 2.7.11 2.98.72.79 1.15 1.79 1.15 3.02 0 4.31-2.63 5.25-5.13 5.53.4.35.76 1.03.76 2.08v3.15c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></svg></a><a class="nav-icon" href="/account" aria-label="My account" title="My account"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.4-4 3.1-6.5 7.5-6.5s7.1 2.5 7.5 6.5"/></svg></a><details class="mobile-menu"><summary aria-label="Main navigation"><span aria-hidden="true">☰</span><span class="mobile-menu-label">Menu</span></summary><nav aria-label="Main navigation"><a href="/cves?list=critical&amp;lang=en">Latest critical</a><a href="/cves?list=exploited&amp;lang=en">Most exploited</a><a href="/advisories/vigievuln?lang=en">VigieVuln advisories</a><a href="https://9pings.github.io/VigieVuln/">CLI</a></nav></details></div>
+</div>
+</header>
+<main id="content" tabindex="-1">
+
+<div class="summary cve-header-card cve-sev-UNKNOWN"><h1 class="cve-title"><span aria-hidden="true">⚪</span> openssl - security update</h1><div class="cve-meta"><span class="record-id">DLA-3942-1</span><div class="record-badges"><span class="badge">OSV</span></div></div></div>
+<div class="record-overview"><section class="summary compact-summary cve-summary"><h2>At a glance</h2><dl class="kv"><dt>Source</dt><dd>OSV</dd>
+
+<dt>Published</dt><dd><time datetime="2024-10-31T00:00:00.000Z" data-local-time>2024-10-31 00:00 UTC</time></dd>
+<dt>Updated</dt><dd><time datetime="2026-03-09T01:22:40.686Z" data-local-time>2026-03-09 01:22 UTC</time></dd>
+
+
+</dl></section><div class="record-body">
+</div></div>
+<h2>Related upstream CVEs (6)</h2><p>These relationships are declared by the source. Scores describe each CVE; they do not independently establish that every CVE affects each package or version in this advisory.</p><div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th scope="col">CVE</th><th scope="col">CVE severity and score</th><th scope="col">Source</th></tr></thead><tbody><tr><td><a href="/cve/CVE-2023-5678?lang=en">CVE-2023-5678</a></td><td><span class="badge sev-MEDIUM">MEDIUM 5.3</span></td><td>NVD</td></tr><tr><td><a href="/cve/CVE-2024-0727?lang=en">CVE-2024-0727</a></td><td><span class="badge sev-MEDIUM">MEDIUM 5.5</span></td><td>NVD</td></tr><tr><td><a href="/cve/CVE-2024-2511?lang=en">CVE-2024-2511</a></td><td><span class="badge sev-MEDIUM">MEDIUM 5.9</span></td><td>NVD</td></tr><tr><td><a href="/cve/CVE-2024-4741?lang=en">CVE-2024-4741</a></td><td><span class="badge sev-HIGH">HIGH 7.5</span></td><td>NVD</td></tr><tr><td><a href="/cve/CVE-2024-5535?lang=en">CVE-2024-5535</a></td><td><span class="badge sev-CRITICAL">CRITICAL 9.1</span></td><td>NVD</td></tr><tr><td><a href="/cve/CVE-2024-9143?lang=en">CVE-2024-9143</a></td><td><span class="badge sev-MEDIUM">MEDIUM 4.3</span></td><td>NVD</td></tr></tbody></table></div>
+<h2>Affected packages</h2><div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th scope="col">Package</th><th scope="col">Versions</th></tr></thead><tbody><tr><td>Debian:11 · <b>openssl</b></td><td>introduced 0, fixed 1.1.1n-0+deb11u6</td></tr></tbody></table></div>
+<h2>Sources</h2><div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th scope="col">Source</th><th scope="col">Licence</th></tr></thead><tbody><tr><td><a href="https://osv.dev/vulnerability/DLA-3942-1" rel="noopener noreferrer nofollow">OSV.dev</a></td><td>See osv.dev/data for this database&#39;s licence</td></tr></tbody></table></div>
+</main>
+<footer><p>Data from the sources listed on each page, under their own licences.</p><nav aria-label="Service information"><a href="/sources?lang=en">Data sources</a><a href="/dumps?lang=en">Data dumps</a><a href="/legal?lang=en">Legal notice</a><a href="/terms">CGU</a><a href="/privacy">Privacy</a></nav></footer>
+</body>
+</html>

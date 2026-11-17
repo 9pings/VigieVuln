@@ -210,7 +210,7 @@ function visibleText(html) {
 // rot into a set of strings that match nothing at all.
 const ENGLISH_CHROME = [
 	"Expand all", "Collapse all", "Click a section header or a CVE row to toggle.",
-	"Executive Summary", "Everything else:", "dependencies scanned", "most critical", "end-of-life frameworks",
+	"Executive Summary", "Overall:", "dependencies scanned", "most critical", "end-of-life frameworks",
 	"defined in:", "version managed by:", "pulled in via:", "parent POM",
 	"Base score", "Known exploited", "Match confidence", "External links", "Security advisory", "Mailing list",
 	"Recommended action", "Priority / severity", "Advisory-specific candidate", "pulled in by",

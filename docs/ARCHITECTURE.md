@@ -2,6 +2,14 @@
 
 This is the deep-dive for anyone modifying `vigievuln`'s internals or wondering why a particular finding shows up the way it does. For day-to-day usage, see [`USAGE.md`](USAGE.md).
 
+The client stores current advisory and resource caches in SQLite under
+`~/.vigie-vuln/cache.sqlite` by default; the proxy cache uses a separate directory.
+Legacy filesystem cache archives are not imported. Source-tree image discovery and
+inspection are disabled by default and require `--images`; the separate `image` command
+can inspect supported OCI sources. Neither path guarantees complete image coverage.
+Without a Python lockfile, the PyPI codec parses supported pins and manifests best-effort;
+it does not execute pip or resolve the complete transitive graph.
+
 ## Module map
 
 ```
@@ -9,6 +17,12 @@ vigievuln.js                 Thin CLI: commander parsing + orchestration (loops 
 lib/codecs/                  Per-ecosystem codecs (maven, gradle, npm, yarn, composer, pypi, nuget, go, ruby, binary) + registry + select + recipes (see "Codecs" below).
 lib/codecs/gradle/                gradle.lockfile + gradle.properties + build.gradle(.kts) best-effort DSL parser (parse.js) + version-catalog libs.versions.toml resolver (catalog.js). Emits ecosystem "maven" / ecosystemType "gradle" records; surfaces platform() BOMs for the maven-bom backfill.
 lib/codecs/binary/                 Native-binary scanner: sniff.js (extension + magic-byte gate) + scan.js (walk + SHA-1/SHA-256). The binary codec finds committed .dll/.exe/.so/.dylib (provenance:"binary").
+lib/codecs/binary/elf-metadata.js   Bounded ELF reader, interpreter/dynamic metadata/build IDs and Go buildinfo; signature detection includes extensionless executables.
+lib/artifacts/               Native Docker/OCI/rootfs readers, installed application and publisher SBOM inventories, portable snapshots, assessment/enrichment and report evidence.
+lib/system-inventory/        dpkg/APK/RPM collectors, native RPM storage readers, distribution-specific OSV snapshots and Debian/RPM/APK version comparators.
+lib/image-registry.js        Native OCI HTTP transport, image and SBOM discovery, digest/platform binding, explicit authentication; no Docker process.
+lib/image-references.js      Extensible Dockerfile/YAML image declaration discovery, separate from image content assessment.
+lib/cli-image.js             image command, offline inventory workflow, reports and incomplete-coverage gates. See IMAGES.md and PLAN-native-images-linux.md.
 lib/hash-id.js               Identity-by-checksum: deps.dev (→ exact coordinate) then CIRCL hashlookup (→ known-good + KnownMalicious). Cached, offline-aware.
 lib/unmanaged.js             enrichUnmanaged() (identity + integrity on hash-bearing records) + buildInventory() (per-file signals for unmanaged-components report section / JSON).
 lib/certs/                   Certificate / key-material scanner (NOT a codec — crypto material has no version/registry/CVE/EOL). sniff.js (extension + conventional-SSH-name gate) + analyze.js (X.509 via built-in crypto.X509Certificate, key classification incl. private/public + all SSH/PEM/PuTTY/PGP formats, weak-crypto findings — pure) + scan.js (walk + sha256) + index.js (scanCertificates). → unmanaged-components report section + JSON `certificates` + SARIF `FAD-*`. 100% offline.
@@ -132,10 +146,39 @@ resolveEolProduct(dep), recipe, nativeScanners
   OSV `Maven`, the Maven-Central transitive walk, the external import-BOM backfill, outdated
   and EOL all cover Gradle deps unchanged — but `ecosystemType: "gradle"` so the report
   buckets them into a dedicated "Gradle" chapter and offers a Gradle `constraints { }` fix
-  recipe (`codecFor()` resolves the codec by `ecosystemType` first). The only Gradle-specific
-  orchestrator wiring is: include it in the transitive/CVE/scan-completeness gates
+  recipe (`codecFor()` resolves the codec by `ecosystemType` first). Gradle-specific
+  orchestration includes the transitive/CVE/scan-completeness gates
   (`runMaven || runGradle`) and feed its `platform(...)` BOMs into the same
-  `lib/maven-bom.js` managed-version backfill the Maven path uses. A backfilled dep is stamped
+  `lib/maven-bom.js` managed-version backfill the Maven path uses. The parser also supplies
+  `spring-boot-dependencies` when a top-level `plugins` block applies both
+  `org.springframework.boot` (with a concrete version) and `io.spring.dependency-management`.
+  Kotlin/Groovy plugin declarations and `libs.plugins.*` aliases are supported; `apply false`,
+  unknown/dynamic versions and nested plugin-management declarations do not imply an import.
+  Implicit BOM inference is limited to a source tree with one Gradle build script, and its
+  managed versions are bound to that script (never applied to Maven records). Multiple
+  scripts produce a coverage warning rather than a global guessed BOM; scan a module
+  separately or provide its resolved lockfile for that case.
+  For remaining versionless declarations, `lib/codecs/gradle/versionless.js` collects
+  requests from the same manifest and compatible Java classpaths before the main transitive
+  pass. It selects the highest numeric request, rechecks the graph with that selection,
+  and retains direct scope and manifest attribution with `versionSource.via = "gradle-graph"`.
+  A version must agree across the declaration's compile/runtime classpaths. Multi-manifest
+  records, incomplete graphs, unknown expressions, qualified-version conflicts and unstable graphs remain
+  unresolved; this is static POM-based evidence, not execution of Gradle's variant/rule engine.
+  Intermediate numeric conflicts are accepted only when the selected version is already
+  the highest request or a known BOM/force settles it. Exclusions stay associated with
+  each declaration's configuration, preventing test-only paths from widening production.
+  The shared Maven resolver keeps nearest-first mediation; optional request observation
+  is used only for this Gradle recovery pass.
+  The normal unlocked transitive expansion is also a static POM walk, not Gradle's
+  resolution engine. Its selected versions, variants and exclusions can differ from the
+  actual classpath and lead to missing or incorrect findings. A Gradle-generated lockfile
+  covers only configurations actually resolved and may combine compile, runtime, test and
+  build-tool versions in the scan inventory; it is not an exact runtime-only SBOM.
+  Traccar v6.6 (`fc5ae14952a44c85894e470cad04d4f91e6a3bd2`) exposed 18 unlocked
+  runtime version differences and two confirmed version-based false positives. This
+  observation is a case study, not a general accuracy measurement.
+  A backfilled dep is stamped
   `versionSource = { via: "bom", bom: "<g:a:v>" }` (the top-level platform/import BOM coord), which
   the report renders as a `version managed by: <bom> (BOM)` line and the findings JSON carries on
   `dep.versionSource` — so a versionless dep's resolved version is traceable to its BOM, not mistaken
@@ -208,7 +251,7 @@ The Maven keyspace and npm keyspace never collide — `:lodash` (Maven groupId-l
    - **Licenses** (`--licenses`, **opt-in / off by default**): each registry pass also returns the package's license (no extra request); Maven licenses come network-free from cached POMs (`lib/maven-license.js`). `lib/license-policy.js` normalises to SPDX and classifies (permissive / weak / strong / network copyleft / proprietary / unknown), flagging copyleft + unknown.
 10. **Snyk** (optional, `--snyk`) — runs `snyk test --all-projects --json` against the cleaned target dir. Normalised + merged. Findings in both sources tagged `source: "both"`.
 11. **Outputs** — controlled by the `--report-<type>` family (`html`/`doc`/`xlsx`/`sbom`/`csaf`/`json`/`sarif`), each taking an optional path (else a default name under `--report-output`, default `./vigievuln-report/`). With no `--report-*` flag the default set is HTML + findings JSON; `--no-report` writes nothing (gate-only). `writeReports()` renders `cve-report.html` (self-contained, inline CSS) and/or `cve-report.doc` (same HTML with Office XML meta tags so Word opens it natively).
-12. **Machine-readable exports** (optional) — `--report-sbom` writes a CycloneDX 1.6 SBOM with vulnerabilities inline (VDR); `--report-csaf` writes a CSAF 2.0 VEX; `--report-json` a flat findings doc; `--report-xlsx` an Excel workbook from that same findings model; `--report-sarif` a SARIF 2.1.0 log. All build purls via `lib/purl.js` and use the full match set (cpeFiltered marked, not dropped; embedded-jar coords carry `provenance:"embedded"`).
+12. **Machine-readable exports** (optional) — `--report-sbom` writes a CycloneDX 1.6 SBOM with vulnerabilities inline (VDR); `--report-csaf` writes a CSAF 2.0 VEX; `--report-json` a flat findings doc; `--report-xlsx` an Excel workbook from that same findings model; `--report-sarif` a SARIF 2.1.0 log. The SBOM preserves each known scanned version for Maven, npm and PyPI records and links findings to their version; it cannot supply uncollected versions or infer deployment scope. All build purls via `lib/purl.js` and use the full match set (cpeFiltered marked, not dropped; embedded-jar coords carry `provenance:"embedded"`).
 13. **Audit-trail outputs** — a **provenance manifest** (`lib/provenance.js`) is attached to `projectInfo` and rendered as the Methodology subsection + the JSON `provenance` block. With `--baseline <file>` the current findings are diffed (`lib/diff.js`) into a Δ report chapter + the JSON `diff` block, and `--fail-on-new` gates on new production CVEs. Unless `--no-checksums`, a `SHA256SUMS` manifest (`lib/report-integrity.js`) is written beside the artifacts. A standalone `vigievuln diff a.json b.json` compares two exports without scanning.
 
 ## Report structure
@@ -224,15 +267,17 @@ The Maven keyspace and npm keyspace never collide — `:lodash` (Maven groupId-l
                                       unmanaged native binaries, scan alerts).
                                   "📋 Copy summary" yields a Word-pasteable rich+plain version of all three.
 <Summary cards>                ← critical / high / medium / low / KEV / EOL / obsolete / outdated / licenses (compacted to one line)
-<Overview charts>              ← 4 inline-SVG donuts on one row under the totals (lib/charts.js):
-                                  CWE of direct vulns (legend = CWE titles) · sub-dep CVEs per root dep
-                                  (CVE count, legend = readable dep name; rootless/npm shown as a note) ·
-                                  MOST VULNERABLE COMPONENTS — the scanned project's OWN modules
-                                  (pom artifactId / package.json name / …, else the relative path)
-                                  ranked by critical+high; falls back to direct vs transitive when
-                                  the scan has a single descriptor · fix-priority
-                                  bands. Each donut has a "📋 Copy chart" button (SVG→canvas→PNG →
-                                  clipboard) for pasting into Word.
+<Overview charts>              ← four inline charts under the totals (lib/charts.js):
+                                  CWE distribution · findings by component · an exposure or
+                                  severity breakdown · fix priority. Component grouping uses
+                                  the proven image first, otherwise an application instance,
+                                  otherwise parsed project descriptor ownership. Shared owners
+                                  form an explicit group; unknown owners remain unattributed.
+                                  An explicit physical finding ID is counted once in that chart,
+                                  including when several owner records describe it. Excess groups
+                                  are folded into a labelled remainder. Instance and module charts
+                                  can count a finding in each affected owner; their center shows
+                                  the distinct finding count. Every chart supports copy as PNG.
 <Toolbar>                      ← expand-all / collapse-all / expand CVE details
 
 Chapters are grouped under SIX root chapters (a two-level hierarchy), with two
@@ -281,7 +326,7 @@ Production/Dev chapter number; their All and per-manifest views are consecutive 
 - The bundle ships as `cves.zip.zip` (a zip whose sole content is another zip). `extractZip()` recurses up to 3 levels.
 - `endoflife.date`, Maven Central and npm registry responses are cached locally for four hours by default. Both the `eol` and the `support` field are read (`--eol-support` surfaces the latter).
 - **Persistent config**: `~/.vigie-vuln/config.json` (mode 0600) stores per-user state, currently the NVD API key. Set via `vigievuln --set-nvd-key <KEY>`.
-- **`--offline` umbrella flag**: skips every network call (CVE index download, OSV queries, NVD enrichment, EPSS/KEV lookups, endoflife.date lookups, Maven Central version queries, npm registry queries, transitive POM fetches, retire.js scans). Falls back to whatever is already cached. Per-source variants (`--cve-offline`, `--no-osv`, `--no-nvd`, `--no-epss`, `--no-kev`, `--no-retire`, `--no-js`) still work independently. (Licenses are opt-in via `--licenses`, off by default.)
+- **`--offline` umbrella flag**: skips network calls and uses available cached source data; local analysis, including retire.js when its signatures are available, can still run. Missing cached evidence limits coverage. Per-source variants (`--cve-offline`, `--no-osv`, `--no-nvd`, `--no-epss`, `--no-kev`, `--no-retire`, `--no-js`) work independently. Licenses are opt-in via `--licenses`.
 - `snyk` is not a dependency — we shell out via `execFile`. `snyk` exits 1 when it finds vulnerabilities, which is expected (the JSON is still on stdout).
 - The cleaned POM is the union of every profile's deps. Counts will therefore be larger than the source POM. This is intentional — verify your reasoning before "reducing" them.
 - Unresolved `${…}` Maven variables are kept verbatim in the rewritten POM. `lib/cve-match.js` resolves them lazily via `resolveDepVersion()` when collecting deps for the scan. Deps that *still* can't be resolved (external BOM) are surfaced in chapter 0 as `unresolved-versions` warnings.

@@ -1,0 +1,146 @@
+{
+  "method": "Same 99 pinned distributions from the preserved native pip report. Match name, PEP 440-equivalent version and explicit advisory identifier/alias overlap; no title-based inferred equivalences.",
+  "pip_audit_version": "2.10.1",
+  "vigievuln_finding_rows": 102,
+  "expected_packages": 99,
+  "vigievuln_inventory": {
+    "missing": [],
+    "extra": []
+  },
+  "original_manifest_scan_pypi_rows": 100,
+  "services": {
+    "pypi": {
+      "dependencies": 99,
+      "inventory_missing": [],
+      "inventory_extra": [],
+      "skipped": [],
+      "raw_advisory_records": 141,
+      "explicit_alias_groups": 101,
+      "records_matched_in_vigievuln": 141,
+      "unmatched_pip_audit_records": [],
+      "vigievuln_rows_not_in_this_service": [
+        {
+          "name": "pillow",
+          "version": "11.1.0",
+          "id": "CVE-2026-112898",
+          "aliases": [
+            "BIT-pillow-2026-112898",
+            "CVE-2026-112898"
+          ]
+        }
+      ],
+      "records_absent_in_original_manifest_scan": [
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3609",
+          "aliases": [
+            "GHSA-9xwg-3r6f-jcx2",
+            "CVE-2026-61632"
+          ]
+        },
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3609",
+          "aliases": [
+            "GHSA-9xwg-3r6f-jcx2",
+            "CVE-2026-61632"
+          ]
+        },
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3654",
+          "aliases": [
+            "CVE-2026-67422",
+            "GHSA-gm37-52c6-37mw"
+          ]
+        },
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3654",
+          "aliases": [
+            "CVE-2026-67422",
+            "GHSA-gm37-52c6-37mw"
+          ]
+        }
+      ]
+    },
+    "osv": {
+      "dependencies": 99,
+      "inventory_missing": [],
+      "inventory_extra": [],
+      "skipped": [],
+      "raw_advisory_records": 169,
+      "explicit_alias_groups": 102,
+      "records_matched_in_vigievuln": 169,
+      "unmatched_pip_audit_records": [],
+      "vigievuln_rows_not_in_this_service": [],
+      "records_absent_in_original_manifest_scan": [
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3609",
+          "aliases": [
+            "GHSA-9xwg-3r6f-jcx2",
+            "CVE-2026-61632"
+          ]
+        },
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3654",
+          "aliases": [
+            "GHSA-gm37-52c6-37mw",
+            "CVE-2026-67422"
+          ]
+        },
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3609",
+          "aliases": [
+            "GHSA-9xwg-3r6f-jcx2",
+            "CVE-2026-61632"
+          ]
+        },
+        {
+          "name": "pymdown-extensions",
+          "version": "10.21.3",
+          "id": "PYSEC-2026-3654",
+          "aliases": [
+            "GHSA-gm37-52c6-37mw",
+            "CVE-2026-67422"
+          ]
+        }
+      ]
+    }
+  },
+  "new_vigievuln_findings_after_resolved_inventory": [
+    {
+      "name": "pymdown-extensions",
+      "version": "10.21.3",
+      "id": "CVE-2026-67422",
+      "aliases": [
+        "PYSEC-2026-3654",
+        "GHSA-gm37-52c6-37mw"
+      ]
+    },
+    {
+      "name": "pymdown-extensions",
+      "version": "10.21.3",
+      "id": "CVE-2026-61632",
+      "aliases": [
+        "PYSEC-2026-3609",
+        "GHSA-9xwg-3r6f-jcx2"
+      ]
+    }
+  ],
+  "limits": [
+    "A second implementation is not fully independent vulnerability evidence: pip-audit and VigieVuln overlap in PyPA/OSV sources.",
+    "The requirements passed to both scanners are deliberately frozen: --no-deps --disable-pip applies only to pip-audit on this already resolved inventory.",
+    "A matching result on these 99 versions does not establish universal detection coverage or exploitability."
+  ]
+}

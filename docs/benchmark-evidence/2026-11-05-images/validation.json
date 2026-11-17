@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-11-05T07:59:46.944Z",
+  "full": {
+    "tests": 2076,
+    "pass": 2065,
+    "skipped": 11,
+    "fail": 0
+  },
+  "subsequentImageCliTests": {
+    "pass": 9,
+    "fail": 0
+  },
+  "logs": {
+    "full": {
+      "path": "/tmp/vv-images-pathways-final-tests.log",
+      "sha256": "86e1cf2513424f6df266ea3d9d285c178e881fa683c3f11bd294615ed7a6fe8b"
+    }
+  }
+}

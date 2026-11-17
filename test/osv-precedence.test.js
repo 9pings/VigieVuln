@@ -109,7 +109,7 @@ test('expiring a clean query keeps its offline meaning while online refreshes in
   f.put(doc, f.earlier); f.proof([]); f.coverage(true, f.now - 1000);
   const offline = await f.scan({ queryTtlMs: 60000 });
   assert.deepEqual(offline.matches, []);
-  assert.ok(offline.warnings.some(w => w.type === 'source-stale'));
+  assert.ok(offline.warnings.some(w => w.type === 'cache-freshness' && w.severity === 'info' && w.oldestFetchedAt === new Date(f.consulted).toISOString()));
   assert.deepEqual(f.store.getRecord('osv', doc.id).document, doc, 'TTL cannot erase the advisory');
   let batches = 0;
   const online = await f.scan({ offline: false, queryTtlMs: 60000, fetcher: async url => {
@@ -135,7 +135,7 @@ test('TTL zero preserves offline findings and timestamps while requiring a fresh
   f.put(doc, f.earlier); f.proof([doc.id]);
   const offline = await f.scan({ queryTtlMs: 0 });
   assert.equal(offline.matches.length, 1);
-  assert.ok(offline.warnings.some(w => w.type === 'source-stale'));
+  assert.ok(offline.warnings.some(w => w.type === 'cache-freshness' && w.severity === 'info' && w.oldestFetchedAt === new Date(f.consulted).toISOString()));
   assert.equal(f.store.getQuery(tuple).fetchedAt, f.consulted);
   let batches = 0;
   const online = await f.scan({ offline: false, queryTtlMs: 0, fetcher: async url => {

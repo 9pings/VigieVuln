@@ -1,0 +1,9 @@
+{
+  "checkedAt": "2026-11-06T07:04:50.264Z",
+  "nodeReport": "nginx/published-registry/findings.json",
+  "standaloneReport": "nginx/standalone-registry/findings.json",
+  "nodeStandaloneCveEqual": true,
+  "nodeStandaloneArtifactsEqual": true,
+  "standaloneSha256": "b05ef9935869b8f753dd451a2b1364b9afd24a8e573fa80bc999cfc7ac8d9697",
+  "standalonePathEnvironment": "/nonexistent"
+}

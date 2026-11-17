@@ -1,0 +1,34 @@
+[
+  {
+    "report": "maven-openrefine/report-after",
+    "components": 402,
+    "duplicate_refs": [],
+    "orphan_refs": [],
+    "vulnerabilities_without_affects": [],
+    "findings_without_matching_affected_component": []
+  },
+  {
+    "report": "gradle-traccar/report-scoped-lock",
+    "components": 280,
+    "duplicate_refs": [],
+    "orphan_refs": [],
+    "vulnerabilities_without_affects": [],
+    "findings_without_matching_affected_component": []
+  },
+  {
+    "report": "python-apps/reports-after/paperless",
+    "components": 1486,
+    "duplicate_refs": [],
+    "orphan_refs": [],
+    "vulnerabilities_without_affects": [],
+    "findings_without_matching_affected_component": []
+  },
+  {
+    "report": "python-apps/reports-after/netbox",
+    "components": 455,
+    "duplicate_refs": [],
+    "orphan_refs": [],
+    "vulnerabilities_without_affects": [],
+    "findings_without_matching_affected_component": []
+  }
+]

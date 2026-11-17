@@ -1,4 +1,55 @@
-# Scanner comparison — 3 November 2026
+# Scanner comparisons — updated 17 November 2026
+
+## Application checks — 17 November 2026
+
+Four real applications were cloned and scanned inside Docker at fixed commits.
+Native Maven and Gradle graphs, Python lock entries and a pip dry-run resolution
+provided independent inventory checks. These tests found real limitations;
+they do not establish general recall, precision or exploitability.
+
+| Application | Version | Inventory result after the targeted corrections |
+| --- | --- | --- |
+| OpenRefine | 3.9.0 | 152 of 153 external Maven coordinate/version pairs from 12 native module trees present. Five versions omitted by the SBOM exporter were restored. `commons-io:2.16.1` remains absent on a `packaging/provided` reactor path; no specific missed CVE was demonstrated for that omission. |
+| Traccar | 6.6 | 48 direct production versions agree with Gradle after the Groovy `ext` fix. Without a lock, 18 runtime transitive versions still differ; Guava/CVE-2023-2976 and HttpClient/CVE-2020-13956 are confirmed false positives for the actual Gradle-selected versions. A native lock of four Java classpaths includes all 265 runtime library versions and removes those two false positives, but also contains compile/test components and BOMs. Locking every configuration adds tooling such as Checkstyle, some of which is classified as production. |
+| Paperless-ngx | 2.14.7 | All 184 Python and 1,302 npm package/version pairs from the inspected lockfiles are present after correcting the multi-version SBOM export. This includes development and optional-platform entries, not just packages installed on one Linux deployment. |
+| NetBox | 4.2.3 | All 38 Python requirements pins are inventoried. Native pip resolves 99 distributions in the tested Python 3.11/Linux environment: 61 additional transitives are absent from the source-manifest scan. This current resolution is not evidence of historical deployed versions. |
+
+The CLI profile enabled its ordinary advisory sources, with `--cve-offline` using
+the public CVEProject snapshot from that morning and `--retries 0`; images stayed
+off by default. EUVD HTTP 403 and incomplete/undecidable CVEProject npm coverage
+occurred in some runs and remain in the preserved reports. Caches and runtime
+configuration were isolated. An initial SQLite seed-header preparation error was
+corrected before successful scans; it was a harness error, not a scanner finding.
+
+For a separate detector comparison, both scanners received the same 99 versions
+from the preserved NetBox pip report. Pip-audit 2.10.1 used `--no-deps --disable-pip`
+because the supplied inventory was already resolved. With OSV it returned 169
+advisory records forming 102 explicit-alias groups, all matched by VigieVuln's 102
+finding rows. With PyPI it returned 141 records forming 101 groups, all present in
+VigieVuln; VigieVuln had one additional Pillow finding. No package was skipped.
+Completing the inventory added two findings on `pymdown-extensions` to the original
+Python scan. The implementations share some advisory sources; agreement is not
+an independent guarantee of database completeness.
+
+Sample checks covered Django, Requests and h11 upstream advisories, and the OSV
+matching path rejected the sampled Requests/h11 CVEs at their fixed boundaries.
+The final local suite passed 2,415 tests, skipped 13 and failed none. Browser and
+export checks found no JavaScript errors, duplicate/orphan component references
+or missing finding-to-component links in the checked final reports.
+
+Evidence: [run summary](benchmark-evidence/2026-11-17/verification-summary.json),
+[pip-audit comparison](benchmark-evidence/2026-11-17/checker-comparison.json),
+[inventory and export details](benchmark-evidence/2026-11-17/README.md).
+
+## Earlier comparisons — 3 November 2026
+
+**Native image follow-up, 5 November 2026:** [Traefik and NGINX comparisons](BENCHMARK-IMAGES.md)
+test Docker/OCI contents against Trivy and Grype, plus direct, fleet, transferred
+offline caches and local server paths. These expose substantial historical Debian
+coverage gaps; the Maven results below must not be generalized to container images.
+A subsequent follow-up reduces the NGINX gaps and separately compares the
+proved Traefik binary identity; see the latest section of the image benchmark for
+the counts, evidence and remaining uncertainty.
 
 These figures are a dated snapshot and continue to evolve. On the Dubbo and Petclinic inputs below, VigieVuln includes all observations reported by OSV-Scanner, Trivy and Grype in the compared runs; this is not a general guarantee. Published VigieVuln advisories add AI-assisted reconciliation and human review, whose coverage is evolving and is not represented as a fixed benchmark gain.
 

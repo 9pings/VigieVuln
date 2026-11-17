@@ -1,0 +1,16 @@
+{
+  "paperless": {
+    "before": 573,
+    "after": 573,
+    "added": [],
+    "removed": [],
+    "warningsAfter": 4
+  },
+  "netbox": {
+    "before": 159,
+    "after": 159,
+    "added": [],
+    "removed": [],
+    "warningsAfter": 6
+  }
+}

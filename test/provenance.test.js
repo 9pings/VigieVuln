@@ -111,7 +111,7 @@ test("provenance distinguishes source profiles, GCVE index and derived identifie
 		assert.equal(p.configuration.sourceProfile, "us");
 		assert.equal(by.cve.status, "disabled");
 		assert.equal(by.gcve.status, "disabled");
-		assert.equal(by.gcveDerived.status, "derived");
+		assert.equal(by.gcveDerived.status, "disabled");
 		assert.equal(by["osvDb-npm"].status, "cached");
 		assert.equal(by["osvDb-maven"].status, "missing");
 		const gcve = collectDataSources({ cacheDir: dir }).find(s => s.id === "gcve");

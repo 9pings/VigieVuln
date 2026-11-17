@@ -1,0 +1,2 @@
+# Generated audit snapshots preserve upstream advisory whitespace and checksums.
+docs/samples/*.html -whitespace

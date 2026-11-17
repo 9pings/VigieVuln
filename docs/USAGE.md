@@ -6,6 +6,7 @@ Every flag, every common workflow, with copy-pasteable commands.
 
 ```text
 vigievuln scan <src> [scan options]
+vigievuln image <archive|rootfs|reference> [image options]
 vigievuln login
 vigievuln whoami
 vigievuln watch <src> --name 'My Project'
@@ -22,6 +23,12 @@ vigievuln -s <src> [-t <target>] [-e <regex>] [other options]
 - `-t, --target <dir>` — optional. **Extraction mode.** Write a parallel directory of "cleaned" POMs (private/excluded deps stripped, reactor modules linked to each other) to `<dir>` **and mirror every non-Maven lockfile/manifest** (`package-lock.json`/`yarn.lock`/`pnpm-lock.yaml`, `composer.lock`/`symfony.lock`, `poetry.lock`/`Pipfile.lock`/…, `*.csproj`/`packages.lock.json`, `go.mod`/`go.sum`, `Gemfile.lock`, …) into it — so **any** scanner pointed at `<dir>` (`snyk test --all-projects` among them) sees **every** ecosystem, not just Maven. Each POM is reduced to the dependency-relevant nodes (coordinates, `properties`, `dependencyManagement`, `dependencies`, `modules`), reactor parents are rewired to their real in-tree `relativePath`, and `${…}` is resolved in coordinates. The run then **stops**: the only network action is the Maven-repository *existence* check, which is also what **identifies your private/internal modules** (coordinates that exist in no configured repository) — skipped under `--offline`, or when no repository answers a 5 s preflight. No CVE/EOL/outdated pass, no report — add `--snyk`, a `--report-<type>`, `--fail-on`/`--fail-on-new` or `--baseline` to also run the scan. A non-empty target requires `--force` because its contents are replaced. Without `-t`, the run is read-only and produces the full report.
 
 ## Output
+
+For Docker/OCI archives, registry images, root filesystems, publisher SBOMs and
+portable offline image inventories, see [Native images and Linux binaries](IMAGES.md).
+Use `vigievuln image --help` for that command's options. Source-scan image discovery
+and content inspection are off by default; use `--images` to opt in.
+Discovered references that cannot be inspected are identified in coverage warnings.
 
 By default the HTML report and a `findings.json` land in `./vigievuln-report/` (the JSON so the next run can `--baseline` against it; add `--report-doc` for the Word file). Override with `--report-output <dir>`.
 
@@ -59,7 +66,7 @@ vigievuln -s . --cert-expiry-days 30        # warn on certs expiring within 30 d
 
 > **Embedded JARs**: committed `.jar`/`.war`/`.ear` archives (vendored libs, Spring-Boot fat-jars, shaded uber-jars) are unzipped in-memory and their Maven coordinates — read from `META-INF/maven/.../pom.properties`, then `MANIFEST.MF`, then the file name — are reported in their own **Embedded binaries** section, grouped by containing archive. The section is a **full inventory** of every embedded coordinate — vulnerable or not (the JAR counterpart of the native-binary and vendored-JS inventories) — with a CVE-status column per coord and the full CVE detail for vulnerable ones. So a committed fat-jar shows up even when nothing inside it is currently vulnerable. Auto when archives are present; `--no-jars` disables it. Archives with no resolvable coordinate are listed in chapter 0.
 
-> **Committed native binaries**: `.dll`/`.exe`/`.so`/`.dylib` files are detected by extension **and** magic-byte confirmation (PE/ELF/Mach-O — images/fonts/assets are rejected even with a spoofed extension), hashed (SHA-1 + SHA-256) and **identified by checksum** online: **deps.dev** maps the hash to an exact package coordinate (byte-identical to a published artifact → *pristine*, and a candidate to declare as a real dependency); **CIRCL hashlookup** recognises known OS/distro/CDN/NSRL files (*known-good*) and carries a free `KnownMalicious` flag. Files no source knows are *unknown*; a filename disagreeing with the resolved identity is *name≠checksum*. Reported in the **Unmanaged / vendored binaries** section and the JSON export (`unmanaged` array). Cached + `--offline`-aware; the binary scan is on by default in `auto` mode and disabled with `--no-binaries`. No malware/AV lane.
+> **Committed native binaries**: supported PE/ELF/Mach-O files are identified by their content, including extensionless ELF executables, then hashed (SHA-1 + SHA-256). Bounded PE/ELF metadata and Go build information can provide additional evidence. Online checksum lookups use **deps.dev** and **CIRCL hashlookup**; missing or unverified evidence does not establish identity. Results appear in the unmanaged binaries section and JSON export, are cache-aware, and can be disabled with `--no-binaries`. This is not an antivirus scan.
 
 Native files over 512 MiB and unreadable files produce a coverage warning with their path; other files remain scanned. Hashing uses bounded buffers. Failed POM parsing likewise marks dependency coverage incomplete and does not count the failed module as parsed.
 
@@ -72,17 +79,28 @@ Native files over 512 MiB and unreadable files produce a coverage warning with t
 > **npm without a lockfile**: a `package.json` lacking a sibling
 > `package-lock.json`/`yarn.lock` is now scanned **best-effort** — pinned exact
 > versions are checked, ranges (`^1.0.0`) are skipped, and a `no-lockfile` warning
-> flags the partial coverage. Run `npm install`/`yarn install` for full coverage.
+> flags the partial coverage. A current lockfile improves coverage but does not by itself
+> establish the contents of every deployed environment.
+
+> **Python without a lockfile**: exact pins in supported requirements files and
+> `pyproject.toml` are collected best-effort; ranges and unsupported declarations may be
+> skipped. The scanner does not execute pip or resolve the transitive Python dependency
+> graph. Use a supported resolved lockfile or independently inspect the installed environment.
 
 > **Gradle**: a Gradle dependency *is* a Maven coordinate, so Gradle findings flow through
 > the **same** Maven services (CVE index, OSV `Maven`, transitive resolution, outdated, EOL)
 > and get their **own "Gradle" report chapter + `constraints { }` fix recipe**. Sources, in
-> order of authority: **`gradle.lockfile`** (exact, resolved, transitives included — enable
+> order of authority: **`gradle.lockfile`** (resolved versions for the configurations written to it — enable
 > Gradle [dependency locking](https://docs.gradle.org/current/userguide/dependency_locking.html)
 > for the best coverage); **`gradle/libs.versions.toml`** version catalogs; and a
 > **best-effort** parse of `build.gradle`/`build.gradle.kts` (Groovy **and** Kotlin DSL — string
 > & map notation, `libs.*` catalog accessors, `$var`/`gradle.properties` resolution),
-> including the `buildSrc/` convention plugins. A `platform("…")` / `enforcedPlatform("…")`
+> including the `buildSrc/` convention plugins. Top-level Groovy `ext` literal versions are
+> resolved when unambiguous; dynamic or reassigned values remain unresolved. Without a
+> lockfile or native Gradle resolution, POM-based traversal can choose versions different
+> from Gradle and omit dependencies, leading to incorrect vulnerability alerts. A lockfile
+> improves version coverage but includes only locked configurations; build, test and runtime
+> configurations can have different versions and the inventory may combine them. A `platform("…")` / `enforcedPlatform("…")`
 > BOM (e.g. `spring-boot-dependencies`) is resolved exactly like a Maven `<scope>import</scope>`
 > BOM, **backfilling the versions of the versionless starters** declared against it. A
 > backfilled dep's resolved version isn't written anywhere in your source, so the report
@@ -91,6 +109,13 @@ Native files over 512 MiB and unreadable files produce a coverage warning with t
 > and the findings JSON carries it as `dep.versionSource = { via: "bom", bom: "<coord>" }`. Versions
 > that can't be resolved statically (programmatic/dynamic deps) are listed in chapter 0 and
 > excluded from CVE matching (never assumed vulnerable); `--no-gradle` disables the codec.
+
+> The distinction matters in practice: a comparison with Traccar v6.6 at commit
+> `fc5ae14952a44c85894e470cad04d4f91e6a3bd2` found 18 runtime version differences and
+> two confirmed version-based false positives in the unlocked scan. A Gradle-generated
+> lock for four Java classpaths contained all 265 observed runtime library versions, but
+> also combined compile/test versions and BOMs. This is one experiment, not a guarantee
+> for other projects, configurations, plugins or variants.
 
 ## Filtering deps
 
@@ -135,7 +160,11 @@ Each data source can be disabled independently:
 | `--no-all-libs` | Don't query Maven Central for latest versions (skips the Outdated section and the "missing on Central" check) |
 | `--no-osv` | Skip OSV.dev (Google + GitHub aggregated feed) |
 | `--advisory-query-ttl <hours>` | Refresh advisory consultations after this many hours (integer 0–8760, default 4). `0` revalidates on each online scan; offline scans still use available observations and report their age. Sources have different coverage scopes: OSV can answer a package/version, while others may provide a package or feed snapshot. |
-| `--force-update` | Revalidate all consulted online sources, using conditional requests when available. The proxy may still serve its own cache; unavailable sources retain their cached data. Incompatible with `--offline`. |
+| `--reuse-stable-advisories` / `--no-reuse-stable-advisories` | Enabled by default: reuse individually cached advisory records whose last source modification is at least 365 days old. The negative flag restores normal cache lifetimes. Package queries and catalogues retain their own refresh policies; KEV and EPSS remain independently refreshed. |
+| `--stable-advisory-age-days <days>` | Set the minimum age for advisory reuse (1–36500 days; default 365). Records with missing or future source dates are refreshed normally. |
+| `--force-update` | Revalidate consulted online sources, including eligible individual records, regardless of stable reuse. Unavailable sources retain cached data with their provenance. Incompatible with `--offline`. |
+| `--images` / `-a images` | Enable image discovery and analysis in source scans and descriptor preparation (off by default). |
+| `--proxy-rate-limit-wait-ms <milliseconds>` | Maximum proxy retry wait per request (default 45000 ms). |
 
 When using the VigieVuln service, reviewed and published VigieVuln advisories for the Maven and npm packages in the scan are refreshed by package under this same consultation TTL, independently of OSV. No global seed is required. Project cache preparation includes the relevant cached advisories and consultations for offline scans; proposals awaiting human review are never served as published advisories.
 | `--no-packagist-audit` | Skip the Packagist security-advisories lane for Composer deps — the endpoint `composer audit` queries. OSV misses CVEs it carries only as CVEProject entries without composer coordinates (twig/twig CVE-2026-46636/46627, knp-snappy CVE-2026-46643 on the real-instance corpus); this lane matches them with the official constraints. Only package names are sent |
@@ -242,7 +271,7 @@ Every output has its own `--report-<type>` flag, each taking an **optional** pat
 | `--report-html [file]` | `cve-report.html` | The self-contained HTML report (inline CSS, no external assets). |
 | `--report-doc [file]` | `cve-report.doc` | The same report as a Word-compatible `.doc`. |
 | `--report-xlsx [file]` | `findings.xlsx` | Excel workbook with a summary and one sheet per populated category, including application ownership, coverage, warnings, provenance and diff when present. Text is stored as text, never evaluated as a formula; an explicit path must end in `.xlsx`. |
-| `--report-sbom [file]` | `sbom.cdx.json` | A **CycloneDX 1.6** SBOM with `vulnerabilities` inline (a VDR). Components carry purls + detected licenses (+ `fad:provenance`/`fad:location` for embedded-jar coords); vulnerabilities carry CVSS ratings, CWEs, affected purls, and `fad:epss` / `fad:kev` / `fad:priorityBand` properties. |
+| `--report-sbom [file]` | `sbom.cdx.json` | A **CycloneDX 1.6** SBOM with `vulnerabilities` inline (a VDR). Maven, npm and PyPI records export each known scanned version as a separate component; findings refer to their affected version. Coverage and scope depend on the input evidence. Components carry purls and detected licenses; vulnerabilities carry available CVSS, CWE and priority evidence. |
 | `--report-csaf [file]` | `csaf-vex.json` | A **CSAF 2.0 VEX** (`csaf_vex`) document: a `product_tree` of every dep (purl-identified) plus per-CVE `product_status.known_affected`, `cvss_v3` scores, a KEV `exploited` flag, and prioritization notes. |
 | `--report-json [file]` | `findings.json` | A flat **findings JSON** (fad's own format): every chapter (CVE/EOL/obsolete/outdated/licenses/vendored) + an `unmanaged` array (native-binary inventory with identity/integrity/signals), an `embedded` array (every JAR/WAR/EAR coordinate, vuln or not, with `vulnCount`/`maxSeverity`), EOL entries carrying their `productSlug`/`via`/`viaKey` origin + `status`/`cycle`/`support` and, for grouped frameworks, `anchor`/`components[]` (each component with its own `manifestPaths`, or `scope:"transitive"` + `via` chain), + a summary, easy to diff between audits and post-process. |
 | `--report-sarif [file]` | `fad.sarif` | A **SARIF 2.1.0** log for GitHub Code Scanning / GitLab: one rule per CVE with `security-severity` (drives GitHub's severity), KEV tags, and the manifest (or embedding jar) as the result location. |
@@ -319,20 +348,20 @@ vigievuln diff audit-q1.json audit-q2.json --report-json delta.json
 
 ## Report integrity & methodology
 
-Every run aimed at a deliverable is **reproducible** and **tamper-evident**:
+Reports include evidence that helps reviewers assess provenance and integrity:
 
 - **Provenance manifest** — each report (and the JSON export's `provenance` block) records
   the tool version, run mode (offline/online), the findings-affecting configuration, and
   the **freshness of every data source** (CVE index, OSV, NVD, KEV, EPSS, endoflife, the
-  registry caches) read from `~/.vigie-vuln/`. An `--offline` re-run against the same cache
-  (ship it with `--export-cache`) reproduces the findings.
+  registry caches) read from `~/.vigie-vuln/`. An `--offline` re-run can reuse an exported
+  cache, subject to the evidence and coverage available in that cache and the scanned inputs.
 - **Methodology chapter** — appendix 12 of the HTML/`.doc` report renders that source table
   plus an explicit statement of **what vigievuln does *not* assess** (reachability,
   runtime config, secrets/IaC, first-party code, malware beyond the OSV/CIRCL signal, legal
   license advice) — the audit's scope, stated up front.
 - **Integrity manifest** — a standard **`SHA256SUMS`** is written beside the artifacts,
-  verifiable with `sha256sum -c SHA256SUMS`. `--no-checksums` disables it. (Sign the
-  manifest with your own key for a full chain of custody.)
+  verifiable with `sha256sum -c SHA256SUMS`. `--no-checksums` disables it. A checksum
+  manifest alone does not authenticate its contents; sign it separately when needed.
 
 ## Supply-chain risk (malware / typosquat)
 
@@ -671,10 +700,12 @@ tunnel. For the server-side equivalent see `serve-cache --upstream-proxy` above.
 ## Anonymized descriptor (air-gapped audits)
 
 For an offline/confidential system that can't reach the vuln databases, split the scan
-across machines using dependency coordinates and filtered version hints. Manifest paths
-and registry URLs are removed. Private coordinates cannot be identified offline: exclude
-internal dependencies and review the complete descriptor before transfer. The detailed
-report is produced **back offline**.
+across machines using dependency coordinates, filtered version hints and eligible image
+references with their requested platforms. Manifest paths, image declarations, build
+contexts, variables and credentials are removed. Image references can contain private
+registry hostnames or repository names; private coordinates and image references cannot
+be identified offline. Exclude internal identities and review the complete descriptor
+before transfer. The detailed report is produced **back offline**.
 
 ```bash
 # Phase 1 — OFFLINE (audited machine): export the anonymized descriptor, then stop.
@@ -693,7 +724,11 @@ vigievuln -s ./proj --offline               # re-collect locally + cache hits �
 Why it works: vigievuln's caches are keyed by *coordinate* / *vuln id*, never by path,
 so warming them online and replaying offline yields cache hits. The descriptor keeps
 `ecosystem`/`ecosystemType`/`namespace`/`name`/`version`/`versions`/`scope`/`isDev` and
-drops manifest paths, registry URLs, integrity hashes and parent chains. The phase-2
+drops manifest paths, package download URLs, integrity hashes and parent chains. Eligible
+image references and requested platforms are retained for online image preparation;
+review private registry hosts and repository names before transfer. `--no-images` omits
+them and skips image preparation. Dockerfiles remain offline and are not built online.
+The phase-2
 report is itself path-free; vendored-JS (retire.js) findings come from phase 3 (retire
 needs the actual `.js` files), using the signature DB warmed in phase 2.
 
@@ -918,3 +953,14 @@ vigievuln -s ./real-project --offline
 
 See the **Anonymized descriptor** section above for what the descriptor contains and why
 the round-trip prepares an offline report while retaining coverage warnings.
+
+Proxy rate-limit retries use their own budget, independently of `--retries` for
+source failures. They are capped at 15, with a minimum delay of three seconds
+and a retry wait budget of 45 seconds **per request** by default. Only retry
+delays scheduled for that request consume its budget; ordinary scanning and network
+requests do not. Concurrent requests coordinate their cooldowns, but exhausting
+one request’s budget does not disable retries for other requests. A longer Retry-After is
+respected; if it exceeds the remaining budget, the available cached response is
+retained. During a wait in an interactive terminal, press **S** or **Esc** to skip
+further retries and continue using available data. Non-interactive runs never read
+keyboard input. Skipping does not claim that missing consultations succeeded.

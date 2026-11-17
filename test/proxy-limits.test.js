@@ -62,9 +62,15 @@ test("batch stale fallback identifies the old data and its date", async () => {
 		await new Promise(ok=>setTimeout(ok,5));
 		const result=await request();
 		assert.equal(result.status,200); assert.equal(result.headers.get('x-fad-proxy'),'stale');
+		assert.equal(result.headers.get('x-fad-proxy-reason'),'refresh-failed');
 		assert.ok(Number.isFinite(Date.parse(result.headers.get('x-fad-proxy-fetched-at'))));
 		assert.deepEqual(await result.json(),{results:[{vulns:[]}]});
 	} finally {await h.close()}
+});
+test('batch stale-while-revalidate does not claim a failed refresh',async()=>{
+ const h=await harness({overrideTtlMs:1,swr:true,fetcher:async()=>Response.json({results:[{vulns:[]}]})});
+ const request=()=>fetch(h.url+'/v1/resource',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({provider:'osv',type:'packages',params:{queries:[{ecosystem:'npm',name:'demo',version:'1.0.0'}]}})});
+ try{await (await request()).text();await new Promise(r=>setTimeout(r,5));const result=await request();assert.equal(result.headers.get('x-fad-proxy'),'stale');assert.equal(result.headers.get('x-fad-proxy-reason'),'revalidating');await result.text();}finally{await h.close()}
 });
 
 test("concurrent readers both see stale when the shared refresh fails", async () => {

@@ -1,0 +1,62 @@
+{
+  "startedAt": "2026-11-06T07:04:13.040568+00:00",
+  "image": "sha256:4127b9fde72156001e22e2e8b149739d9d8a21a6b647e9d9d24b56eaa1dd9515",
+  "sourceArchiveSha256": "a1c270a6269f098ad39a04cb5f1ba525f57190b6a75c95bb2b39fe7cbcce7c22",
+  "previous": {
+    "web": {
+      "id": "f781e5c02e95c695588b3334637ea2eb0ea4ca3d0e3153c6885e8e7f5e17d0de",
+      "image": "sha256:1214e0c8cb0aab408f7735a99dd0566706389fc6b77cffbfaf77ba4568d82460"
+    },
+    "worker": {
+      "id": "83a60689485fcc2bf75d37b5d1d8a65c5eeddd811dd85ca8c64a1a6e7c4a9438",
+      "image": "sha256:1214e0c8cb0aab408f7735a99dd0566706389fc6b77cffbfaf77ba4568d82460"
+    },
+    "curation": {
+      "id": "b801bd5d3046c31e58ea68ecf6810c873101aef097bdacdf99ef3d4d719e1fc6",
+      "image": "sha256:1214e0c8cb0aab408f7735a99dd0566706389fc6b77cffbfaf77ba4568d82460"
+    },
+    "postgres": {
+      "id": "425e9cdd3c77b2400a49823676e13d63ee974a0e10bf02565ca62bd035f91441",
+      "image": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777"
+    },
+    "waf": {
+      "id": "1df1697d39f64597873e8335e6de99ccc6c5da88df94c92776eac68ae18a7ef3",
+      "image": "sha256:4834f49ad6b666bb93c7feb1ca661ce52986bf61931c3598b538892b1a2f4597"
+    }
+  },
+  "schemaMigration": false,
+  "current": {
+    "web": {
+      "id": "613c6578b3cd7773cfa8c607f835677f7edb9d7c04f5c46a1d0dc06bd3b8bf5b",
+      "image": "sha256:4127b9fde72156001e22e2e8b149739d9d8a21a6b647e9d9d24b56eaa1dd9515",
+      "state": "running",
+      "health": "healthy"
+    },
+    "worker": {
+      "id": "6e4ab922e5724ee1fb57907c2cc2cb62b1fea9053e67d4eedfa223bd2a209b64",
+      "image": "sha256:4127b9fde72156001e22e2e8b149739d9d8a21a6b647e9d9d24b56eaa1dd9515",
+      "state": "running",
+      "health": null
+    },
+    "curation": {
+      "id": "6a53463ba5d341867d924919adb9b91176595cfda72dff0c1379ed5757a6adbc",
+      "image": "sha256:4127b9fde72156001e22e2e8b149739d9d8a21a6b647e9d9d24b56eaa1dd9515",
+      "state": "running",
+      "health": null
+    },
+    "postgres": {
+      "id": "425e9cdd3c77b2400a49823676e13d63ee974a0e10bf02565ca62bd035f91441",
+      "image": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+      "state": "running",
+      "health": "healthy"
+    },
+    "waf": {
+      "id": "1df1697d39f64597873e8335e6de99ccc6c5da88df94c92776eac68ae18a7ef3",
+      "image": "sha256:4834f49ad6b666bb93c7feb1ca661ce52986bf61931c3598b538892b1a2f4597",
+      "state": "running",
+      "health": "healthy"
+    }
+  },
+  "completedAt": "2026-11-06T07:04:27.537150+00:00",
+  "lockVerified": true
+}

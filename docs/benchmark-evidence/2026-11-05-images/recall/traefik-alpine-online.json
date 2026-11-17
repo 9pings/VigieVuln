@@ -1,0 +1,16 @@
+{
+  "coverage": {
+    "source": "alpine-tracker",
+    "execution": "completed",
+    "result": "consulted",
+    "scope": "cpe-candidates",
+    "packages": 11,
+    "candidates": 257,
+    "missing": 0,
+    "unscoped": 0,
+    "stale": 0,
+    "reason": "Consulted only CVEs discoverable from tracker CPE rules; this does not establish complete package coverage."
+  },
+  "diagnostics": [],
+  "observationCount": 257
+}

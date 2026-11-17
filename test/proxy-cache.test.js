@@ -88,7 +88,7 @@ const get = url => {
 				? callResource(base, "nvd", "cve", { id: source.searchParams.get("cveId") })
 				: fetch(url);
 	} else result = fetch(url);
-	return result.then(async r => ({ status: r.status, tag: r.headers.get("x-fad-proxy"), body: await r.text() }));
+	return result.then(async r => ({ status: r.status, tag: r.headers.get("x-fad-proxy"), reason:r.headers.get('x-fad-proxy-reason'), body: await r.text() }));
 };
 
 // ------------------------------------------------------------------ store ----
@@ -201,6 +201,7 @@ test("server: TTL expiry refetches; swr serves stale then refreshes in the backg
 		await new Promise(r => setTimeout(r, 700)); // expired
 		const r2 = await get(target);
 		assert.equal(r2.tag, "stale"); // served the old copy immediately
+		assert.equal(r2.reason, 'revalidating');
 		// …and refreshed upstream in the background. The refreshed entry is
 		// served once the revalidate LANDS — poll for that observable instead of
 		// guessing when the store write lands: a loaded runner may interleave
@@ -238,6 +239,7 @@ test("server: stale-if-error — a dead upstream serves the stale copy instead o
 		const r2 = await get(target);
 		assert.equal(r2.status, 200);
 		assert.equal(r2.tag, "stale");
+		assert.equal(r2.reason, 'refresh-failed');
 		assert.equal(r2.body, first.body);
 	} finally { await p.close(); }
 });

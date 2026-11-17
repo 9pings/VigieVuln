@@ -375,3 +375,13 @@ test("--retries: a value that is not a non-negative integer is refused, never cl
 	for (const bad of ["five", "-1", "2.5", "", null]) assert.throws(() => setRetryAttempts(bad), /non-negative integer/);
 	assert.equal(getRetryAttempts(), 5, "a refused value leaves the setting untouched");
 });
+test('refresh failure summary is omitted only when every failed cache request is already described',()=>{
+ const health=require('../lib/source-health').createSourceHealth();
+ health.markStale('euvd',new Date().toISOString(),{reason:'refresh-failed',requestKey:'detail-a'});
+ assert.equal(health.unreportedStale(['detail-a']).length,0);
+ health.markStale('euvd',new Date().toISOString(),{reason:'refresh-failed',requestKey:'detail-b'});
+ assert.equal(health.unreportedStale(['detail-a']).length,1);
+ health.markStale('euvd',new Date().toISOString(),{reason:'refresh-failed'});
+ assert.equal(health.unreportedStale(['detail-a','detail-b']).length,1);
+ assert.equal(health.stale()[0].blocking,true);
+});

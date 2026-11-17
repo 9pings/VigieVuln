@@ -65,3 +65,9 @@ test("serve-cache: an invalid /v1/resource document is a 400 before any lookup o
 		assert.equal(upstream, 1);
 	} finally { await new Promise(ok => h.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
+test('OSV distribution ecosystems require an explicit scoped release',()=>{
+ for(const ecosystem of ['Debian:12','Alpine:v3.20','Red Hat:rhel_eus:9.6::appstream','Custom Distro:release-1']) {
+  const payload=validateResource({provider:'osv',type:'packages',params:{queries:[{ecosystem,name:'pkg',version:'1'}]}});assert.equal(payload.params.queries[0].ecosystem,ecosystem);
+ }
+ for(const ecosystem of ['Nope','Debian:',':12','Debian: '])assert.throws(()=>validateResource({provider:'osv',type:'packages',params:{queries:[{ecosystem,name:'pkg',version:'1'}]}}),/invalid/);
+});

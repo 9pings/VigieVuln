@@ -1,6 +1,6 @@
 # HTML report samples
 
-Generated with **VigieVuln 1.2.1** on **2026-11-04** from real source scans. The Dubbo scan uses the official hosted proxy; the CMS scan runs offline against the local cache scoped to that same proxy. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
+Generated with **VigieVuln 1.2.1** from real scans: source-tree samples on **2026-11-04** and image samples on **2026-11-06**. The Dubbo scan uses the official hosted proxy; the CMS scan runs offline against the local cache scoped to that same proxy. These are complete, standalone HTML exports, copied unchanged from actual scans. No findings or scores were added for the demo. Data-source dates, exclusions and limitations are included in each report. Counts describe this snapshot, not current upstream releases; one advisory affecting several dependencies can produce several findings.
 
 | Sample | Source and scope | What to explore |
 | --- | --- | --- |
@@ -8,6 +8,44 @@ Generated with **VigieVuln 1.2.1** on **2026-11-04** from real source scans. The
 | [Multi-instance CMS/frameworks](multi-cms-frameworks.html) | **4 applications**, **281 application components**, **251 Composer dependencies** | 192 production findings and 8 dev findings; per-instance ownership, application coverage, vendored JavaScript and certificate inventory |
 
 ## Source corpus
+
+### Native image samples — 6 November 2026
+
+The image update observations were refreshed from Docker Registry and replayed offline.
+Traefik `v2.11.61` is a newer observed tag on the `v2.11` branch with a verified
+Linux amd64 manifest; NGINX `1.24.0` remains the latest comparable numeric tag
+observed on its `1.24` branch. These observations do not establish that any
+vulnerability is fixed. The original OCI acquisition is preserved and the verified
+registry reference is recorded separately. See the [registry and offline replay
+evidence](../benchmark-evidence/2026-11-05-images/image-updates/README.md).
+
+The standalone [Traefik v2.11.0](traefik-image.html) and
+[NGINX 1.24.0](nginx-image.html) reports include the latest
+[recall corrections](../BENCHMARK-IMAGES.md). Traefik has **285 raw findings**,
+273 package/CVE tuples and 234 distinct CVEs. NGINX has **739 raw findings**,
+661 package/CVE tuples and 429 distinct CVEs. Several advisories can describe
+one package/CVE; the report consolidates them and retains their independent evidence.
+
+The same immutable OCI images and saved inventories were used. Corrections cover
+Debian tracker inheritance and maintenance annotations, public Freexian ELA
+advisories, native CVE package matching and GitHub publisher advisories for the
+identified Go module. Freexian release evidence qualifies the former 185 Trivy-only tuples: 31 are now confirmed, 77 are not affected for Bullseye and 77 remain indeterminate. The raw comparison still has 154 missing tuples (77 not affected and 77 indeterminate). NGINX reports 175 additional observations; they do not inflate confirmed vulnerability counts. Alpine observations follow the same rule.
+
+Both reports were replayed from prepared caches with a network tripwire: **zero
+network attempts**. The NGINX replay also succeeds with the standalone executable
+and `PATH=/nonexistent`. The reports preserve the actual EUVD HTTP 403 blocks
+encountered online (28 details for NGINX, 11 for Traefik). Cached snapshots retain
+their own timestamps; not every source was freshly downloaded.
+See the [evidence and limits](../benchmark-evidence/2026-11-06-images/elts/README.md).
+
+Descriptions come from one source per CVE panel. Dates with a timezone are
+localized by report JavaScript using HTML time elements; date-only values retain
+their calendar date. Remediation leads with image update/rebuild guidance.
+No source declaration files were supplied for these OCI samples, and the reports
+say so. Remaining comparator differences are documented, not automatically treated
+as either scanner misses or comparator false positives.
+
+### Source-tree samples — 4 November 2026
 
 - [Apache Dubbo 2.7.8](https://github.com/apache/dubbo/tree/0be2a1bbbf9168490acecaf1eed1bd16cb8db402): the README report screenshot is captured directly from this HTML sample.
 - [WordPress 6.4.2](https://wordpress.org/wordpress-6.4.2.zip), under `wp/`.
@@ -45,4 +83,4 @@ The source trees used for this regeneration were `/tmp/vigie-benchmark-20261102/
 
 Copy each `cve-report.html` to its corresponding filename here. HTML opens locally without a server or network connection. Updated source trees, cache contents or tool versions can change the findings; this directory preserves the demonstration snapshot, not a reproducible archive of every upstream feed.
 
-`SHA256SUMS` covers the two published HTML files.
+`SHA256SUMS` covers all four published HTML files.

@@ -1,0 +1,20 @@
+[
+  {
+    "key": "euvd",
+    "fetchedAt": "2026-11-05T09:10:13.048Z",
+    "stale": false,
+    "sha256": "ea63101c0c74aa07ee8f55f4ea3bbbb630fae71da3416aa255bfee2c48f22133",
+    "metadata": {
+      "uncompressedBytes": 13800412
+    }
+  },
+  {
+    "key": "certfr",
+    "fetchedAt": "2026-11-05T09:10:13.350Z",
+    "stale": false,
+    "sha256": "f2622c86994607fb559df9ef624cf5213f7356b72b7d1c841e31f2399be853f5",
+    "metadata": {
+      "uncompressedBytes": 7007215
+    }
+  }
+]

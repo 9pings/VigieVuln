@@ -38,6 +38,7 @@ jobs:
           build bun-darwin-x64 macos-x64 vigievuln
           build bun-darwin-arm64 macos-arm64 vigievuln
           build bun-windows-x64 windows-x64 vigievuln.exe
+          node scripts/set-windows-icon.js build/windows-x64/vigievuln.exe
       - name: smoke-test the Linux binary offline
         run: |
           build/linux-x64/vigievuln --version

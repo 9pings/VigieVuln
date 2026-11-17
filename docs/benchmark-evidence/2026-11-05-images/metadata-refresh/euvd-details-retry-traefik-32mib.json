@@ -1,0 +1,15 @@
+{
+  "coverage": [
+    {
+      "capability": "sources",
+      "collector": "euvd-details",
+      "execution": "completed",
+      "result": "enriched",
+      "count": 176,
+      "consulted": 176,
+      "missing": 0,
+      "stale": 0
+    }
+  ],
+  "warnings": []
+}

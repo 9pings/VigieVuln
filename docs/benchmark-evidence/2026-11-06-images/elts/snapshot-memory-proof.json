@@ -1,0 +1,31 @@
+{
+  "heapLimitMiB": 192,
+  "sourceBytes": 138188488,
+  "upstreamCalls": 1,
+  "requests": [
+    {
+      "packages": [
+        "apt"
+      ],
+      "status": 200,
+      "elapsedMs": 13063,
+      "sha256": "132cd4b4671ca30e143c3e5aae0c89f9e2df4bc1a72c5e06e709e7aaaa1d2a3d"
+    },
+    {
+      "packages": [
+        "curl"
+      ],
+      "status": 200,
+      "elapsedMs": 5884,
+      "sha256": "132cd4b4671ca30e143c3e5aae0c89f9e2df4bc1a72c5e06e709e7aaaa1d2a3d"
+    }
+  ],
+  "memory": {
+    "rss": 515031040,
+    "heapTotal": 180367360,
+    "heapUsed": 66683160,
+    "external": 143891117,
+    "arrayBuffers": 140186307
+  },
+  "maxRSSKiB": 528792
+}

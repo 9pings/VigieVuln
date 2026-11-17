@@ -1,0 +1,36 @@
+{
+  "nginx": {
+    "desktop": [
+      1425,
+      1425
+    ],
+    "mobile": [
+      390,
+      390
+    ],
+    "mobileNavigationPosition": "static",
+    "navigationOverlaps": [],
+    "horizontallyScrollableTables": 8,
+    "observations": 175,
+    "reference": "docker.io/library/nginx:1.24.0",
+    "update": "docker.io/library/nginx:1.24.0",
+    "manifestBound": true
+  },
+  "traefik": {
+    "desktop": [
+      1425,
+      1425
+    ],
+    "mobile": [
+      390,
+      390
+    ],
+    "mobileNavigationPosition": "static",
+    "navigationOverlaps": [],
+    "horizontallyScrollableTables": 7,
+    "observations": 257,
+    "reference": "docker.io/library/traefik:v2.11.0",
+    "update": "docker.io/library/traefik:v2.11.61",
+    "manifestBound": true
+  }
+}

@@ -446,3 +446,23 @@ test('engine: live Maven HEAD responses carry their observation timestamp', asyn
   assert.deepEqual(methods,['HEAD','HEAD']);
  } finally {await s.close();}
 });
+
+test('forced individual revalidation obeys upstream admission and marks cached fallback stale',async()=>{
+ let admitted=true,calls=0;const store=memoryStore();const engine=createResourceEngine({store,admit:()=>admitted?true:{retryAfterS:60},fetcher:async()=>{calls++;return Response.json({id:'EUVD-2024-123',description:'cached'});}}),s=await serve(engine);
+ try{const payload={provider:'euvd',type:'vulnerability',params:{id:'EUVD-2024-123'}};assert.equal((await s.ask(payload)).status,200);admitted=false;
+ const response=await s.ask({...payload,revalidate:true});assert.equal(response.status,200);assert.equal(response.headers.get('x-fad-proxy'),'stale');assert.equal(response.headers.get('x-fad-proxy-reason'),'refresh-failed');assert.equal((await response.json()).description,'cached');assert.equal(calls,1);
+ const missing=await s.ask({...payload,params:{id:'EUVD-2024-124'},revalidate:true});assert.equal(missing.status,503);assert.equal(missing.headers.get('x-fad-proxy'),'denied');assert.equal(missing.headers.get('retry-after'),'60');assert.equal(calls,1);
+ }finally{await s.close();}
+});
+
+test('HTTP stale quota fallbacks are retried after the advertised cooldown and preserve data on budget exhaustion',async()=>{
+ for(const kind of ['rate-limit','admission']){
+  let mode='ok',calls=0,time=1000;const store=memoryStore();const engine=createResourceEngine({store,admit:()=>kind==='admission'&&mode==='limited'?{retryAfterS:2}:true,fetcher:async()=>{calls++;return mode==='limited'?new Response('',{status:429,headers:{'retry-after':'2'}}):Response.json({id:'EUVD-2024-123',description:mode});}}),s=await serve(engine);
+  const payload={provider:'euvd',type:'vulnerability',params:{id:'EUVD-2024-123'}};
+  try{assert.equal((await s.ask(payload)).status,200);mode='limited';let attempts=0;const throttle=require('../lib/proxy-throttle').createProxyThrottle({now:()=>time,sleep:async ms=>{time+=ms;mode='new';},warn:()=>{}});
+   const recovered=await throttle.request(async()=>{attempts++;return s.ask({...payload,revalidate:true});});assert.equal((await recovered.json()).description,'new');assert.equal(attempts,2);assert(time>=3000);
+   mode='limited';const limited=require('../lib/proxy-throttle').createProxyThrottle({maxWaitMs:0,now:()=>time,sleep:async()=>{throw Error('must not sleep')},warn:()=>{}});
+   const fallback=await limited.request(()=>s.ask({...payload,revalidate:true}));assert.equal(fallback.status,200);assert.equal((await fallback.json()).description,'new');assert.equal(fallback.headers.get('x-fad-proxy'),'stale');assert.equal(fallback.headers.get('x-fad-proxy-refresh-cause'),kind);assert.equal(fallback.headers.get('retry-after'),'2');
+  }finally{await s.close();}
+ }
+});

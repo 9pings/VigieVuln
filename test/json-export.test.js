@@ -262,3 +262,10 @@ test('warning redaction never changes URL query values that contain the project 
 	const doc = buildFindings({ projectInfo: { src: '/work/project' }, warnings: [{ message }] });
 	assert.equal(doc.warnings[0].message, `Failed pom.xml; see ${url}`);
 });
+test('system advisory export preserves risk provenance and relationship semantics',()=>{
+ const {buildFindings}=require('../lib/json-export');
+ const advisory={id:'DLA-3951-1',aliases:[],upstream:['CVE-2024-8096','CVE-2024-9999'],related:['DEBIAN-CVE-2024-8096'],summary:'curl security update',description:'advisory text',published:'2024-11-14T00:00:00Z',modified:'2026-03-09T00:00:00Z',advisorySource:'https://storage.googleapis.com/debian-osv/dla-osv/DLA-3951-1.json',severity:'UNKNOWN',riskEvidence:{source:'nvd',id:'CVE-2024-8096',relationship:'upstream'},severitySource:'nvd',scoreSource:'nvd',nvdEvidence:{records:[{id:'CVE-2024-8096',relationship:'upstream',severity:'HIGH',score:7.5},{id:'CVE-2024-9999',relationship:'upstream',severity:'LOW',score:2.1}]}};
+ const row=buildFindings({cveMatches:[{dep:{ecosystem:'system',name:'curl',version:'1'},source:'osv',cve:advisory}]}).cve[0];
+ for(const key of ['id','aliases','upstream','related','summary','published','modified','advisorySource','riskEvidence','severitySource','scoreSource','nvdEvidence'])assert.deepEqual(row[key],advisory[key]);
+ assert.equal(row.severity,'UNKNOWN');assert.equal(row.cvss,null);assert.deepEqual(advisory.aliases,[]);
+});

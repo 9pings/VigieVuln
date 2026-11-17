@@ -1,0 +1,117 @@
+{
+  "selection": {
+    "ecosystem": "Go",
+    "name": "github.com/traefik/traefik/v2",
+    "method": "typed source index",
+    "inputCoverage": {
+      "source": "cveproject",
+      "ecosystem": "*",
+      "fetchedAt": 1793878728176,
+      "complete": false,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      },
+      "fresh": true,
+      "lastComplete": null
+    }
+  },
+  "records": [
+    {
+      "id": "CVE-2026-112778",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-114635",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-114639",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-114641",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-114642",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-114656",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-121966",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-65600",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-85595",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-85597",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-88878",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    },
+    {
+      "id": "CVE-2026-88879",
+      "fetchedAt": 1793878728176,
+      "provenance": {
+        "transport": "direct",
+        "releaseTag": "cve_2026-11-05_1100Z"
+      }
+    }
+  ]
+}

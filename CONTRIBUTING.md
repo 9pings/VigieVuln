@@ -19,7 +19,9 @@ one that breaks.
 
 ## Development setup
 
-Node ≥ 20. This repository contains the CLI; the server has its own repository.
+Use Node.js `^22.13.0`, `^23.4.0` or `>=24.0.0`, as declared in
+`package.json`; SQLite support is required. This repository contains the CLI;
+the server has its own repository.
 
 ```bash
 npm ci

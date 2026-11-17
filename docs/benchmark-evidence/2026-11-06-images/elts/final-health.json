@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-11-06T07:05:00.788Z",
+  "image": "sha256:4127b9fde72156001e22e2e8b149739d9d8a21a6b647e9d9d24b56eaa1dd9515",
+  "checks": [
+    {
+      "host": "www.vigievuln.fr",
+      "status": 200,
+      "body": {
+        "ok": true,
+        "draining": false,
+        "service": "vigievuln-server",
+        "version": "1.0.0",
+        "region": "fr",
+        "store": "postgresql",
+        "uptimeMs": 47867
+      }
+    },
+    {
+      "host": "api.vigievuln.fr",
+      "status": 200,
+      "body": {
+        "ok": true,
+        "draining": false,
+        "service": "vigievuln-server",
+        "version": "1.0.0",
+        "region": "fr",
+        "store": "postgresql",
+        "uptimeMs": 48028
+      }
+    }
+  ]
+}

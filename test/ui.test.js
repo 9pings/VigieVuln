@@ -88,3 +88,23 @@ test("the live counter reads as (done / total)", () => {
 	assert.strictEqual(st.live, "(47 / 193)");
 	st.done("");
 });
+
+test('network notices clear the progress line before and after stderr output only in a terminal',()=>{
+ const {spawnSync}=require('node:child_process');
+ for(const tty of [true,false]){
+  const script=`
+   const output=process.stdout.write.bind(process.stdout),writes=[];
+   Object.defineProperty(process.stdout,'isTTY',{value:${tty}});
+   process.stdout.write=s=>{writes.push(['stdout',String(s)]);return true};
+   process.stderr.write=s=>{writes.push(['stderr',String(s)]);return true};
+   const ui=require('./lib/ui');const step=new ui.Progress(1).start('NVD');step.tick(30,625);
+   ui.networkNotice('Network retry: waiting 3s');step.done('complete');
+   output(JSON.stringify(writes));`;
+  const result=spawnSync(process.execPath,['-e',script],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',env:{...process.env,TERM:'xterm',NO_COLOR:'1'}});
+  assert.equal(result.status,0,result.stderr);
+  const writes=JSON.parse(result.stdout),index=writes.findIndex(x=>x[0]==='stderr');
+  assert.deepEqual(writes[index],['stderr','Network retry: waiting 3s\n']);
+  if(tty){assert.deepEqual(writes[index-1],['stdout','\r\x1b[2K']);assert.deepEqual(writes[index+1],['stdout','\r\x1b[2K']);}
+  else assert.ok(writes.every(([,s])=>!s.includes('\x1b')));
+ }
+});

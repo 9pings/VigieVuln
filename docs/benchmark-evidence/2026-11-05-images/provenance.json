@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-05",
+  "platform": "linux/amd64",
+  "images": {
+    "traefik": {
+      "reference": "traefik:v2.11.0",
+      "metadata": {
+        "reference": "traefik:v2.11.0",
+        "registry": "registry-1.docker.io",
+        "repository": "library/traefik",
+        "digest": "sha256:0a5157f742d2900389da6ce60ea80cc476801dc951917a993cd848d982f58265",
+        "diagnostics": [],
+        "resolvedAt": "2026-11-05T07:41:50.169Z",
+        "platforms": [
+          {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        ],
+        "acquisition": "registry"
+      },
+      "leaves": [
+        {
+          "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+          "digest": "sha256:903f89ddacc3059657565d3e5b3b8e8dcba4cc3b8af08183dad6fdc415459111",
+          "size": 1157,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        }
+      ]
+    },
+    "nginx": {
+      "reference": "nginx:1.24.0",
+      "metadata": {
+        "reference": "nginx:1.24.0",
+        "registry": "registry-1.docker.io",
+        "repository": "library/nginx",
+        "digest": "sha256:f6daac2445b0ce70e64d77442ccf62839f3f1b4c24bf6746a857eff014e798c8",
+        "diagnostics": [
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:c77955a7291b5403d1150279cd591622922803289e57a26f82383bb8d3fb8a97",
+            "artifactType": "attestation-manifest"
+          },
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:2796b8d6e8f4f8da1708e89b578790504d23c6a94f9b5c6c1a33cf0031d55fc9",
+            "artifactType": "attestation-manifest"
+          },
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:1ecbaa35ef6b5f822543bc6fbe7b8f3fe2c58f32adac255f39c0ed1115995445",
+            "artifactType": "attestation-manifest"
+          },
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:e0700696b36f35f5124e2bf4d24295614d1d3a35cefaeaac1dcb091db66df618",
+            "artifactType": "attestation-manifest"
+          },
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:6895631259b0468b42b3f6028461a7225f38b132b2b427b2ea0a12edd5dee1d1",
+            "artifactType": "attestation-manifest"
+          },
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:2c2487ffb3e5a88bac2ef32ea60fc08609a4c1da8a94309136d303c9d721883e",
+            "artifactType": "attestation-manifest"
+          },
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:51565d6e7b7ed8ceed094dc03bd7a3455ac8f7f1fc374f25b51ad30f6f7dd37c",
+            "artifactType": "attestation-manifest"
+          },
+          {
+            "kind": "non-image-artifact",
+            "digest": "sha256:4ab8f01f118cef311d245d00eca2035ed23042ca9f30268397a1889a743ee726",
+            "artifactType": "attestation-manifest"
+          }
+        ],
+        "resolvedAt": "2026-11-05T07:41:49.729Z",
+        "platforms": [
+          {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        ],
+        "acquisition": "registry"
+      },
+      "leaves": [
+        {
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "digest": "sha256:2e26275ed7a47e8e93f264d39a09ca4bc3f4058c904c75087e237f4ea883f2a1",
+          "size": 2104,
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "annotations": {
+            "com.docker.official-images.bashbrew.arch": "amd64",
+            "org.opencontainers.image.base.digest": "sha256:d1268324d1e3a3350098ac69d9628f162105355dfe8f48260caed6a7c001d3ad",
+            "org.opencontainers.image.base.name": "debian:bullseye-slim",
+            "org.opencontainers.image.created": "2024-04-10T02:53:34Z",
+            "org.opencontainers.image.revision": "1a8d87b69760693a8e33cd8a9e0c2e5f0e8b0e3c",
+            "org.opencontainers.image.source": "https://github.com/nginxinc/docker-nginx.git#1a8d87b69760693a8e33cd8a9e0c2e5f0e8b0e3c:stable/debian",
+            "org.opencontainers.image.url": "https://hub.docker.com/_/nginx",
+            "org.opencontainers.image.version": "1.24.0"
+          }
+        }
+      ]
+    }
+  },
+  "tools": {
+    "trivy": "0.76.1",
+    "grype": "0.121.0"
+  },
+  "databases": {
+    "trivy": {
+      "Version": 2,
+      "NextUpdate": "2026-11-06T01:19:45.907162401Z",
+      "UpdatedAt": "2026-11-05T01:19:45.907162652Z",
+      "DownloadedAt": "2026-11-05T07:42:46.365802372Z"
+    },
+    "trivyJava": {
+      "Version": 1,
+      "NextUpdate": "2026-11-08T01:08:50.735678108Z",
+      "UpdatedAt": "2026-11-05T01:08:50.735678238Z",
+      "DownloadedAt": "2026-11-05T07:44:02.064937204Z"
+    },
+    "grype": {
+      "schemaVersion": "v6.1.10",
+      "from": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.10_2026-11-05T00:20:34Z_1793859666.tar.zst?checksum=sha256%3A9fbc8d8f2428cd715ffc9591cce16c4179955a7f45c76c12fbcb9cea8dc93813",
+      "built": "2026-11-05T06:21:06Z",
+      "path": "/tmp/vv-image-benchmark-20261105/grype-cache/6/vulnerability.db",
+      "valid": true
+    }
+  },
+  "sha256": {
+    "/tmp/vigie-scanner-benchmark-20261102/bin/trivy": "d1dfca6ae10a1ad4540bb94e64f0510077c47008920a9b554986b39dca573d83",
+    "/tmp/vigie-scanner-benchmark-20261102/bin/grype": "bd511334178bc3002eb9eb58880f89e01e35f7fed7cfbe671171127a8afa3596",
+    "/tmp/vv-image-benchmark-20261105/traefik/image.oci.tar": "8300a5d520f77e76fddee0896b071dfa1b9abfdd45a90b6e8b7b1d997714503f",
+    "/tmp/vv-image-benchmark-20261105/traefik/trivy.json": "44092132260907b9ca834ab5d82423494b67cc9c4bf8cea082c0d5bc3d6462bb",
+    "/tmp/vv-image-benchmark-20261105/traefik/grype.json": "7eb447fdf571756a387e1f4c18cec69f76afedec9b44343ace04b1e2605af5ec",
+    "/tmp/vv-image-benchmark-20261105/traefik/grype.cdx.json": "7f838b149820e32aad8e4897e89f9d82b813fbdd8ca3eef795a14345f156e81a",
+    "/tmp/vv-image-benchmark-20261105/traefik/acquisition.json": "d25cd8131276e2c805b432ba2b0201f965c1949bbd29895312d9bc426e68d36b",
+    "/tmp/vv-image-benchmark-20261105/nginx/image.oci.tar": "ba5ec9a12ecb9b76cbc02b6f7e2f82fc558a2ba0f7771d4a869cadd35ab67e79",
+    "/tmp/vv-image-benchmark-20261105/nginx/trivy.json": "4e929bf5a1f903e2c9b55f9c06d30f05a3cc7b4df565850bd4ec714763fa3b7c",
+    "/tmp/vv-image-benchmark-20261105/nginx/grype.json": "4c8e65e312af983f1161fe9c63ce9f6895327106072b11b470e30c44acf86477",
+    "/tmp/vv-image-benchmark-20261105/nginx/grype.cdx.json": "d4a9e836c49a0a228ac6aeb6b78ed029ec846556e83027a4f6de01c5a8432a0a",
+    "/tmp/vv-image-benchmark-20261105/nginx/acquisition.json": "2341dc28caad77ba7e6a8d30ca57a53c4bfe15a197356f58010e6e5ec9af63cd",
+    "/tmp/vv-image-benchmark-20261105/trivy-cache/db/trivy.db": "68917cddd951d3d29ab1e6bc4e1a33cf3bf160743d19276290b77afad13cfa98",
+    "/tmp/vv-image-benchmark-20261105/trivy-cache/java-db/trivy-java.db": "823874792b6e8300a0f7a19c4031771b818654efbcefdb700f90115ed1a040e2",
+    "/tmp/vv-image-benchmark-20261105/grype-cache/6/vulnerability.db": "b7d4354f9d35bc0e6c13ad9d80ff9468a68662a300b47142775c9a44b6c2a855"
+  }
+}

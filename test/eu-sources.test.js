@@ -188,13 +188,13 @@ test("report: the detail panel links EUVD, GCVE and CERT-FR, in both languages; 
 		eolResults: [], obsoleteResults: [], outdatedResults: [], projectInfo: { name: "demo", src: "/p", generatedAt: "2026-10-07" }, locale });
 	const en = render("en");
 	assert.match(en, /href="https:\/\/euvd\.enisa\.europa\.eu\/vulnerability\/EUVD-2021-34768"/);
-	assert.match(en, /exploited since 2021-12-10/);
+	assert.match(en, /exploited since <time datetime="2021-12-10">2021-12-10<\/time>/);
 	assert.match(en, /href="https:\/\/db\.gcve\.eu\/vuln\/GCVE-0-2021-44228"/);
 	assert.match(en, /CERT-FR advisories/);
 	assert.match(en, /EVIDENCE_Vulnérabilité dans Apache Log4j/);
 	const fr = render("fr");
 	assert.match(fr, /Avis du CERT-FR/);
-	assert.match(fr, /exploitée depuis le 2021-12-10/);
+	assert.match(fr, /exploitée depuis le <time datetime="2021-12-10">2021-12-10<\/time>/);
 	assert.match(fr, /EVIDENCE_Vulnérabilité dans Apache Log4j/);
 });
 

@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-11-05T13:20:02.678Z",
+  "job": {
+    "status": "ok",
+    "lastStarted": 1793883278037,
+    "lastFinished": 1793883279509,
+    "leaseActive": false
+  },
+  "index": {
+    "version": 1,
+    "complete": true,
+    "missingRawRecords": 0,
+    "rows": 4317
+  },
+  "localAnswer": {
+    "status": 200,
+    "complete": true,
+    "scope": "explicit-package-identities",
+    "count": 12
+  },
+  "authenticatedRemoteTested": false
+}

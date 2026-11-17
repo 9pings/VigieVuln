@@ -1,0 +1,14 @@
+{
+  "reference": "docker.io/library/traefik:v2.11.0",
+  "currentTag": "v2.11.0",
+  "branch": "v2.11",
+  "source": "registry-tags",
+  "verifiedFix": false,
+  "status": "available",
+  "targetTag": "v2.11.61",
+  "targetReference": "docker.io/library/traefik:v2.11.61",
+  "targetDigest": "sha256:2466a4590dc9f6fc85f32572378e59b0cd36a797ecde512782673e48a856f85d",
+  "platformDigest": "sha256:13064dcca35341355072281e92861d4ed5ee6134013e1f243b7b6d8f55107f75",
+  "observedAt": "2026-11-05T10:40:00.462Z",
+  "reason": "Registry tag ordering does not establish that any vulnerability is fixed."
+}

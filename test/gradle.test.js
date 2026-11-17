@@ -12,6 +12,51 @@ const {
 	parseBuildScript,
 } = require("../lib/codecs/gradle/parse");
 
+test("Groovy top-level ext literals resolve dependencies without guessing mutable values", () => {
+	const result = parseBuildScript(`
+ext {
+  guiceVersion = "7.0.0"
+  jettyVersion = '11.0.24' // comment
+  changing = "1.0"
+  dynamic = "2.$missing"
+  computed = "1.0" + suffix
+}
+if (condition) { changing = "2.0" }
+tasks.register("fixture") { localOnly = "3.0" }
+dependencies {
+ implementation "example:guice:$guiceVersion"
+ implementation "example:jetty:$jettyVersion"
+ implementation "example:changing:$changing"
+ implementation "example:dynamic:$dynamic"
+ implementation "example:computed:$computed"
+ implementation "example:local:$localOnly"
+ implementation "example:composite:4.$guiceVersion"
+}`);
+	const versions = Object.fromEntries(result.deps.map(d => [d.name, d.version]));
+	assert.deepEqual(versions, { guice: "7.0.0", jetty: "11.0.24", changing: null, dynamic: null, computed: null, local: null, composite: null });
+});
+
+test("nested ext blocks, comments and strings cannot supply project ext versions", () => {
+	const result = parseBuildScript(`
+// ext { aVersion = "1.0" }
+def text = 'ext { bVersion = "1.0" }'
+subprojects { ext { cVersion = "1.0" } }
+ext { dVersion = "1.0" }
+project.ext.dVersion = provider.get()
+dependencies { implementation "example:a:$aVersion"; implementation "example:b:$bVersion"; implementation "example:c:$cVersion"; implementation "example:d:$dVersion" }
+`);
+	assert.deepEqual(result.deps.map(d => d.version), [null, null, null, null]);
+});
+
+test("Groovy ext mutations through operators or computed property writes remain unknown", () => {
+	for (const mutation of ["version++", "++version", "--version", "++project.ext.version", "version %= 2", "version <<= 1", "version >>= 1", "version >>>= 1", "version &= 1", "version |= 1", "version ^= 1", "version **= 2", "project.ext.version += '.1'", "ext.set('version', provider.get())", "ext[provider.get()] = '2.0'"]) {
+		const result = parseBuildScript(`ext { version = "1.0" }\n${mutation}\ndependencies { implementation "example:library:$version" }`);
+		assert.equal(result.deps[0].version, null, mutation);
+	}
+	const relative = parseBuildScript('ext { version += "1.0" }\ndependencies { implementation "example:library:$version" }');
+	assert.equal(relative.deps[0].version, null);
+});
+
 // ---------------------------------------------------------------------------
 // Version catalog (gradle/libs.versions.toml)
 // ---------------------------------------------------------------------------
@@ -271,7 +316,11 @@ test("gradle codec detects + collects the kotlin-catalog fixture", async () => {
 		b.group === "org.springframework.boot" && b.name === "spring-boot-dependencies" && b.version === "4.0.6"),
 		"platform() BOM surfaced with catalog-resolved version");
 
-	assert.ok(warnings.some(w => w.type === "no-lockfile"), "best-effort warning emitted");
+	const warning = warnings.find(w => w.type === "no-lockfile");
+	assert.ok(warning, "best-effort warning emitted");
+	assert.match(warning.message, /POM-based transitive resolution can choose different versions than Gradle/);
+	assert.match(warning.message, /incorrect alerts and omissions/);
+	assert.match(warning.message, /dependency locking/);
 });
 
 test("gradle codec: lockfile is authoritative when present", async () => {

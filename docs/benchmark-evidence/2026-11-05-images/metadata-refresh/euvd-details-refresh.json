@@ -1,0 +1,39 @@
+{
+  "started": "2026-11-05T09:13:12.715Z",
+  "finished": "2026-11-05T09:13:28.372Z",
+  "attempted": 273,
+  "blocked": 0,
+  "origins": [
+    "https://euvdservices.enisa.europa.eu"
+  ],
+  "coverage": [
+    {
+      "capability": "sources",
+      "collector": "euvd",
+      "execution": "completed",
+      "result": "enriched",
+      "count": 273,
+      "consulted": 273,
+      "missing": 0,
+      "stale": 0
+    },
+    {
+      "capability": "sources",
+      "collector": "euvd-details",
+      "execution": "partial",
+      "result": "enriched",
+      "count": 184,
+      "consulted": 184,
+      "missing": 89,
+      "stale": 0
+    }
+  ],
+  "warnings": [
+    {
+      "type": "source-unavailable",
+      "capability": "sources",
+      "source": "euvd-details",
+      "message": "EUVD-DETAILS: context is incomplete or stale."
+    }
+  ]
+}

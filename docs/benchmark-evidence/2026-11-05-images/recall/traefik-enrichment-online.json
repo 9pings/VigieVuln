@@ -1,0 +1,60 @@
+{
+  "coverage": [
+    {
+      "capability": "sources",
+      "collector": "nvd",
+      "execution": "completed",
+      "result": "available"
+    },
+    {
+      "capability": "sources",
+      "collector": "kev",
+      "execution": "completed",
+      "result": "available"
+    },
+    {
+      "capability": "sources",
+      "collector": "epss",
+      "execution": "completed",
+      "result": "available"
+    },
+    {
+      "capability": "sources",
+      "collector": "gcve",
+      "execution": "completed",
+      "result": "derived-alias",
+      "count": 47
+    },
+    {
+      "capability": "sources",
+      "collector": "euvd",
+      "execution": "completed",
+      "result": "enriched",
+      "count": 47,
+      "consulted": 47,
+      "missing": 0,
+      "stale": 0
+    },
+    {
+      "capability": "sources",
+      "collector": "euvd-details",
+      "execution": "completed",
+      "result": "enriched",
+      "count": 47,
+      "consulted": 47,
+      "missing": 0,
+      "stale": 0
+    },
+    {
+      "capability": "sources",
+      "collector": "certfr",
+      "execution": "completed",
+      "result": "enriched",
+      "count": 30,
+      "consulted": 47,
+      "missing": 0,
+      "stale": 0
+    }
+  ],
+  "warnings": []
+}

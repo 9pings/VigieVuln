@@ -1,0 +1,104 @@
+{
+  "nginx": {
+    "baselineSha256": "c3e4df5002280c3fdc4fd16b8d1cea52ec93785a5006e4262d49c99fc2eb0fc5",
+    "currentSha256": "c12b4a7ff395502cbf87674035ab9c00f7e6a982a8a93567e360186ba0516291",
+    "counts": {
+      "before": 80,
+      "after": 80
+    },
+    "summary": {
+      "cve": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 80,
+        "unassessed": 0,
+        "unassessedAdded": 0,
+        "addedProduction": 0,
+        "addedBySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0,
+          "NONE": 0,
+          "UNKNOWN": 0
+        }
+      },
+      "eol": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      },
+      "obsolete": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      },
+      "outdated": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      },
+      "licenses": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      }
+    },
+    "currentWarnings": 0
+  },
+  "traefik": {
+    "baselineSha256": "6f1ed07540335ec48b6092dc22a417151b0380f336c0ff3c900581fe81802c56",
+    "currentSha256": "a1557fa4902801b191953ae0f07d90fc76150ef717752bd2003353db8e95e0e2",
+    "counts": {
+      "before": 212,
+      "after": 212
+    },
+    "summary": {
+      "cve": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 212,
+        "unassessed": 0,
+        "unassessedAdded": 0,
+        "addedProduction": 0,
+        "addedBySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0,
+          "NONE": 0,
+          "UNKNOWN": 0
+        }
+      },
+      "eol": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      },
+      "obsolete": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      },
+      "outdated": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      },
+      "licenses": {
+        "added": 0,
+        "removed": 0,
+        "unchanged": 0,
+        "unassessed": 0
+      }
+    },
+    "currentWarnings": 0
+  }
+}

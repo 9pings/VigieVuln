@@ -60,3 +60,13 @@ test('explicit --no-osv-db overrides a configured group even with the EU source 
  const r=spawnSync(process.execPath,['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',project,'--config',config,'--offline','--source-profile','eu','--no-osv-db','-d','report'],{encoding:'utf8',env:{PATH:process.env.PATH,FORCE_COLOR:'0'},timeout:30000});
  assert.equal(r.status,0,r.stderr+r.stdout);
 });
+test('cache transfer uses explicitly selected proxy-scoped cache root',t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-custom-scope-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const origin='https://proxy.example',first=path.join(dir,'first'),second=path.join(dir,'second');fs.mkdirSync(first);fs.mkdirSync(second);
+ const from=proxyScope(origin,{homeDir:first}),to=proxyScope(origin,{homeDir:second});const {openAdvisoryStore}=require('../lib/advisory-store');
+ const seeded=openAdvisoryStore({cacheDir:from});seeded.commit({records:[{source:'osv',document:{id:'GHSA-custom-scope',affected:[]},fetchedAt:Date.now()}]});seeded.close();
+ const bundle=path.join(dir,'export.tar.gz'),cli=path.join(__dirname,'../vigievuln.js'),run=(...args)=>spawnSync(process.execPath,[cli,...args],{encoding:'utf8',env:{...process.env,HOME:dir,USERPROFILE:dir,NO_COLOR:'1',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''}});
+ let result=run('cache','export',bundle,'--cache-dir',first,'--source-profile','proxy','--proxy-cache',origin);assert.equal(result.status,0,result.stderr);
+ result=run('cache','import',bundle,'--cache-dir',second,'--source-profile','proxy','--proxy-cache',origin);assert.equal(result.status,0,result.stderr);
+ const target=openAdvisoryStore({cacheDir:to});try{assert.equal(target.getRecord('osv','GHSA-custom-scope').document.id,'GHSA-custom-scope');}finally{target.close();}
+});

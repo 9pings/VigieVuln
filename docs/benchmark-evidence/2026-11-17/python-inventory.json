@@ -1,0 +1,16 @@
+{
+  "paperless": {
+    "expected": 184,
+    "observed": 184,
+    "missing": [],
+    "extra": [],
+    "default_develop_overlap": 31,
+    "finding_scope_disagreements": []
+  },
+  "netbox": {
+    "expected": 38,
+    "observed": 38,
+    "missing": [],
+    "extra": []
+  }
+}

@@ -92,3 +92,11 @@ test("a Drupal advisory without a CVE never merges into the CVE line of the same
 	assert.equal(advisoryLine.cve.severityScheme, "drupal-rating");
 	assert.equal(summarizeFindings(merged).total, 2);
 });
+test('image findings remain distinct across targets even without serialized coordinate keys',()=>{
+ const one={dep:{ecosystem:'system',name:'libfoo',version:'1',artifactTargetId:'img-a',artifactPath:'/var/lib/dpkg/status'},cve:{id:'CVE-2024-12345',severity:'HIGH'}};
+ const two={...one,dep:{...one.dep,artifactTargetId:'img-b'}};
+ assert.equal(summarizeFindings([one,two]).total,2);
+ const composer={...one,dep:{ecosystem:'composer',coordKey:'composer:vendor/lib',version:'1',artifactTargetId:'img-a',manifestPaths:['/app/vendor/composer/installed.json']}};
+ const second={...composer,dep:{...composer.dep,artifactTargetId:'img-b'}};
+ const rows=coalescePhysicalFindings([composer,second]);assert.equal(rows.length,2);assert.notEqual(rows[0].findingId,rows[1].findingId);
+});

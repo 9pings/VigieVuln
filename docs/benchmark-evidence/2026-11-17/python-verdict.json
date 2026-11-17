@@ -1,0 +1,1193 @@
+{
+  "netbox": {
+    "method": "pip install --dry-run --ignore-installed --report -r requirements.txt",
+    "environment": {
+      "implementation_name": "cpython",
+      "implementation_version": "3.11.2",
+      "os_name": "posix",
+      "platform_machine": "x86_64",
+      "platform_release": "6.12.117+deb13-amd64",
+      "platform_system": "Linux",
+      "platform_version": "#1 SMP PREEMPT_DYNAMIC Debian 6.12.117-1 (2026-11-12)",
+      "python_full_version": "3.11.2",
+      "platform_python_implementation": "CPython",
+      "python_version": "3.11",
+      "sys_platform": "linux"
+    },
+    "resolved_count": 99,
+    "sbom_pypi_count": 38,
+    "missing_count": 61,
+    "missing": [
+      {
+        "name": "asgiref",
+        "resolved_version": "3.13.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "async-timeout",
+        "resolved_version": "5.0.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "attrs",
+        "resolved_version": "26.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "babel",
+        "resolved_version": "2.18.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "certifi",
+        "resolved_version": "2026.10.23",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "cffi",
+        "resolved_version": "2.1.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "charset-normalizer",
+        "resolved_version": "3.5.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "click",
+        "resolved_version": "8.5.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "colorama",
+        "resolved_version": "0.4.6",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "cryptography",
+        "resolved_version": "50.0.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "defusedxml",
+        "resolved_version": "0.8.0rc2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "django-js-asset",
+        "resolved_version": "5.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "ghp-import",
+        "resolved_version": "2.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphene",
+        "resolved_version": "3.4.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphene-django",
+        "resolved_version": "3.2.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphql-core",
+        "resolved_version": "3.2.14",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphql-relay",
+        "resolved_version": "3.2.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "idna",
+        "resolved_version": "3.20",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "inflection",
+        "resolved_version": "0.5.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "jsonschema",
+        "resolved_version": "4.26.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "jsonschema-specifications",
+        "resolved_version": "2025.9.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "markdown-it-py",
+        "resolved_version": "4.3.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "markupsafe",
+        "resolved_version": "3.0.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mdurl",
+        "resolved_version": "0.1.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mergedeep",
+        "resolved_version": "1.3.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs",
+        "resolved_version": "1.6.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs-autorefs",
+        "resolved_version": "1.4.5",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs-get-deps",
+        "resolved_version": "0.2.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs-material-extensions",
+        "resolved_version": "1.3.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocstrings-python-legacy",
+        "resolved_version": "0.2.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "oauthlib",
+        "resolved_version": "4.0.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "packaging",
+        "resolved_version": "26.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "paginate",
+        "resolved_version": "0.5.7",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pathspec",
+        "resolved_version": "1.1.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "platformdirs",
+        "resolved_version": "4.14.5",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "prometheus-client",
+        "resolved_version": "0.26.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "promise",
+        "resolved_version": "2.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "psycopg-c",
+        "resolved_version": "3.2.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "psycopg-pool",
+        "resolved_version": "3.3.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pycparser",
+        "resolved_version": "3.12",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pygments",
+        "resolved_version": "2.21.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pyjwt",
+        "resolved_version": "2.15.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pymdown-extensions",
+        "resolved_version": "10.21.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "python-dateutil",
+        "resolved_version": "2.9.0.post0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "python3-openid",
+        "resolved_version": "3.2.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pytkdocs",
+        "resolved_version": "0.16.5",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pyyaml-env-tag",
+        "resolved_version": "1.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "redis",
+        "resolved_version": "8.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "referencing",
+        "resolved_version": "0.37.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "regex",
+        "resolved_version": "2026.11.15",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "requests-oauthlib",
+        "resolved_version": "2.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "rich",
+        "resolved_version": "15.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "rpds-py",
+        "resolved_version": "2026.9.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "sgmllib3k",
+        "resolved_version": "1.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "six",
+        "resolved_version": "1.17.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "sqlparse",
+        "resolved_version": "0.6.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "text-unidecode",
+        "resolved_version": "1.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "typing-extensions",
+        "resolved_version": "4.16.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "uritemplate",
+        "resolved_version": "4.2.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "urllib3",
+        "resolved_version": "2.8.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "watchdog",
+        "resolved_version": "7.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      }
+    ],
+    "resolved": [
+      {
+        "name": "django",
+        "resolved_version": "5.1.5",
+        "requested": true,
+        "scanner_version": "5.1.5",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-cors-headers",
+        "resolved_version": "4.6.0",
+        "requested": true,
+        "scanner_version": "4.6.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-debug-toolbar",
+        "resolved_version": "5.0.1",
+        "requested": true,
+        "scanner_version": "5.0.1",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-filter",
+        "resolved_version": "24.3",
+        "requested": true,
+        "scanner_version": "24.3",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-htmx",
+        "resolved_version": "1.21.0",
+        "requested": true,
+        "scanner_version": "1.21.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-graphiql-debug-toolbar",
+        "resolved_version": "0.2.0",
+        "requested": true,
+        "scanner_version": "0.2.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-mptt",
+        "resolved_version": "0.16.0",
+        "requested": true,
+        "scanner_version": "0.16.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-pglocks",
+        "resolved_version": "1.0.4",
+        "requested": true,
+        "scanner_version": "1.0.4",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-prometheus",
+        "resolved_version": "2.3.1",
+        "requested": true,
+        "scanner_version": "2.3.1",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-redis",
+        "resolved_version": "5.4.0",
+        "requested": true,
+        "scanner_version": "5.4.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-rich",
+        "resolved_version": "1.13.0",
+        "requested": true,
+        "scanner_version": "1.13.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-rq",
+        "resolved_version": "3.0.0",
+        "requested": true,
+        "scanner_version": "3.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-taggit",
+        "resolved_version": "6.1.0",
+        "requested": true,
+        "scanner_version": "6.1.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-tables2",
+        "resolved_version": "2.7.5",
+        "requested": true,
+        "scanner_version": "2.7.5",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "django-timezone-field",
+        "resolved_version": "7.1",
+        "requested": true,
+        "scanner_version": "7.1",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "djangorestframework",
+        "resolved_version": "3.15.2",
+        "requested": true,
+        "scanner_version": "3.15.2",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "drf-spectacular",
+        "resolved_version": "0.28.0",
+        "requested": true,
+        "scanner_version": "0.28.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "drf-spectacular-sidecar",
+        "resolved_version": "2025.2.1",
+        "requested": true,
+        "scanner_version": "2025.2.1",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "feedparser",
+        "resolved_version": "6.0.11",
+        "requested": true,
+        "scanner_version": "6.0.11",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "gunicorn",
+        "resolved_version": "23.0.0",
+        "requested": true,
+        "scanner_version": "23.0.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "jinja2",
+        "resolved_version": "3.1.5",
+        "requested": true,
+        "scanner_version": "3.1.5",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "markdown",
+        "resolved_version": "3.7",
+        "requested": true,
+        "scanner_version": "3.7",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "mkdocs-material",
+        "resolved_version": "9.6.2",
+        "requested": true,
+        "scanner_version": "9.6.2",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "netaddr",
+        "resolved_version": "1.3.0",
+        "requested": true,
+        "scanner_version": "1.3.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "nh3",
+        "resolved_version": "0.2.20",
+        "requested": true,
+        "scanner_version": "0.2.20",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "pillow",
+        "resolved_version": "11.1.0",
+        "requested": true,
+        "scanner_version": "11.1.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "pyyaml",
+        "resolved_version": "6.0.2",
+        "requested": true,
+        "scanner_version": "6.0.2",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "requests",
+        "resolved_version": "2.32.3",
+        "requested": true,
+        "scanner_version": "2.32.3",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "rq",
+        "resolved_version": "2.1.0",
+        "requested": true,
+        "scanner_version": "2.1.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "social-auth-app-django",
+        "resolved_version": "5.4.2",
+        "requested": true,
+        "scanner_version": "5.4.2",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "social-auth-core",
+        "resolved_version": "4.5.4",
+        "requested": true,
+        "scanner_version": "4.5.4",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "strawberry-graphql",
+        "resolved_version": "0.258.0",
+        "requested": true,
+        "scanner_version": "0.258.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "strawberry-graphql-django",
+        "resolved_version": "0.52.0",
+        "requested": true,
+        "scanner_version": "0.52.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "svgwrite",
+        "resolved_version": "1.4.3",
+        "requested": true,
+        "scanner_version": "1.4.3",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "tablib",
+        "resolved_version": "3.8.0",
+        "requested": true,
+        "scanner_version": "3.8.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "tzdata",
+        "resolved_version": "2025.1",
+        "requested": true,
+        "scanner_version": "2025.1",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "psycopg-c",
+        "resolved_version": "3.2.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "asgiref",
+        "resolved_version": "3.13.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "babel",
+        "resolved_version": "2.18.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "certifi",
+        "resolved_version": "2026.10.23",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "charset-normalizer",
+        "resolved_version": "3.5.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "click",
+        "resolved_version": "8.5.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "colorama",
+        "resolved_version": "0.4.6",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "cryptography",
+        "resolved_version": "50.0.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "defusedxml",
+        "resolved_version": "0.8.0rc2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphene-django",
+        "resolved_version": "3.2.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "idna",
+        "resolved_version": "3.20",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "inflection",
+        "resolved_version": "0.5.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "jsonschema",
+        "resolved_version": "4.26.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "markupsafe",
+        "resolved_version": "3.0.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs",
+        "resolved_version": "1.6.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs-autorefs",
+        "resolved_version": "1.4.5",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs-material-extensions",
+        "resolved_version": "1.3.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocstrings-python-legacy",
+        "resolved_version": "0.2.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocstrings",
+        "resolved_version": "0.27.0",
+        "requested": true,
+        "scanner_version": "0.27.0",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "oauthlib",
+        "resolved_version": "4.0.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "packaging",
+        "resolved_version": "26.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "paginate",
+        "resolved_version": "0.5.7",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "platformdirs",
+        "resolved_version": "4.14.5",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "prometheus-client",
+        "resolved_version": "0.26.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pygments",
+        "resolved_version": "2.21.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pyjwt",
+        "resolved_version": "2.15.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pymdown-extensions",
+        "resolved_version": "10.21.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "python-dateutil",
+        "resolved_version": "2.9.0.post0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "python3-openid",
+        "resolved_version": "3.2.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "redis",
+        "resolved_version": "8.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "regex",
+        "resolved_version": "2026.11.15",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "requests-oauthlib",
+        "resolved_version": "2.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "rich",
+        "resolved_version": "15.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "six",
+        "resolved_version": "1.17.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "sqlparse",
+        "resolved_version": "0.6.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "typing-extensions",
+        "resolved_version": "4.16.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "uritemplate",
+        "resolved_version": "4.2.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "urllib3",
+        "resolved_version": "2.8.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "django-js-asset",
+        "resolved_version": "5.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "psycopg",
+        "resolved_version": "3.2.4",
+        "requested": true,
+        "scanner_version": "3.2.4",
+        "scanner_equivalent": true
+      },
+      {
+        "name": "psycopg-pool",
+        "resolved_version": "3.3.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "sgmllib3k",
+        "resolved_version": "1.0.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "async-timeout",
+        "resolved_version": "5.0.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "attrs",
+        "resolved_version": "26.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "cffi",
+        "resolved_version": "2.1.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "ghp-import",
+        "resolved_version": "2.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphene",
+        "resolved_version": "3.4.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphql-core",
+        "resolved_version": "3.2.14",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "graphql-relay",
+        "resolved_version": "3.2.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "jsonschema-specifications",
+        "resolved_version": "2025.9.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "markdown-it-py",
+        "resolved_version": "4.3.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mergedeep",
+        "resolved_version": "1.3.4",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mkdocs-get-deps",
+        "resolved_version": "0.2.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pathspec",
+        "resolved_version": "1.1.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "promise",
+        "resolved_version": "2.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pytkdocs",
+        "resolved_version": "0.16.5",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pyyaml-env-tag",
+        "resolved_version": "1.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "referencing",
+        "resolved_version": "0.37.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "rpds-py",
+        "resolved_version": "2026.9.1",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "watchdog",
+        "resolved_version": "7.1.0",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "text-unidecode",
+        "resolved_version": "1.3",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "mdurl",
+        "resolved_version": "0.1.2",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      },
+      {
+        "name": "pycparser",
+        "resolved_version": "3.12",
+        "requested": false,
+        "scanner_version": null,
+        "scanner_equivalent": false
+      }
+    ],
+    "limitations": [
+      "Live index resolution at scan time; not installed and not a historical or deployed environment.",
+      "Environment markers and selected extras use the resolver environment in this report.",
+      "requirements.txt pins are counted without a complete resolved lockfile."
+    ]
+  },
+  "paperless": {
+    "lock_comparison": "inventory-verification.json",
+    "limitations": [
+      "Lock entries are potential installations; platform markers and extras determine actual environment."
+    ]
+  },
+  "negative_boundary_checks": {
+    "results": [
+      {
+        "name": "requests",
+        "version": "2.32.3",
+        "target": "CVE-2024-47081",
+        "targetMatched": true,
+        "matchCount": 4
+      },
+      {
+        "name": "requests",
+        "version": "2.32.4",
+        "target": "CVE-2024-47081",
+        "targetMatched": false,
+        "matchCount": 2
+      },
+      {
+        "name": "h11",
+        "version": "0.14.0",
+        "target": "CVE-2025-43859",
+        "targetMatched": true,
+        "matchCount": 2
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0",
+        "target": "CVE-2025-43859",
+        "targetMatched": false,
+        "matchCount": 0
+      }
+    ],
+    "warnings": []
+  },
+  "upstream_advisories": [
+    "https://github.com/psf/requests/security/advisories/GHSA-9hjg-9r4m-mvj7",
+    "https://github.com/python-hyper/h11/security/advisories/GHSA-vqfr-h8mv-ghfj"
+  ]
+}

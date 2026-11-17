@@ -1,0 +1,9 @@
+✔ oversized cells remain within Excel limits, keep Unicode intact and cannot create formulas (9.998202ms)
+ℹ tests 2428
+ℹ suites 0
+ℹ pass 2415
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 13
+ℹ todo 0
+ℹ duration_ms 167931.235675

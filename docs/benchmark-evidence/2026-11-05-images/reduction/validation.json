@@ -1,0 +1,40 @@
+{
+  "cliTests": {
+    "tests": 2277,
+    "passed": 2266,
+    "skipped": 11,
+    "failed": 0
+  },
+  "serverTests": {
+    "tests": 590,
+    "passed": 590,
+    "failed": 0
+  },
+  "additionalTests": {
+    "passed": 22,
+    "failed": 0
+  },
+  "offline": {
+    "nginxNetworkAttempts": 0,
+    "traefikNetworkAttempts": 0,
+    "standaloneNginxPath": "/nonexistent",
+    "standaloneNginxFindingIdentityRiskFixParity": true
+  },
+  "sampleHashes": {
+    "nginx": "3a783fd19e1e8cfc78b2c0ea05c331640a8e25db677094a00deb9212663243f5",
+    "traefik": "446961ee12f578335b7081df1c7443e3363d7808a632d7c17d459d6576b14278"
+  },
+  "productionHealth": {
+    "www": 200,
+    "api": 200
+  },
+  "deploymentImage": "sha256:10bb8d83a7be5d1d3935495aeed3b059f037b304ecf6ee83e11b9211c1bcd278",
+  "htmlVisualCheck": {
+    "browser": "Chromium",
+    "horizontalOverflow": false,
+    "sections": [
+      "image summary and totals",
+      "additional advisory observations"
+    ]
+  }
+}

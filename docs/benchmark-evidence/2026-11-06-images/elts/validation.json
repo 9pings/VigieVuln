@@ -1,0 +1,23 @@
+{
+  "cli": {
+    "tests": 2348,
+    "passed": 2337,
+    "skipped": 11,
+    "failed": 0,
+    "logSha256": "a99dff397a3bb1667afa7596752befab2c71cf09761e9011d98d10927656bcd2"
+  },
+  "server": {
+    "tests": 599,
+    "passed": 599,
+    "failed": 0,
+    "logSha256": "144dbcd9fbffd3c327a5ad5088aa970c7f53b842ff85515d610fcac1805fb341"
+  },
+  "finalRendering": {
+    "passed": 20,
+    "failed": 0
+  },
+  "runtimeManifest": "source-manifest.json",
+  "sourceSmokeImage": "sha256:1214e0c8cb0aab408f7735a99dd0566706389fc6b77cffbfaf77ba4568d82460",
+  "finalImage": "sha256:4127b9fde72156001e22e2e8b149739d9d8a21a6b647e9d9d24b56eaa1dd9515",
+  "finalImageDifference": "Only mobile CSS table minimum width differs from the source-smoke image; source runtime modules are unchanged."
+}

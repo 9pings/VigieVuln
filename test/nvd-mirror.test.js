@@ -3,6 +3,7 @@
  * CVE ids in the year 2099 so the real ~/.vigie-vuln/nvd-cache is never shadowed; every
  * test removes what it wrote.
  */
+require('./helpers/isolated-cache')('nvd-mirror');
 const { test, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -126,11 +127,20 @@ test('hosted NVD enrichment does not apply the direct NVD thirty-second window',
 	finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
 });
 
-test('a hosted NVD budget refusal proceeds to the targeted mirror without waiting for the primary budget', {timeout:3000}, async()=>{
+test('a hosted NVD budget refusal proceeds to the targeted mirror once the scan wait budget is exhausted', {timeout:3000}, async()=>{
 	const c=id('0000320'), calls=[];
 	const {configureResourceRoute}=require('../lib/providers');
 	const fetcher=async (_url,init)=>{const body=JSON.parse(init.body);calls.push(body.type);return body.type==='cve' ? new Response('',{status:503,headers:{'x-fad-proxy':'denied','retry-after':'30'}}) : Response.json(record(c));};
-	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher});
+	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher,resetRateLimit:true,proxyRateLimitMaxWaitMs:0});
 	try {const result=await N.fetchOne(c,{fetcher});assert.equal(result.score,9.8);assert.deepEqual(calls,['cve','cve-mirror']);}
-	finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
+	finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null,resetRateLimit:true,proxyRateLimitMaxWaitMs:null});}
+});
+
+test('hosted NVD primary retries stale admission with mirror enabled and returns fresh without mirror',async()=>{
+ const http=require('node:http'),{configureResourceRoute}=require('../lib/providers'),{createProxyThrottle}=require('../lib/proxy-throttle');const c=id('0000999'),health=createSourceHealth(),calls=[];let clock=0;
+ const server=http.createServer((req,res)=>{let body='';req.on('data',x=>body+=x);req.on('end',()=>{const q=JSON.parse(body);calls.push(q.type);const stale=calls.length===1;res.writeHead(200,{'content-type':'application/json','x-fad-proxy':stale?'stale':'miss','x-fad-proxy-fetched-at':new Date().toISOString(),...(stale?{'x-fad-proxy-reason':'refresh-failed','x-fad-proxy-refresh-status':'503','x-fad-proxy-refresh-cause':'admission','retry-after':'1'}:{})});res.end(JSON.stringify({totalResults:1,vulnerabilities:[{cve:record(c)}]}));});});
+ await new Promise(ok=>server.listen(0,'127.0.0.1',ok));const url=`http://127.0.0.1:${server.address().port}`;
+ configureResourceRoute({proxyUrl:url,hosted:true,store:null,hostedStore:null,health,token:'test',fetcher:globalThis.fetch,proxyThrottle:createProxyThrottle({now:()=>clock,sleep:async ms=>{clock+=ms},warn:()=>{}})});
+ try{const result=await N.fetchOne(c,{fetcher:globalThis.fetch,mirror:true});assert.equal(result.score,9.8);assert.deepEqual(calls,['cve','cve']);assert(clock>=1000);assert.deepEqual(health.stale(),[]);assert.deepEqual(health.degraded(),[]);}
+ finally{configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null,proxyThrottle:null,resetRateLimit:true});await new Promise(ok=>server.close(ok));}
 });

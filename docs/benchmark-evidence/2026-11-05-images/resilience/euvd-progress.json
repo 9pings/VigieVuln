@@ -1,0 +1,15 @@
+{
+  "stage": "before",
+  "status": "ok",
+  "lastStarted": 1793890822712,
+  "lastFinished": 1793890847311,
+  "leased": false,
+  "count": 29909,
+  "page": 300,
+  "pageSize": 100,
+  "total": 418125,
+  "scope": "search-records-partial",
+  "completedFullAt": null,
+  "completedIncrementalAt": null,
+  "retryAt": 0
+}
