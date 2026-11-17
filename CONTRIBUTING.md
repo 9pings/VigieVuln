@@ -43,6 +43,11 @@ network and git, so it stays skipped unless you ask for it:
 FAD_REAL_INSTANCES=1 node --test test/real-instances.test.js
 ```
 
+Hosted-server integration tests require the separate sibling `../server-main`
+checkout and its installed dependencies. A standalone CLI checkout skips those
+tests explicitly; when the server is present, failures are not suppressed.
+The skipped-test count therefore depends on the available integration targets.
+
 ## Ground rules for changes
 
 - **Tests must not touch the network.** Every fixture-driven test drives an in-memory

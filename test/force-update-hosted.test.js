@@ -1,6 +1,11 @@
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict'),path=require('node:path');
-test('hosted force update bypasses local EUVD mirror and preserves authenticated upstream result',async()=>{
+const {test}=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
+// These are real-server integration checks, like the distro pathway tests.
+// A standalone CLI checkout does not include the independently released server.
+// Skip only when that checkout is absent; an available but broken server fails.
+const serverAvailable=fs.existsSync(path.resolve(__dirname,'../../server-main/lib/server.js'));
+const integration={skip:serverAvailable?false:'sibling server-main checkout not available (hosted integration)'};
+test('hosted force update bypasses local EUVD mirror and preserves authenticated upstream result',integration,async()=>{
  const fadFile=require.resolve('../../server-main/lib/fad'),old=require.cache[fadFile];require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require(path.join(__dirname,'../lib',rel)),fadData:file=>require(path.join(__dirname,'../data',file))}};
  const {open}=require('../../server-main/test/helpers/db'),{createServiceServer}=require('../../server-main/lib/server');const s=await open(),key=await s.tokens.add({role:'client',label:'force test'});let calls=0;
  const id='EUVD-2024-48936';await s.assets.upsert(require('../../server-main/lib/jobs/euvd-details').asset({id,description:'mirror'},Date.now()-1000));
@@ -10,7 +15,7 @@ test('hosted force update bypasses local EUVD mirror and preserves authenticated
  finally{await new Promise(ok=>server.close(ok));await s.driver.close();if(old)require.cache[fadFile]=old;else delete require.cache[fadFile];}
 });
 
-test('forced EUVD refresh retains mirror-only record on upstream 503 or 429',async()=>{
+test('forced EUVD refresh retains mirror-only record on upstream 503 or 429',integration,async()=>{
  const fadFile=require.resolve('../../server-main/lib/fad'),old=require.cache[fadFile];require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require(path.join(__dirname,'../lib',rel)),fadData:file=>require(path.join(__dirname,'../data',file))}};
  const {open}=require('../../server-main/test/helpers/db'),{createServiceServer}=require('../../server-main/lib/server');
  try{for(const status of [503,429]){

@@ -11,7 +11,7 @@ const { detectScanCompletenessWarnings } = require("../lib/scan-completeness");
 // A local fake Maven repository: exercise real POM parsing and graph traversal.
 async function fixture(t, script, graph, otherFiles = {}) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-gradle-versionless-"));
-	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	t.after(() => { require("../lib/cache-db").closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
 	for (const [name, text] of Object.entries({ "build.gradle.kts": script, ...otherFiles })) {
 		fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
 		fs.writeFileSync(path.join(root, name), text);

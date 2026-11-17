@@ -6,7 +6,8 @@ const os=require('node:os');
 const path=require('node:path');
 const {zipSync,strToU8}=require('fflate');
 const {collectSystemInventory,assessSystemInventory,importSystemAdvisories,syncSystemAdvisories,rpmHeader,versions}=require('../lib/system-inventory');
-function root(t){const p=fs.mkdtempSync(path.join(os.tmpdir(),'vv-system-'));t.after(()=>fs.rmSync(p,{recursive:true,force:true}));return p;}
+const {closeCacheDbs}=require('../lib/cache-db');
+function root(t){const p=fs.mkdtempSync(path.join(os.tmpdir(),'vv-system-'));t.after(()=>{closeCacheDbs();fs.rmSync(p,{recursive:true,force:true});});return p;}
 function put(dir,file,text){const p=path.join(dir,file);fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,text);}
 test('installed dpkg records preserve source identity and reject host symlinks',async t=>{
  const dir=root(t);put(dir,'etc/os-release','ID=debian\nVERSION_ID="12"\nVERSION_CODENAME=bookworm\n');

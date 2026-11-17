@@ -28,6 +28,15 @@ its success is a packaging/execution check, not a clean vulnerability verdict.
 GitHub workflow results are separate from these local checks. The historical
 server checks below do not validate the current server or a production deployment.
 
+The first 1.3.0 CI attempt exposed two hosted-server tests that assumed a sibling
+`server-main` checkout. They now follow the existing integration-test convention:
+run against the real server when present, otherwise report an explicit skip.
+Standalone CLI and full local-workspace test counts can therefore differ.
+The Windows run also exposed SQLite connections left open by test cleanup and
+a POSIX-only path comparison in the WAL-injection fixture. These test harnesses
+now close databases before removal and use platform-aware path components.
+Hosted CLI fixtures write their reports inside their temporary directory.
+
 ## Historical preparation — 2026-10-25
 
 The following is the original 1.0.0 preparation record, not the current release

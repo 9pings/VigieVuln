@@ -2,6 +2,7 @@
 
 ## [1.3.0] — 2026-11-17
 
+- Make hosted integration tests explicit about the optional server checkout, close test SQLite handles before cleanup on Windows, and keep generated test reports in temporary directories.
 - Preserve every inventoried Maven, npm and PyPI version in CycloneDX exports and link each vulnerability to the affected version, including multi-module and nested-lockfile cases.
 - Document measured inventory limitations on OpenRefine, Traccar, Paperless-ngx and NetBox, and a same-inventory comparison with pip-audit. Python requirements without a complete lock or resolved inventory do not trigger pip-style transitive resolution; Gradle POM expansion is not native Gradle mediation.
 - Resolve unambiguous literal versions in top-level Groovy `ext` blocks, while leaving dynamic or reassigned values unresolved. Warn that Gradle scans without a lockfile can report different transitive versions and miss dependencies.

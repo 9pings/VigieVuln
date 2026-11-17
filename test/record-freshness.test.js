@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {stableRecord,METADATA_VERSION}=require('../lib/record-freshness');
+const {closeCacheDbs}=require('../lib/cache-db');
 const nvd=require('../lib/nvd');
 
 test('stable individual records are reused by default and require trustworthy old source dates',()=>{
@@ -36,7 +37,7 @@ test('NVD stable cached record is reused by default and newer imports replace it
   const updated={...old,modified:new Date().toISOString(),description:'updated'};
   nvd.writeCache(id,updated,Date.now(),dir);
   assert.deepEqual(nvd.readCache(id,false,dir,{reuseStableAdvisories:true}),updated);
- } finally {fs.rmSync(dir,{recursive:true,force:true});}
+ } finally {closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('NVD proxy records are bound to their proxy origin',()=>{
@@ -51,7 +52,7 @@ test('NVD proxy records are bound to their proxy origin',()=>{
   assert.equal(nvd.readCache('CVE-2020-12345',false,dir,{reuseStableAdvisories:true}),null);
   providers.configureResourceRoute({proxyUrl:null,hosted:false});
   assert.equal(nvd.readCache('CVE-2020-12345',false,dir,{reuseStableAdvisories:true}),null);
- } finally {providers.configureResourceRoute({proxyUrl:null,hosted:false});fs.rmSync(dir,{recursive:true,force:true});}
+ } finally {providers.configureResourceRoute({proxyUrl:null,hosted:false});closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('proxy OSV repeats package consultations but reuses bound stable details until forced or origin changes',async t=>{

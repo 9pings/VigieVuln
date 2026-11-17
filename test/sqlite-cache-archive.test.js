@@ -146,7 +146,7 @@ test('invalid archive errors are sanitized and cache transfer requires no PATH t
 test('export still rejects an uncheckpointed WAL introduced during native streaming',async t=>{
  const f=fixture(t),{spawnSync}=require('node:child_process');createCacheRepository(f.source).put('fixture','key','value');
  const modulePath=require.resolve('../lib/cache-archive-sqlite');
- const script=`const fs=require('node:fs'), original=fs.createReadStream;fs.createReadStream=function(file,...args){if(String(file).endsWith('/.vigie-vuln/cache.sqlite'))fs.writeFileSync(file+'-wal','injected');return original.call(this,file,...args)};require(${JSON.stringify(modulePath)}).exportCache(${JSON.stringify(f.archive)},{sourceDir:${JSON.stringify(f.source)}}).catch(e=>{process.stdout.write(e.message);process.exitCode=1});`;
+ const script=`const fs=require('node:fs'), path=require('node:path'), original=fs.createReadStream;fs.createReadStream=function(file,...args){if(path.basename(String(file))==='cache.sqlite' && path.basename(path.dirname(String(file)))==='.vigie-vuln')fs.writeFileSync(file+'-wal','injected');return original.call(this,file,...args)};require(${JSON.stringify(modulePath)}).exportCache(${JSON.stringify(f.archive)},{sourceDir:${JSON.stringify(f.source)}}).catch(e=>{process.stdout.write(e.message);process.exitCode=1});`;
  const child=spawnSync(process.execPath,['-e',script],{encoding:'utf8',env:{...process.env,PATH:''}});
  assert.equal(child.status,1);assert.match(child.stdout,/uncheckpointed WAL/);assert.equal(fs.existsSync(f.archive),false);
 });

@@ -203,7 +203,7 @@ test('hosted OSV database options perform only package lookups and never downloa
  const isolatedFlags=['--cve-offline','--no-gcve','--no-transitive','--no-all-libs','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0','--advisory-query-ttl','0'];
  for(const flags of [['--osv-db'],['-a','osv-db'],['--osv-db-refresh']]){
   fs.rmSync(calls,{force:true});
-  const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default',...isolatedFlags,...flags],{env,encoding:'utf8',timeout:15000});
+  const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default',...isolatedFlags,...flags],{cwd:home,env,encoding:'utf8',timeout:15000});
   assert.equal(r.status,0,r.stdout+r.stderr);
   const requests=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);
   assert.ok(requests.some(c=>c.body&&JSON.parse(c.body).provider==='osv'));

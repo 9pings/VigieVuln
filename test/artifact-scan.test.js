@@ -4,7 +4,7 @@ const {acquireInventories,assessInventories,incompleteCapabilities}=require('../
 const {importSystemAdvisories}=require('../lib/system-inventory');
 function write(root,p,body){const file=path.join(root,p);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
 test('rootfs uses offline scoped advisory snapshots and package ownership',async t=>{
- const work=fs.mkdtempSync(path.join(os.tmpdir(),'vv-image-scan-'));t.after(()=>fs.rmSync(work,{recursive:true,force:true}));const root=path.join(work,'root'),cacheDir=path.join(work,'cache');
+ const work=fs.mkdtempSync(path.join(os.tmpdir(),'vv-image-scan-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(work,{recursive:true,force:true});});const root=path.join(work,'root'),cacheDir=path.join(work,'cache');
  write(root,'etc/os-release','ID=debian\nVERSION_ID=12.4\n');
  write(root,'var/lib/dpkg/status','Package: libfoo\nStatus: install ok installed\nVersion: 1.0-1\nArchitecture: amd64\nSource: foo (1.0-1)\n');
  write(root,'var/lib/dpkg/info/libfoo.list','/usr/lib/node_modules/foo/package.json\n');
