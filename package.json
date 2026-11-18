@@ -103,7 +103,7 @@
     "rimraf": "^6.1.4",
     "smol-toml": "^1.8.0",
     "stream-chain": "^2.2.5",
-    "stream-json": "^1.9.1",
+    "stream-json": "^3.9.0",
     "tar-stream": "^3.2.2",
     "xml2js": "^0.6.2"
   },
