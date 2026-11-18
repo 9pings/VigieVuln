@@ -24,10 +24,10 @@ vigievuln -s <src> [-t <target>] [-e <regex>] [other options]
 
 ## Output
 
-For Docker/OCI archives, registry images, root filesystems, publisher SBOMs and
-portable offline image inventories, see [Native images and Linux binaries](IMAGES.md).
-Use `vigievuln image --help` for that command's options. Source-scan image discovery
-and content inspection are off by default; use `--images` to opt in.
+Add `--images` or `-a images` to include referenced container images in a project
+scan (off by default). See [Native images and Linux binaries](IMAGES.md) for this
+workflow, then the dedicated `vigievuln image` command for archives, registry
+images, root filesystems, publisher SBOMs and offline inventories.
 Discovered references that cannot be inspected are identified in coverage warnings.
 
 By default the HTML report and a `findings.json` land in `./vigievuln-report/` (the JSON so the next run can `--baseline` against it; add `--report-doc` for the Word file). Override with `--report-output <dir>`.

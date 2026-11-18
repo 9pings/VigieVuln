@@ -1,12 +1,49 @@
 # Native images and Linux binaries
 
-`vigievuln image` inventories Docker/OCI images, root filesystems and publisher
-SBOMs, then matches the observed components against vulnerability data. It does
-not require Docker, Trivy, Grype, a package manager or execution of the inspected
-files. The compiled executable includes its parsers; the npm installation uses
-the supported Node runtime.
+Image analysis inventories container contents and matches the observed components
+against vulnerability data. It requires no Docker daemon, external scanner,
+package manager or execution of the inspected files. The compiled executable
+includes its parsers; the npm installation uses the supported Node runtime.
 
-## Inputs and first scan
+## Scan project images with `--images` / `-a images`
+
+The usual workflow is to include images in a project scan. Add `--images` or
+`-a images` to discover Dockerfile, Containerfile and YAML image references and
+inspect eligible registry images alongside the project's dependencies:
+
+```bash
+vigievuln scan ./code --images
+# Equivalent ecosystem-selection syntax
+vigievuln scan ./code -a images
+```
+
+Image analysis is **off by default**; configuration can also enable it with
+`"images": true`. The report keeps project and image findings, charts and
+coverage warnings separate. A Dockerfile `FROM` identifies a build-stage base;
+this scan does not build the application's final image.
+
+An enabled source-tree scan resolves an eligible registry tag while acquiring the
+image; the report links the declaration to the digest resolved during that scan.
+Repeated declarations are grouped while their local file locations remain visible.
+`--no-images` (or `-d images`) disables source-image discovery and acquisition.
+Source scans use the declared platform, otherwise `--image-platform` (default
+`linux/amd64`); the selected platform travels with the anonymized descriptor.
+
+For an air-gapped source scan, `--images --export-anonymized` transfers eligible image
+references and requested platforms alongside dependency coordinates, not Dockerfiles,
+build contexts, paths or credentials. Review the descriptor: registry hostnames and
+repository names may be private. `vigievuln cache prepare <descriptor> --images --output <archive>`
+acquires eligible registry images online and prepares their cache for the subsequent
+offline source scan (also enable `--images` there). Dockerfiles remain in the isolated environment and their images
+cannot be built during online preparation. An absent or invalid required inventory
+prevents a successful image-cache preparation; other incomplete advisory coverage is
+reported separately.
+
+## Scan a standalone image with `vigievuln image`
+
+Use the dedicated command for a Docker/OCI archive, registry reference, root
+filesystem or publisher SBOM. It scans the supplied input directly, without
+requiring a project scan or `--images`.
 
 ```bash
 # Docker save, OCI archive, docker export/rootfs tar, OCI layout or rootfs directory
@@ -35,7 +72,7 @@ and invalid descriptors fail the acquisition. Devices and FIFOs are never create
 `docker export` archives have no image-layer history and may omit mounted volumes;
 VV only assesses the supplied filesystem.
 
-## Source declarations
+### Associate source declarations
 
 Use `--definitions <directory>` to include Dockerfile, Containerfile and YAML
 image declarations in the report and exported inventory:
@@ -52,27 +89,6 @@ unresolved references remain visible as unbound declarations. A Dockerfile
 line numbers where available and the original declaration survive inventory
 export and offline replay. Without a source directory, the report states that
 no source declaration was supplied.
-
-Image analysis in source-tree scans is **off by default**. Enable it with
-`--images`, `-a images`, or `"images": true` in configuration. The explicit
-`vigievuln image` command still scans its supplied input.
-
-An enabled source-tree scan resolves an eligible registry tag while acquiring the
-image; the report links the declaration to the digest resolved during that scan.
-Repeated declarations are grouped while their local file locations remain visible.
-`--no-images` (or `-d images`) disables source-image discovery and acquisition.
-Source scans use the declared platform, otherwise `--image-platform` (default
-`linux/amd64`); the selected platform travels with the anonymized descriptor.
-
-For an air-gapped source scan, `--images --export-anonymized` transfers eligible image
-references and requested platforms alongside dependency coordinates, not Dockerfiles,
-build contexts, paths or credentials. Review the descriptor: registry hostnames and
-repository names may be private. `vigievuln cache prepare <descriptor> --images --output <archive>`
-acquires eligible registry images online and prepares their cache for the subsequent
-offline source scan (also enable `--images` there). Dockerfiles remain in the isolated environment and their images
-cannot be built during online preparation. An absent or invalid required inventory
-prevents a successful image-cache preparation; other incomplete advisory coverage is
-reported separately.
 
 ## Image update suggestions
 
