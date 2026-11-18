@@ -5,3 +5,5 @@
 - Summarize NVD/EUVD record availability in one warning, separate from discovery coverage.
 - Separate source and image summaries and charts; rank vulnerable images with their most critical CVEs.
 - Restore the documented scanner feature comparison on the project site.
+- Inventory installed image libraries and nested CLI tools separately, without resolving their declared dependencies.
+- Ignore npm metadata fragments and separate image warnings from project warnings.

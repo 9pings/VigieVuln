@@ -298,3 +298,26 @@ test('overview totals include image findings from every input lane once',()=>{
   assert.match(exec,/<strong>3<\/strong> CVE findings/);assert.doesNotMatch(exec,/dev\/test CVE/);
  }
 });
+
+test('each image separates observed direct components and sub-dependencies, including libraries without CVEs',()=>{
+ const {ids,payload}=fixture(),first=payload.projectInfo.artifacts[0],second=payload.projectInfo.artifacts[1],finding=payload.cveMatches[0];
+ const direct={ecosystem:'npm',name:'app',version:'1.0',imageRole:'direct',artifactTargetId:ids[0],artifactPath:'/app/package.json'};
+ const vulnerable={ecosystem:'npm',name:'library',version:'2.0',imageRole:'transitive',artifactTargetId:ids[0],artifactPath:'/app/node_modules/library/package.json'};
+ const clean={ecosystem:'npm',name:'clean-library',version:'3.0',imageRole:'transitive',artifactTargetId:ids[0],artifactPath:'/app/node_modules/clean-library/package.json'};
+ const unknown={ecosystem:'npm',name:'unknown-role',version:'1.0',artifactTargetId:ids[0]};
+ first.components=[direct,vulnerable,clean,unknown];first.componentCount=4;
+ second.components=[{...vulnerable,artifactTargetId:ids[1]}];second.componentCount=1;
+ payload.cveMatches=[{...finding,dep:vulnerable,cve:{id:'CVE-2099-3333',severity:'HIGH'}}];
+ for(const [render,locale] of [[generateHtmlReport,'en'],[generateWordReport,'en'],[generateHtmlReport,'fr'],[generateWordReport,'fr']]) {
+  const html=render({...payload,locale}),one=detailsById(html,artifactAnchor(ids[0])),two=detailsById(html,artifactAnchor(ids[1]));
+  const directLabel=locale==='fr'?'Composants directs de l’image':'Direct image components';
+  const subLabel=locale==='fr'?'Sous-dépendances de l’image':'Image sub-dependencies';
+  const unknownLabel=locale==='fr'?'Composants de l’image non classés':'Unclassified image components';
+  const d=one.indexOf(directLabel),s=one.indexOf(subLabel),u=one.indexOf(unknownLabel);
+  assert.ok(d>=0&&s>d&&u>s);
+  assert.match(one.slice(d,s),/>app<\/code>/);assert.doesNotMatch(one.slice(d,s),/clean-library/);
+  const sub=one.slice(s,u);assert.match(sub,/>library<\/code>/);assert.match(sub,/>clean-library<\/code>/);
+  assert.match(sub,new RegExp(`href="#${artifactAnchor(ids[0])}-cves">CVE-2099-3333`));
+  assert.doesNotMatch(two,/CVE-2099-3333/);assert.match(one.slice(u),/unknown-role/);
+ }
+});

@@ -43,3 +43,46 @@ test('one source outage across images keeps every affected image in the grouped 
  assert.match(alerts,/registry.example\/app-0:1/);assert.match(alerts,/registry.example\/app-1:1/);
  assert.equal((alerts.match(/class="warn-block warn-image-source-unavailable"/g)||[]).length,1);
 });
+
+test('project, image and shared-source warnings stay separate for identical causes',()=>{
+ const reason='binary-scan-error',message='Cannot inspect binary';
+ const warnings=[
+  {type:'dependency-coverage',reason,message,manifestPath:'/project/src/app'},
+  {type:'dependency-coverage',reason,message,artifactTargetId:'image-a',manifestPath:'usr/bin/tool'},
+  {type:'dependency-coverage',reason,message,artifactTargetId:'image-b',manifestPath:'opt/app/tool'},
+  {type:'source-unavailable',source:'osv',artifactTargetId:'image-a',message:'HTTP 503'},
+  {type:'image-scan-failed',artifactTargetId:'image-b',message:'Registry HTTP 503'},
+  {type:'cve-enrichment-summary',severity:'warning',affectsCompleteness:false,artifactTargetIds:['image-a'],message:'CVE record enrichment is incomplete.'},
+ ];
+ const groups=groupReportWarnings(warnings), scoped=groups.filter(w=>w.type==='dependency-coverage');
+ assert.equal(scoped.length,2);assert.equal(scoped.find(w=>!w.artifactTargetIds?.length).manifestPath,'/project/src/app');
+ const images=scoped.find(w=>w.artifactTargetIds?.length);assert.deepEqual(images.artifactTargetIds,['image-a','image-b']);
+ assert.ok(images.items.some(x=>x.manifestPaths?.includes('usr/bin/tool')));assert.ok(images.items.some(x=>x.manifestPaths?.includes('opt/app/tool')));
+ assert.equal(groups.filter(w=>w.type==='image-source-unavailable').length,1);
+ const projectInfo={name:'fixture',src:'/project',artifacts:['image-a','image-b'].map(id=>({id,kind:'oci-image',metadata:{source:id},components:[],coverage:[]}))};
+ for(const render of [generateHtmlReport,generateWordReport])for(const locale of ['en','fr']){
+  const report=render({cveMatches:[],projectInfo,warnings,locale});
+  const block=report.slice(report.indexOf('class="warnings warnings-chapter"'),report.indexOf('</section>',report.indexOf('class="warnings warnings-chapter"'))+10);
+  const p=report.indexOf('class="warning-scope warning-scope-project"'),i=report.indexOf('class="warning-scope warning-scope-image"'),g=report.indexOf('class="warning-scope warning-scope-global"');
+  assert.ok(p>=0 && i>p && g>i);
+  assert.match(block,locale==='fr'?/Avertissements de l’analyse du projet/:/Project scan warnings/);
+  const project=report.slice(p,i),image=report.slice(i,g),shared=report.slice(g,report.indexOf('</section>',g));
+  assert.match(project,/src\/app/);assert.doesNotMatch(project,/usr\/bin\/tool|opt\/app\/tool/);
+  assert.match(image,/usr\/bin\/tool/);assert.match(image,/opt\/app\/tool/);assert.doesNotMatch(image,/src\/app/);
+  assert.match(image,locale==='fr'?/Avertissements de l’analyse des images/:/Image scan warnings/);
+  assert.equal((image.match(/warn-block warn-image-source-unavailable/g)||[]).length,1);
+  assert.match(shared,locale==='fr'?/Avertissements des sources communes/:/Shared source warnings/);
+  assert.equal((report.match(/warn-block warn-cve-enrichment-summary/g)||[]).length,1);
+ }
+});
+
+test('warning grouping uses explicit image identifiers even without an individual target id',()=>{
+ const grouped=groupReportWarnings([
+  {type:'dependency-coverage',reason:'same',message:'same',artifactTargetIds:['a']},
+  {type:'dependency-coverage',reason:'same',message:'same'},
+ ]);
+ assert.equal(grouped.length,2);assert.equal(require('../lib/report-notices').warningScope(grouped[0]),'image');assert.equal(require('../lib/report-notices').warningScope(grouped[1]),'project');
+ const unavailable=groupReportWarnings([{type:'source-unavailable',source:'osv',message:'HTTP 503',artifactTargetIds:['a','b']}]);
+ assert.equal(unavailable.length,1);assert.equal(unavailable[0].type,'image-source-unavailable');assert.deepEqual(unavailable[0].artifactTargetIds,['a','b']);
+ assert.deepEqual(groupReportWarnings(unavailable),unavailable);
+});

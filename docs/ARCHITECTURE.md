@@ -125,6 +125,17 @@ Image inspection is off by default in source-tree scans; enable `--images` or us
 `vigievuln image`. Registry access is separate from vulnerability data access.
 See [image acquisition and air-gap preparation](IMAGES.md).
 
+Image filesystem collection keeps OS package inventory from dpkg, APK and RPM
+separate from application and binary inspection. Supported metadata identifies
+the image's own components and libraries or tools recorded in installed metadata,
+including descriptors in dependency directories such as `node_modules` or
+`vendor`; nesting alone does not exclude them. Installed metadata does not prove
+that every package file exists or that the component executes. Go build information
+and embedded JARs can provide evidence for components in binaries. Project
+dependency declarations are not resolved or downloaded to invent additional
+image contents. A publisher-supplied SBOM is a separate, explicit inventory input.
+These image rules do not change source-tree scans.
+
 ## Testing
 
 Run `npm test` for the offline suite, or `node --test test/<name>.test.js` for a

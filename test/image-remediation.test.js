@@ -34,5 +34,5 @@ test('inventory lists affected components and their advisories even without a ca
  assert.match(table,/<code>unfixed<\/code>/);
  assert.doesNotMatch(table,/<code>clean<\/code>/);
  assert.match(table,/From finding; not present in inventory/);
- assert.match(table,/<td>—<\/td><td><a href="https:\/\/www\.vigievuln\.fr\/cve\/CVE-2099-9999">CVE-2099-9999<\/a>/);
+ assert.match(table,/<td>—<\/td><td><a href="#image-[a-f0-9]+-cves">CVE-2099-9999<\/a>/);
 });
