@@ -45,7 +45,8 @@ It scans dependencies and **9 CMS/frameworks** in one pass without build tools, 
 📖 **[Usage & all flags](docs/USAGE.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Comparison vs other tools](docs/COMPARISON.md)** · **[Data sources](docs/DATA-SOURCES.md)**
 
 > [!IMPORTANT]
-> **Although VigieVuln is an excellent tool—comprehensive, rigorously tested, and regularly updated—it is still relatively new, and like any other scanner, it may occasionally produce errors. We recommend that you verify the results using an analysis tool of your choice whenever possible.**
+> **Although VigieVuln is an excellent tool—comprehensive, rigorously tested, and regularly updated—it is still relatively new, and like any other scanner, it may occasionally produce errors.
+> Whenever possible, cross-check important findings with another analysis tool — though, among the tools we compared, none offers reports as comprehensive as VigieVuln.**
 
 ## Quick start
 
