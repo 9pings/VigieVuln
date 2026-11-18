@@ -385,3 +385,35 @@ test('refresh failure summary is omitted only when every failed cache request is
  assert.equal(health.unreportedStale(['detail-a','detail-b']).length,1);
  assert.equal(health.stale()[0].blocking,true);
 });
+
+test('stale filtering retains unrelated nonblocking and unkeyed observations without inheriting covered failure severity',()=>{
+ const h=createSourceHealth();
+ h.markStale('nvd','2024-01-01T00:00:00Z',{reason:'refresh-failed',requestKey:'cve-a'});
+ h.markStale('nvd','2025-01-01T00:00:00Z',{requestKey:'spip'});
+ assert.deepEqual(h.unreportedStale(['cve-a']),[{id:'nvd',at:Date.parse('2025-01-01T00:00:00Z')}]);
+ assert.deepEqual(h.unreportedStale(['cve-a','spip']),[]);
+ h.markStale('nvd','2025-02-01T00:00:00Z');
+ assert.equal(h.unreportedStale(['cve-a','spip']).length,1);
+});
+
+test('request keys are stripped before fetch and concurrent failures remain independently attributable',async()=>{
+ const {REQUEST_KEY}=require('../lib/source-health'),h=createSourceHealth(),seen=[];
+ const f=guardedFetch({health:h,retries:0,fetch:async(url,init)=>{seen.push(Object.getOwnPropertySymbols(init));await Promise.resolve();return {status:503}},sleep:async()=>{}});
+ await Promise.all(['a','b'].map(k=>f('https://services.nvd.nist.gov/rest/json/cves/2.0',{[REQUEST_KEY]:k})));
+ assert.deepEqual(seen,[[],[]]);
+ assert.equal(h.unreportedOutages(['a']).length,1);
+ assert.equal(h.unreportedOutages(['a','b']).length,0);
+});
+
+test('fanout preserves each request key and unrelated unkeyed outages',()=>{
+ const h=createSourceHealth();setActiveLedger(h);
+ try {
+  noteFanoutExhausted('https://services.nvd.nist.gov/x',['HTTP 429'],{requestKey:'cve'});
+  noteFanoutExhausted('https://services.nvd.nist.gov/y',['HTTP 503'],{requestKey:'spip'});
+  assert.equal(h.unreportedOutages(['cve']).length,1);
+	  assert.deepEqual(h.unreportedOutages(['cve'])[0].codes,['HTTP 503']);
+  assert.equal(h.unreportedOutages(['cve','spip']).length,0);
+  noteFanoutExhausted('https://services.nvd.nist.gov/z',['HTTP 503']);
+  assert.equal(h.unreportedOutages(['cve','spip']).length,1);
+ } finally {setActiveLedger(null)}
+});

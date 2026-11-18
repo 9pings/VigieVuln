@@ -54,6 +54,74 @@ test("NVD throttled → the record comes from the mirror, tagged, and no outage 
 	assert.ok(f.calls[0].signal, "the NVD request owns its deadline, so the guard does not burn its retry schedule");
 });
 
+test('per-CVE evidence distinguishes cache, offline miss, and a cached confirmed absence', async () => {
+	const available = id('0001101'), missing = id('0001102'), absent = id('0001103');
+	N.writeCache(available, N.extractFromNvdRecord(record(available)));
+	N.writeCache(absent, null);
+	const matches = [available, missing, absent].map(id => ({cve:{id}}));
+	await N.enrichMatches(matches, {offline:true,onProgress:()=>{},fetcher:()=>{throw Error('offline network')}});
+	assert.deepEqual(matches.map(m => m.cve.nvdRecordEvidence), [
+		{status:'available',stale:false}, {status:'unavailable',reason:'offline',stale:false}, {status:'no-match',stale:false},
+	]);
+});
+
+test('per-CVE evidence identifies stale cache after failed refresh and definitive empty responses', async () => {
+	const staleId = id('0001111'), absentId = id('0001112');
+	N.writeCache(staleId, N.extractFromNvdRecord(record(staleId)), Date.now() - 86400000);
+	const matches = [{cve:{id:staleId}},{cve:{id:absentId}}];
+	const fetcher = fakeFetcher(url => url.includes(staleId) ? res(429,{}) : res(200,{totalResults:0,vulnerabilities:[]}), res(503,{}));
+	await N.enrichMatches(matches, {fetcher,hasKey:true,onProgress:()=>{}});
+	assert.deepEqual(matches[0].cve.nvdRecordEvidence,{status:'available',stale:true,refreshFailed:true,reason:'HTTP 429'});
+	assert.deepEqual(matches[1].cve.nvdRecordEvidence,{status:'no-match',stale:false});
+});
+
+test('successful fallback reports available evidence even after a primary error', async () => {
+	const c = id('0001121'), matches = [{cve:{id:c}},{cve:{id:c}}];
+	await N.enrichMatches(matches, {fetcher:fakeFetcher(res(429,{}),res(200,record(c))),hasKey:true,onProgress:()=>{}});
+	for (const m of matches) assert.deepEqual(m.cve.nvdRecordEvidence,{status:'available',stale:false});
+});
+
+test('an unanswered CVE keeps its own HTTP reason while a different CVE succeeds', async () => {
+	const failed = id('0001122'), success = id('0001123');
+	const matches = [{cve:{id:failed}},{cve:{id:success}}], observed = [];
+	const fetcher = fakeFetcher(url => url.includes(failed) ? res(429,{}) : res(200,{vulnerabilities:[{cve:record(success)}]}),res(503,{}));
+	await N.enrichMatches(matches,{fetcher,hasKey:true,onProgress:()=>{},onRecordEvidence:(id,e)=>observed.push([id,e])});
+	assert.deepEqual(matches[0].cve.nvdRecordEvidence,{status:'unavailable',reason:'HTTP 429',stale:false});
+	assert.deepEqual(matches[1].cve.nvdRecordEvidence,{status:'available',stale:false});
+	assert.equal(observed.length,2);
+});
+
+test('offline expired records are marked stale without claiming an attempted refresh', async () => {
+	const c = id('0001124');
+	N.writeCache(c,N.extractFromNvdRecord(record(c)),Date.now()-86400000);
+	const m = {cve:{id:c}};
+	await N.enrichMatches([m],{offline:true,onProgress:()=>{}});
+	assert.deepEqual(m.cve.nvdRecordEvidence,{status:'available',stale:true,reason:'offline'});
+});
+
+test('a stale hosted response without a failure indication does not invent one', async () => {
+	const c = id('0001131'), matches = [{cve:{id:c}}], providers = require('../lib/providers');
+	const fetcher = async () => Response.json({vulnerabilities:[{cve:record(c)}]}, {headers:{'x-fad-proxy':'stale'}});
+	providers.configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher,proxyRateLimitMaxWaitMs:0});
+	try {
+		await N.enrichMatches(matches,{fetcher,hasKey:true,onProgress:()=>{}});
+		assert.deepEqual(matches[0].cve.nvdRecordEvidence,{status:'available',stale:true,reason:'stale proxy response'});
+	} finally { providers.configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null,proxyRateLimitMaxWaitMs:null}); }
+});
+
+test('a hosted stale refresh failure retains its HTTP status when cached and replayed', async () => {
+	const c = id('0001132'), matches = [{cve:{id:c}}], providers = require('../lib/providers');
+	const fetcher = async () => Response.json({vulnerabilities:[{cve:record(c)}]}, {headers:{'x-fad-proxy':'stale','x-fad-proxy-reason':'refresh-failed','x-fad-proxy-refresh-status':'429'}});
+	providers.configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher,proxyRateLimitMaxWaitMs:0});
+	try {
+		await N.enrichMatches(matches,{fetcher,hasKey:true,onProgress:()=>{}});
+		assert.deepEqual(matches[0].cve.nvdRecordEvidence,{status:'available',stale:true,reason:'HTTP 429',refreshFailed:true});
+		const offline = [{cve:{id:c}}];
+		await N.enrichMatches(offline,{offline:true,onProgress:()=>{}});
+		assert.deepEqual(offline[0].cve.nvdRecordEvidence,{status:'available',stale:true,reason:'HTTP 429',refreshFailed:true});
+	} finally { providers.configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null,proxyRateLimitMaxWaitMs:null}); }
+});
+
 test("a definitive NVD 404 is an answer: the mirror is never asked", async () => {
 	const c = id("0000102");
 	const f = fakeFetcher(res(404, {}), () => { throw new Error("mirror must not be called"); });

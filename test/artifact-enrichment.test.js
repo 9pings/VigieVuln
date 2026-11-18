@@ -20,6 +20,14 @@ test('NVD evidence tracks every explicit upstream CVE separately',async()=>{
  const result=await enrichArtifactFindings([match],{offline:true,enrich:['nvd']});assert.equal(result.coverage[0].execution,'completed');assert.deepEqual(match.cve.nvdEvidence.records.map(x=>x.id),['CVE-2024-12345','CVE-2024-56789']);
  }finally{nvd.enrichMatches=original;}
 });
+test('NVD record status is preserved per explicit CVE identity',async()=>{
+ const nvd=require('../lib/nvd'),original=nvd.enrichMatches;
+ try {nvd.enrichMatches=async copies=>{for(const x of copies){x.cve.nvdRecordEvidence={status:x.cve.id.endsWith('12345')?'available':'unavailable'};if(x.cve.id.endsWith('12345'))x.source='nvd';}};
+ const match={cve:{id:'DIST-1',upstream:['CVE-2024-12345','CVE-2024-56789']}};
+ await enrichArtifactFindings([match],{offline:true,enrich:['nvd']});
+ assert.deepEqual(match.cve.cveEvidence.map(x=>[x.id,x.nvdRecordEvidence.status]),[['CVE-2024-12345','available'],['CVE-2024-56789','unavailable']]);
+ }finally{nvd.enrichMatches=original;}
+});
 test('source profiles cannot invoke disabled enrichment adapters',async()=>{
  const {enrichArtifactFindings}=require('../lib/artifacts/enrichment');let invoked=false;
  const result=await enrichArtifactFindings([{cve:{id:'CVE-2024-12345'}}],{enrich:['kev'],kev:false,enrichmentAdapters:[{id:'kev',run:async()=>{invoked=true;return {complete:true};}}]});

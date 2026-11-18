@@ -2,6 +2,12 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {acquireInventories,assessInventories,incompleteCapabilities}=require('../lib/artifacts/scan');
 const {importSystemAdvisories}=require('../lib/system-inventory');
+test('non-blocking record enrichment does not hide true image coverage gaps',()=>{
+ const result={artifacts:[{id:'image',coverage:[{capability:'inventory',execution:'completed'},{capability:'advisories',execution:'completed'},{capability:'inventory',execution:'partial',affectsCompleteness:false}]}],warnings:[{type:'source-unavailable',artifactTargetId:'image',affectsCompleteness:false}]};
+ assert.deepEqual(incompleteCapabilities(result),[]);
+ result.warnings.push({type:'source-unavailable',artifactTargetId:'image',message:'OSV discovery failed'});
+ assert.deepEqual(incompleteCapabilities(result),[{target:'image',capability:'sources'}]);
+});
 function write(root,p,body){const file=path.join(root,p);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
 test('rootfs uses offline scoped advisory snapshots and package ownership',async t=>{
  const work=fs.mkdtempSync(path.join(os.tmpdir(),'vv-image-scan-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(work,{recursive:true,force:true});});const root=path.join(work,'root'),cacheDir=path.join(work,'cache');
@@ -15,6 +21,10 @@ test('rootfs uses offline scoped advisory snapshots and package ownership',async
  const npm=targets[0].deps.find(x=>x.ecosystem==='npm');assert.equal(npm.osPackageOwners[0].name,'libfoo');assert.equal(JSON.stringify(targets).includes(root),false);
  const result=await assessInventories(targets,{offline:true,cacheDir,fetcher:()=>{throw Error('network called');}});
  assert.equal(result.cveMatches.length,1);const match=result.cveMatches[0];assert.equal(match.cve.id,'CVE-2024-12345');assert.ok(result.resolvedDeps.has(match.dep.coordKey));assert.equal(match.dep.manager,'dpkg');
+ const repeated=await assessInventories([targets[0],{...targets[0],id:'second-image'}],{offline:true,cacheDir,fetcher:()=>{throw Error('network called');}});
+ const summaries=repeated.warnings.filter(w=>w.type==='cve-enrichment-summary');assert.equal(summaries.length,1);assert.equal(summaries[0].records.length,1);assert.equal(summaries[0].affectsCompleteness,false);
+ assert.ok(repeated.artifacts.every(a=>a.coverage.filter(c=>['nvd','euvd','euvd-details'].includes(c.collector)).every(c=>c.affectsCompleteness===false)));
+ assert.ok(!repeated.warnings.some(w=>['nvd','euvd','euvd-details'].includes(w.source)));
  const missing=await assessInventories(targets,{offline:true,cacheDir:path.join(work,'empty')});assert.ok(incompleteCapabilities(missing).some(x=>x.capability==='advisories'));assert.ok(missing.warnings.some(x=>/No offline system advisory/.test(x.message)));
 });
 test('system package coordinates retain distinct architectures and versions',()=>{

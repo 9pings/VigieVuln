@@ -26,12 +26,14 @@ test('native absence observations count as consultations; an unprepared source r
  const result=await prepareNativeSources(deps(),opts);
  assert.equal(result.coverage[0].execution,'completed');assert.equal(result.coverage[0].scope,'consulted-packages');assert.equal(result.coverage[0].issue,null);
 });
-test('undecidable native comparison remains incomplete coverage and informational context',async t=>{
+test('undecidable native comparison remains indeterminate without a source retrieval gap',async t=>{
  const {store,cacheDir}=fixture(t),raw={cveMetadata:{cveId:'CVE-2024-33333',state:'PUBLISHED'},containers:{cna:{affected:[{packageURL:'pkg:npm/demo',versions:[{version:'1.0.0',status:'affected'}]}]},adp:[{affected:[{packageURL:'pkg:npm/demo',versions:[{version:'1.0.0',status:'unaffected'}]}]}]}};
  store.commit({records:[require('../lib/native-advisories').cveEnvelope(raw,{fetchedAt:Date.now()})]});
  const dep={ecosystem:'npm',name:'demo',version:'1.0.0',coordKey:'demo',artifactTargetId:'image'},target={id:'image',kind:'rootfs',metadata:{},distribution:null,packages:[],deps:[dep],warnings:[],coverage:[]};
  const result=await assessInventories([target],{cacheDir,offline:true,osv:false,disableGcve:true,enrich:[]});
  assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='native-comparisons').result,'indeterminate');
+ assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='native-comparisons').affectsCompleteness,false);
+ assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='native-comparisons').affectsAssessment,true);
  assert.ok(result.notices.some(w=>/undecidable/.test(w.message)));assert.ok(!result.warnings.some(w=>/undecidable|native-comparisons/.test(w.message)));
 });
 test('explicitly excluded image advisory sources produce neither alerts nor failed coverage gates',async t=>{

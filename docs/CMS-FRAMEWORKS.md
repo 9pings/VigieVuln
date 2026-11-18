@@ -1,11 +1,9 @@
 # CMS & frameworks — the instance view
 
-Most scanners read a WordPress or Drupal site the way they read any other directory: as a
-bunch of lockfiles. vigievuln inventories the **instance** — the CMS or framework as a
-product with a version, its plugins, themes, bundles, extensions and framework components —
-attributes every dependency CVE to the component that actually ships it, and reports each
-instance in its own sub-chapter. This guide is the reference for that view; every flag it
-mentions also lives in [`USAGE.md`](USAGE.md).
+VigieVuln inventories supported CMS and framework instances, their components and
+attributable dependency findings. Each instance has its own report section, with
+coverage and unresolved ownership shown separately. See [`USAGE.md`](USAGE.md) for
+commands and options.
 
 ## What gets detected, and how
 
@@ -41,8 +39,8 @@ instances keeps its own origins in each.
 
 **Private/custom components** (a plugin with a third-party `Update URI`, a module under
 `modules/custom/`, anything you declare with `--private-component`) are inventoried
-separately, their dependency CVEs stay in their own report group, and they are **never sent
-to any publisher feed**. A component with a public catalogue identity can be declared with
+separately, their dependency CVEs stay in their own report group, and their private identities are not sent
+to publisher feeds. Public dependencies can still be queried through dependency sources. A component with a public catalogue identity can be declared with
 `--public-component <relative-path>=<slug>`.
 
 ## Advisory lanes, per product
@@ -54,12 +52,11 @@ to any publisher feed**. A component with a public catalogue identity can be dec
 | **Drupal** | **packages.drupal.org** per-package security advisories (`--drupal-advisories[-live]`) | queried for exactly the inventoried **public** `drupal/*` identities; `--max-advisory-age` bounds snapshot age |
 | **PrestaShop** | the publisher's **GitHub security-advisories** feed (`--prestashop-advisories[-live]`) | whole-repository feed, range grammar normalized in the lane |
 | **TYPO3** | the publisher's **GitHub security-advisories** feed (`--typo3-advisories[-live]`) | same mechanism |
-| **SPIP** | **NVD product CVEs** for the core (`cpe:2.3:a:spip:spip`, `--spip-advisories[-live]`) | SPIP has no publisher API and no package ecosystem (not on Packagist, no GHSA — hosted on git.spip.net); NVD's versioned CPE is the one machine-readable source. SPIP *plugins* have no advisory source at all — their rows stay `not-run / CMS_ADVISORY_NOT_QUALIFIED`. The optional NVD API key only lifts the rate limit |
+| **SPIP** | **NVD product CVEs** for the core (`cpe:2.3:a:spip:spip`, `--spip-advisories[-live]`) | The NVD lane covers the core; SPIP plugins have no dedicated advisory lane and stay `not-run / CMS_ADVISORY_NOT_QUALIFIED`. The NVD API key is optional |
 | **Symfony / Laravel** | **the dependency lanes** (OSV.dev, Packagist security-advisories, NVD) | this implementation uses Composer dependency sources; the `dependency-lanes` coverage row currently has the execution-proof limitation described below |
 | **Joomla / Magento** | **per component** | this implementation has no dedicated publisher lane; Composer components use dependency sources (subject to the coverage limitation below), while source-only extensions retain `not-run / CMS_ADVISORY_NOT_QUALIFIED` |
 
-A publisher constat the standard Composer lane already found **merges** into that finding
-with the union of its sources instead of duplicating it.
+A publisher advisory and a Composer finding for the same issue are merged with their source evidence.
 
 ## Coverage and its current limits
 
@@ -81,8 +78,8 @@ source results until execution is recorded per package/version.
   inventoried: an instance synthesis (observed version, direct/indirect counts, worst
   priority, aggregated coverage), then per-instance CVE groups split Direct / Indirect /
   Private, with cross-references for shared occurrences. A **zero-finding instance keeps
-  its chapter** — the synthesis and coverage always render, so "detected and clean" is a
-  stated result; only the CVE tables wait for findings.
+  its chapter** with inventory and coverage. No findings do not prove a clean installation;
+  review incomplete checks and activation evidence.
 - **Application inventory & coverage chapter** — every inventoried component with its
   version and evidence path, and the per-source coverage table.
 - **Overview chart** — `Most vulnerable instances` ranks exposed instances by
@@ -90,8 +87,8 @@ source results until execution is recorded per package/version.
 
 ## The air-gapped workflow
 
-The publisher lanes are the only data an anonymized dependency descriptor cannot carry by
-itself — so it carries what they need:
+An anonymized dependency descriptor includes the public application identities needed
+to prepare supported publisher snapshots:
 
 1. **Phase 1 (offline)** — `--export-anonymized` writes the public coordinates *and* the
    application identities: type, core version, and the inventoried **public** component
@@ -114,10 +111,4 @@ itself — so it carries what they need:
    to operator-supplied ones. Provenance follows the data: an auto-consumed snapshot
    reports `completeness: "tool-fetched"` with its stamp's `collectedAt` and source URL.
 
-## Where the code lives
-
-`lib/application-plugins/` (one plugin per product, `runner.js` for selection, validation
-and the offline fallback), `lib/application-providers/` (publisher clients and evaluators,
-`live-snapshot.js` for fetch/stamp/cache), `lib/application-inventory.js` (attribution),
-`lib/cms-snapshot-warm.js` (phase-2 warming), `lib/deps-descriptor.js` (the `applications`
-section of `fad-deps/1`).
+For the implementation and evidence model, see [Architecture](ARCHITECTURE.md).

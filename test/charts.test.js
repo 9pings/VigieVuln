@@ -399,7 +399,7 @@ test('synthetic mixed scan merges repeated physical finding IDs across proved ow
  const modules=mostVulnerableComponents([moduleA,moduleA,moduleB],opts.moduleNames,{topN:20});
  assert.equal(modules.reduce((sum,r)=>sum+r.total,0),2);
  const html=renderCharts({prodMatches:[appA,appB,moduleA,moduleB,image,stray],...opts,descriptorCount:2});
- assert.equal((html.match(/class="chart-card"/g)||[]).length,4);
+ assert.equal((html.match(/class="chart-card"/g)||[]).length,8);
  assert.match(html,/Findings per component/);assert.match(html,/test-image/);assert.match(html,/Shared: app-a, app-b/);assert.match(html,/Shared: One, Two/);assert.match(html,/Unattributed/);
 });
 
@@ -407,6 +407,21 @@ test('image-only charts include a real severity chart rather than an inapplicabl
  const html=renderCharts({prodMatches:[{dep:{artifactTargetId:'a'},cve:{severity:'HIGH'}}],artifacts:[{id:'a',metadata:{source:'sample'}}]});
  assert.equal((html.match(/class="chart-card"/g)||[]).length,4);
  assert.match(html,/Findings by severity/);assert.doesNotMatch(html,/Not applicable to image findings/);
+});
+
+test('source and image charts remain separate, including an empty image scan',()=>{
+ const source={dep:{scope:'direct',manifestPaths:['source/pom.xml']},cve:{id:'CVE-2099-1000',severity:'HIGH',cwes:['CWE-79']}};
+ const image={dep:{artifactTargetId:'image',scope:'direct'},cve:{id:'CVE-2099-1000',severity:'CRITICAL',cwes:['CWE-89']}};
+ const opts={prodMatches:[source,image],artifacts:[{id:'image',metadata:{source:'isolated-image'}}]};
+ const html=renderCharts(opts), split=html.indexOf('aria-label="Image overview charts"');
+ assert.ok(split>0);const sourceRow=html.slice(0,split), imageRow=html.slice(split);
+ assert.match(sourceRow,/<h2 class="charts-heading">Project overview<\/h2>/);
+ assert.match(sourceRow,/<h2 class="charts-heading">Image overview<\/h2>/);
+ assert.match(sourceRow,/CWE-79/);assert.doesNotMatch(sourceRow,/CWE-89|isolated-image/);
+ assert.match(imageRow,/CWE-89/);assert.doesNotMatch(imageRow,/CWE-79/);
+ const empty=renderCharts({...opts,prodMatches:[source]});
+ assert.match(empty,/aria-label="Image overview charts"/);assert.match(empty,/id="image-chart-image-severity"/);
+ assert.match(empty.slice(empty.indexOf('aria-label="Image overview charts"')),/No production CVE/);
 });
 
 test('CWE chart labels folded categories with the readable remainder, not an internal key',()=>{

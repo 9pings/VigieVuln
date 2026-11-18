@@ -846,8 +846,8 @@ if (!options.offline) {
  * Provider outages are coverage warnings by default. Write the partial reports before
  * evaluating an explicitly requested --fail-on-incomplete gate.
  */
-function warnIfDegraded() {
-	const bad = sourceHealth.degraded();
+function warnIfDegraded(handledKeys = []) {
+	const bad = sourceHealth.unreportedOutages(handledKeys);
 	if (!bad.length) return;
 	ui.warn(`Sources unavailable: ${bad.map(s => s.id).join(", ")}; report coverage is incomplete.`);
 }
@@ -1822,6 +1822,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// 1. CVE — native scanner contributed by the maven codec (local cvelistV5 index).
 	let cveMatches = [];
 	const sourceConsultations = [];
+	const undecidableAdvisories = [];
 	let cveDataDate = null;
 	if (willCve) {
 		const st = progress.start("CVE index (CVEProject)");
@@ -1853,14 +1854,14 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			if (!offline && !options.cveOffline && require('./lib/providers').hasHostedProxy()) {
 				try {
 					const status=await require('./lib/cve-npm-proxy').refreshNpmCves(resolved,cveStore,{ttlMs:options.advisoryQueryTtlMs});
-					if(status.incomplete)scanWarnings.push({type:'source-unavailable',message:'CVEProject: the npm proxy index is partial or stale; advisory coverage is incomplete.'});
+					if(status.incomplete)noteSourceLimitation('CVEProject','Available npm proxy records were assessed; the response does not certify an exhaustive, current catalogue.');
 				} catch (err) {scanWarnings.push({type:'source-unavailable',message:`CVEProject npm proxy: ${err.message}; cached records are still matched.`});}
 			}
 			const npmCves = require('./lib/native-advisories').matchNativeNpmCves(resolved, cveStore);
 			cveMatches = require('./lib/merge-sources').mergeBySource(cveMatches, npmCves.matches);
-			if (npmCves.unknown.length) scanWarnings.push({type:'source-unavailable',message:`CVEProject: ${npmCves.unknown.length} npm package/version comparison(s) are undecidable; advisory coverage is incomplete.`});
+			undecidableAdvisories.push(...npmCves.unknown);
 			const npmNames=require('./lib/cve-npm-proxy').packageNames(resolved);
-			if (!cveStore.getSourceCoverage('cveproject','*')?.complete && npmNames.some(name=>{const q=cveStore.getQuery({source:'cveproject',ecosystem:'npm',name,version:'*'},{ttlMs:options.advisoryQueryTtlMs});return !q || q.provenance?.stale || (!(offline || options.cveOffline) && !q.fresh);})) scanWarnings.push({type:'source-unavailable',message:'CVEProject: native npm advisory coverage is incomplete; records absent from OSV may be missing.'});
+			if (!cveStore.getSourceCoverage('cveproject','*')?.complete && npmNames.some(name=>{const q=cveStore.getQuery({source:'cveproject',ecosystem:'npm',name,version:'*'},{ttlMs:options.advisoryQueryTtlMs});return !q || q.provenance?.stale || (!(offline || options.cveOffline) && !q.fresh);})) noteSourceLimitation('CVEProject','Available native npm records were assessed; this dataset does not certify an exhaustive catalogue.');
 		} catch (err) { scanWarnings.push({type:'source-unavailable',message:`CVEProject npm: ${err.message}; advisory coverage is incomplete.`}); }
 	}
 
@@ -2064,7 +2065,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			const unindexed = result.coverage.reduce((n,c)=>n+(c.unindexed || 0),0);
 			if (!result.sourceCoverage?.complete || (index && (!index.directory?.verified || !result.coverage.length || result.coverage.some(c=>!c.complete) || skipped || unindexed)))
 				noteSourceLimitation('GCVE',`Partial source coverage: ${skipped ?? 'unknown'} GNA source(s) not collected; ${unindexed} source records lack explicit package coordinates. These records are not necessarily relevant to this project.`);
-			if (result.unknown.length) scanWarnings.push({type:'source-unavailable',message:`GCVE: ${result.unknown.length} package/version comparison(s) are undecidable; advisory coverage is incomplete.`});
+			undecidableAdvisories.push(...result.unknown);
 			st.done(`${result.matches.length} matched · +${cveMatches.length-before} new`);
 		} catch (err) {
 			st.fail(err.message);
@@ -2092,7 +2093,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			}
 			const native = require('./lib/native-advisories').matchNativePackages(resolved,cveStore,{sources});
 			cveMatches = mergeBySource(cveMatches,native.matches);
-			if (native.unknown.length) scanWarnings.push({type:'source-unavailable',severity:'info',message:`Native advisories: ${native.unknown.length} package/version comparison(s) are undecidable; coverage is incomplete.`});
+			undecidableAdvisories.push(...native.unknown);
 		} catch (err) { scanWarnings.push({type:'source-unavailable',message:`Native advisories: ${err.message}; coverage is incomplete.`}); }
 	}
 
@@ -2171,7 +2172,9 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				st.done(`${uniqueCves} CVE${nvdAdded ? ` · +${nvdAdded} via NVD ranges` : ""}${filtered ? ` · ${filtered} false-positive(s) filtered` : ""}${hasNvdKey || options.vigievulnProxy ? "" : " · no key (slow)"}`);
 			} catch (err) {
 				st.fail(err.message);
-				scanWarnings.push({type:'source-unavailable',message:`NVD: ${err.message}; enrichment and additional version-range coverage are incomplete.`});
+				scanWarnings.push(nvdBindings.length || options.nvdCpeMatch
+					? {type:'source-unavailable',message:`NVD: ${err.message}; additional version-range coverage is incomplete.`}
+					: {type:'cve-record-source',source:'nvd',affectsCompleteness:false,message:err.message});
 			}
 		}
 	}
@@ -2306,12 +2309,13 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				europeanAdapters:[adapter,...europeanAdapters.filter(a=>a.parent===adapter.id)],
 				onEnrichmentProgress:event=>st?.tick(`${event.source} ${event.completed}/${event.total}`),
 			});
-			sourceConsultations.push(...result.coverage);
-			scanWarnings.push(...result.warnings);
+			const recordEnrichment = adapter.id === 'euvd';
+			sourceConsultations.push(...result.coverage.map(c => ({...c,...(recordEnrichment?{affectsCompleteness:false,diagnostics:result.warnings.filter(w=>w.source===c.collector)}:{})})));
+			if (!recordEnrichment) scanWarnings.push(...result.warnings);
 			const status = result.coverage[0];
 			if (status?.execution === 'not-applicable') st?.skip('no CVE');
 			else if (status?.execution === 'failed') st?.fail(status.reason);
-			else st?.done(`${status?.count || 0} CVE(s) enriched${status?.execution === 'partial' ? ' · incomplete coverage' : ''}`);
+			else st?.done(`${status?.count || 0} CVE(s) enriched${status?.execution === 'partial' ? (recordEnrichment ? ' · some enrichment unavailable' : ' · incomplete coverage') : ''}`);
 		}
 	}
 
@@ -2533,8 +2537,18 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		if (retireMatches.length > 8) console.log(chalk.dim(`    …and ${retireMatches.length - 8} more`));
 	}
 
+	if (undecidableAdvisories.length) scanWarnings.push(require('./lib/diagnostics').advisoryEvidenceDiagnostic(undecidableAdvisories));
 	const durableIssues = require('./lib/package-versions').drainIssues();
 	if (durableIssues.length) scanWarnings.push({type:'source-unavailable', message:`${durableIssues.length} package version observation(s) are conflicting or invalid; dependency coverage may be incomplete.`,items:durableIssues});
+	// Reconcile source and image enrichment by CVE identity, once for the whole scan.
+	const recordSummary = require('./lib/cve-record-coverage').summarizeCveRecords([...cveMatches, ...retireMatches], {
+		...options, nvd:willNvd, euvd:willEuvd, offline,
+		coverage:[...sourceConsultations,...imageState.artifacts.flatMap(a=>a.coverage||[])],
+	});
+	const enrichmentRequestKeys = recordSummary.requestKeys;
+	scanWarnings = scanWarnings.filter(w=>w.type!=='cve-enrichment-summary' && w.type!=='cve-record-source');
+	if (recordSummary.warning) scanWarnings.push(recordSummary.warning);
+	sourceConsultations.push(recordSummary.coverage);
 	{ const split=require('./lib/diagnostics').partitionDiagnostics(scanWarnings); scanWarnings=split.warnings; scanNotices.push(...split.notices); }
 	if (scanWarnings.length) {
 		console.log();
@@ -2633,9 +2647,9 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 
 	const reportWarnings = [
 		...triageWarnings,
-		...sourceHealth.unreportedOutages(scanWarnings.flatMap(w=>w.requestKeys||[])).map(s => ({type:"source-unavailable",count:1,
+		...sourceHealth.unreportedOutages([...enrichmentRequestKeys,...scanWarnings.flatMap(w=>w.requestKeys||[])]).map(s => ({type:"source-unavailable",count:1,
 			message:`${s.id}: requested source data could not be retrieved (${s.codes.join(", ") || "no response"}).`})),
-		...sourceHealth.unreportedStale(scanWarnings.flatMap(w=>w.requestKeys||[])).map(s => ({ type:"source-stale", count:1,...(!s.blocking?{severity:'info'}:{}),...(s.refreshFailure?{refreshFailure:s.refreshFailure}:{}),
+		...sourceHealth.unreportedStale([...enrichmentRequestKeys,...scanWarnings.flatMap(w=>w.requestKeys||[])]).map(s => ({ type:"source-stale", count:1,...(!s.blocking?{severity:'info'}:{}),...(s.refreshFailure?{refreshFailure:s.refreshFailure}:{}),
 			message:s.blocking ? `${s.id}: source refresh failed${s.refreshFailure ? ` (${s.refreshFailure.cause}, HTTP ${s.refreshFailure.status}${s.refreshFailure.retryAfterSeconds!=null?`, retry after ${s.refreshFailure.retryAfterSeconds}s`:''})` : ''}; cached data${s.at ? ` from ${new Date(s.at).toISOString()}` : " of unknown age"} was used. Coverage may be incomplete.` : `${s.id}: cached data${s.at ? ` from ${new Date(s.at).toISOString()}` : " of unknown age"} was used; freshness was not confirmed.` })),
 		// A project already on a vendor build of an open-source-EOL cycle: covered by the paid
 		// support that build comes from, so it is a note, not an EOL finding.
@@ -2750,7 +2764,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const wrote = [];
 	let exportFailed = false;
 	// Announce coverage gaps for every output combination, including JSON-only.
-	warnIfDegraded();
+	warnIfDegraded(enrichmentRequestKeys);
 	for (const [format, label] of [["html", "HTML report"], ["doc", "Word .doc"]]) {
 		if (!out[format]) continue;
 		try {
@@ -2883,7 +2897,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		if (!required.length || required.some(x => !known.has(x))) {
 			console.error(chalk.red(`❌  invalid --fail-on-incomplete capabilities: ${raw}`));
 			process.exitCode = 2;
-		} else if (imageAcquisitionFailed || require("./lib/artifacts/scan").incompleteCapabilities(imageState,required).length || ((required.includes("inventory") || required.includes("sources")) && (mavenDepthLimited || reportWarnings.some(w => w.type === "dependency-coverage" || w.type === "go-coverage"))) || (required.includes("sources") && (sourceHealth.degraded().length || sourceHealth.stale().some(s=>s.blocking) || reportWarnings.some(w => w.type === "source-unavailable" || w.type === "source-stale" || w.type === "osv-coverage"))) || !requiredCoverageComplete(appState.coverage, required.filter(x => x !== "sources"))) {
+		} else if (imageAcquisitionFailed || require("./lib/artifacts/scan").incompleteCapabilities(imageState,required).length || ((required.includes("inventory") || required.includes("sources")) && (mavenDepthLimited || reportWarnings.some(w => w.type === "dependency-coverage" || w.type === "go-coverage"))) || (required.includes("sources") && (sourceHealth.unreportedOutages(enrichmentRequestKeys).length || sourceHealth.unreportedStale(enrichmentRequestKeys).some(s=>s.blocking) || reportWarnings.some(w => w.affectsCompleteness !== false && (w.type === "source-unavailable" || w.type === "source-stale" || w.type === "osv-coverage")))) || !requiredCoverageComplete(appState.coverage, required.filter(x => x !== "sources"))) {
 			ui.section("Coverage gate");
 			console.log(chalk.red(`✗ required scan checks incomplete: ${required.join(", ")}`));
 			process.exitCode = 2;

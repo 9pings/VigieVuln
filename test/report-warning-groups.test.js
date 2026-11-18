@@ -10,8 +10,9 @@ test('warning groups retain locations and distinguish sources and HTTP causes',(
   {type:'source-unavailable',source:'osv',message:'HTTP 503'},
   {type:'source-unavailable',source:'euvd',message:'HTTP 503'}];
  const grouped=groupReportWarnings(warnings);
- assert.equal(grouped.length,4);assert.equal(grouped[0].count,2);
- assert.deepEqual(grouped[0].items.map(x=>x.id),['/project/a.yml','/project/b.yml']);
+ assert.equal(grouped.length,3);const images=grouped.find(w=>w.type==='image-source-unavailable');
+ assert.deepEqual(images.items.map(x=>x.id),['/project/a.yml','/project/b.yml','']);
+ assert.ok(images.items.some(x=>/Authentication required/.test(x.detail)));
  assert.deepEqual(groupReportWarnings(grouped),grouped);
  assert.equal(warnings[0].count,undefined);
 });
@@ -22,7 +23,7 @@ test('HTML and Word collapse repeated alerts without dropping locations or expos
  const input={cveMatches:[],eolResults:[],obsoleteResults:[],outdatedResults:[],resolvedDeps:new Map(),projectInfo:{name:'fixture',src:'/project'},warnings};
  for(const render of [generateHtmlReport,generateWordReport]){
   const html=render(input);
-  assert.equal((html.match(/class="warn-block warn-image-scan-failed"/g)||[]).length,1);
+  assert.equal((html.match(/class="warn-block warn-image-source-unavailable"/g)||[]).length,1);
   if(render===generateHtmlReport)assert.match(html,/<details class="warning-details">/);
   assert.match(html,/module-59\/compose.yml/);
   assert.doesNotMatch(html,/\/project\/module-/);
@@ -40,5 +41,5 @@ test('one source outage across images keeps every affected image in the grouped 
  const html=generateHtmlReport({cveMatches:[],eolResults:[],obsoleteResults:[],outdatedResults:[],resolvedDeps:new Map(),projectInfo,warnings});
  const alerts=html.slice(html.indexOf('class="warnings warnings-chapter"'),html.indexOf('class="warnings warnings-chapter"')+2000);
  assert.match(alerts,/registry.example\/app-0:1/);assert.match(alerts,/registry.example\/app-1:1/);
- assert.equal((alerts.match(/class="warn-block warn-source-unavailable"/g)||[]).length,1);
+ assert.equal((alerts.match(/class="warn-block warn-image-source-unavailable"/g)||[]).length,1);
 });

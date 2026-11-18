@@ -167,6 +167,17 @@ test("findings JSON summary includes source and dependency coverage uncertainty"
 	assert.equal(doc.warnings.length, 4);
 });
 
+test("non-blocking enrichment diagnostics stay visible without counting as coverage gaps", () => {
+	const warning = {type:'cve-enrichment-summary',severity:'warning',affectsCompleteness:false,message:'Record details unavailable'};
+	const doc = buildFindings({ warnings:[warning], projectInfo:{artifacts:[{id:'image',coverage:[
+		{capability:'sources',collector:'nvd',execution:'partial',affectsCompleteness:false},
+		{capability:'inventory',collector:'dpkg',execution:'completed'},
+	]}]} });
+	assert.deepEqual(doc.warnings,[warning]);
+	assert.equal(doc.summary.coverageWarnings,0);
+	assert.equal(doc.summary.coverageIncomplete,0);
+});
+
 test("findings JSON retains physical finding ID and proven private-plugin ownership", () => {
 	const match = { findingId: "fad-cve-copy-a", applicationIds: ["wordpress:site"],
 		ownerComponentIds: ["wordpress:site:plugin:acme"], applicationRelation: "indirect",

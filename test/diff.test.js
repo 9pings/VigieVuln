@@ -219,6 +219,15 @@ test('an unavailable baseline source cannot prove a later finding is new', () =>
  assert.equal(d.cve.added.length,0);assert.equal(d.cve.unassessedAdded.length,1);assert.equal(newProductionCveCount(d),0);
 });
 
+test('a non-blocking record enrichment warning does not make baseline findings unassessed', () => {
+ const warning={type:'source-unavailable',severity:'warning',affectsCompleteness:false,message:'CVE record refresh failed'};
+ const previous={...doc([cve('CVE-2026-1234','g:a','1')]),warnings:[]};
+ const current={...doc([]),warnings:[warning]};
+ const diff=diffFindings(previous,current);
+ assert.equal(diff.cve.removed.length,1);
+ assert.equal(diff.cve.unassessed.length,0);
+});
+
 test('a multi-CVE advisory is not an alias of each individual CVE', () => {
  const multi={...cve('DLA-1','x','1'),aliases:['CVE-2026-1000','CVE-2026-1001']};
  const single=cve('CVE-2026-1000','x','1');

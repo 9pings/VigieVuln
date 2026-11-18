@@ -1,17 +1,31 @@
-# Release validation — 1.3.0 · 17 November 2026
+# Validate a CLI change
 
-| Check | Result |
-| --- | --- |
-| Local Linux suite, Node 24 | 2,415 passed, 13 skipped, zero failures |
-| Isolated Docker suite, no network or sibling server | 2,410 passed, 18 skipped, zero failures |
-| GitHub CI | Linux Node 22/24 and Windows Node 22 passed |
-| External applications | Four fixed releases compared with native Maven, Gradle and Python inventories; see [benchmark](BENCHMARK.md) |
-| Reports | HTML rendered without JavaScript errors or horizontal overflow; checked CycloneDX exports had no duplicate/orphan references or missing finding links |
-| Packaging | Installed npm archive and offline CLI smoke checks passed; release build and Pages deployment passed |
+Run from the CLI repository with a supported Node.js version:
 
-Skip counts depend on platform and available integration targets. A successful
-cold-cache smoke scan checks execution, not vulnerability coverage.
+```bash
+npm ci
+npm test
+npm run pack:release
+npm pack --dry-run
+```
 
-For measured inventory limits and advisory comparisons, see the
-[benchmark](BENCHMARK.md) and [evidence](benchmark-evidence/2026-11-17/README.md).
-Reproduction: [release checks](RELEASING.md).
+The ordinary suite uses fixtures and fake providers. Optional integrations require
+an explicit environment setting or the separate server checkout; skipped tests are
+reported. See [contributing](../CONTRIBUTING.md) for targeted and live tests.
+
+For report changes, render source-only, image-only and mixed inputs in HTML and
+Word. Check counts, ownership, links, chart separation, narrow-screen layout and
+browser errors. Compare JSON/SBOM identities and finding links with the inventories.
+
+For matching changes, compare a pinned public application's inventory with its
+native package manager before comparing findings with another scanner. Verify
+selected positive and negative version boundaries against publisher evidence.
+Record tool versions, source profiles, database dates and exact input revisions.
+
+An offline test needs a prepared cache and a network-disabled environment. Verify
+that absent data stays distinguishable from an unaffected verdict, and that strict
+coverage gates retain actual retrieval failures. A successful cold-cache run alone
+does not validate vulnerability coverage.
+
+[Source benchmarks](BENCHMARK.md) · [Image benchmarks](BENCHMARK-IMAGES.md) ·
+[Release procedure](RELEASING.md)

@@ -48,7 +48,7 @@
       <div class="license-badge"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg> APACHE 2.0 · ZERO BUILD</div>
       <div class="hero-tags" aria-label="Supported ecosystems"><span>Maven</span><span>Gradle</span><span>npm</span><span>pnpm</span><span>Composer</span><span>PyPI</span><span>NuGet</span><span>Go</span><span>Ruby</span><span>CMS/Fmwk</span><span>Native bins</span></div>
       <h1 id="hero-title">Audit your<br>dependencies<span class="dot">.</span><span class="l2">No build required.</span></h1>
-      <p class="lead">VigieVuln 1.3.0 is a polyglot <b>CVE · EOL · outdated · license</b> scanner that reads your source tree directly — no mvn, no npm install, no Docker. Findings merged from <b>CVEProject, OSV, Packagist, NVD &amp; retire.js</b>, prioritised with <b>EPSS + CISA KEV</b>, an <b>HTML + findings JSON</b> report with optional <b>Word, CycloneDX SBOM</b> and <b>CSAF VEX</b>, and an air-gapped mode for confidential code.</p>
+      <p class="lead">VigieVuln 1.3.1 is a polyglot <b>CVE · EOL · outdated · license</b> scanner that reads your source tree directly — no mvn, no npm install, no Docker. Findings merged from <b>CVEProject, OSV, Packagist, NVD &amp; retire.js</b>, prioritised with <b>EPSS + CISA KEV</b>, an <b>HTML + findings JSON</b> report with optional <b>Word, CycloneDX SBOM</b> and <b>CSAF VEX</b>, and an air-gapped mode for confidential code.</p>
       <div class="cta">
         <a class="btn primary" href="#start"><svg class="icon " aria-hidden="true"><use href="#i-code"></use></svg>get started<svg class="icon " aria-hidden="true"><use href="#i-arrow"></use></svg></a>
         <a class="btn ghost" href="https://github.com/9pings/VigieVuln"><svg class="icon " aria-hidden="true"><use href="#i-github"></use></svg>Star on GitHub</a>
@@ -255,7 +255,26 @@ vigievuln logout</pre></div>
     <div class="kicker">Comparison</div>
     <h2>Choose evidence for the task</h2>
     <p class="sub">VigieVuln scans source checkouts and, when requested, container images. Other scanners can complement it with different inventories and advisory sources. Results depend on the input, tool version, configuration and date.</p>
-    <p class="note">Image scans are opt-in in source scans via <span class="mono">--images</span>, or available through <span class="mono">vigievuln image</span>. Findings cover the contents and sources acquired. Compare the dated <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">source-project results</a> and <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK-IMAGES.md">image benchmarks</a> before drawing conclusions about a particular workflow.</p>
+    <p class="note">Scroll the table horizontally on smaller screens.</p>
+    <div class="tablewrap"><table>
+      <caption>Selected CLI capabilities · documentation checked 18 November 2026</caption>
+      <thead><tr><th scope="col">Capability</th><th scope="col">VigieVuln</th><th scope="col">OSV-Scanner</th><th scope="col">Trivy</th><th scope="col">Grype + Syft</th><th scope="col">OWASP Dependency-Check</th><th scope="col">Snyk OSS / Container</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Source dependencies</th><td>Manifests / locks; no build</td><td>Supported manifests / locks</td><td>Filesystem / repository scan</td><td>Directory via Syft catalogers</td><td>File analyzers / build integrations</td><td>OSS: supported manifests</td></tr>
+        <tr><th scope="row">Container images</th><td>Image command; source opt-in</td><td>Image command / archive</td><td>Image scan</td><td>Image via Syft</td><td>Not assessed</td><td>Container test</td></tr>
+        <tr><th scope="row">SBOM input</th><td>Image command: CycloneDX / SPDX</td><td>CycloneDX / SPDX</td><td>SBOM scan</td><td>CycloneDX / SPDX</td><td>Not assessed</td><td>SBOM test</td></tr>
+        <tr><th scope="row">SBOM output</th><td>CycloneDX 1.6</td><td>CycloneDX / SPDX¹</td><td>CycloneDX / SPDX</td><td>Syft: CycloneDX / SPDX</td><td>Not assessed</td><td>OSS: Enterprise²</td></tr>
+        <tr><th scope="row">Offline vulnerability scan</th><td>Prepared cache</td><td>Prepared OSV database</td><td>Prepared DB; offline flags</td><td>Prepared DB; update disabled³</td><td>Cached data; --noupdate⁴</td><td>Service-backed; exceptions vary</td></tr>
+        <tr><th scope="row">CMS instance inventory</th><td>Nine products; coverage varies</td><td>Not assessed</td><td>Not assessed</td><td>Not assessed</td><td>Not assessed</td><td>Not assessed</td></tr>
+        <tr><th scope="row">End-of-life context</th><td>Application frameworks; optional support data</td><td>Not assessed</td><td>OS distributions</td><td>OS distro warnings</td><td>Not assessed</td><td>Not assessed</td></tr>
+        <tr><th scope="row">License review</th><td>Optional registry / SPDX checks</td><td>--licenses; deps.dev</td><td>License scanner</td><td>Syft metadata; Grant policy</td><td>Not assessed</td><td>OSS license policies</td></tr>
+        <tr><th scope="row">Secrets / key material</th><td>Keys and certificates only</td><td>Not assessed</td><td>Secret scanner</td><td>Not assessed</td><td>Not assessed</td><td>Separate Snyk products</td></tr>
+        <tr><th scope="row">Reports</th><td>HTML, JSON; Word optional</td><td>HTML, JSON, SARIF</td><td>JSON, SARIF, templates</td><td>JSON, SARIF, templates</td><td>HTML, JSON, SARIF</td><td>JSON, SARIF</td></tr>
+        <tr><th scope="row">CI failure control</th><td>--fail-on / incomplete</td><td>Exit status / config</td><td>--exit-code</td><td>--fail-on</td><td>--failOnCVSS</td><td>OSS / Container thresholds</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">“Not assessed” is not a claim of absence. ¹ OSV-Scanner needs <span class="mono">--all-packages</span> for all SBOM packages. ² Snyk OSS SBOM generation requires Enterprise and internet; Container SBOM has separate conditions. ³ Grype requires a prepared DB and suitable update and age settings. ⁴ Dependency-Check requires prepared data and appropriate analyzer configuration. License, secret and key-material coverage differs by tool.</p>
+    <p class="note">Image scans are opt-in in source scans via <span class="mono">--images</span>, or available through <span class="mono">vigievuln image</span>. Findings cover the contents and sources acquired. See the <a href="https://github.com/9pings/VigieVuln/blob/main/docs/COMPARISON.md">comparison and primary sources</a> and <a href="https://github.com/9pings/VigieVuln/blob/main/docs/BENCHMARK-IMAGES.md">image benchmarks</a>.</p>
   </section>
 
   <!-- BENCHMARK -->
@@ -279,7 +298,7 @@ vigievuln logout</pre></div>
       <a class="doc" href="https://github.com/9pings/VigieVuln#readme"><div class="t">▸ README <span class="arr">↗</span></div><div class="d">Quick start, install, every supported manifest, the comparison table.</div></a>
       <a class="doc" href="https://github.com/9pings/VigieVuln/blob/main/docs/USAGE.md"><div class="t">▸ Usage <span class="arr">↗</span></div><div class="d">Every flag and workflow: ecosystems, offline/cache, NVD key, Snyk, recipes.</div></a>
       <a class="doc" href="https://github.com/9pings/VigieVuln/blob/main/docs/ARCHITECTURE.md"><div class="t">▸ Architecture <span class="arr">↗</span></div><div class="d">Codecs, the resolved-deps map, matching tiers, the report pipeline.</div></a>
-      <a class="doc" href="https://github.com/9pings/VigieVuln/blob/main/CHANGELOG.md"><div class="t">▸ Changelog <span class="arr">↗</span></div><div class="d">Release history and what changed in each version.</div></a>
+      <a class="doc" href="https://github.com/9pings/VigieVuln/blob/main/docs/IMAGES.md"><div class="t">▸ Container images <span class="arr">↗</span></div><div class="d">Opt-in image scans, supported inputs, offline preparation and report coverage.</div></a>
     </div>
   </section>
 

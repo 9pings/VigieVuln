@@ -24,6 +24,23 @@ test("the router builds a provider request for direct access", async () => {
 	assert.equal((await response.json()).id, nvdId);
 });
 
+test('direct source health identifies each lookup without hiding same-host SPIP discovery', async () => {
+	const {guardedFetch,createSourceHealth,REQUEST_KEY}=require('../lib/source-health');
+	const {failureKey}=require('../lib/providers/common');
+	const health=createSourceHealth();
+	const fetcher=guardedFetch({health,retries:0,fetch:async (_url,init)=>{
+		assert.equal(Object.getOwnPropertySymbols(init).includes(REQUEST_KEY),false);
+		return new Response('',{status:503});
+	}});
+	configureResourceRoute({proxyUrl:null,store:null,health,fetcher});
+	try {
+		await getResource('nvd','cve',{id:nvdId});
+		await assert.rejects(getResource('nvd','spip-advisories',{}),/HTTP 503/);
+		assert.equal(health.unreportedOutages([failureKey('nvd','cve',{id:nvdId})]).length,1);
+		assert.equal(health.unreportedOutages([failureKey('nvd','cve',{id:nvdId}),failureKey('nvd','spip-advisories',{})]).length,0);
+	} finally {configureResourceRoute({proxyUrl:null,store:null,health:null,fetcher:null});}
+});
+
 test('custom proxies receive the CLI version without adding it to direct requests', async () => {
 	const seen=[];
 	configureResourceRoute({proxyUrl:'https://internal.example',hosted:false,store:null,health:null,fetcher:async (url,init)=>{seen.push({url,headers:new Headers(init.headers)});return Response.json({});}});

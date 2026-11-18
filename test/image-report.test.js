@@ -214,3 +214,87 @@ test('registry-resolved source definitions appear with digest evidence and platf
   assert.doesNotMatch(detailsById(html,artifactAnchor(artifact.id)),locale==='fr'?/Aucune déclaration source associée n’est disponible/:/No matching source declaration is available/);
  }
 });
+
+test('source and image executive summaries and charts stay separate for the same finding',()=>{
+ const {payload}=fixture();
+ const source=payload.cveMatches[2],image=payload.cveMatches[0];
+ image.cve={...image.cve,id:'CVE-2099-2001',severity:'CRITICAL',cwes:['CWE-89']};
+ source.cve={...source.cve,severity:'HIGH',cwes:['CWE-79']};
+ image.findingId=source.findingId='same-finding';
+ image.dep={...image.dep,ecosystem:source.dep.ecosystem,groupId:source.dep.groupId,artifactId:source.dep.artifactId,version:source.dep.version,coordKey:source.dep.coordKey};
+ payload.cveMatches=[source,image];
+ for(const render of [generateHtmlReport,generateWordReport]) {
+  const html=render(payload), exec=html.slice(html.indexOf('<div class="exec-meta"'),html.indexOf('<div class="exec-rest"'));
+  const sourceHeading=exec.indexOf('most critical · production findings'),imageHeading=exec.indexOf('most critical · images to update');
+  assert.ok(sourceHeading>=0 && imageHeading>sourceHeading);
+  const sourceBlock=exec.slice(sourceHeading,imageHeading),imageBlock=exec.slice(imageHeading);
+  assert.match(sourceBlock,/CWE-79/);assert.doesNotMatch(sourceBlock,/CWE-89/);
+  assert.match(imageBlock,/CWE-89/);assert.doesNotMatch(imageBlock,/CWE-79/);
+  const split=html.indexOf('aria-label="Image overview charts"');assert.ok(split>0);
+  const sourceCharts=html.slice(html.indexOf('aria-label="Overview charts"'),split),imageCharts=html.slice(split,html.indexOf('</section>',split));
+  assert.match(sourceCharts,/CWE-79/);assert.doesNotMatch(sourceCharts,/CWE-89/);
+  assert.match(imageCharts,/CWE-89/);assert.doesNotMatch(imageCharts,/CWE-79/);
+ }
+ const stats=require('../lib/cve-report').computeStats([source,image]);assert.equal(stats.direct,1);assert.equal(stats.total,2);
+ const html=generateHtmlReport(payload),copy=html.slice(html.indexOf('<template class="exec-copy-rich">'),html.indexOf('</template>'));
+ assert.match(copy,/production findings/);assert.match(copy,/images to update/);
+});
+
+test('an image scan with no image findings still renders its empty chart row',()=>{
+ const {payload}=fixture();payload.cveMatches=payload.cveMatches.filter(m=>!m.dep.artifactTargetId);
+ for(const render of [generateHtmlReport,generateWordReport]) {
+  const html=render(payload),split=html.indexOf('aria-label="Image overview charts"');
+  assert.ok(split>0);assert.match(html.slice(split,html.indexOf('</section>',split)),/No production CVE/);
+ }
+});
+
+test('executive image ranking groups CVEs per image, orders by severity and uses only observed image updates',()=>{
+ const {payload}=fixture(), first=payload.projectInfo.artifacts[0],second=payload.projectInfo.artifacts[1];
+ first.imageUpdate={status:'available',targetTag:'v2',targetReference:'registry.example/app:v2'};
+ second.imageUpdate={status:'unknown',targetReference:'unverified.example/should-not-appear',targetTag:'v3'};
+ const image=payload.cveMatches[0],other=payload.cveMatches[1];
+ payload.resolvedDeps=new Map([...payload.resolvedDeps].filter(([,d])=>d.artifactTargetId));
+ payload.cveMatches=[
+  ...['HIGH','CRITICAL','MEDIUM','LOW'].map((severity,i)=>({...image,cve:{id:`CVE-2099-${3000+i}`,severity},findingId:`first-${i}`})),
+  {...other,cve:{id:'CVE-2099-4000',severity:'HIGH'}}
+ ];
+ for(const render of [generateHtmlReport,generateWordReport]) {
+  const html=render(payload),start=html.indexOf('<div class="exec-meta"'),end=html.indexOf('<div class="exec-rest"');const exec=html.slice(start,end);
+  assert.doesNotMatch(exec,/most critical · production findings|direct production dependencies/);
+  assert.match(exec,/Top 2 most critical · images to update/);
+  assert.ok(exec.indexOf('registry.example/app:v1')<exec.indexOf('other-image.tar'));
+  assert.match(exec,/registry.example\/app:v2/);assert.doesNotMatch(exec,/unverified\.example/);
+  for(const id of ['CVE-2099-3000','CVE-2099-3001','CVE-2099-3002','CVE-2099-4000'])assert.match(exec,new RegExp(id));
+  assert.doesNotMatch(exec,/CVE-2099-3003/);
+  assert.doesNotMatch(html,/aria-label="Overview charts"/);assert.match(html,/aria-label="Image overview charts"/);
+ }
+});
+
+test('overview rows follow actual project and image scan evidence',()=>{
+ const image={id:'image-empty',metadata:{source:'empty-image'}};
+ const projectOnly={projectInfo:{name:'project'},parsedManifests:[{path:'/project/package-lock.json'}],cveMatches:[]};
+ const mixed={...projectOnly,projectInfo:{name:'project',artifacts:[image]}};
+ const noDescriptors={projectInfo:{name:'empty'},cveMatches:[]};
+ const referenceOnly={projectInfo:{name:'reference',imageReferences:[{path:'compose.yml',declared:'example.org/image:1'}]},cveMatches:[]};
+ for(const render of [generateHtmlReport,generateWordReport]) {
+  const report=render(mixed);assert.match(report,/aria-label="Overview charts"/);assert.match(report,/aria-label="Image overview charts"/);
+  for(const input of [projectOnly,noDescriptors,referenceOnly])assert.doesNotMatch(render(input),/aria-label="Image overview charts"/);
+  assert.doesNotMatch(render(noDescriptors),/aria-label="Overview charts"/);
+ }
+});
+
+test('overview totals include image findings from every input lane once',()=>{
+ const {payload}=fixture();const source=payload.cveMatches[2],img=payload.cveMatches[0];
+ payload.cveMatches=[source];payload.devCveMatches=[{...img,cve:{id:'CVE-2099-3001',severity:'MEDIUM'}}];
+ payload.embeddedMatches=[{...img,dep:{...img.dep,artifactPath:'/another'},cve:{id:'CVE-2099-3002',severity:'CRITICAL'}}];
+ payload.cveMatches.push(payload.devCveMatches[0]); // same physical occurrence in two input lanes
+ for(const render of [generateHtmlReport,generateWordReport]) {
+  const html=render(payload), summary=html.slice(html.indexOf('<div class="summary">'),html.indexOf('aria-label="Overview charts"'));
+  assert.match(summary,/<div class="v">3<\/div><div class="l">Total CVEs<\/div>/);
+  assert.match(summary,/<div class="v">2<\/div><div class="l">Image findings<\/div>/);
+  assert.match(summary,/<div class="v">1<\/div><div class="l">Source findings<\/div>/);
+  assert.match(summary,/<div class="v">1<\/div><div class="l">Critical<\/div>/);
+  const exec=html.slice(html.indexOf('<div class="exec-rest"'),html.indexOf('<div class="summary">'));
+  assert.match(exec,/<strong>3<\/strong> CVE findings/);assert.doesNotMatch(exec,/dev\/test CVE/);
+ }
+});

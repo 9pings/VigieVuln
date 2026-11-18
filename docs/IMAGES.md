@@ -191,9 +191,8 @@ vigievuln image ./image.tar --offline --proxy-cache https://scanner.example \
 
 Hosted services use targeted distribution/package/version OSV consultations
 instead of requesting prohibited full database archives. The resulting cache
-proves coverage for consulted versions only. Server installations need the updated
-CLI library for these distribution scopes; development tests do not upgrade a
-deployed server. See the [measured pathway and image comparisons](BENCHMARK-IMAGES.md).
+proves coverage for consulted versions only. See the
+[measured pathway and image comparisons](BENCHMARK-IMAGES.md).
 
 ## Installed components and vulnerability sources
 
@@ -225,9 +224,8 @@ No advisory is applied merely because package names happen to match.
 
 A complete native source corpus is not implied by consulting local records.
 Coverage records and notices distinguish missing, stale, partial and failed
-sources; no match in incomplete data is not a clean verdict. Legacy GCVE index
-coverage counters can understate package identities recognized by the newer
-native matcher. `--fail-on-incomplete sources` can enforce a source coverage
+sources; no match in incomplete data is not a clean verdict.
+`--fail-on-incomplete sources` can enforce a source coverage
 requirement; ordinary vulnerability severity gates do not fail solely because a
 source is incomplete.
 
@@ -235,8 +233,7 @@ On a direct online scan, preparing a missing or expired CVEProject source can
 fetch its full cvelistV5 archive (hundreds of MB compressed and substantial
 unpacked temporary storage) and index native records. GCVE refresh verifies its
 signed directory and downloads allowed GNA feeds. This preparation is shared
-across the image targets in one scan; the matcher walks older native records
-once to include package identities that earlier cache versions did not index.
+across the image targets in one scan.
 A shared or hosted proxy may offer only targeted native operations and cannot be
 assumed to provide a complete distribution corpus; the report marks this
 limitation. `--offline` reads only existing caches and never refreshes sources.
@@ -324,9 +321,9 @@ bytes. Such binaries remain inventoried with incomplete advisory coverage.
 Installed-package metadata and publisher SBOMs are additional evidence, not proof
 that every embedded component has been identified.
 
-Source-tree scans also discover Dockerfile and YAML image references. These
-references do not trigger automatic image downloads or establish the contents of
-the final build. HTML/Word and JSON expose the declaration-only coverage warning.
+With image analysis enabled, source-tree scans discover Dockerfile and YAML image
+references. Declarations alone do not establish the contents of the final build;
+unacquired images remain visible as incomplete coverage in HTML/Word and JSON.
 
 ## Reports and CI
 
@@ -341,7 +338,7 @@ vigievuln image ./image.tar --offline --lang fr \
   --fail-on high --fail-on-incomplete inventory,advisories,sources
 ```
 
-Warnings identify failed operations or applicable components/data that could not be assessed. A source deliberately excluded by configuration, a CVE-only lookup with no CVE identifier, or reuse of a prepared offline snapshot is not an alert. These observations remain in scan context and do not fail coverage gates. Source-wide corpus limitations remain visible separately from whether the requested consultation ran. A provider-marked stale response, a failed refresh, unavailable required data or an unevaluable component still produces an alert. An archive covered by its verified, assessed OS package does not also require a Maven identity; corrupt or unowned archives remain gaps.
+Warnings identify failed operations or applicable components and data that could not be assessed. A source deliberately excluded by configuration, a CVE-only lookup with no CVE identifier, or reuse of a prepared offline snapshot is not an alert. These observations remain in scan context and do not fail coverage gates. Source-wide corpus limitations remain distinct from whether a consultation ran. Unavailable inventory or advisory discovery can affect coverage gates; NVD/EUVD per-CVE enrichment failures are summarized separately without marking inventory incomplete. An archive covered by its verified, assessed OS package does not also require a Maven identity; corrupt or unowned archives remain gaps.
 
 Exit `0` means no selected gate failed, `1` means a finding gate failed, and `2`
 means required coverage is incomplete or the command failed. Without the strict
@@ -401,8 +398,7 @@ The JavaScript API exposes independent extension points:
 
 Format constants and distribution scope mappings live in their adapters. The
 orchestrator does not identify software from a catalogue of binary names. See
-[the development plan](PLAN-native-images-linux.md) and the subsystem tests for
-contracts, failure states and extension examples.
+the subsystem tests for contracts, failure states and extension examples.
 
 ## Independent distribution and vendor sources
 
@@ -435,3 +431,8 @@ All these snapshots and identity proofs use the regular SQLite cache archive.
 They work through the fleet and hosted resource operations as well as direct
 HTTP. Additional evidence remains separate from confirmed CVE counters, and
 source-specific coverage is considered when comparing scan deltas.
+
+The executive summary ranks vulnerable images separately from project dependencies,
+with up to three critical CVEs per image. Project and image charts use separate rows;
+each row appears only when its inventory is present. NVD/EUVD record availability
+and update failures share one enrichment summary without changing inventory coverage.

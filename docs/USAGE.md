@@ -77,7 +77,7 @@ Native files over 512 MiB and unreadable files produce a coverage warning with t
 > **EOL detail panel**: in the HTML report, **click an EOL row** to expand the exact references of the descriptors it is defined in — for every component of the finding: the descriptor path **with the line number** (`web/pom.xml:34`), its module, and the declaration itself (the `<dependency>` block, the `package.json` entry, the lockfile header, …). A transitive finding lists **every** chain that pulls it in plus where the direct dependency to bump is declared; a BOM / parent-POM-managed version names that BOM. A descriptor in which the coordinate has no textual declaration (a POM that inherits it from a parent or reactor module) says so instead of guessing a line. The `.doc` prints every panel open.
 
 > **npm without a lockfile**: a `package.json` lacking a sibling
-> `package-lock.json`/`yarn.lock` is now scanned **best-effort** — pinned exact
+> `package-lock.json`/`yarn.lock` is scanned **best-effort** — pinned exact
 > versions are checked, ranges (`^1.0.0`) are skipped, and a `no-lockfile` warning
 > flags the partial coverage. A current lockfile improves coverage but does not by itself
 > establish the contents of every deployed environment.
@@ -170,7 +170,7 @@ When using the VigieVuln service, reviewed and published VigieVuln advisories fo
 | `--help-all` | Every option, including the individual flags `-d`/`-a`/`-r` replace and the cache / registry / config commands |
 | `--lang <en\|fr>` | Language of the HTML / Word report (default `en`). Translates the report's own chrome — **all of it**: chapter titles and their counts, table headers, scope chips, every intro paragraph, every status pill, the warning headings, the licence categories, the methodology limitations, the per-ecosystem fix recipes, the empty states, and the executive summary both on screen and as the 📋 button pastes it — plus the CWE titles. **Not** the evidence: CVE descriptions, advisory text and registry reasons stay as published, and a CVSS severity keeps NVD's own wording where it is a finding's value. French CWE titles are fad's own (MITRE publishes English only) and carry MITRE's original with them |
 | `--no-eol` | Skip the end-of-life check (endoflife.date) — the flag the run suggests when that source is unreachable |
-| `--no-nvd-mirror` | NVD only. By default, **without an NVD API key** the CVE records are read FIRST from the mirror below (in parallel — NVD without a key allows 5 requests / 30 s) and only the CVEs it does not hold yet are asked of NVD, which must then answer (full retry schedule; an outage becomes a coverage warning); **with a key**, NVD stays first and, when it does not answer (throttled 403/429, 5xx, network), the CVE record is read from the [fkie-cad/nvd-json-data-feeds](https://github.com/fkie-cad/nvd-json-data-feeds) mirror (daily copy of the NVD API 2.0, same JSON, no key, no rate limit — records fetched there carry `via: "fkie-cad/nvd-json-data-feeds"` in the NVD cache) and coverage is marked incomplete if both fail; a cached record past its TTL is served rather than dropped. This flag (or `-d nvd-mirror`) disables the fallback and restores NVD's own retry schedule |
+| `--no-nvd-mirror` | Disable the [fkie-cad NVD mirror](https://github.com/fkie-cad/nvd-json-data-feeds). Without an NVD API key the mirror is queried first; with a key it is the fallback. Cached stale data may be used with a warning. Missing CVE enrichment is reported separately from discovery coverage. |
 | `--retries <n>` | Retries before a data source is marked unavailable (default `5`, waiting 5+n s each: 6, 7, 8, 9, 10 s). `0` = no retry — the first failed answer declares the source down. Shared per source, so one dead host runs ONE schedule however many lookups hit it. Requests whose caller rotates across mirrors/registries are not retried (the rotation moves on). Also settable as `"retries"` in a trusted file selected with `--config` |
 | *(source unavailable)* | **By default, provider failures produce partial reports with explicit warnings and incomplete coverage, without failing the scan.** Use `--fail-on-incomplete sources` (or `advisories` for application checks) to return code 2 **after** writing the reports. Invalid configuration and unusable explicitly supplied local snapshots still fail. |
 | *(EOL + paid support)* | When endoflife.date lists **paid** support past the open-source end of life (`extendedSupport` — e.g. Broadcom for Spring 5.3/6.x), the EOL row stays an EOL finding (those fixes are builds from the vendor's private repository, for subscribers) and states: the support end date, the build of the dependency's own branch that fixes the CVEs found (`A 5.3 build > 5.3.40 fixes 7 of the 9 CVEs found`), and — when the vendor repository is configured with `--add-repo maven <name> <url> --token <TOKEN>` — the newest vendor build of the branch. A project already on a vendor build (newer than the branch's last public release and absent from Maven Central) is not reported as EOL; chapter 0 notes it. |
@@ -188,9 +188,13 @@ code 2 after the partial report is written.
 
 ## Application inventory (experimental)
 
-The bundled `symfony`, `wordpress`, `drupal`, `laravel`, `joomla`, `prestashop`, `typo3`, and `magento` application plugins are currently experimental in capability, but a present CMS/framework is **activated by the default `--app-plugins auto`**: any recognized layout is inventoried automatically, with honest per-capability coverage (advisories stay `not-run (CMS_PROVIDER_UNCONFIGURED)` until their source is configured — never silently clean). Detection requires conjunctive positive evidence per product (e.g. WordPress needs `wp-load.php` + `wp-includes/version.php` + `wp-admin/index.php`; Symfony needs a kernel/front-controller marker *and* `symfony/framework-bundle` in that tree's lock; a bare `require` constraint never creates an application) — verified on real bare libraries (guzzle, laravel/framework as a package, the symfony/symfony monorepo, composer/composer): zero phantom applications. `--app-plugins none` disables every application plugin; `all` is an explicit synonym of the default; a comma list restricts to specific plugins. `--list-app-plugins` shows the available plugins.
+The experimental application plugins identify supported CMS and framework instances
+from product-specific markers and inventory their components. `--app-plugins auto`
+selects recognized layouts, `none` disables all plugins, `all` enables all, and a
+comma-separated list selects specific plugins. Use `--list-app-plugins` to list them.
+See [CMS & frameworks](CMS-FRAMEWORKS.md) for detection and coverage by product.
 
-Every subtree is also scanned through its supported dependency descriptors. If its CMS layout is recognized, dependency findings are shown under that CMS instance; otherwise those findings remain in the ordinary dependency sections.
+Every subtree is also scanned through its supported dependency descriptors. Findings with proven component ownership are attributed to the CMS instance; findings without proven ownership remain in the ordinary dependency sections.
 
 ```bash
 vigievuln -s ./project --app-plugins symfony --offline --report-json
@@ -208,16 +212,16 @@ vigievuln -s ./shop --app-plugins magento --offline --report-json
 vigievuln -s ./cms --app-plugins joomla,prestashop,typo3 --offline --report-json
 ```
 
-Wave 2 recognizes these product layouts and component metadata:
+Additional supported layouts and advisory coverage:
 
 | Plugin | Tested source files / layout | Version authority | Advisory coverage |
 | --- | --- | --- | --- |
 | Joomla | 5.4.1 core manifest plus `libraries/src/Version.php`; typed extension XML under components, modules, plugins and templates | Runtime version constants, corroborated with the core manifest; extension `<version>` is its own version | Application advisories not yet qualified; Composer packages use the standard OSV/Packagist lanes |
-| PrestaShop | 8.2.1 source `composer.json`, `config/config.inc.php` and installer version; installed `config/settings.inc.php`, static module PHP metadata, `config/theme.yml` | Installed `_PS_VERSION_` ahead of the installer source version; module `$this->version` and theme `version` | Application advisories not yet qualified; Composer/npm scans remain separate |
-| TYPO3 | 13.4.2 source `typo3/sysext/core/ext_emconf.php`; Composer installation with `typo3/cms-core` lock; classic extensions | Locked `typo3/cms-core` for Composer sites, otherwise the literal core `ext_emconf.php` version | Application advisories not yet qualified; locked public Composer packages use OSV/Packagist |
-| Magento / Adobe Commerce | 2.4.7-p3 Magento source markers; Composer product edition lock, `app/code` modules and `app/design` themes | Exact locked `magento/product-*` version, including `-pN`; a module's XML `setup_version` is a database schema version, not its code version | Adobe product bulletins are not parsed as a complete machine feed; application advisories remain not-run |
+| PrestaShop | 8.2.1 source `composer.json`, `config/config.inc.php` and installer version; installed `config/settings.inc.php`, static module PHP metadata, `config/theme.yml` | Installed `_PS_VERSION_` ahead of the installer source version; module `$this->version` and theme `version` | Publisher GitHub advisories when configured; Composer/npm scans remain separate |
+| TYPO3 | 13.4.2 source `typo3/sysext/core/ext_emconf.php`; Composer installation with `typo3/cms-core` lock; classic extensions | Locked `typo3/cms-core` for Composer sites, otherwise the literal core `ext_emconf.php` version | Publisher GitHub advisories when configured; locked public Composer packages use OSV/Packagist |
+| Magento / Adobe Commerce | 2.4.7-p3 Magento source markers; Composer product edition lock, `app/code` modules and `app/design` themes | Exact locked `magento/product-*` version, including `-pN`; a module's XML `setup_version` is a database schema version, not its code version | Adobe product bulletins are not parsed as a complete machine feed; source-only components remain not-run and Composer components use dependency sources |
 
-A missing `composer.lock` leaves package versions and dependency origins incomplete. The four wave-2 plugins also mark product lifecycle as `not-run`: community support, paid support and deployed patches need separate evidence. Magento product packages from `repo.magento.com` are not queried against Packagist; their publisher bulletins require separate review. Components found on disk do not prove activation, and no plugin infers that a patch file was applied. `--scan-context component` also recognizes a standalone extension for each wave-2 CMS when its local metadata is valid.
+A missing `composer.lock` leaves package versions and dependency origins incomplete. These four plugins also mark product lifecycle as `not-run`: community support, paid support and deployed patches need separate evidence. Magento product packages from `repo.magento.com` are not queried against Packagist; their publisher bulletins require separate review. Components found on disk do not prove activation, and no plugin infers that a patch file was applied. `--scan-context component` also recognizes a standalone extension for each of these CMSs when its local metadata is valid.
 
 `--private-component` takes a path relative to `--src` and can be repeated. A WordPress plugin with an `Update URI` header is also classified as private automatically, even if a public slug was declared; [WordPress documents this header for third-party updates](https://developer.wordpress.org/plugins/plugin-basics/header-requirements/). A private WordPress plugin or custom Drupal module stays separate from public catalogue identities; Composer CVEs in its own lockfile are attributed to that component. Shared dependencies retain one physical finding with multiple proven owners. WordPress classic and Bedrock layouts and Drupal Composer and Drupal 7 layouts are recognized. Components found on disk are inventoried even when runtime activation cannot be established.
 
@@ -227,7 +231,15 @@ A missing `composer.lock` leaves package versions and dependency origins incompl
 
 `--drupal-advisories` reads a local snapshot of the [official Drupal Composer security-advisories response](https://packages.drupal.org/8/packages.json). Save it as `{ "queriedPackages": ["drupal/core", ...], "advisories": { ... } }`; `queriedPackages` must list every package requested from the API, including those omitted from its response because no advisory was returned. Unlisted packages retain `CMS_PACKAGE_NOT_QUERIED` and no negative conclusion. Drupal 7 remains outside the current community security-advisory coverage. Drupal's advisory ratings are kept separately from CVSS scores; the report shows their original rating and the derived gate severity.
 
-`--prestashop-advisories <file>` and `--typo3-advisories <file>` read a local snapshot of the vendor's own [GitHub repository security advisories](https://docs.github.com/en/rest/security-advisories/repository-advisories) (PrestaShop/PrestaShop, TYPO3/typo3), the machine-readable channel those publishers maintain themselves. Save the API's array as `{ "advisories": [ ... ], "_fadSnapshot": { "collectedAt": "..." } }` (a bare array is accepted too, but then `--max-advisory-age` will refuse it until a collection date is declared). The whole repository feed is fetched once and matched per inventoried composer coordinate: `prestashop/prestashop` for the PrestaShop core, `typo3/cms-core` and the `typo3/cms-*` system extensions for TYPO3. The publishers' range spellings are normalized before the shared Composer evaluation — PrestaShop's "< 8.2.6 and < 9.1.1" (two affected branches, one fix each) versus ">= 8.0.0 and < 8.1.1" (one interval), TYPO3's comma-joined hyphen intervals "13.0.0-13.4.33, 14.0.0-14.3.5" (alternative branches) — and the ~30 2020-era PrestaShop records whose package identity is empty in the official feed are attributed to the PrestaShop core coordinate with a documented inference, never silently dropped. An unbounded published range ("> 1.7.0.0") is only decidable through its `patched_versions` bound; a version at or above the publisher's patched release is fixed, never flagged. Joomla and Magento/Adobe Commerce have no machine-readable publisher feed (verified 2026-09-23: empty GitHub advisory lists; their bulletins are HTML pages), so those lanes stay `not-run (CMS_ADVISORY_NOT_QUALIFIED)`.
+`--prestashop-advisories <file>` and `--typo3-advisories <file>` read snapshots
+of the publishers' [GitHub security advisories](https://docs.github.com/en/rest/security-advisories/repository-advisories).
+Use `{ "advisories": [ ... ], "_fadSnapshot": { "collectedAt": "..." } }`;
+a bare array is accepted when `--max-advisory-age` is not set. Findings are matched
+to the inventoried PrestaShop core, TYPO3 core and TYPO3 system-extension coordinates.
+Publisher range syntax is normalized. Some PrestaShop records lack a package identity;
+the core association is reported as an inference. A range that cannot be evaluated
+is indeterminate, not evidence of safety. Joomla and Magento have no dedicated
+publisher advisory lane; source-only components retain `CMS_ADVISORY_NOT_QUALIFIED`.
 
 `--wp-checksums <file>` reads a local snapshot of the official [api.wordpress.org core checksums](https://developer.wordpress.org/rest-api/reference/core-checksums/) (`{ "checksums": { "<file>": "<md5>" }, "version": "...", "locale": "..." }`) and compares the WordPress core files of every inventoried instance against it. `--wp-checksums-live` fetches that reference live, pinned to each instance's observed core version and `--wp-checksums-locale` (default `en_US`). Divergences are **diagnostics, never CVE findings**: `CMS_FILE_MODIFIED` (the file differs from the official distribution), `CMS_FILE_MISSING` (the reference file is absent from the tree — a source checkout is not the distribution archive, so this does not flip the verdict), `CMS_FILE_EXTRA` (an unexpected file inside `wp-admin/` or `wp-includes/`, the controlled perimeter; `wp-content/` is user land and is never flagged), reported under the `integrity` capability with `affected` only on modified or unexpected core-directory files. A reference pinned to another version (`CMS_CHECKSUMS_REFERENCE_MISMATCH`) produces no verdict rather than fake divergences.
 
@@ -235,11 +247,44 @@ An explicitly configured advisory file requires its corresponding `--app-plugins
 
 `--max-advisory-age <duration>` (e.g. `72h`, `30d`) bounds the age of every configured advisory snapshot. A snapshot's file modification time proves nothing about when it was collected, so the date must be declared **inside the snapshot file**: a top-level `collectedAt` or `generatedAt` ISO 8601 string, or a reserved `_fadSnapshot: { "collectedAt": "..." }` object (the Wordfence v3 feed is a flat UUID-keyed map, so the reserved key is the only metadata it tolerates). A snapshot without a declared date, a malformed date, or one older than the limit exits with code `2` before any report is written. A declared date also travels with the coverage provenance (`sourceSnapshot.collectedAt`) whether or not the limit is set.
 
-Live sources are the alternative to operator-supplied files. `--spip-advisories-live` queries NVD's SPIP product CVEs (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source that exists (no publisher API, no Packagist package); an NVD API key is optional and only lifts the rate limit. `--drupal-advisories-live` queries the official `https://packages.drupal.org/8/security-advisories` endpoint (announced by the packages.drupal.org Composer descriptor; no authentication) for exactly the inventoried public `drupal/*` identities — private components are never sent. `--prestashop-advisories-live` and `--typo3-advisories-live` page the publishers' GitHub advisory feeds (unauthenticated, subject to GitHub's rate limits), and `--wp-checksums-live` fetches the official api.wordpress.org checksums reference; each can take an optional URL override for a mirror of the same API. Wordfence publishes a [free production feed with bearer authentication](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/). Set `WORDFENCE_API_KEY` (recommended, to keep it out of the process command line) or pass `--wordfence-api-key <key>`; the key alone selects the official production endpoint, or `--wordfence-feed-url <url>` can override its URL. In direct mode, a live Wordfence request without a client key stops with code `2`. With `--proxy-cache --wordfence-live`, the server key is sufficient and only targeted advisory projections reach the client (see the proxy section below). A WordPress instance without either a local feed or a live key gets an explicit warning and incomplete advisory coverage. A fetched snapshot is stamped `_fadSnapshot.collectedAt` at collection time (so `--max-advisory-age` accepts it by construction), stored atomically in the local SQLite cache for offline reuse, and recorded in coverage with `completeness: "tool-fetched"`. Those cached snapshots are consumed **automatically — in every mode**: the lanes a scan runs are a function of the cache state, not of online/offline, so `vigievuln -s <proj>` online and `vigievuln -s <proj> --offline` in the air-gapped enclave (same command, same options, warmed by the same phase 2) produce identical reports — no `--drupal-advisories` / `--prestashop-advisories` / `--typo3-advisories` / `--wp-checksums` flag needed. The SQLite cache travels with `--export-cache` / `--import-cache`; `cache prepare` **warms them from the descriptor alone** (its `applications` section carries the public product identities — type, core version, inventoried public components — the phase-1 export emits): the Drupal feed for the union of the lock's `drupal/*` coordinates and the inventoried public identities, the PrestaShop/TYPO3 repository feeds, one WordPress checksums reference per declared core version (pinned by the warming run's `--wp-checksums-locale`, so both phases must agree on it), and the Wordfence catalogue when the warming machine holds an API key (the key itself never travels — the enclave reads the snapshot back without one). An explicit flag or live URL always wins, the fallback only engages when the source's application plugin is selected, and the file goes through the same schema and `--max-advisory-age` validation as an operator-supplied one. The WordPress checksums reference is pinned by version and locale, so its fallback resolves per instance. Live sources refuse to run under `--offline` (exit `2`); an air-gapped scan supplies a local feed snapshot — the tool's own cache counts as one. A failed or invalid live response produces an explicit warning and indeterminate coverage in the reports. A live source still requires its `--app-plugins` selection. An explicitly requested completeness or freshness gate remains enforced.
+Live advisory options query their respective sources:
 
-Symfony Flex `symfony.lock` recipes and `extra.symfony.require` are context. Installed package versions come from `composer.lock`. Extraction with `-t` also mirrors `symfony.lock`. The Symfony and Laravel application-advisory capabilities are currently recorded as `not-run (CMS_ADVISORY_NOT_QUALIFIED)`: their CVEs come from the standard Composer lane (OSV/Packagist), and a capability that never ran never becomes a clean result. WordPress and Drupal advisories run through the Wordfence and Drupal sources configured above. `--fail-on-incomplete` exits with code 2 after writing the partial report when a requested capability is incomplete. The default capability set is `inventory,advisories`.
+- `--spip-advisories-live` queries NVD's SPIP core CPE. An NVD key is optional.
+- `--drupal-advisories-live` queries the official Drupal endpoint for inventoried
+  public `drupal/*` identities. Private components are excluded.
+- `--prestashop-advisories-live` and `--typo3-advisories-live` query the publishers'
+  GitHub advisory feeds; GitHub rate limits apply.
+- `--wp-checksums-live` fetches WordPress core checksums. These sources accept their
+  documented URL override for a mirror of the same API.
+- Wordfence requires `WORDFENCE_API_KEY` or `--wordfence-api-key <key>` in direct
+  mode. `--wordfence-feed-url <url>` overrides the endpoint. With `--proxy-cache
+  --wordfence-live`, the server key is sufficient and the client receives targeted
+  advisory projections. See [Wordfence's feed documentation](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/).
 
-For CI, `--fail-on-incomplete sources` exits with code 2 after writing the report if a source used stale data or was unavailable, in hosted and direct mode.
+Fetched snapshots record their collection date and are cached for offline reuse.
+A warmed cache can supply Drupal, PrestaShop, TYPO3 and WordPress data without
+separate snapshot flags. `cache prepare` can warm the supported publisher data from
+an anonymized descriptor; Wordfence warming needs a key, which is not exported.
+WordPress checksums are keyed by version and `--wp-checksums-locale`. Explicit
+snapshot or live options take precedence, and the selected application plugin and
+`--max-advisory-age` still apply. Live options cannot run with `--offline`. Failed,
+invalid or missing data produces a warning and indeterminate coverage.
+
+Symfony Flex `symfony.lock` recipes and `extra.symfony.require` provide context;
+installed package versions come from `composer.lock`, and extraction with `-t` mirrors
+`symfony.lock`. Symfony and Laravel use the standard Composer advisory sources. Their
+`dependency-lanes` application coverage row is currently marked `completed` based on
+inventory membership; it does **not** verify that OSV or Packagist evaluated each
+package and version. The same limitation applies to dependency-lane rows for some
+Joomla and Magento components. Check source coverage separately: disabling sources can
+still satisfy `--fail-on-incomplete advisories`. Publisher lanes that are unconfigured or
+unqualified remain `not-run` with their diagnostic. `--fail-on-incomplete` exits with code
+2 after writing the partial report when a requested capability is incomplete; its default
+capabilities are `inventory,advisories`.
+
+For CI, `--fail-on-incomplete sources` exits with code 2 when source failures leave discovery or assessment coverage incomplete. NVD/EUVD enrichment of already identified CVEs is summarized in one warning: records available from either source, missing records and failed updates. These enrichment diagnostics do not invalidate dependency coverage.
+
+Indeterminate comparisons from available advisory data are listed in scan context, with the affected packages; they are not source outages or proof that a package is safe. Image retrieval and advisory-source issues share one report warning, “Unavailable from public sources”, with per-image reasons. Actual failed consultations remain coverage gaps.
 
 Report subsections with no results are omitted, and the remaining ones are numbered in order. CMS/framework CVEs appear first under CVE when present; application inventory and coverage remain in scan context even when no advisory matches. The six root chapters remain visible.
 
@@ -398,35 +443,20 @@ KEV and the CVE lookup use the fresher snapshot. Pass `--replace` to install the
 database as a whole and keep the previous one as `~/.vigie-vuln.bak-<timestamp>.sqlite`.
 Add `--force` to omit that backup. Configuration and API keys are never part of the bundle.
 
-### Zero-data-sent guarantee (air-gap)
+### Offline operation
 
-Under `--offline`, `vigievuln` makes **zero network calls** — it reads only the warmed
-caches under `~/.vigie-vuln/` and never transmits any dependency, path, hostname or
-finding off the machine. This is the property a regulated / air-gapped engagement needs, and it
-is enforced two ways:
+`--offline` makes no network requests and uses available local caches under
+`~/.vigie-vuln/`. Missing or stale data is reported; an offline scan is only as
+complete as the evidence prepared for it. To run in a network-free namespace:
 
-- **Regression-tested** (`test/offline-guarantee.test.js`): the network-heavy Maven paths
-  (`fetchPom`, `effectivePom`, `resolveTransitiveDeps`, the per-module Maven resolution) are run on
-  a *cold* cache with a tripwire fetcher that throws if touched — so any future change that
-  sneaks a network call into the offline path fails CI.
-- **Auditor-reproducible** — run the scan inside a network namespace that has **no
-  interfaces at all** and confirm the output is byte-identical to a normal offline run:
+```bash
+unshare -rn node vigievuln.js -s ./proj --offline --report-json /tmp/airgap.json
+```
 
-  ```bash
-  # true air-gap: no network device exists inside the namespace
-  unshare -rn node vigievuln.js -s ./proj --offline --report-json /tmp/airgap.json
-  # → exit 0, and /tmp/airgap.json is identical to a normal `--offline` run
-  ```
-
-  (Measured on a 25-module Spring/JSF project: identical findings, ~1.8 s.)
-
-> **Compiled binary, no `node`/`retire` needed:** the bun-compiled single binary
-> (`dist/vigievuln`, `.exe`, `-macos`) statically bundles the retire.js CLI and
-> re-execs itself to run it — so vendored-JS scanning works from the
-> lone binary on an air-gapped box with no Node.js and no `retire` on `PATH`. The only
-> input it needs is the signature DB warmed in phase 2 (carried in the cache archive).
-> If retire still can't run, the failure is reported as a chapter-0 warning (run `-v`
-> for the exact reason) instead of an empty chapter.
+The compiled binary includes retire.js and does not require Node.js or a separate
+`retire` executable. Its signature database must be prepared in the cache; if the
+vendored-JavaScript scan fails, the report includes a warning. Use `--verbose` for
+diagnostics.
 
 ## Hosted VigieVuln proxy
 
@@ -600,9 +630,8 @@ Behaviour worth knowing:
 - A dead proxy-cache server uses the local resource cache when that cache covers the request. Otherwise the source-health retry schedule runs and the scan writes a coverage warning. `--fail-on-incomplete sources` opts into exit 2 after report generation.
 - `--proxy-cache` and `--offline` are exclusive (offline makes no requests at all).
 
-GitHub pagination links are retained in both caches. Entries created before this
-metadata was preserved are fetched again; an old headerless GitHub page cannot
-establish a complete feed. CMS snapshots retain the upstream collection time
+GitHub pagination links are retained in both caches; a headerless page cannot establish
+a complete feed. CMS snapshots retain the upstream collection time
 reported by the cache, and `--max-advisory-age` checks live as well as local data.
 Without that option, stale fallback has no maximum age.
 
@@ -654,11 +683,8 @@ and 8 MiB for a client projection including merged batches; exceeding a limit fa
 explicitly. An empty, malformed or truncated upstream catalogue cannot establish
 negative coverage.
 
-Deployment requires updating the shared `vigievuln` package used by the server as
-well as the CLI. The hosted server keeps refusing `wordfence/production-feed`;
-the targeted operation is handled by the shared resource engine, with no route,
-authentication, monitoring or scheduled-job patch required. Older servers reject
-the new operation rather than triggering a client bulk fallback.
+The hosted server's targeted Wordfence operation is provided by the shared resource
+engine. It does not fall back to a client bulk-feed request when unavailable.
 
 CMS snapshot imports compare the declared collection date, even if a copy has a
 newer filesystem date. Semantic cache imports publish each body/metadata pair
@@ -715,9 +741,8 @@ needs the actual `.js` files), using the signature DB warmed in phase 2.
 
 Maven descriptors include path-free per-module dependency and management hints so
 the online preparation can resolve each module with its own versions and exclusions.
-Review those hints along with the other coordinates before transfer. Descriptors
-created by older builds lack these hints and produce a warning: regenerate the JSON
-from the available manifests before running `cache prepare` for complete coverage.
+Review those hints along with the other coordinates before transfer. A descriptor without these hints produces a warning; regenerate it from the manifests
+when they are available.
 Preparation resolves the descriptor online and saves targeted OSV consultations;
 it does not require or download a global OSV seed. Use the same resolution options
 and unchanged manifests in both phases. Failed or depth-limited resolution can
@@ -847,7 +872,8 @@ This:
 
 `--snyk` requires `-t` (Snyk needs a real POM tree to scan).
 
-If the snyk run itself **fails** — not authenticated, an unsupported project, a timeout — vigievuln now reports it as a `Snyk run failed: <reason>` warning and continues the scan with vigievuln's own findings. (Earlier versions parsed snyk's error-shaped `--json` output as zero vulnerabilities and printed a misleading `Snyk: 0 findings merged`.) A snyk exit of 1 is **not** a failure — it just means snyk found vulnerabilities, which are merged as usual.
+If Snyk fails, the scan reports `Snyk run failed: <reason>` and continues with its own
+findings. Snyk exit code 1 means vulnerabilities were found and is not a run failure.
 
 ## Read-only vs write mode
 
@@ -874,11 +900,10 @@ vigievuln -s . --verbose   # progress per source (OSV batches, NVD pages, retire
 ```bash
 vigievuln                  # no arguments: a mini help with the running version (exit 1 — nothing was scanned)
 vigievuln -h, --help       # every option
-vigievuln -v, --version    # the running version (-V still works; it was the version flag before)
+vigievuln -v, --version    # print the running version (-V also works)
 ```
 
-> `--verbose` is **long-form only**: `-v` used to mean verbose and now means version, so an old
-> `vigievuln -s . -v` prints the version and exits 0 **without scanning**. Grep CI for it.
+> `--verbose` is long-form only. `-v` prints the version and exits without scanning.
 
 ## Shell completion
 

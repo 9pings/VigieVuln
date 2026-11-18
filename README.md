@@ -10,7 +10,7 @@
 [![CI](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml)
 
 
-**VigieVuln 1.3.0** is a polyglot dependency auditor for code audits.
+**VigieVuln 1.3.1** is a polyglot dependency auditor for code audits.
 
 It scans dependencies and **9 CMS/frameworks** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
 
@@ -44,6 +44,9 @@ It scans dependencies and **9 CMS/frameworks** in one pass without build tools, 
 
 📖 **[Usage & all flags](docs/USAGE.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Comparison vs other tools](docs/COMPARISON.md)** · **[Data sources](docs/DATA-SOURCES.md)**
 
+> [!IMPORTANT]
+> **Although VigieVuln is an excellent tool—comprehensive, rigorously tested, and regularly updated—it is still relatively new, and like any other scanner, it may occasionally produce errors. We recommend that you verify the results using an analysis tool of your choice whenever possible.**
+
 ## Quick start
 
 ```bash
@@ -51,22 +54,11 @@ npm install -g vigievuln
 vigievuln scan ./code             # → ./vigievuln-report/cve-report.html
 ```
 
+### Faster scans using personal NVD API key
+
 A free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) (instant) gives 10× faster enrichment: `vigievuln --set-nvd-key YOUR_KEY`. A few common runs; full list via `vigievuln --help` or [docs/USAGE.md](docs/USAGE.md)
 
-### Monitor a project
-
-Monitor your project's direct dependencies for new high, critical or known exploited vulnerabilities. Create and verify a [Vigie Vuln account](https://www.vigievuln.fr/account) first.
-
-```bash
-vigievuln login                                  # sign in and accept the terms
-vigievuln watch ./project --export deps.json     # optional: review the inventory locally
-vigievuln watch ./project --name 'My Project'     # upload or update the project
-vigievuln project status                         # check the monitoring status
-```
-
-Review the inventory before sharing, enable alerts in your account and upload again when dependencies change. The free tier covers one project, 100 direct coordinates and a 0.5 MB descriptor; each upload renews monitoring for one month. [Monitoring guide](docs/USAGE.md#project-monitoring).
-
-### Official Vigie Vuln proxy cache
+### Faster scans using the VigieVuln DB European hosted cache
 
 Use [Vigie Vuln DB](https://www.vigievuln.fr/) as a European-hosted source for scans, including reviewed VigieVuln advisories for Maven and npm.
 
@@ -78,22 +70,17 @@ vigievuln setup --mode direct --sources all  # switch back to direct sources
 
 The proxy receives package coordinates and CVE identifiers, not source code. Cached advisories remain usable offline; partial version evidence leaves other versions unknown. [Proxy guide](docs/USAGE.md#hosted-vigievuln-proxy).
 
-### Interactive HTML samples
+### Include container images
 
-- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the report screenshot below, rescanned with VigieVuln 1.2.1; 105 Maven descriptors, direct/transitive CVEs, KEV matches, EOL and fix recommendations.
-- **[Multi-instance CMS & frameworks — open the report](https://9pings.github.io/VigieVuln/samples/multi-cms-frameworks.html)**: WordPress 6.4.2, Drupal 8.5.0, Symfony Demo (Symfony 7.1.1) and BookStack v24.10 (Laravel 10.48.22), with findings attributed to each instance.
+Add `--images` to scan supported container images referenced by the project alongside its dependencies, without Docker; this option is off by default.
 
-These are standalone reports from real source scans, generated on **2026-11-04** with VigieVuln **1.2.1**. Dubbo uses the hosted proxy; the CMS sample uses its local cache offline and focuses on PHP dependencies. Missing Wordfence/Drupal advisory and WordPress checksum inputs are explicitly marked incomplete. [Sample scope, sources and reproduction commands](docs/samples/README.md).
+```bash
+vigievuln scan ./code --images
+```
 
-### Resolution and coverage
+The report keeps source and image findings in separate summaries and charts, highlighting vulnerable images and their most critical CVEs. [Image inputs, options and coverage](docs/IMAGES.md).
 
-- **Gradle:** without a lock, POM-based resolution can differ from Gradle. Locks cover only their recorded configurations, which may mix runtime, tests and build tools.
-- **Python:** exact pins are checked; transitives require a supported resolved lockfile or complete inventory.
-- **Coverage:** missing metadata or unavailable advisory sources can cause omissions or false positives. Review report warnings.
-
-See [usage](docs/USAGE.md) and [measured results](docs/BENCHMARK.md).
-
-## Why use vigievuln for code audits?
+## Why use vigievuln ?
 
 An author-maintained comparison of audit workflows; see [`docs/COMPARISON.md`](docs/COMPARISON.md)
 for versions, sources and limitations. `⚠️` indicates partial or conditional support.
@@ -116,12 +103,7 @@ for versions, sources and limitations. `⚠️` indicates partial or conditional
 | **Share one cache across the fleet**, API keys server-side                               | ✅ `serve-cache` | ❌ | ⚠️ local DB | ⚠️ local DB | ⚠️ local DB | ⚠️ cloud |
 
 
-Offline dependency resolution depends on cached metadata. In the Dubbo test, a cold advisory seed alone produced 185 groups versus 734 with warm metadata and reported missing POMs; see the [benchmark](docs/BENCHMARK.md) for scope and warnings.
-
-**Deliberately not a goal: reachability.** A finding is a vulnerable version on the dependency
-graph, and the report says exactly that (in Methodology) instead of guessing at call paths. Deciding
-whether the vulnerable code is reachable in *this* application is the auditor's call, made with
-application context no scanner has.
+**Deliberately not a goal: reachability.** ( That's an AI or human Job )
 
 ## More examples
 
@@ -140,39 +122,16 @@ vigievuln -s ./site --app-plugins wordpress --private-component wp-content/plugi
 
 > [!IMPORTANT]
 > **`--offline` reads the cache, it doesn't replace it.** On a *cold* cache there is nothing to
-> match against; an empty report is not evidence that the project is clean. Initialise it from
-> a seed or warm it online, then review coverage and freshness warnings in the offline report.
-> Cached advisories can match other applicable versions, but neither a partial cache nor an
-> old snapshot guarantees complete or current results.
+> match against;
 > Air-gapped machines get their cache via [`--export-cache` / `--import-cache`](#air-gapped-audits).
-
-## What it finds
-
-The report keeps the six root chapters. Sub-chapters appear only when they contain results and are numbered consecutively; application inventory and methodology remain available in scan context:
-
-| Chapter | Source | What it catches |
-| --- | --- | --- |
-| **0. Warnings** *(top)* | local heuristics | Missing lockfiles, unresolved Maven versions (BOM-managed), private packages absent from configured registries |
-| **Δ. Changes since baseline** *(top, with `--baseline`)* | diff vs prior JSON | New / fixed / unchanged findings per category + the list of **new production CVEs**; for repeat audits and `--fail-on-new` CI gating |
-| **1. CVE** *(X direct, Y indirect, Z dev)* | CVEProject + OSV.dev + Packagist + qualified publisher feeds + NVD/CPE | **Applications first when findings exist**; CMS/framework findings by instance and owner · **Production**; public CVE / GHSA in other prod deps, per ecosystem, per manifest, **prioritised** by CISA KEV + EPSS + CVSS · **Vendored JS vulns** ([retire.js](https://retirejs.github.io/)) — one row per physical library, linked CVEs + CWEs on the row, every advisory behind a click · **Dev** (`test`/`provided`, `dev`/`optional`/`peer`) · **Likely false positives** (CPE-filtered) |
-| **2. Unmanaged / unversioned components** | deps.dev + CIRCL (by checksum), retire.js, built-in X.509 | **Embedded binaries**; CVEs in libs shipped inside committed `.jar`/`.war`/`.ear` (fat-jars, shaded uber-jars) · **Native binaries** (`.dll`/`.exe`/`.so`/`.dylib`): available metadata and checksum evidence; metadata alone does not reliably identify a product or establish CVE applicability · **Vendored JavaScript** inventory (jQuery, Bootstrap, …) vulnerable *or not* · **Certificates &amp; key material**; committed certs (expiry / weak key / weak signature / self-signed), **private vs public keys** (PEM/OpenSSH/PuTTY/PGP/SSH) and keystores, all parsed offline |
-| **3. Maintenance / EOL** *(X EOL, Y obsolete, Z outdated)* | endoflife.date · curated + registry flags · Maven Central / npm / Packagist / PyPI / NuGet | **End-of-Life** frameworks (+ an "Out of active support" band with `--eol-support`; Symfony/Laravel grouped as one row per framework; PHP runtime when the Composer constraint proves it), split **direct** (declared / parent-POM-inherited — bump these) vs **transitive** (bump the dep that pulls them in) · **Obsolete / deprecated / abandoned / yanked** · **Outdated** (newer version available, with release dates; direct deps only) |
-| **4. Licenses** *(opt-in: `--licenses`)* | registry metadata + Maven POMs → SPDX policy | Each dep's license normalised to SPDX and classified; copyleft (GPL/AGPL/LGPL/MPL), proprietary and unknown flagged for review |
-| **5. Fix Recommendations** | computed | Per-ecosystem pin recipes: Maven `<dependencyManagement>`, Gradle `constraints { }`, npm `overrides`, yarn `resolutions`, `composer require`, `pip install`, `dotnet add package` |
-| **6. Scan context & limitations** | provenance manifest + walk | **Scanned descriptors** (every manifest parsed) · **Ignored directories** (pruned paths + rule) · **Methodology, data sources & limitations** (data-source freshness, run config, explicit statement of **what vigievuln does *not* assess**) · **Application inventory & coverage** (also shown when no CVE matches) |
-| **Supply-chain risk** *(cross-cutting)* | OSV `MAL-…` + name heuristic | **Known-malicious** packages (always block the CI gate, any `--fail-on` level) and **suspected typosquats** (`--typosquat`: an npm/PyPI name one edit from a popular package; `lodahs`↔`lodash`) |
-
-The HTML report opens in any browser, contains every detail (CVSS vectors, references, full descriptions, CPE configurations, via-paths for transitives) and ships a Word-compatible `.doc` twin. Every match carries a **composite priority** (KEV-exploited > EPSS likelihood > CVSS severity), and the run can additionally emit a **CycloneDX 1.6 SBOM** (`--report-sbom`, vulnerabilities inline) and a **CSAF 2.0 VEX** (`--report-csaf`) for downstream tooling.
-
-<p align="center"><img src="docs/assets/report.png" alt="vigievuln HTML report; executive summary with severity tiles and a detailed CVE table with CWE, descriptions and fix versions" width="900"></p>
 
 
 ## CMS & frameworks
 
 See the [CMS coverage limits](docs/CMS-FRAMEWORKS.md#coverage-and-its-current-limits)
-and [shared-cache operating limits](docs/USAGE.md#shared-proxy-cache-server-serve-cache--proxy-cache).
+and [shared-cache operating limits](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache).
 
-vigievuln doesn't just read the `composer.json` under a WordPress or Drupal site — it inventories the **instance**: core, plugins, themes, bundles and framework components with their observed versions, attributes dependency findings where ownership is established, and reports each instance in its own sub-chapter — synthesis included even when it comes out clean. Any recognized layout is activated by the default `--app-plugins auto`; `none` opts out.
+VigieVuln inventories the **instance**: core, plugins, themes, bundles and framework components with their observed versions, attributes dependency findings where ownership is established, and reports each instance in its own sub-chapter.
 
 | Product | Inventory | Advisory lane |
 | --- | --- | --- |
@@ -185,7 +144,7 @@ vigievuln doesn't just read the `composer.json` under a WordPress or Drupal site
 | **SPIP** | core (`$spip_version_branche` in `ecrire/inc_version.php`), dist plugins (`paquet.xml`), user plugins (`paquet.xml`/legacy `plugin.xml`) | **NVD product CVEs** (`cpe:2.3:a:spip:spip`) — the only machine-readable SPIP source; plugins stay honestly not-qualified |
 | **Joomla / Magento (Adobe Commerce)** | core, extensions/modules, themes | no machine-readable publisher feed exists; components locked as Composer packages read as covered by the **dependency lanes**, the rest stays honestly **not qualified**. A Magento source distribution reports its exact version from the root `composer.json` |
 
-Every advisory snapshot a live lane fetches is stamped and cached in the local SQLite database, **prepared from the air-gapped descriptor** by `cache prepare`, and reused automatically offline — the Wordfence API key never travels to the enclave. Private/custom components are inventoried separately and never sent to any publisher. → **[the dedicated guide](docs/CMS-FRAMEWORKS.md)** · [application usage](docs/USAGE.md#application-inventory-experimental)
+Private/custom components are inventoried separately and never sent to any publisher. → **[the dedicated guide](docs/CMS-FRAMEWORKS.md)** · [application usage](docs/USAGE.md#application-inventory-experimental)
 
 ## Air-gapped audits
 
@@ -213,7 +172,22 @@ Review the descriptor before sharing and the report's coverage and freshness inf
 - [`docs/COMPARISON.md`](docs/COMPARISON.md); vs OSV-Scanner / Trivy / Grype / OWASP DC / Snyk, and how it stays build-free.
 - [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — dated scanner comparisons on pinned projects, including warm and cold offline limitations.
 - [`docs/DATA-SOURCES.md`](docs/DATA-SOURCES.md); the public datasets vigievuln uses + their licenses.
-- [`CHANGELOG.md`](CHANGELOG.md) · [`CLAUDE.md`](CLAUDE.md); release history · code-level orientation for contributors.
+- [`CHANGELOG.md`](CHANGELOG.md) · [`CLAUDE.md`](CLAUDE.md); current release notes · code-level orientation for contributors.
+
+### Interactive HTML samples
+
+- **[Apache Dubbo 2.7.8 — open the report](https://9pings.github.io/VigieVuln/samples/dubbo.html)**: the project used for the report screenshot below, rescanned with VigieVuln 1.2.1; 105 Maven descriptors, direct/transitive CVEs, KEV matches, EOL and fix recommendations.
+- **[Multi-instance CMS & frameworks — open the report](https://9pings.github.io/VigieVuln/samples/multi-cms-frameworks.html)**: WordPress 6.4.2, Drupal 8.5.0, Symfony Demo (Symfony 7.1.1) and BookStack v24.10 (Laravel 10.48.22), with findings attributed to each instance.
+
+These are standalone reports from real source scans, generated on **2026-11-04** with VigieVuln **1.2.1**. Dubbo uses the hosted proxy; the CMS sample uses its local cache offline and focuses on PHP dependencies. Missing Wordfence/Drupal advisory and WordPress checksum inputs are explicitly marked incomplete. [Sample scope, sources and reproduction commands](docs/samples/README.md).
+
+### Resolution and coverage
+
+- **Gradle:** without a lock, POM-based resolution can differ from Gradle. Locks cover only their recorded configurations, which may mix runtime, tests and build tools.
+- **Python:** exact pins are checked; transitives require a supported resolved lockfile or complete inventory.
+- **Coverage:** missing metadata or unavailable advisory sources can cause omissions or false positives. Review report warnings.
+
+See [usage](docs/USAGE.md) and [measured results](docs/BENCHMARK.md).
 
 ## Contributing
 
@@ -222,14 +196,6 @@ real project and file a [false positive / false negative report](https://github.
 with the coordinate and the manifest snippet that produced it. Dev setup, ground rules and the
 codec extension point → [`CONTRIBUTING.md`](CONTRIBUTING.md). Vulnerabilities in vigievuln
 itself → [`SECURITY.md`](SECURITY.md) (please report privately).
-
-**On AI assistance:** this codebase is written with heavy use of Claude Code; [`CLAUDE.md`](CLAUDE.md)
-in the repo root is exactly what it looks like. The bar it's held to is the one you can check
-yourself: the test suite (`npm test`), the zero-network guarantee enforced by a tripwire test and
-and the dated comparisons and limitations documented in [`docs/BENCHMARK.md`](docs/BENCHMARK.md). `vigievuln` itself uses **no LLM at runtime**; findings come from public
-vulnerability databases and deterministic parsers, and no report text is generated. Full
-statement, including where review actually caught a bad finding →
-[`AI_POLICY.md`](AI_POLICY.md). Where the code doesn't meet that bar, that's a bug report I want.
 
 ## License
 
