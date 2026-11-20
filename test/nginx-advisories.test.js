@@ -53,3 +53,55 @@ test('origin classifiers are injectable and conflicting evidence is indeterminat
  const adapters=[a,b].map(x=>({...x,supports:()=>false,assess:async()=>({})})),result=await assessInventories([target],{cacheDir,offline:true,disableCveProject:true,disableGcve:true,enrich:[],distributionSourceAdapters:adapters});
  assert.ok(!result.cveMatches.some(m=>m.cve.id==='CVE-2024-99991'));assert.equal(result.artifacts[0].components[0].packageOrigin.status,'ambiguous');
 });
+
+const recentXml='<article><section><security><item name="HTTP/2 flow control" cve="2026-123007" vulnerable="1.9.5-1.31.8" good="1.31.9+, 1.30.7+"/><item name="HTTP/3" cve="CVE-2026-121810" vulnerable="1.25.0-1.31.8" good="1.31.9+, 1.30.7+"/></security></section></article>';
+test('stable fixed exceptions do not suppress vulnerable mainline versions, for APK and dpkg',async()=>{
+ const snapshot={...await parseNginxAdvisories(recentXml),observedAt:Date.now()},cacheRepository={get:()=>({value:snapshot})};
+ assert.deepEqual(snapshot.records.map(r=>r.id),['CVE-2026-123007','CVE-2026-121810']);
+ for(const manager of ['apk','dpkg'])for(const [version,affected,fix] of [['1.30.6',true,'1.30.7'],['1.30.7',false],['1.30.8',false],['1.31.8',true,'1.31.9'],['1.31.9',false],['1.29.9',true,null]]){
+  const pkg={manager,name:'nginx',sourceName:'nginx',sourceVersion:version+(manager==='apk'?'-r1':'-1~bookworm'),packageMetadata:{maintainer:'NGINX Packaging <nginx-packaging@f5.com>'}};
+  const result=await assessNginxAdvisories([pkg],{offline:true,cacheRepository});
+  assert.equal(result.matches.length,affected?2:0,`${manager} ${version}`);
+  assert.equal(result.coverage[0].execution,'completed');
+  if(affected){assert.equal(result.matches[0].cve.fixVersion,fix);assert.equal(result.matches[0].dep.packageOrigin.source,`${manager}-maintainer`);}
+ }
+});
+test('APK collection retains vendor identity, but source package origin alone never establishes the vendor',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-nginx-apk-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ fs.mkdirSync(path.join(root,'lib/apk/db'),{recursive:true});fs.mkdirSync(path.join(root,'etc'));
+ fs.writeFileSync(path.join(root,'etc/os-release'),'ID=alpine\nVERSION_ID=3.24.4\n');
+ fs.writeFileSync(path.join(root,'lib/apk/db/installed'),'P:nginx\nV:1.30.6-r1\nA:x86_64\no:nginx\nm:NGINX Packaging <nginx-packaging@f5.com>\nU:https://nginx.org/\n\n');
+ const inventory=await require('../lib/system-inventory').collectSystemInventory(root),pkg=inventory.packages[0];
+ assert.equal(pkg.packageMetadata.maintainer,'NGINX Packaging <nginx-packaging@f5.com>');
+ const snapshot={...await parseNginxAdvisories(recentXml),observedAt:Date.now()},cacheRepository={get:()=>({value:snapshot})};
+ const result=await require('../lib/system-inventory/distribution-sources').assessDistributionSources(inventory,{cacheDir:path.join(root,'cache'),cacheRepository,offline:true});
+ assert.equal(result.matches.filter(m=>m.source==='nginx-vendor-advisories').length,2);
+ for(const packageMetadata of [{origin:'nginx',maintainer:'Alpine Maintainer <dev@alpinelinux.org>'},{origin:'nginx'},{maintainer:'NGINX <packaging@f5.com.evil.test>'}]){
+  const generic={...pkg,packageMetadata};assert.equal(require('../lib/system-inventory/nginx-advisories').nginxPackageOrigin(generic),null);
+  const result=await assessNginxAdvisories([generic],{offline:true,cacheRepository});assert.equal(result.matches.length,0);assert.equal(result.observations.length,2);
+ }
+ const ambiguous=await assessNginxAdvisories([{...pkg,packageOrigin:{status:'ambiguous'}}],{offline:true,cacheRepository});assert.equal(ambiguous.matches.length,0);
+});
+test('old parsed catalogues refresh online and remain explicitly incomplete offline',async()=>{
+ const snapshot={...await parseNginxAdvisories(recentXml),observedAt:Date.now()};delete snapshot.parserVersion;snapshot.records=snapshot.records.slice(0,1);
+ let saved,calls=0;const cacheRepository={get:()=>({value:snapshot}),put:(_namespace,_key,value)=>{saved=value;}};
+ const pkg={manager:'apk',sourceName:'nginx',sourceVersion:'1.30.6-r1',packageMetadata:{maintainer:'NGINX <packaging@nginx.org>'}};
+ const offline=await assessNginxAdvisories([pkg],{offline:true,cacheRepository});assert.equal(offline.coverage[0].execution,'partial');assert.equal(offline.matches.length,1);
+ const online=await assessNginxAdvisories([pkg],{cacheRepository,fetcher:async()=>{calls++;return new Response(recentXml);}});
+ assert.equal(calls,1);assert.equal(online.matches.length,2);assert.equal(online.coverage[0].execution,'completed');assert.equal(saved.parserVersion,2);
+});
+
+test('full Alpine assessment keeps vendor ranges separate from distribution backports',async t=>{
+ const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-nginx-alpine-assess-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});});
+ const distribution={id:'alpine',versionId:'3.24.4'},vendor={manager:'apk',name:'nginx',sourceName:'nginx',version:'1.30.6-r1',sourceVersion:'1.30.6-r1',architecture:'x86_64',manifestPath:'/lib/apk/db/installed',packageMetadata:{maintainer:'NGINX Packaging <nginx-packaging@f5.com>'}};
+ await require('../lib/system-inventory/nginx-advisories').syncNginxAdvisories({cacheDir,fetcher:async()=>new Response(recentXml)});
+ await require('../lib/system-inventory').importSystemAdvisories([{id:'ALPINE-CVE-fixture',aliases:['CVE-2026-99999'],affected:[{package:{ecosystem:'Alpine:v3.24',name:'nginx'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'1.31.0-r0'}]}]}]}],{cacheDir,distribution,complete:true});
+ const {assessInventories,systemDep}=require('../lib/artifacts/scan');
+ for(const official of [true,false]){
+  const pkg=official?vendor:{...vendor,packageMetadata:{maintainer:'Alpine Maintainer <dev@alpinelinux.org>'}};
+  const target={id:'img',kind:'rootfs',metadata:{},distribution,packages:[pkg],deps:[systemDep(pkg,'img',distribution)],coverage:[],warnings:[]};
+  const result=await assessInventories([target],{cacheDir,offline:true,disableCveProject:true,disableGcve:true,enrich:[]});
+  assert.equal(result.cveMatches.some(m=>m.cve.id==='CVE-2026-123007'),official);
+  assert.equal(result.cveMatches.some(m=>m.cve.id==='CVE-2026-99999'),!official);
+ }
+});

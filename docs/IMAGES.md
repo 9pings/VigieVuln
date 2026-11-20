@@ -233,9 +233,53 @@ package identity are not treated as installed packages. Go build information and
 nested JARs can identify components present within a binary or archive. An absent
 finding does not establish that every component was identified or assessed.
 
-The image inventory groups direct image components, image sub-dependencies and
-unclassified components separately. Classification uses available metadata and
-locations; it does not prove that a component is executed at runtime.
+The CVE chapter groups each image by installation source: OS packages (APT/dpkg,
+APK, RPM), global installations (first-level npm global packages, Python,
+RubyGems, Composer in recognized shared/user prefixes), applications with their
+own root descriptor outside package stores, bundled JavaScript (RetireJS), and
+other components/sub-dependencies. Nested npm dependencies remain in the last
+group, including those bundled in npm itself. OS file ownership takes precedence.
+Unknown/custom prefixes remain in the last group. A shared Python/Ruby environment
+does not establish which packages were explicitly requested by the installer.
+Classification does not prove execution at runtime.
+
+The Images chapter starts with declared image references. Its component details
+and the JSON report omit sub-dependencies without vulnerability findings; the
+complete inventory stays in acquisition snapshots for advisory reassessment.
+Direct application roots and global installs remain visible, while OS packages
+and native binaries are detailed only when an advisory is associated with them.
+The total component count continues to describe the full collected inventory.
+
+### Optional RetireJS image scan
+
+```bash
+vigievuln scan ./code --images --image-retire
+vigievuln image nginx:stable-alpine --registry --image-retire
+vigievuln image ./rootfs --image-retire --offline
+```
+
+`--image-retire` is off by default and independent of the source-tree RetireJS
+option. It inspects regular `.js`, `.mjs` and `.cjs` files without executing them
+or following symlinks. Package stores (`node_modules`, `vendor`, Python stores,
+package caches, `usr/share/nodejs`, etc.) are excluded; deployed `dist` and `build`
+directories are included. Files attributed to installed OS packages are excluded
+to avoid overriding distribution backport assessments. The default limits are 16 MiB per file, 128 MiB of JS
+and 10,000 files per image; limits or unreadable files produce incomplete coverage.
+The image `--limits` file accepts `maxImageJsFileBytes`, `maxImageJsBytes` and
+`maxImageJsFiles`. The scan uses RetireJS filename/content/hash signatures; it
+does not unpack arbitrary JavaScript bundles or infer dependency graphs.
+
+Offline use requires cached signatures and image contents or an inventory acquired
+with this option. Saved JS identities are reassessed against the available
+signatures, not saved vulnerability verdicts. Online image acquisition with this
+option re-inspects contents, including when an earlier inventory exists, and takes
+precedence over `--prefer-sbom`. An explicit SBOM or an older snapshot cannot supply
+the missing JS scan and is reported as incomplete when this option is requested.
+
+HTML stores identical CVE detail panels once and restores their copies locally in
+the browser for viewing, copying and printing. Word remains fully expanded.
+`findings.json` uses compact JSON whitespace and retains the existing schema and
+all vulnerability evidence; format it with `jq . findings.json` when needed.
 
 The image filesystem policy does not change source-tree scans. An explicitly
 supplied publisher SBOM is a separate inventory input, rather than a filesystem
@@ -476,3 +520,7 @@ The executive summary ranks vulnerable images separately from project dependenci
 with up to three critical CVEs per image. Project and image charts use separate rows;
 each row appears only when its inventory is present. NVD/EUVD record availability
 and update failures share one enrichment summary without changing inventory coverage.
+
+### Mutable image tags
+
+Source scans with `--images` and registry image scans warn about references without a digest, including `latest`, `stable-alpine`, numeric tags such as `1.30.7`, and an omitted tag. Pin the declaration as `nginx:1.30.7@sha256:<digest>` to keep the same image content between scanning, building and deployment. A digest resolved and recorded by the scanner does not pin the original declaration. This warning does not mean image analysis failed.

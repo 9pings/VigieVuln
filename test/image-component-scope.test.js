@@ -4,6 +4,30 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {acquireInventories,assessInventories}=require('../lib/artifacts/scan');
 const {isNpmPackageDescriptor}=require('../lib/artifacts/component-scope');
 
+test('image sources distinguish global roots, project descriptors, nested libraries and OS ownership',()=>{
+ const {imageComponentSource:source,imageComponentRole:role}=require('../lib/artifacts/component-scope');
+ const dep=(ecosystem,artifactPath,extra={})=>({ecosystem,artifactPath,...extra});
+ const cases=[
+  [dep('system','var/lib/dpkg/status',{manager:'dpkg'}),'system'],
+  [dep('npm','usr/local/lib/node_modules/@scope/tool/package.json'),'global'],
+  [dep('npm','root/.nvm/versions/node/v24.0.0/lib/node_modules/tool/package.json'),'global'],
+  [dep('npm','usr/local/lib/node_modules/tool/node_modules/child/package.json'),'other'],
+  [dep('npm','app/node_modules/tool/package.json'),'other'],
+  [dep('npm','srv/dedicated-app/package.json'),'project'],
+  [dep('pypi','usr/local/lib/python3.12/site-packages/tool.dist-info/METADATA'),'global'],
+  [dep('pypi','app/.venv/lib/python3.12/site-packages/tool.dist-info/METADATA'),'other'],
+  [dep('ruby','var/lib/gems/3.1.0/specifications/tool.gemspec'),'global'],
+  [dep('composer','root/.config/composer/vendor/composer/installed.json'),'global'],
+  [dep('composer','srv/php/composer.json',{installEvidence:{source:'composer-project'}}),'project'],
+  [dep('npm','usr/share/nodejs/tool/package.json',{osPackageOwners:[{manager:'dpkg'}]}),'system'],
+  [dep('npm','app/dist/vendor.js',{installEvidence:{source:'retire'}}),'vendored'],
+  [dep('maven','app.jar!/lib/tool.jar'),'other'],
+  [dep('npm',null,{provenance:'sbom'}),'other'],
+ ];
+ for(const [d,category] of cases)assert.equal(source(d).category,category,d.artifactPath);
+ assert.equal(role(cases[1][0]),'direct');assert.equal(role(cases[3][0]),'transitive');
+});
+
 test('only installed npm package roots are descriptors, including nested and scoped CLI packages',()=>{
  for(const p of ['app/package.json','usr/lib/node_modules/npm/package.json','node_modules/a/node_modules/b/package.json','node_modules/@scope/tool/package.json','node_modules/.pnpm/tool@1/node_modules/tool/package.json','C:\\root\\node_modules\\tool\\package.json'])assert.equal(isNpmPackageDescriptor(p),true,p);
  for(const p of ['node_modules/tool/dist/mjs/package.json','node_modules/tool/test/package.json','node_modules/.cache/package.json','node_modules/@scope/tool/dist/package.json'])assert.equal(isNpmPackageDescriptor(p),false,p);
@@ -28,7 +52,7 @@ test('images retain main components and installed libraries without expanding de
  const [target]=await acquireInventories(root,{offline:true});
  assert.equal(target.warnings.filter(w=>w.reason==='installed-metadata-error').length,0,JSON.stringify(target.warnings));
  assert.deepEqual(target.deps.map(d=>d.name).sort(),['image-app','tool','child-tool','app','library','python-app','java-app'].sort());
- for(const dep of target.deps)assert.equal(dep.imageRole,['tool','child-tool','library'].includes(dep.name)?'transitive':'direct',dep.name);
+ for(const dep of target.deps)assert.equal(dep.imageRole,['child-tool','library'].includes(dep.name)?'transitive':'direct',dep.name);
  assert.equal(target.metadata.componentScope,'image-components/1');
  const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir}),now=Date.now(),advisory={id:'CVE-2024-12345',affected:[{package:{ecosystem:'npm',name:'child-tool'},ranges:[{type:'SEMVER',events:[{introduced:'0'},{fixed:'4.0.0'}]}]}]};
  store.commit({records:[{source:'osv',document:advisory,fetchedAt:now}],queries:[{source:'osv',ecosystem:'npm',name:'child-tool',version:'3.0.0',ids:[advisory.id],fetchedAt:now,complete:true}]});store.close();
@@ -36,11 +60,11 @@ test('images retain main components and installed libraries without expanding de
  const finding=assessed.cveMatches.find(m=>m.cve.id===advisory.id);assert.ok(finding);assert.equal(finding.dep.imageRole,'transitive');assert.equal(finding.dep.artifactTargetId,target.id);
  const components=assessed.artifacts[0].components;assert.equal(components.length,7);assert.equal(components.find(c=>c.name==='child-tool').imageRole,'transitive');
  const {reportArtifacts}=require('../lib/artifacts/report-inventory');
- assert.equal(reportArtifacts(assessed.artifacts,assessed.cveMatches)[0].components.length,7);
+ assert.equal(reportArtifacts(assessed.artifacts,assessed.cveMatches)[0].components.length,6);
 });
 
-test('classified image libraries remain in JSON without a CVE, including OS-owned components',()=>{
+test('image sub-dependencies without a CVE are omitted from the report projection',()=>{
  const {reportArtifacts}=require('../lib/artifacts/report-inventory');
  const components=[{ecosystem:'binary',name:'app',imageRole:'direct'},{ecosystem:'npm',name:'tool',imageRole:'transitive',osPackageOwners:[{name:'npm'}]}];
- const [result]=reportArtifacts([{id:'img',components}],[]);assert.deepEqual(result.components,[components[1]]);assert.equal(result.componentDetailsFiltered,true);assert.equal(result.componentCount,2);
+ const [result]=reportArtifacts([{id:'img',components}],[]);assert.deepEqual(result.components,[]);assert.equal(result.componentDetailsFiltered,true);assert.equal(result.componentCount,2);
 });

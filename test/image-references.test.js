@@ -64,3 +64,14 @@ test('Compose and Dockerfile platforms are resolved and malformed platforms are 
  const explicit=yamlReferences('services:\n  x:\n    image: nginx\n    platform: linux/${TARGET_ARCH}\n',{variables:{TARGET_ARCH:'arm64'}});assert.equal(explicit[0].platform,'linux/arm64');assert.equal(explicit[0].scanEligible,true);
  const docker=dockerfileReferences('FROM --platform=linux/arm64 nginx\nFROM --platform=broken alpine\nFROM --platform=linux/$ARCH debian');assert.equal(docker[0].platform,'linux/arm64');assert.equal(docker[1].blockReason,'invalid-platform');assert.equal(docker[2].classification,'unresolved');
 });
+
+test('unpinned image warnings cover all mutable tags and retain locations without treating a resolved digest as a pin',()=>{
+ const {unpinnedImageWarnings}=require('../lib/image-references'),digest='sha256:'+'a'.repeat(64);
+ const refs=dockerfileReferences(`FROM nginx:stable-alpine AS base\nFROM nginx:1.30.7 AS numeric\nFROM nginx AS implicit\nFROM nginx@${digest} AS pinned\nFROM nginx:stable-alpine@${digest}\n`)
+  .map(r=>({...r,path:'Dockerfile',contentVerified:true,boundArtifactIds:['image'],digest}));
+ refs.push(...yamlReferences('services:\n  app:\n    image: local:latest\n    build: .\n  unknown:\n    image: ${IMAGE}\n  registry:\n    image: localhost:5000/team/app:2\n',{filePath:'compose.yml'}).map(r=>({...r,path:'compose.yml'})));
+ const warnings=unpinnedImageWarnings(refs);assert.equal(warnings.length,1);const w=warnings[0];assert.equal(w.type,'image-unpinned');assert.equal(w.severity,'warning');assert.equal(w.affectsCompleteness,false);
+ assert.deepEqual(w.items.map(i=>i.reference),['nginx:stable-alpine','nginx:1.30.7','nginx','localhost:5000/team/app:2']);assert.equal(w.items[1].line,2);assert.deepEqual(w.items[1].manifestPaths,['Dockerfile']);
+ assert.equal(unpinnedImageWarnings([...refs,...refs])[0].count,4);
+ assert.deepEqual(unpinnedImageWarnings([{reference:'nginx@sha256:bad'}]),[]);
+});

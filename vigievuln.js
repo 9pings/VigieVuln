@@ -587,6 +587,8 @@ program
 	.option("--no-go", "skip the Go codec")
 	.option("--no-ruby", "skip the Ruby (Bundler) codec")
 	.option("--no-binaries", "skip scanning committed native binaries (.dll/.exe/.so/.dylib)")
+	.option("--no-image-retire", "disable RetireJS inspection of image contents")
+	.option("--image-retire", "scan bundled JavaScript in image contents with RetireJS (excludes package stores)", false)
 	.option("--images", "enable image analysis in source-tree scans (off by default)", false)
 	.option("--no-images", "skip image declaration discovery and image analysis in source-tree scans")
 	.option("--image-platform <os/arch[/variant]>", "image platform when no platform is declared", "linux/amd64")
@@ -621,7 +623,7 @@ if (!process.argv.includes("--help-all")) {
 	const { foldedFlags } = require("./lib/cli-groups");
 	const { ADMIN_FLAGS, REPORTS } = require("./lib/cli-groups");
 	const folded = new Set([...foldedFlags(), ...ADMIN_FLAGS, ...REPORTS.map(r => `--report-${r}`),
-		"--images", "--image-platform", "--reuse-stable-advisories", "--no-reuse-stable-advisories", "--stable-advisory-age-days", "--proxy-rate-limit-wait-ms",
+		"--images", "--image-retire", "--no-image-retire", "--image-platform", "--reuse-stable-advisories", "--no-reuse-stable-advisories", "--stable-advisory-age-days", "--proxy-rate-limit-wait-ms",
 		"--source", "--list-app-plugins", "--scan-context", "--private-component", "--public-component", "--wordfence-live", "--wordfence-feed", "--drupal-advisories", "--wordfence-feed-url", "--drupal-advisories-live", "--prestashop-advisories", "--prestashop-advisories-live", "--typo3-advisories", "--typo3-advisories-live", "--spip-advisories", "--spip-advisories-live", "--wp-checksums", "--wp-checksums-live", "--wp-checksums-locale", "--max-advisory-age", "--fail-on-incomplete", "--proxy-cache-token", "--advisory-query-ttl", "--prepare-offline", "--output"]);
 	for (const opt of program.options) if (folded.has(opt.long)) opt.hidden = true;
 } else {

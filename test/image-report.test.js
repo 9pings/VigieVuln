@@ -15,6 +15,24 @@ function fixture(){
  return {ids:[imageId,otherId],payload:{cveMatches:[cve(a,'CVE-2099-1001'),cve(b,'CVE-2099-1001'),cve(m,'CVE-2099-2001')],resolvedDeps:new Map([[a.coordKey,a],[b.coordKey,b],[m.coordKey,m]]),projectInfo:{name:'mixed',src:'/project',generatedAt:'2026-11-05',artifacts:[image,other]}}};
 }
 function detailsById(html,id){const anchor=html.indexOf(`id="${id}"`);assert(anchor>=0,`${id} exists`);const start=html.lastIndexOf('<details',anchor);assert(start>=0);const re=/<details\b[^>]*>|<\/details>/g;re.lastIndex=start;let depth=0,m;while((m=re.exec(html))){depth+=m[0].startsWith('</')?-1:1;if(depth===0)return html.slice(start,re.lastIndex);}assert.fail(`unclosed ${id}`);}
+test('image CVEs group installation sources and declarations lead the image chapter',()=>{
+ const {payload,ids}=fixture(),base=payload.cveMatches[0];
+ const deps=[{ecosystem:'system',manager:'dpkg',artifactPath:'var/lib/dpkg/status'},
+  {ecosystem:'npm',artifactPath:'usr/local/lib/node_modules/tool/package.json'},
+  {ecosystem:'npm',artifactPath:'srv/app/package.json'},
+  {ecosystem:'npm',artifactPath:'srv/app/dist/jquery.js',installEvidence:{source:'retire'}},
+  {ecosystem:'npm',artifactPath:'srv/app/node_modules/child/package.json'}];
+ payload.cveMatches=deps.map((d,i)=>({...base,dep:{...base.dep,...d,name:`component-${i}`,artifactId:`component-${i}`,coordKey:`component-${i}`,artifactTargetId:ids[0]}}));
+ payload.projectInfo.imageReferences=[{reference:'example:latest',path:'compose.yaml',line:3,classification:'registry'}];
+ for(const render of [generateHtmlReport,generateWordReport]){
+  const html=render(payload),cves=detailsById(html,'chimages-cves'),inventory=detailsById(html,'chimages');
+  const headings=['System packages — APT / dpkg','Global installations — npm -g','Applications with a root descriptor — srv/app','Bundled JavaScript (RetireJS)','Other components and sub-dependencies'];
+  for(let i=0;i<headings.length;i++){assert.ok(cves.includes(headings[i]),headings[i]);if(i)assert.ok(cves.indexOf(headings[i])>cves.indexOf(headings[i-1]));}
+  assert.equal((cves.match(/class="cve-row/g)||[]).length,5);
+  assert.ok(inventory.indexOf('Declared image references')<inventory.indexOf('class="image-totals"'));
+  assert.ok(inventory.indexOf('Declared image references')<inventory.indexOf('<th>Components</th>'));
+ }
+});
 test('native GCVE image advisories link to their own source and site record',()=>{
  const {payload}=fixture(),match=payload.cveMatches[0];
  match.cve={id:'GCVE-1-native/test',gcveSource:'https://example.test/feed',description:'Native advisory',severity:'HIGH',score:7.5,fixVersion:'2.0'};match.source='GCVE:GNA-1';
@@ -299,7 +317,7 @@ test('overview totals include image findings from every input lane once',()=>{
  }
 });
 
-test('each image separates observed direct components and sub-dependencies, including libraries without CVEs',()=>{
+test('each image groups component sources and omits sub-dependencies without CVEs',()=>{
  const {ids,payload}=fixture(),first=payload.projectInfo.artifacts[0],second=payload.projectInfo.artifacts[1],finding=payload.cveMatches[0];
  const direct={ecosystem:'npm',name:'app',version:'1.0',imageRole:'direct',artifactTargetId:ids[0],artifactPath:'/app/package.json'};
  const vulnerable={ecosystem:'npm',name:'library',version:'2.0',imageRole:'transitive',artifactTargetId:ids[0],artifactPath:'/app/node_modules/library/package.json'};
@@ -310,14 +328,14 @@ test('each image separates observed direct components and sub-dependencies, incl
  payload.cveMatches=[{...finding,dep:vulnerable,cve:{id:'CVE-2099-3333',severity:'HIGH'}}];
  for(const [render,locale] of [[generateHtmlReport,'en'],[generateWordReport,'en'],[generateHtmlReport,'fr'],[generateWordReport,'fr']]) {
   const html=render({...payload,locale}),one=detailsById(html,artifactAnchor(ids[0])),two=detailsById(html,artifactAnchor(ids[1]));
-  const directLabel=locale==='fr'?'Composants directs de l’image':'Direct image components';
-  const subLabel=locale==='fr'?'Sous-dépendances de l’image':'Image sub-dependencies';
-  const unknownLabel=locale==='fr'?'Composants de l’image non classés':'Unclassified image components';
-  const d=one.indexOf(directLabel),s=one.indexOf(subLabel),u=one.indexOf(unknownLabel);
-  assert.ok(d>=0&&s>d&&u>s);
-  assert.match(one.slice(d,s),/>app<\/code>/);assert.doesNotMatch(one.slice(d,s),/clean-library/);
-  const sub=one.slice(s,u);assert.match(sub,/>library<\/code>/);assert.match(sub,/>clean-library<\/code>/);
-  assert.match(sub,new RegExp(`href="#${artifactAnchor(ids[0])}-cves">CVE-2099-3333`));
-  assert.doesNotMatch(two,/CVE-2099-3333/);assert.match(one.slice(u),/unknown-role/);
+  const directLabel=locale==='fr'?'Applications avec un descripteur racine':'Applications with a root descriptor';
+  const subLabel=locale==='fr'?'Autres composants et sous-dépendances':'Other components and sub-dependencies';
+  const d=one.indexOf(directLabel),s=one.indexOf(subLabel);
+  assert.ok(d>=0&&s>d);
+  assert.match(one.slice(d,s),/>app<\/code>/);
+  assert.doesNotMatch(one,/clean-library/);
+  assert.match(one.slice(s),/>library<\/code>/);
+  assert.match(one.slice(s),new RegExp(`href="#${artifactAnchor(ids[0])}-cves">CVE-2099-3333`));
+  assert.doesNotMatch(two,/CVE-2099-3333|>library<\/code>/);assert.match(one,/unknown-role/);
  }
 });

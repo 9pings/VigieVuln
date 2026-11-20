@@ -1,4 +1,4 @@
-# Releasing VigieVuln 1.3.1
+# Releasing VigieVuln 1.3.2
 
 From the CLI repository, with Node.js 22.13+, 23.4+ or 24+:
 
@@ -9,21 +9,21 @@ npm run pack:release
 npm pack --dry-run
 ```
 
-Review `dist/vigievuln-1.3.1.tgz`, `dist/SHA256SUMS`, release notes and the staged Git diff. Check an installed-package offline scan. Record any live official-proxy check separately; it requires a test account or proxy key. The server is maintained separately in `../server-main`.
+Review `dist/vigievuln-1.3.2.tgz`, `dist/SHA256SUMS`, release notes and the staged Git diff. Check an installed-package offline scan. Record any live official-proxy check separately; it requires a test account or proxy key. The server is maintained separately in `../server-main`.
 
 After approval, publish the archive with the intended npm account:
 
 ```bash
 npm whoami
-npm publish ./dist/vigievuln-1.3.1.tgz --access public
-npm view vigievuln@1.3.1 version
+npm publish ./dist/vigievuln-1.3.2.tgz --access public
+npm view vigievuln@1.3.2 version
 ```
 
-The GitHub release workflow requires the exact `1.3.1` tag (no `v` prefix),
+The GitHub release workflow requires the exact `1.3.2` tag (no `v` prefix),
 matching both package manifests. Create an annotated tag on the reviewed commit:
 
 ```bash
-git tag -a 1.3.1 -m "VigieVuln 1.3.1" HEAD
+git tag -a 1.3.2 -m "VigieVuln 1.3.2" HEAD
 ```
 
 If a version tag already exists, inspect its local and remote targets before

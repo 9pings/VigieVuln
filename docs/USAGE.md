@@ -157,6 +157,7 @@ When using the VigieVuln service, reviewed and published VigieVuln advisories fo
 | `--gcve-offline` | Use the local GCVE data without contacting its feeds, while other enabled sources remain online. Missing or stale GCVE data is reported. |
 | `--no-certfr` | Skip CERT-FR (ANSSI) advisory references. fad keeps a local CVE → advisory index: direct mode builds a local index without sending CVE ids; hosted proxy mode sends matched CVE ids to the proxy and receives only their advisory references. GCVE ids need no source (`GCVE-0-…` is the CVE id by the GCVE rules) |
 | `--licenses` | Run license detection + the copyleft-policy chapter (**off by default**; legacy `--no-licenses` is a no-op) |
+| `--image-retire` | Opt in to RetireJS inspection of deployed image JavaScript; excludes package stores and OS-owned files. Requires `--images` in source scans. |
 | `--no-retire` | Skip retire.js vendored-JS scan |
 | `--no-vendored-js-inventory` | Keep only **vulnerable** vendored JS (the CVE chapter); skip the full **inventory** of all identified standalone JS libs (under unmanaged components). The inventory is a cyber-hygiene constat — unmanaged third-party JS regardless of CVEs — on by default. |
 | `--no-jars` | Skip scanning embedded `.jar`/`.war`/`.ear` binaries for Maven coordinates (the unmanaged-components chapter) |

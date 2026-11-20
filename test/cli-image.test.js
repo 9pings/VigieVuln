@@ -5,6 +5,15 @@ function fixture(t){const d=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cli-image-'
 function run(args,d){return spawnSync(process.execPath,[cli,...args],{cwd,encoding:'utf8',timeout:30000,env:{...process.env,HOME:d,USERPROFILE:d,NO_COLOR:'1',FAD_CHECKER_ENV:'',HTTP_PROXY:'http://127.0.0.1:9',HTTPS_PROXY:'http://127.0.0.1:9'}});}
 function ok(p){assert.equal(p.status,0,p.stderr+'\n'+p.stdout);}
 async function archive(file){const pack=tar.pack(),chunks=[];pack.on('data',c=>chunks.push(c));const done=new Promise((r,j)=>{pack.on('end',r);pack.on('error',j)});pack.entry({name:'etc/os-release'},'ID=debian\nVERSION_ID=12\n');pack.entry({name:'var/lib/dpkg/status'},'Package: specimen\nStatus: install ok installed\nVersion: 1.0-1\nArchitecture: amd64\n\n');pack.finalize();await done;fs.writeFileSync(file,Buffer.concat(chunks));}
+test('image RetireJS is opt-in, can be disabled, and reports missing offline signatures',t=>{
+ const {makeCommand}=require('../lib/cli-image');
+ for(const [args,value] of [[[],false],[['--image-retire'],true],[['--image-retire','--no-image-retire'],false]]){const c=makeCommand();c.parse(args,{from:'user'});assert.equal(c.opts().imageRetire,value);}
+ const {d,root,cache}=fixture(t),out=path.join(d,'retire');
+ ok(run(['image',root,'--image-retire','--offline','--cache-dir',cache,'--report-output',out],d));
+ const doc=JSON.parse(fs.readFileSync(path.join(out,'findings.json')));
+ assert.ok(doc.warnings.some(w=>w.reason==='image-retire-incomplete'));
+ assert.equal(doc.artifacts[0].coverage.find(c=>c.collector==='image-retire'&&c.capability==='advisories').result,'indeterminate');
+});
 test('offline rootfs and archive create JSON and HTML, export and rescan inventory',async t=>{
  const {d,root,cache}=fixture(t),out=path.join(d,'out'),snap=path.join(d,'inventory.json');
  ok(run(['image',root,'--offline','--cache-dir',cache,'--report-output',out,'--export-inventory',snap],d));

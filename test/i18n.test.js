@@ -67,7 +67,7 @@ test("Word column widths survive translation", () => {
 });
 
 // Every file using the shared report/CLI translator.
-const CHROME_SOURCES = ["lib/cve-report.js", "lib/charts.js", "lib/codecs/recipes.js", "vigievuln.js"];
+const CHROME_SOURCES = ["lib/cve-report.js", "lib/charts.js", "lib/codecs/recipes.js", "lib/image-references.js", "vigievuln.js"];
 function chromeSource() {
 	const fs = require("fs"), path = require("path");
 	return CHROME_SOURCES.map(f => fs.readFileSync(path.join(__dirname, "..", f), "utf8")).join("\n");

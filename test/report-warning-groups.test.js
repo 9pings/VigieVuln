@@ -86,3 +86,13 @@ test('warning grouping uses explicit image identifiers even without an individua
  assert.equal(unavailable.length,1);assert.equal(unavailable[0].type,'image-source-unavailable');assert.deepEqual(unavailable[0].artifactTargetIds,['a','b']);
  assert.deepEqual(groupReportWarnings(unavailable),unavailable);
 });
+
+test('unpinned images are translated image warnings, not failures or CVEs, in HTML and Word',()=>{
+ const warnings=require('../lib/image-references').unpinnedImageWarnings([{reference:'nginx:stable-alpine',path:'Dockerfile',line:3}]);
+ assert.equal(require('../lib/report-notices').warningScope(warnings[0]),'image');assert.deepEqual(groupReportWarnings(warnings),warnings);
+ const input={cveMatches:[],eolResults:[],obsoleteResults:[],outdatedResults:[],resolvedDeps:new Map(),projectInfo:{name:'fixture',imageReferences:[{reference:'nginx:stable-alpine'}]},warnings};
+ for(const render of [generateHtmlReport,generateWordReport])for(const locale of ['en','fr']){
+  const html=render({...input,locale});assert.match(html,/warn-image-unpinned/);assert.match(html,/nginx:stable-alpine/);assert.match(html,/Dockerfile:3/);assert.match(html,/@sha256:&lt;digest&gt;/);
+  assert.match(html,locale==='fr'?/Références d’images sans digest/:/Image references without a digest/);assert.doesNotMatch(html,/warn-image-source-unavailable/);
+ }
+});
