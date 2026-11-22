@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "racket",
+  "label": "Racket",
+  "category": "interpreter",
+  "executable": "^racket$",
+  "osPackage": "^racket$",
+  "cpe": "racket-lang:racket"
+}

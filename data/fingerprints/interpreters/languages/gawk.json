@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "gawk",
+  "label": "GNU Awk",
+  "category": "interpreter",
+  "executable": "^gawk$",
+  "osPackage": "^gawk$",
+  "cpe": "gnu:gawk",
+  "elfBanner": "\\0GNU Awk (\\d+\\.\\d+\\.\\d+)(?=\\0)"
+}

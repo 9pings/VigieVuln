@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "r",
+  "label": "R",
+  "category": "interpreter",
+  "executable": "^(?:R|Rscript)$",
+  "osPackage": "^r-base(?:-core)?$",
+  "cpe": "r-project:r"
+}

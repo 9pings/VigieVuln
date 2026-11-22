@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "deno",
+  "label": "Deno",
+  "category": "interpreter",
+  "executable": "^deno$",
+  "osPackage": "^deno$",
+  "cpe": "deno:deno",
+  "elfBanner": "\\x00Deno/(\\d+\\.\\d+\\.\\d+)\\x00"
+}

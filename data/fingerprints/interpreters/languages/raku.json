@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "raku",
+  "label": "Rakudo",
+  "category": "interpreter",
+  "executable": "^(?:raku|rakudo)$",
+  "osPackage": "^rakudo$"
+}

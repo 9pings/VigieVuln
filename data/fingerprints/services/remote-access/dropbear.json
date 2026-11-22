@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "dropbear",
+  "label": "Dropbear SSH",
+  "category": "service",
+  "executable": "^dropbear$",
+  "osPackage": "^dropbear(?:-bin)?$"
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "dash",
+  "label": "Dash",
+  "category": "interpreter",
+  "executable": "^dash$",
+  "osPackage": "^dash$"
+}

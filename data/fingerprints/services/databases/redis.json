@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "redis",
+  "label": "Redis",
+  "category": "service",
+  "executable": "^redis-server$",
+  "osPackage": "^redis(?:-server)?$",
+  "cpe": "redis:redis"
+}

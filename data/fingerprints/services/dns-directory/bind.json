@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "bind",
+  "label": "BIND",
+  "category": "service",
+  "executable": "^named$",
+  "osPackage": "^(?:bind|bind9|bind-server)$"
+}

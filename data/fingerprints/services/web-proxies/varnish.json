@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "varnish",
+  "label": "Varnish Cache",
+  "category": "service",
+  "executable": "^varnishd$",
+  "osPackage": "^varnish$"
+}

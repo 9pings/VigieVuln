@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "opensearch",
+  "label": "OpenSearch",
+  "category": "service",
+  "executable": "^opensearch$",
+  "osPackage": "^opensearch$"
+}

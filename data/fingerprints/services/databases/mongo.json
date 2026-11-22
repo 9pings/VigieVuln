@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "mongo",
+  "label": "MongoDB",
+  "category": "service",
+  "executable": "^mongod$",
+  "osPackage": "^(?:mongodb-server|mongodb-org-server)$"
+}

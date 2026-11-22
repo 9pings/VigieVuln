@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "kafka",
+  "label": "Apache Kafka",
+  "category": "service",
+  "executable": "^kafka-server-start$",
+  "osPackage": "^kafka$"
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "squid",
+  "label": "Squid",
+  "category": "service",
+  "executable": "^squid$",
+  "osPackage": "^squid$"
+}

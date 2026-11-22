@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "nats",
+  "label": "NATS Server",
+  "category": "service",
+  "executable": "^nats-server$",
+  "osPackage": "^nats-server$",
+  "goMainModule": "github.com/nats-io/nats-server"
+}

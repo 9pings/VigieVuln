@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "etcd",
+  "label": "etcd",
+  "category": "service",
+  "executable": "^etcd$",
+  "osPackage": "^etcd(?:-server)?$",
+  "goMainModule": "go.etcd.io/etcd/server"
+}

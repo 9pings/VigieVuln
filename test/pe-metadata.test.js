@@ -15,9 +15,9 @@ function block(key, value, children = [], type = 1) {
 	data.writeUInt16LE(type, 4);
 	return data;
 }
-function fixture() {
+function fixture(product='Example',company='Example Corp') {
 	const version = block('VS_VERSION_INFO', '', [block('StringFileInfo', '', [block('040904b0', '', [
-		block('ProductName', 'Example'), block('ProductVersion', '1.2.3'), block('CompanyName', 'Example Corp'),
+		block('ProductName', product), block('ProductVersion', '1.2.3'), block('CompanyName', company),
 	])])], 0);
 	const b = Buffer.alloc(2048);
 	b.write('MZ'); b.writeUInt32LE(0x80, 0x3c); b.write('PE\0\0', 0x80, 'binary');
@@ -59,4 +59,21 @@ test('file-backed metadata reader preserves VERSIONINFO in a distant resource wi
 		const { extractPeMetadataFile } = require('../lib/codecs/binary/pe-metadata');
 		assert.deepEqual(extractPeMetadataFile(fd, fs.fstatSync(fd).size), extractPeMetadata(original));
 	} finally { fs.closeSync(fd); }
+});
+
+test('identify a PE runtime resource separately from the enclosing program', () => {
+ const child=fixture('Node.js','Node.js');
+ const options={imageProducts:true};
+ assert.deepEqual(extractPeMetadata(child,options).products,[{id:'node',version:'1.2.3',source:'pe-version-info'}]);
+ assert.equal(extractPeMetadata(fixture('Example','Node.js'),options).products,undefined);
+ const parent=Buffer.alloc(4096);
+ fixture().copy(parent);
+ const root=512, section=0x98+224;
+ parent.writeUInt32LE(10,root+16); // RT_RCDATA, resource ID 1
+ parent.writeUInt32LE(3072,section+16);
+ parent.writeUInt32LE(3072,0x98+116);
+ parent.writeUInt32LE(child.length,root+76);
+ child.copy(parent,root+256);
+ const [embedded]=extractPeMetadata(parent,options).products;
+ assert.deepEqual(embedded,{id:'node',version:'1.2.3',source:'pe-rcdata-version-info',resourceId:1,resourceOffset:root+256});
 });

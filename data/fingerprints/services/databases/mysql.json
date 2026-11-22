@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "mysql",
+  "label": "MySQL",
+  "category": "service",
+  "executable": "^mysqld$",
+  "osPackage": "^(?:mysql(?:-community)?-server(?:-core)?)(?:-\\d\\.\\d)?$",
+  "cpe": "oracle:mysql"
+}

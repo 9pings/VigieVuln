@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "bun",
+  "label": "Bun",
+  "category": "interpreter",
+  "executable": "^bun$",
+  "osPackage": "^bun$",
+  "cpe": "anthropic:bun",
+  "elfBanner": "\\0Bun v(\\d+\\.\\d+\\.\\d+) \\(Linux (?:x64|arm64)\\)(?=\\0)",
+  "peVersionInfo": {
+    "names": [
+      "Bun"
+    ],
+    "originals": [
+      "bun.exe"
+    ],
+    "vendors": [
+      "Oven",
+      "Oven, Inc."
+    ]
+  },
+  "elfCodec": "bun-standalone"
+}

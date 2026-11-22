@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "python",
+  "label": "CPython",
+  "category": "interpreter",
+  "executable": "^python(?:[23](?:\\.\\d+)?t?)?$",
+  "osPackage": "^python[23](?:\\.\\d+)?(?:-minimal)?$",
+  "cpe": "python:python",
+  "peVersionInfo": {
+    "names": [
+      "Python"
+    ],
+    "originals": [
+      "python.exe",
+      "pythonw.exe",
+      "python3.dll"
+    ],
+    "vendors": [
+      "Python Software Foundation"
+    ]
+  },
+  "elfLibrary": "^libpython[23]\\.\\d+t?\\.so(?:\\.\\d+)*$",
+  "elfCodec": "py-version"
+}

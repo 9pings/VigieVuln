@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "ksh",
+  "label": "KornShell",
+  "category": "interpreter",
+  "executable": "^(?:ksh|ksh93|mksh)$",
+  "osPackage": "^(?:ksh|ksh93u\\+m|mksh)$"
+}

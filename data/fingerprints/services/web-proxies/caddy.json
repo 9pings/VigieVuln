@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "caddy",
+  "label": "Caddy",
+  "category": "service",
+  "executable": "^caddy$",
+  "osPackage": "^caddy$",
+  "goMainModule": "github.com/caddyserver/caddy"
+}

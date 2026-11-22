@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "rabbitmq",
+  "label": "RabbitMQ",
+  "category": "service",
+  "executable": "^rabbitmq-server$",
+  "osPackage": "^rabbitmq-server$"
+}

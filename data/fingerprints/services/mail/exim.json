@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "exim",
+  "label": "Exim",
+  "category": "service",
+  "executable": "^exim4?$",
+  "osPackage": "^exim(?:4(?:-daemon-(?:light|heavy))?)?$",
+  "cpe": "exim:exim"
+}

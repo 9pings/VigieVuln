@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "guile",
+  "label": "GNU Guile",
+  "category": "interpreter",
+  "executable": "^guile(?:-\\d\\.\\d)?$",
+  "osPackage": "^guile-\\d\\.\\d$",
+  "cpe": "gnu:guile"
+}

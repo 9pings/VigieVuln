@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "dotnet",
+  "label": ".NET",
+  "category": "interpreter",
+  "executable": "^dotnet$",
+  "osPackage": "^(?:dotnet-runtime|aspnetcore-runtime)-\\d+\\.\\d+$"
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "jscgtk",
+  "label": "JavaScriptCoreGTK",
+  "category": "interpreter",
+  "executable": "^libjavascriptcoregtk-[\\d.]+\\.so(?:\\.\\d+)*$",
+  "osPackage": "^libjavascriptcoregtk-[\\d.]+-\\d+$",
+  "cpe": "webkitgtk:webkitgtk",
+  "elfCodec": "jsc-version"
+}

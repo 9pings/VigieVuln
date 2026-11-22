@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "samba",
+  "label": "Samba",
+  "category": "service",
+  "executable": "^smbd$",
+  "osPackage": "^(?:samba|samba-server)$"
+}

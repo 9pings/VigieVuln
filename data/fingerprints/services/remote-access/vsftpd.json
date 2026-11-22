@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "vsftpd",
+  "label": "vsftpd",
+  "category": "service",
+  "executable": "^vsftpd$",
+  "osPackage": "^vsftpd$"
+}

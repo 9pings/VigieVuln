@@ -10,7 +10,7 @@
 [![CI](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml)
 
 
-**VigieVuln 1.3.2** is a polyglot dependency auditor for code audits.
+**VigieVuln 1.3.3** is a polyglot dependency auditor for code audits.
 
 It scans dependencies and **9 CMS/frameworks** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
 

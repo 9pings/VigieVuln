@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "javascriptcore",
+  "label": "JavaScriptCore (WebKit)",
+  "category": "interpreter",
+  "executable": "^jsc$",
+  "osPackage": "^javascriptcore$",
+  "elfCodec": "jsc-build",
+  "elfBuildMarkers": [
+    "/Source/JavaScriptCore/",
+    "JSC::VM::",
+    "JSC Heap Collector Thread"
+  ]
+}

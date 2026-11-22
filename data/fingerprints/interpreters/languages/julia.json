@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "julia",
+  "label": "Julia",
+  "category": "interpreter",
+  "executable": "^julia$",
+  "osPackage": "^julia$",
+  "cpe": "julialang:julia"
+}

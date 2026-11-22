@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "mosquitto",
+  "label": "Mosquitto",
+  "category": "service",
+  "executable": "^mosquitto$",
+  "osPackage": "^mosquitto$"
+}

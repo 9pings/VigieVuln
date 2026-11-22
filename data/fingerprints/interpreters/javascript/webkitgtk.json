@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "webkitgtk",
+  "label": "WebKitGTK",
+  "category": "interpreter",
+  "executable": "^libwebkit(?:2gtk|gtk)-[\\d.]+\\.so(?:\\.\\d+)*$",
+  "osPackage": "^(?:libwebkit(?:2gtk|gtk)-[\\d.]+-\\d+|webkit(?:2gtk|gtk)(?:[\\d.]+)?)$",
+  "cpe": "webkitgtk:webkitgtk",
+  "elfCodec": "webkit-version"
+}

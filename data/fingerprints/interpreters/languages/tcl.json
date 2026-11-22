@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "tcl",
+  "label": "Tcl",
+  "category": "interpreter",
+  "executable": "^tclsh(?:\\d+(?:\\.\\d+)?)?$",
+  "osPackage": "^tcl(?:\\d+(?:\\.\\d+)?)?$",
+  "cpe": "tcl:tcl"
+}

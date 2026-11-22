@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "sendmail",
+  "label": "Sendmail",
+  "category": "service",
+  "executable": "^sendmail$",
+  "osPackage": "^sendmail(?:-bin)?$"
+}

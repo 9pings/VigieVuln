@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "dnsmasq",
+  "label": "Dnsmasq",
+  "category": "service",
+  "executable": "^dnsmasq$",
+  "osPackage": "^dnsmasq(?:-base)?$"
+}

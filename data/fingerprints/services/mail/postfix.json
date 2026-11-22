@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "postfix",
+  "label": "Postfix",
+  "category": "service",
+  "executable": "^master$",
+  "osPackage": "^postfix$"
+}

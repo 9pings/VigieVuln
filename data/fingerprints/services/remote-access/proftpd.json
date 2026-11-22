@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "proftpd",
+  "label": "ProFTPD",
+  "category": "service",
+  "executable": "^proftpd$",
+  "osPackage": "^proftpd(?:-core)?$"
+}

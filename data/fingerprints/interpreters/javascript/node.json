@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "node",
+  "label": "Node.js",
+  "category": "interpreter",
+  "executable": "^(?:node|nodejs)$",
+  "osPackage": "^nodejs$",
+  "cpe": "nodejs:node.js",
+  "elfBanner": "\\0node\\.js\\/v(\\d+\\.\\d+\\.\\d+)(?=\\0)",
+  "peVersionInfo": {
+    "names": [
+      "Node.js"
+    ],
+    "originals": [
+      "node.exe",
+      "node.dll"
+    ],
+    "vendors": [
+      "Node.js",
+      "OpenJS Foundation",
+      "Joyent, Inc."
+    ]
+  },
+  "elfLibrary": "^libnode\\.so(?:\\.\\d+)*$",
+  "elfCodec": "node-release"
+}

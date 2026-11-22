@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "bash",
+  "label": "Bash",
+  "category": "interpreter",
+  "executable": "^bash$",
+  "osPackage": "^bash$",
+  "cpe": "gnu:bash",
+  "elfBanner": "@\\(#\\)Bash version (\\d+\\.\\d+\\.\\d+)\\(\\d+\\) release GNU"
+}

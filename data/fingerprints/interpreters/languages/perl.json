@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "perl",
+  "label": "Perl",
+  "category": "interpreter",
+  "executable": "^perl(?:5(?:\\.\\d+){0,2})?$",
+  "osPackage": "^perl(?:-base)?$",
+  "cpe": "perl:perl",
+  "elfBanner": "\\0\\n?This is perl (\\d+), version (\\d+), subversion (\\d+) ",
+  "elfLibrary": "^libperl\\.so(?:\\.\\d+)*$"
+}

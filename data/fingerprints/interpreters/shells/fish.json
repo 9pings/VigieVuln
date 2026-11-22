@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "fish",
+  "label": "fish",
+  "category": "interpreter",
+  "executable": "^fish$",
+  "osPackage": "^fish$",
+  "cpe": "fishshell:fish"
+}

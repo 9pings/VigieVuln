@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "traefik",
+  "label": "Traefik",
+  "category": "service",
+  "executable": "^traefik$",
+  "osPackage": "^traefik$",
+  "goMainModule": "github.com/traefik/traefik"
+}

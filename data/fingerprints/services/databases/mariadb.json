@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "mariadb",
+  "label": "MariaDB",
+  "category": "service",
+  "executable": "^mariadbd$",
+  "osPackage": "^mariadb(?:-server(?:-core)?)?$",
+  "cpe": "mariadb:mariadb"
+}

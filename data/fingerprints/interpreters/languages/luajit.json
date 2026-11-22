@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "luajit",
+  "label": "LuaJIT",
+  "category": "interpreter",
+  "executable": "^luajit(?:-\\d[\\w.-]*)?$",
+  "osPackage": "^luajit$",
+  "cpe": "luajit:luajit",
+  "elfBanner": "\\0LuaJIT (\\d+\\.\\d+\\.\\d+)(?=\\0)"
+}

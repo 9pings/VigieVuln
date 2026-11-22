@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "java",
+  "label": "Java",
+  "category": "interpreter",
+  "executable": "^java$",
+  "osPackage": "^(?:openjdk-\\d+-(?:jre|jdk)(?:-headless)?|openjdk\\d+(?:-jre(?:-headless)?)?|temurin-\\d+-(?:jdk|jre))$"
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "cyrus",
+  "label": "Cyrus IMAP",
+  "category": "service",
+  "executable": "^imapd$",
+  "osPackage": "^cyrus-imapd$"
+}

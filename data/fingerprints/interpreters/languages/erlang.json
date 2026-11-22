@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "erlang",
+  "label": "Erlang/OTP",
+  "category": "interpreter",
+  "executable": "^(?:erl|beam\\.smp)$",
+  "osPackage": "^erlang(?:-base)?$",
+  "cpe": "erlang:otp"
+}

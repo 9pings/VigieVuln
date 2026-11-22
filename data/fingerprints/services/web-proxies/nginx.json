@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "nginx",
+  "label": "NGINX",
+  "category": "service",
+  "executable": "^nginx$",
+  "osPackage": "^nginx(?:-(?:core|full|light|extras))?$",
+  "cpe": "f5:nginx",
+  "elfBanner": "\\0nginx\\/(\\d+\\.\\d+\\.\\d+)(?=\\0)",
+  "cpeAliases": [
+    "nginx:nginx",
+    "igor_sysoev:nginx"
+  ]
+}

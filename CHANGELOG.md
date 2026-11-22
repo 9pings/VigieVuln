@@ -1,5 +1,11 @@
 # Release notes — VigieVuln
 
+## [1.3.3] — 2026-11-22
+
+- Identify interpreters, embedded runtimes and network services in container images with 75 product fingerprints. Extract versions from supported ELF binaries, Windows resources and installation metadata.
+- Check supported upstream binary versions against NVD and retain distribution advisory handling for installed OS packages.
+- Group interpreters and services in image details and CVE reports, including detection evidence, unknown versions and incomplete advisory checks.
+
 ## [1.3.2] — 2026-11-20
 
 - Group image CVEs by installation source and show declared image references first; omit unaffected image sub-dependencies from report inventories.

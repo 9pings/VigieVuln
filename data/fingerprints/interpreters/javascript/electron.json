@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "electron",
+  "label": "Electron",
+  "category": "interpreter",
+  "executable": "^electron$",
+  "osPackage": "^electron(?:\\d+)?$",
+  "cpe": "electronjs:electron",
+  "peVersionInfo": {
+    "names": [
+      "Electron"
+    ],
+    "originals": [
+      "electron.exe"
+    ],
+    "vendors": [
+      "Electron"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "unbound",
+  "label": "Unbound",
+  "category": "service",
+  "executable": "^unbound$",
+  "osPackage": "^unbound$"
+}

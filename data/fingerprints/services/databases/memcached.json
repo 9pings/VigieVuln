@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "memcached",
+  "label": "Memcached",
+  "category": "service",
+  "executable": "^memcached$",
+  "osPackage": "^memcached$",
+  "cpe": "memcached:memcached"
+}

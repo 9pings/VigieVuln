@@ -53,7 +53,7 @@ test('images retain main components and installed libraries without expanding de
  assert.equal(target.warnings.filter(w=>w.reason==='installed-metadata-error').length,0,JSON.stringify(target.warnings));
  assert.deepEqual(target.deps.map(d=>d.name).sort(),['image-app','tool','child-tool','app','library','python-app','java-app'].sort());
  for(const dep of target.deps)assert.equal(dep.imageRole,['child-tool','library'].includes(dep.name)?'transitive':'direct',dep.name);
- assert.equal(target.metadata.componentScope,'image-components/1');
+ assert.equal(target.metadata.componentScope,'image-components/2');
  const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir}),now=Date.now(),advisory={id:'CVE-2024-12345',affected:[{package:{ecosystem:'npm',name:'child-tool'},ranges:[{type:'SEMVER',events:[{introduced:'0'},{fixed:'4.0.0'}]}]}]};
  store.commit({records:[{source:'osv',document:advisory,fetchedAt:now}],queries:[{source:'osv',ecosystem:'npm',name:'child-tool',version:'3.0.0',ids:[advisory.id],fetchedAt:now,complete:true}]});store.close();
  const assessed=await assessInventories([target],{cacheDir,offline:true,disableCveProject:true,disableGcve:true,enrich:[],fetcher:()=>assert.fail('network')});

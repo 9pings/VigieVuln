@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "php",
+  "label": "PHP",
+  "category": "interpreter",
+  "executable": "^php(?:-?(?:fpm|cgi|cli|phpdbg))?(?:\\d+(?:\\.\\d+)?)?$|^phpdbg$",
+  "osPackage": "^php(?:\\d+(?:\\.\\d+)?)?(?:-(?:cli|cgi|fpm|phpdbg))?$",
+  "cpe": "php:php",
+  "elfBanner": "\\0X-Powered-By: PHP\\/(\\d+\\.\\d+\\.\\d+)(?=\\0)",
+  "peVersionInfo": {
+    "names": [
+      "PHP"
+    ],
+    "originals": [
+      "php.exe",
+      "php-cgi.exe"
+    ],
+    "vendors": [
+      "The PHP Group"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "clickhouse",
+  "label": "ClickHouse",
+  "category": "service",
+  "executable": "^clickhouse-server$",
+  "osPackage": "^clickhouse-server$"
+}

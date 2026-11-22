@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "openssh",
+  "label": "OpenSSH server",
+  "category": "service",
+  "executable": "^sshd$",
+  "osPackage": "^openssh-server$",
+  "elfBanner": "\\x00OpenSSH_(\\d+\\.\\d+(?:p\\d+)?)\\x00",
+  "cpe": "openbsd:openssh"
+}

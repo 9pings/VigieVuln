@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "rspamd",
+  "label": "Rspamd",
+  "category": "service",
+  "executable": "^rspamd$",
+  "osPackage": "^rspamd$"
+}

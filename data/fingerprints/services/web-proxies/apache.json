@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "apache",
+  "label": "Apache HTTP Server",
+  "category": "service",
+  "executable": "^(?:apache2|httpd)$",
+  "osPackage": "^(?:apache2(?:-bin)?|httpd(?:-core)?)$",
+  "cpe": "apache:http_server",
+  "elfBanner": "\\0Apache\\/(\\d+\\.\\d+\\.\\d+)(?=\\0)",
+  "peVersionInfo": {
+    "names": [
+      "Apache HTTP Server"
+    ],
+    "originals": [
+      "httpd.exe"
+    ]
+  }
+}

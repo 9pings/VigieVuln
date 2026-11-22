@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "haproxy",
+  "label": "HAProxy",
+  "category": "service",
+  "executable": "^haproxy$",
+  "osPackage": "^haproxy$",
+  "cpe": "haproxy:haproxy",
+  "elfBanner": "\\0HAProxy version (\\d+\\.\\d+\\.\\d+)(?: |\\0)"
+}

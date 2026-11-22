@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "envoy",
+  "label": "Envoy",
+  "category": "service",
+  "executable": "^envoy$",
+  "osPackage": "^envoy$"
+}

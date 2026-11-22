@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "ruby",
+  "label": "Ruby",
+  "category": "interpreter",
+  "executable": "^ruby(?:\\d+(?:\\.\\d+)?)?$",
+  "osPackage": "^ruby(?:\\d+(?:\\.\\d+)?)?$",
+  "cpe": "ruby-lang:ruby",
+  "elfBanner": "\\0ruby (\\d+\\.\\d+\\.\\d+)(?:p\\d+)? \\(\\d{4}-",
+  "peVersionInfo": {
+    "names": [
+      "Ruby interpreter (CUI)",
+      "Ruby interpreter (GUI)"
+    ],
+    "originals": [
+      "ruby.exe",
+      "rubyw.exe"
+    ]
+  },
+  "elfLibrary": "^libruby(?:-\\d+\\.\\d+)?\\.so(?:\\.\\d+)*$"
+}

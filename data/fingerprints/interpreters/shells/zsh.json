@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "zsh",
+  "label": "Zsh",
+  "category": "interpreter",
+  "executable": "^zsh$",
+  "osPackage": "^zsh$",
+  "cpe": "zsh:zsh"
+}

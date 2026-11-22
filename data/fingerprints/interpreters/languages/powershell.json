@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "powershell",
+  "label": "PowerShell",
+  "category": "interpreter",
+  "executable": "^pwsh$",
+  "osPackage": "^powershell$",
+  "cpe": "microsoft:powershell",
+  "peVersionInfo": {
+    "names": [
+      "PowerShell"
+    ],
+    "originals": [
+      "pwsh.exe"
+    ]
+  }
+}

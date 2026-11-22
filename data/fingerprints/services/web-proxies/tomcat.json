@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "tomcat",
+  "label": "Apache Tomcat",
+  "category": "service",
+  "executable": "^jsvc-tomcat$",
+  "osPackage": "^tomcat\\d*$"
+}

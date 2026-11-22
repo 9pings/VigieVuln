@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "wpewebkit",
+  "label": "WPE WebKit",
+  "category": "interpreter",
+  "executable": "^libWPEWebKit-[\\d.]+\\.so(?:\\.\\d+)*$",
+  "osPackage": "^(?:libwpewebkit-[\\d.]+-\\d+|wpewebkit)$",
+  "cpe": "wpewebkit:wpe_webkit",
+  "elfCodec": "webkit-version"
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "lua",
+  "label": "Lua",
+  "category": "interpreter",
+  "executable": "^lua(?:[5-9](?:\\.\\d+)?)?$",
+  "osPackage": "^lua(?:[5-9](?:\\.\\d+)?)?$",
+  "cpe": "lua:lua",
+  "elfBanner": "\\$LuaVersion: Lua (\\d+\\.\\d+\\.\\d+)\\s",
+  "elfLibrary": "^liblua(?:-?5\\.\\d)?\\.so(?:\\.\\d+)*$"
+}

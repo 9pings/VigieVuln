@@ -246,9 +246,45 @@ Classification does not prove execution at runtime.
 The Images chapter starts with declared image references. Its component details
 and the JSON report omit sub-dependencies without vulnerability findings; the
 complete inventory stays in acquisition snapshots for advisory reassessment.
-Direct application roots and global installs remain visible, while OS packages
+Catalogued interpreters and services, direct application roots and global installs remain visible, while other OS packages
 and native binaries are detailed only when an advisory is associated with them.
 The total component count continues to describe the full collected inventory.
+
+### Interpreter and service fingerprints
+
+The image details and CVE chapter group catalogued interpreters, runtime engines
+and network services separately. The detection table records the path, observed
+version, evidence and advisory check. An ELF dependency may reference a shared
+library whose file was not observed. The report lists these references, unidentified native files and the
+catalogued products without observed evidence. Static contents cannot establish
+which process is running or which port is reachable.
+
+Each built-in fingerprint is a JSON file under `data/fingerprints/interpreters/`
+or `data/fingerprints/services/`, grouped by family. To add one, register its
+literal import in `data/fingerprints/index.js`. Schema version 1 records an ID,
+label, category and anchored executable and OS package patterns. Optional fields
+describe an ELF banner with version captures, a library name, a structured ELF
+reader, a Go main module, PE VERSIONINFO identity fields and an upstream CPE.
+These rules use product evidence independently of executable hashes. An exact
+filename alone is shown as a candidate with unknown version.
+
+The ELF readers recognize build banners, CPython's exported `Py_Version`,
+supported constant-return WebKitGTK/JavaScriptCore version APIs, Node's inspector
+and release metadata, and Bun standalone module graphs (appended and ELF section
+formats). A Bun application's own version is independent of its embedded engine.
+PE readers use matching product and publisher/original-filename fields from the
+same version resource. Java and Tcl installations can also provide prefix-local release metadata.
+The PE readers also inspect directly embedded PE files in ordinary,
+uncompressed RCDATA, one level deep. Custom wrappers, stripped builds, packed
+resources and other architectures can leave the exact runtime unknown.
+
+For OS packages the scanner uses distribution advisories. For identified upstream
+executables with a supported version and CPE it queries NVD by product/version,
+then checks the vulnerable CPE and version constraints. Platform constraints it
+cannot establish remain indeterminate. Offline scans replay prior consultations.
+A proxy needs support for the typed `nvd/image-product` operation. A missing
+consultation, unsupported fingerprint or disabled source cannot establish absence
+of CVEs. Reacquire inventories made before this collector to obtain binary evidence.
 
 ### Optional RetireJS image scan
 

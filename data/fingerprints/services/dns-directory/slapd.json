@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "slapd",
+  "label": "OpenLDAP",
+  "category": "service",
+  "executable": "^slapd$",
+  "osPackage": "^(?:slapd|openldap-servers)$"
+}
