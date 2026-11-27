@@ -306,3 +306,54 @@ test("each finding exports its texts once: a repeated NVD record and repeated de
 	assert.equal(doc.schema, "fad-findings/1");
 	assert.equal(typeof single.suppressed, "boolean"); assert.equal(typeof single.cpeFiltered, "boolean");
 });
+
+test("a summary or description that only reflows the finding's text is dropped; CERT-FR notices are listed once", () => {
+	const { buildFindings } = require("../lib/json-export");
+	const dep = { ecosystem: "system", name: "linux-image", version: "6.1.69-1", coordKey: "system:deb:linux-image" };
+	const notice = { ref: "CERTFR-2026-AVI-0225", kind: "avis", title: "Multiples vulnérabilités dans le noyau Linux" };
+	const description = "In the Linux kernel, the following vulnerability has been resolved:\n\ncifs: fix potential race.";
+	const doc = buildFindings({ cveMatches: [1, 2].map(n => ({ dep, source: "osv", cve: { id: `CVE-2026-1000${n}`, description,
+		summary: "In the Linux kernel, the following vulnerability has been resolved: cifs: fix potential race.",
+		certfr: [notice], cveEvidence: [{ id: `CVE-2026-1000${n}`, certfr: [notice] }],
+		nvdEvidence: { id: `CVE-2026-1000${n}`, description: "In the Linux kernel, the following vulnerability has been resolved: cifs: fix potential race." } } })) });
+	assert.equal(doc.cve[0].summary, null);
+	assert.equal(doc.cve[0].description, description);
+	assert.equal("description" in doc.cve[0].nvdEvidence, false);
+	assert.deepEqual(doc.cve[0].certfr, ["CERTFR-2026-AVI-0225"]);
+	assert.deepEqual(doc.cve[0].cveEvidence[0].certfr, ["CERTFR-2026-AVI-0225"]);
+	assert.deepEqual(doc.certfrAdvisories, { "CERTFR-2026-AVI-0225": { kind: "avis", title: notice.title } });
+	const kept = buildFindings({ cveMatches: [{ dep, source: "osv", cve: { id: "CVE-2026-10003", description, summary: "A different, shorter headline" } }] });
+	assert.equal(kept.cve[0].summary, "A different, shorter headline");
+	assert.equal("certfrAdvisories" in kept, false);
+});
+
+test("beyond a component's detail limit, findings stay listed with identity and rating but without texts", () => {
+	const { buildFindings } = require("../lib/json-export");
+	const { buildCycloneDx } = require("../lib/sbom-export");
+	const { makeDepRecord } = require("../lib/dep-record");
+	const kernel = makeDepRecord({ ecosystem: "system", namespace: "debian", name: "linux-image", version: "6.1.69-1", manifestPath: "/var/lib/dpkg/status" });
+	const brotli = makeDepRecord({ ecosystem: "system", namespace: "debian", name: "libbrotli1", version: "1.0.9-2", manifestPath: "/var/lib/dpkg/status" });
+	const finding = (dep, n, severity, score) => ({ dep, source: "osv", cve: { id: `CVE-2026-${10000 + n}`, severity, score, description: `text ${n}`,
+		fixVersion: "6.1.170-1", historicalEvidence: { scope: "release-specific" }, nvdEvidence: { id: `CVE-2026-${10000 + n}`, references: [{ url: "https://example.test/" + n }] } } });
+	const cveMatches = [...Array.from({ length: 130 }, (_, i) => finding(kernel, i, i < 3 ? "CRITICAL" : "LOW", i < 3 ? 9.8 : 2.0)), finding(brotli, 500, "MEDIUM", 5.5)];
+	const doc = buildFindings({ cveMatches });
+	assert.equal(doc.cve.length, 131, "every finding is still listed");
+	const compact = doc.cve.filter(f => f.detail === "compact");
+	assert.equal(compact.length, 30);
+	assert.deepEqual([doc.summary.cve.compact, doc.summary.cve.detailLimitPerComponent, doc.summary.cve.total], [30, 100, 131]);
+	for (const f of compact) {
+		for (const key of ["description", "summary", "references", "nvdEvidence", "cveEvidence", "euvdDetails"]) assert.equal(key in f, false, key);
+		assert.equal(f.severity, "LOW"); assert.equal(f.cvss, 2); assert.equal(f.fixVersion, "6.1.170-1");
+		assert.equal(f.dep.coord, "linux-image"); assert.deepEqual(f.historicalEvidence, { scope: "release-specific" });
+		assert.equal(typeof f.suppressed, "boolean"); assert.equal(typeof f.cpeFiltered, "boolean");
+	}
+	const critical = doc.cve.filter(f => f.severity === "CRITICAL");
+	assert.equal(critical.length, 3); assert.ok(critical.every(f => !f.detail && f.description));
+	assert.ok(!doc.cve.find(f => f.dep.coord === "libbrotli1").detail, "another component keeps its detail");
+	const bom = buildCycloneDx(new Map([[kernel.coordKey, kernel], [brotli.coordKey, brotli]]), cveMatches);
+	assert.equal(bom.vulnerabilities.length, 131);
+	const slim = bom.vulnerabilities.filter(v => v.properties.some(p => p.name === "vigievuln:detail" && p.value === "compact"));
+	assert.equal(slim.length, 30);
+	assert.ok(slim.every(v => !v.description && !v.references && v.ratings[0].severity === "low" && !v.properties.some(p => p.name === "vigievuln:related-risk-evidence")), JSON.stringify(slim[0]));
+	assert.ok(bom.vulnerabilities.filter(v => !slim.includes(v)).every(v => v.description));
+});
