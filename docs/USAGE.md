@@ -442,15 +442,22 @@ vigievuln scan . --fail-on critical                # malware blocks even below '
 
 ## Large reports
 
-A component with thousands of advisories (a kernel package carries more than 9 000) is
-reported in full detail for its 100 highest-priority findings. The HTML and Word reports
-count the others by severity. The JSON, Excel, SBOM, SARIF and CSAF exports still list
-every finding, the ones beyond the limit as compact entries (`detail: "compact"`) with
-their identity, component, rating, fix and distribution evidence but without advisory
-texts; `summary.cve.compact` counts them. A distribution's per-CVE record
-(`DEBIAN-CVE-…`) and the CVE it names are one finding, shown under the CVE id; a DSA or
-DLA announcement whose CVEs are all listed for the package appears in their `related`
-field.
+A component with thousands of advisories (a kernel package carries more than 9 000), or
+one advisory repeated for each of the forty packages built from the same source, would
+bury every other finding. Findings are therefore grouped: a system source package and the
+packages built from it form one group, any other component is its own group. Within a
+group each advisory is detailed once, on its highest-priority occurrence, and the group
+details its 100 highest-priority advisories.
+
+The HTML and Word reports show one row per detailed advisory, name the other packages of
+the source that carry it, and count the advisories beyond the limit by severity. The
+JSON, Excel, SBOM, SARIF and CSAF exports still list every finding for every package;
+the ones that are not detailed are compact entries (`detail: "compact"`): same keys,
+identity, component, rating, fix and distribution evidence, without the advisory texts,
+which the detailed entry of the same advisory carries when it is within the limit.
+`summary.cve.compact` counts them. A distribution's per-CVE record (`DEBIAN-CVE-…`) and
+the CVE it names are one finding, shown under the CVE id; a DSA or DLA announcement
+whose CVEs are all listed for the package appears in their `related` field.
 
 With an NVD API key, a batch of more than 200 CVE records is read from the NVD mirror
 first, then from NVD for what the mirror does not hold yet: NVD's limit of 50 requests
