@@ -342,7 +342,8 @@ test("beyond a component's detail limit, findings stay listed with identity and 
 	assert.equal(compact.length, 30);
 	assert.deepEqual([doc.summary.cve.compact, doc.summary.cve.detailLimitPerComponent, doc.summary.cve.total], [30, 100, 131]);
 	for (const f of compact) {
-		for (const key of ["description", "summary", "references", "nvdEvidence", "cveEvidence", "euvdDetails"]) assert.equal(key in f, false, key);
+		assert.equal(f.description, null); assert.equal(f.nvdEvidence, null); assert.deepEqual(f.cveEvidence, []);
+		assert.deepEqual(Object.keys(f).filter(k => k !== "detail").sort(), Object.keys(doc.cve.find(x => x.detail !== "compact")).filter(k => k !== "detail").sort(), "same keys as a detailed entry");
 		assert.equal(f.severity, "LOW"); assert.equal(f.cvss, 2); assert.equal(f.fixVersion, "6.1.170-1");
 		assert.equal(f.dep.coord, "linux-image"); assert.deepEqual(f.historicalEvidence, { scope: "release-specific" });
 		assert.equal(typeof f.suppressed, "boolean"); assert.equal(typeof f.cpeFiltered, "boolean");
