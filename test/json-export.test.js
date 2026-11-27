@@ -282,3 +282,27 @@ test('system advisory export preserves risk provenance and relationship semantic
  for(const key of ['id','aliases','upstream','related','summary','published','modified','advisorySource','riskEvidence','severitySource','scoreSource','nvdEvidence'])assert.deepEqual(row[key],advisory[key]);
  assert.equal(row.severity,'UNKNOWN');assert.equal(row.cvss,null);assert.deepEqual(advisory.aliases,[]);
 });
+
+test("each finding exports its texts once: a repeated NVD record and repeated descriptions are dropped", () => {
+	const { buildFindings } = require("../lib/json-export");
+	const description = "In the Linux kernel, the following vulnerability has been resolved: fixture.";
+	const references = [{ url: "https://git.kernel.org/stable/c/abc" }];
+	const euvdDetails = { id: "EUVD-2026-1", description, references: ["https://git.kernel.org/stable/c/abc"] };
+	const nvd = { id: "CVE-2026-10001", relationship: "identity", severity: "HIGH", score: 7.8, description, references };
+	const dep = { ecosystem: "system", name: "linux-image", version: "6.1.69-1", coordKey: "system:deb:linux-image" };
+	const doc = buildFindings({ cveMatches: [
+		{ dep, source: "osv", cve: { id: "CVE-2026-10001", description, severity: "HIGH", score: 7.8, euvdDetails,
+			nvdEvidence: { ...nvd, records: [nvd] }, cveEvidence: [{ id: "CVE-2026-10001", euvdDetails }] } },
+		{ dep, source: "osv", cve: { id: "RLSA-2026:1", description: "erratum", upstream: ["CVE-2026-10001", "CVE-2026-10002"],
+			nvdEvidence: { ...nvd, relationship: "upstream", records: [nvd, { ...nvd, id: "CVE-2026-10002", description: "another text" }] } } },
+	] });
+	const [single, erratum] = doc.cve;
+	assert.equal(single.description, description);
+	assert.deepEqual(single.nvdEvidence, { id: "CVE-2026-10001", relationship: "identity", severity: "HIGH", score: 7.8, references });
+	assert.deepEqual(single.euvdDetails, { id: "EUVD-2026-1", references: euvdDetails.references });
+	assert.deepEqual(single.cveEvidence, [{ id: "CVE-2026-10001" }]);
+	assert.equal(erratum.nvdEvidence.description, description, "a text that differs from the finding's own is kept");
+	assert.deepEqual(erratum.nvdEvidence.records, [{ id: "CVE-2026-10001", relationship: "identity" }, { ...nvd, id: "CVE-2026-10002", description: "another text" }]);
+	assert.equal(doc.schema, "fad-findings/1");
+	assert.equal(typeof single.suppressed, "boolean"); assert.equal(typeof single.cpeFiltered, "boolean");
+});
