@@ -21,6 +21,20 @@ For commands and coverage limitations, see [usage](USAGE.md),
 | Scan context | `lib/scan-coverage.js`, `lib/scan-completeness.js`, `lib/diagnostics.js`, `lib/provenance.js`, `lib/diff.js`, `lib/gate.js` | Track coverage, provenance, baseline comparisons and gate outcomes. |
 | Cache | `lib/cache-db.js`, `lib/cache-repository.js`, `lib/proxy-cache.js`, `lib/cache-archive-sqlite.js` | SQLite storage, resource caches, proxy and portable cache archives. |
 
+## Modules loaded by the server
+
+The server repository loads CLI modules by path, `require('vigievuln/lib/<name>')`, about
+forty of them (providers, advisory store, cache, NVD, OSV, CVE download, resource cache).
+The path of a file under `lib/` is therefore a contract: a module with no importer in
+this repository can still be in use (`lib/nvd-bulk.js`, `lib/resource-cache/fs-store.js`,
+`lib/github-publisher-maven.js`). Before moving, renaming or removing a module, run
+
+```bash
+node scripts/check-server-modules.js ../server
+```
+
+which lists the modules the server loads and fails when one no longer resolves.
+
 ## Codecs
 
 Each registered codec in `lib/codecs/` identifies supported project files,
