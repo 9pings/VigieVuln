@@ -454,7 +454,11 @@ field.
 
 With an NVD API key, a batch of more than 200 CVE records is read from the NVD mirror
 first, then from NVD for what the mirror does not hold yet: NVD's limit of 50 requests
-per 30 seconds would otherwise take about 100 minutes for 10 000 CVEs.
+per 30 seconds would otherwise take about 100 minutes for 10 000 CVEs. An ENISA EUVD
+record is requested for the findings reported in full detail and for any CVE still
+lacking a score, a severity or a description; the EUVD identifier and exploitation
+status are attached to every finding. `coverage[].durationMs` gives the time spent in
+each enrichment source.
 
 ## Offline / cache control
 

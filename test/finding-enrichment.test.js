@@ -139,3 +139,22 @@ test('resource-specific health deduplication retains other endpoint outages and 
  health.markOutage('euvd',{url:'https://euvdservices.enisa.europa.eu/api/search',code:'HTTP 503',requestKey:require('../lib/providers/common').failureKey('euvd','exploited',{page:0})});
  assert.equal(health.unreportedOutages(keys).length,1,'different endpoint remains a global alert');
 });
+test('ENISA records are requested for detailed findings and for CVEs still lacking context, not for the rest of a large component',async t=>{
+ const cacheDir=root(t),repo=createCacheRepository(cacheDir),dep={artifactTargetId:'a',ecosystem:'system',name:'linux',version:'6.1',coordKey:'a:linux'};
+ const id=n=>`CVE-2024-${String(10000+n)}`,byCve={};for(let n=0;n<130;n++)byCve[id(n)]=`EUVD-2024-${n+1}`;
+ repo.put('catalogue','euvd',{_fetchedAt:Date.now(),body:{byCve,exploited:{}}});
+ // 130 findings on one component, rated by NVD from the highest score down; the last one has no rating.
+ const matches=Array.from({length:130},(_,n)=>({dep,cve:n===129?{id:id(n),severity:'UNKNOWN'}:{id:id(n),severity:'HIGH',score:9-n/100,description:'NVD text'}}));
+ const asked=[];
+ const fetcher=async url=>{const euvd=/EUVD-2024-\d+/.exec(String(url))[0];asked.push(euvd);const n=Number(euvd.split('-')[2])-1;return Response.json({id:euvd,aliases:id(n),baseScore:5,description:'ENISA'});};
+ const result=await enrichEuropeanFindings(matches,{cacheDir,fetcher,certfr:false});
+ assert.equal(asked.length,101,'100 detailed findings and the unrated one');
+ assert.ok(asked.includes('EUVD-2024-130'),'the CVE without a rating is completed from ENISA');assert.equal(matches[129].cve.score,5);
+ assert.deepEqual(matches[110].cve.euvdDetailsEvidence,{status:'not-consulted',reason:'beyond-detail-limit'});
+ assert.equal(matches[110].cve.euvd.id,'EUVD-2024-111','the ENISA identifier itself is still attached');
+ assert.equal(result.coverage.find(x=>x.collector==='euvd-details').execution,'completed');assert.deepEqual(result.warnings,[]);
+ // Offline replay of that cache: nothing more is expected than what the online scan fetched.
+ const replay=Array.from({length:130},(_,n)=>({dep,cve:n===129?{id:id(n),severity:'UNKNOWN'}:{id:id(n),severity:'HIGH',score:9-n/100,description:'NVD text'}}));
+ const offline=await enrichEuropeanFindings(replay,{cacheDir,offline:true,certfr:false,fetcher:()=>{throw Error('network tripwire');}});
+ assert.equal(offline.coverage.find(x=>x.collector==='euvd-details').execution,'completed');assert.equal(replay[5].cve.euvdDetails.id,'EUVD-2024-6');
+});
