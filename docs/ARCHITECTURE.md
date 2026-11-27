@@ -122,7 +122,7 @@ complete or current. An advisory snapshot alone does not provide every dependenc
 POM or image inventory. Cache age and source coverage remain visible in reports.
 
 Image inspection is off by default in source-tree scans; enable `--images` or use
-`vigievuln image`. Registry access is separate from vulnerability data access.
+`vigievuln system scan`. Registry access is separate from vulnerability data access.
 See [image acquisition and air-gap preparation](IMAGES.md).
 
 Image filesystem collection keeps OS package inventory from dpkg, APK and RPM

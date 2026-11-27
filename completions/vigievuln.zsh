@@ -2,7 +2,7 @@
 # Zsh completion for vigievuln (VigieVuln — autonomous dependency auditor)
 _fad_check() {
 	if (( CURRENT == 2 )); then
-		compadd scan system watch login logout whoami setup config cache
+		compadd scan system watch login logout whoami setup config cache diff serve-cache
 		return
 	fi
 	if [[ ${words[2]} == system && $CURRENT == 3 ]]; then
@@ -18,13 +18,10 @@ _fad_check() {
 		'--target[output directory]:directory:_directories'
 		'-e[regex of groupId to exclude]:regex:'
 		'--exclude[regex of groupId to exclude]:regex:'
-		'-a[query Maven Central]'
-		'--allLibs[query Maven Central]'
-		'-v[verbose]'
+		'-v[print the version]'
 		'--verbose[verbose]'
 		'--force-update[revalidate online sources]'
-		'--test[read-only]'
-		'--report[generate CVE/EOL/obsolete report]'
+		'(-r --report)'{-r,--report}'[outputs to write: html,doc,xlsx,sbom,csaf,json,sarif]:list:'
 		'--report-output[base dir for default-named outputs]:directory:_directories'
 		'--report-html[write HTML report]::file:_files'
 		'--report-doc[write Word .doc report]::file:_files'
@@ -59,7 +56,7 @@ _fad_check() {
 		'--cve-refresh[force CVE re-download]'
 		'--cve-offline[use cached CVE only]'
 		'--snyk[run snyk and merge]'
-		'--ecosystem[codecs to run]:list:(auto all maven npm yarn nuget composer pypi)'
+		'--ecosystem[codecs to run]:list:(auto all maven gradle npm yarn nuget composer pypi go ruby binary)'
 		'--no-maven[skip the Maven codec]'
 		'--no-npm[skip the npm codec]'
 		'--no-yarn[skip the Yarn codec]'

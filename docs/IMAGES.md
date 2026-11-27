@@ -452,6 +452,24 @@ version number. An unknown distribution, repository scope, source version or
 comparison remains indeterminate. Collecting RPM packages does not itself prove
 that suitable advisories exist for that distribution.
 
+Distribution advisories are built in for Debian, Ubuntu, Alpine, AlmaLinux and Rocky
+Linux. Another distribution (RHEL/UBI, Amazon Linux, Fedora, SUSE, Wolfi…) needs
+`--advisory-config`; without it its packages are inventoried and reported as not
+assessed. Details that decide a verdict:
+
+- **End-of-life release.** Its security tracker is frozen. The report says so and is
+  marked incomplete: vulnerabilities published after the end-of-life date are not
+  recorded for its packages.
+- **Debian and Ubuntu kernels.** A signed kernel image (`linux-image-<version>`,
+  source `linux-signed-…`) is assessed under the kernel source it was built from
+  (`linux`), at the image's own version.
+- **RPM epochs.** A package built at its source's own version-release shares the source
+  epoch. A subpackage carrying its own version leaves the source version unknown.
+- **RPM module streams.** An erratum built for a module stream (`php:7.4`) applies to
+  packages of that stream, identified by their modularity label. It is not applied to
+  a non-modular package of the same name or to another stream.
+- **Distroless images.** The dpkg `status.d/` directory is read like `status`.
+
 Installed application and binary collectors inspect supported metadata without
 executing the inspected code. The scanner also consults native CVEProject and GCVE records
 in the shared SQLite advisory store. This matching runs independently of OSV and
@@ -585,9 +603,11 @@ vigievuln system scan ./image.tar --offline --lang fr \
 
 Warnings identify failed operations or applicable components and data that could not be assessed. A source deliberately excluded by configuration, a CVE-only lookup with no CVE identifier, or reuse of a prepared offline snapshot is not an alert. These observations remain in scan context and do not fail coverage gates. Source-wide corpus limitations remain distinct from whether a consultation ran. Unavailable inventory or advisory discovery can affect coverage gates; NVD/EUVD per-CVE enrichment failures are summarized separately without marking inventory incomplete. An archive covered by its verified, assessed OS package does not also require a Maven identity; corrupt or unowned archives remain gaps.
 
-Exit `0` means no selected gate failed, `1` means a finding gate failed, and `2`
-means required coverage is incomplete or the command failed. Without the strict
-coverage gate, an incomplete scan may exit `0` while still displaying warnings.
+Exit `0` means no selected gate failed, `1` means a finding gate failed or a
+known-malicious package was found, and `2` means the scan was cancelled or the command
+failed. Without the strict coverage gate, an incomplete scan exits `0` and publishes its
+reports marked incomplete (banner, chapter 0, `summary.scanReliable: false`). It is
+cancelled only when it has no inventory or when no advisory source assessed any package.
 `--fail-on kev` also requires the advisory and relevant KEV coverage needed to
 make that decision. `--no-report` suppresses report files, not assessment or gates.
 
@@ -596,7 +616,11 @@ make that decision. `--no-report` suppresses report files, not assessment or gat
 `--registry-auth credentials.json` accepts `username`, `password`, `token` and
 optional trusted `authOrigins`. Environment alternatives are
 `VIGIEVULN_REGISTRY_USER`, `VIGIEVULN_REGISTRY_PASSWORD` and
-`VIGIEVULN_REGISTRY_TOKEN`. Credentials are not obtained through Docker helpers.
+`VIGIEVULN_REGISTRY_TOKEN`. Set `registry` in the file, or `VIGIEVULN_REGISTRY_HOST`, to the
+host the credentials belong to (`registry.example.com`, `ghcr.io`, `docker.io`): they are then
+sent to that registry only. Without it they are offered to whichever registry the scanned
+reference names, so bind them wherever public images are scanned too.
+Credentials are not obtained through Docker helpers.
 `--insecure` explicitly permits HTTP registries.
 
 Resource policies are configurable through `--limits policy.json`, for example:
@@ -663,6 +687,10 @@ or installed-version bounds do not establish an affected verdict. NGINX vendor
 ranges apply only to coherently declared vendor packages; generic distro builds
 are not matched against upstream ranges because distro backports differ. Package
 signatures and runtime configuration are not inferred from these declarations.
+
+A Go binary whose `(devel)` main module cannot be given a verified version is listed in
+the scan notices: advisories for the application itself are then not assessed, while its
+embedded module dependencies and standard library are.
 
 Go binaries with a `(devel)` main module can acquire a version when embedded clean
 VCS metadata, the image's declared source/version and the module proxy record

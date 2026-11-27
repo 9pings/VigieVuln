@@ -42,15 +42,19 @@ instances keeps its own origins in each.
 **Private/custom components** (a plugin with a third-party `Update URI`, a module under
 `modules/custom/`, anything you declare with `--private-component`) are inventoried
 separately, their dependency CVEs stay in their own report group, and their private identities are not sent
-to publisher feeds. Public dependencies can still be queried through dependency sources. A component with a public catalogue identity can be declared with
-`--public-component <relative-path>=<slug>`.
+to publisher feeds. Public dependencies can still be queried through dependency sources. They are listed with the
+private packages of the other ecosystems and do not mark the report incomplete.
+
+**WordPress plugins and themes are assessed by default**, under the slug of their official header URL or of their
+directory. An extension the public catalogue does not know is classified private automatically.
+`--public-component <relative-path>=<slug>` is only needed for an extension installed under a renamed directory.
 
 ## Advisory lanes, per product
 
 | Product | Advisory lane | Notes |
 | --- | --- | --- |
-| **WordPress** | **[WPVulnerability](https://docs.wpvulnerability.com/)** (automatic, public, no key) | core version, plugins and themes identified by their official WordPress.org header URL or an explicit public identity; cached responses travel with the air-gapped cache; unknown components, invalid responses and exhausted source retries cancel publication |
-| **WordPress** | **Wordfence v3 production feed** (`--wordfence-feed <file>` snapshot, or live with `WORDFENCE_API_KEY` / `--wordfence-api-key`) | matches only explicitly declared public plugin/theme identities; `--wordfence-live --proxy-cache <url>` uses the server key; without a key on either side the request fails |
+| **WordPress** | **[WPVulnerability](https://docs.wpvulnerability.com/)** (automatic, public, no key) | core version and every plugin and theme, under the slug of its official header URL or of its directory; cached responses travel with the air-gapped cache; a component the catalogue does not know is listed as private; an invalid response or exhausted source retries mark the report incomplete |
+| **WordPress** | **Wordfence v3 production feed** (`--wordfence-feed <file>` snapshot, or live with `WORDFENCE_API_KEY` / `--wordfence-api-key`) | matches plugins and themes under the same slug rule; `--wordfence-live --proxy-cache <url>` uses the server key; without a key on either side the request fails |
 | **WordPress** (integrity) | **core checksums** (`--wp-checksums-live` / `--wp-checksums <file>`, `--wp-checksums-locale`) | modified / missing / extra core files are **diagnostics**, never CVE findings; `wp-content/` is user land |
 | **Drupal** | **packages.drupal.org** per-package security advisories (`--drupal-advisories[-live]`) | queried for exactly the inventoried **public** `drupal/*` identities; `--max-advisory-age` bounds snapshot age |
 | **PrestaShop** | the publisher's **GitHub security-advisories** feed (`--prestashop-advisories[-live]`) | whole-repository feed, range grammar normalized in the lane |

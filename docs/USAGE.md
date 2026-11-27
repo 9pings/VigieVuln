@@ -196,7 +196,7 @@ When using the VigieVuln service, reviewed and published VigieVuln advisories fo
 | `--no-eol` | Skip the end-of-life check (endoflife.date) — the flag the run suggests when that source is unreachable |
 | `--no-nvd-mirror` | Disable the [fkie-cad NVD mirror](https://github.com/fkie-cad/nvd-json-data-feeds). Without an NVD API key the mirror is queried first; with a key it is the fallback. Cached stale data may be used with a warning. Missing CVE enrichment is reported separately from discovery coverage. |
 | `--retries <n>` | Retries before a data source is marked unavailable (default `5`, waiting 5+n s each: 6, 7, 8, 9, 10 s). `0` = no retry — the first failed answer declares the source down. For direct 429/503 responses the scanner honors Retry-After. If the requested delay exceeds the remaining time budget (two minutes or the configured schedule, whichever is longer), it reports the exhausted budget and stops retrying. Shared per source, so one dead host runs ONE schedule however many lookups hit it. Requests whose caller rotates across mirrors/registries are not retried (the rotation moves on). Also settable as `"retries"` in a trusted file selected with `--config` |
-| *(source unavailable)* | **A vulnerability scan cancels before publishing any report and exits 2 if required dependency structure, package advisory discovery or CVE record evidence is missing.** This applies in every source profile, including offline scans. Invalid configuration and unusable explicitly supplied local snapshots still fail. |
+| *(source unavailable)* | **A scan with missing dependency structure, package advisory discovery or CVE record evidence still publishes its reports, marked incomplete**: a banner and chapter 0 list each gap, `summary.scanReliable` is `false` in the JSON export, and the terminal names the checks that did not complete. The scan is cancelled (exit 2, no report) only when it has no inventory at all or when no advisory source assessed any package. `--fail-on-incomplete [inventory,advisories,sources]` restores cancellation for the listed capabilities. This applies in every source profile, including offline scans. Invalid configuration and unusable explicitly supplied local snapshots still fail. |
 | *(EOL + paid support)* | When endoflife.date lists **paid** support past the open-source end of life (`extendedSupport` — e.g. Broadcom for Spring 5.3/6.x), the EOL row stays an EOL finding (those fixes are builds from the vendor's private repository, for subscribers) and states: the support end date, the build of the dependency's own branch that fixes the CVEs found (`A 5.3 build > 5.3.40 fixes 7 of the 9 CVEs found`), and — when the vendor repository is configured with `--add-repo maven <name> <url> --token <TOKEN>` — the newest vendor build of the branch. A project already on a vendor build (newer than the branch's last public release and absent from Maven Central) is not reported as EOL; chapter 0 notes it. |
 | `--eol-support` | Also report frameworks/runtimes whose **active (bug-fix) support has ended** while security fixes are still provided (endoflife.date `support` field) — rendered as an "Out of active support" band under the maintenance chapter, status `unsupported` in the JSON. Off by default: the default EOL set is unchanged. |
 | `--ignore-test` | Drop test-scoped Maven deps and dev npm deps from the scan entirely (the dev-CVE section will be absent) |
@@ -207,7 +207,8 @@ When using the VigieVuln service, reviewed and published VigieVuln advisories fo
 If Packagist answers successfully but omits a package from its advisory data, the scan
 continues and names that package in a report warning; omission is never treated as a
 clean result. An unreachable Packagist endpoint or malformed response produces a
-source-unavailable warning. These discovery failures cancel publication and return code 2.
+source-unavailable warning. The report is then published marked incomplete; with
+`--fail-on-incomplete` these discovery failures cancel publication and return code 2.
 
 ## Application inventory (experimental)
 
@@ -226,7 +227,7 @@ vigievuln scan ./project --app-plugins wordpress --wordfence-feed ./wordfence-pr
 vigievuln scan ./project --app-plugins drupal --offline --fail-on-incomplete inventory,advisories
 vigievuln scan ./project --app-plugins drupal --drupal-advisories ./drupal-advisories.json --offline
 vigievuln scan ./shop --app-plugins prestashop,typo3 --prestashop-advisories ./ps-advisories.json --typo3-advisories ./t3-advisories.json --offline
-vigievuln scan ./shop --app-plugins prestashop,typo3 --prestashop-advisories-live --typo3-advisories-live
+vigievuln scan ./shop                                   # CMS detected and their publisher advisories consulted
 vigievuln scan ./project --app-plugins wordpress --wp-checksums-live
 vigievuln scan ./project --app-plugins wordpress --wp-checksums ./wp-checksums-6.4.2-en_US.json --wp-checksums-locale en_US --offline
 vigievuln scan ./project --app-plugins laravel --offline --report-json
@@ -250,9 +251,9 @@ A missing `composer.lock` leaves package versions and dependency origins incompl
 
 `--scan-context component` treats the scan input as a standalone WordPress plugin or theme directory when its root header identifies it. It inventories that component and its Composer dependencies without inventing a WordPress core installation. The default `source` and explicit `installation` contexts describe how the input was obtained; neither proves runtime activation or a deployed configuration.
 
-WordPress scans use [WPVulnerability](https://docs.wpvulnerability.com/) automatically when no Wordfence source is selected. No API key is required. Core versions and public plugin/theme identities are queried; an official WordPress.org URL in the component header or `--public-component path=slug` identifies an extension. Validated responses are included in cache exports and reused offline. An unknown component is distinguished from a known component with no advisories. Failed required queries cancel publication after the normal retry policy.
+WordPress scans use [WPVulnerability](https://docs.wpvulnerability.com/) automatically when no Wordfence source is selected. No API key is required. The core version and every plugin and theme are assessed by default, with no option to set: an extension is queried under the slug of its official WordPress.org header URL, otherwise under the name of its directory, which is its catalogue slug in a standard installation. Only the slug and extension type are sent. An extension the catalogue does not know, one carrying an `Update URI` header, and one declared with `--private-component` are treated as private components: they are listed with the private packages of the other ecosystems and do not mark the report incomplete. Validated responses are included in cache exports and reused offline. A failed query marks the report incomplete; `--fail-on-incomplete` cancels publication instead.
 
-`--wordfence-feed` reads a local JSON snapshot of the Wordfence Intelligence v3 **production** feed. It makes no network request. `--public-component path=slug` explicitly declares the public WordPress catalogue slug for an installed plugin or theme; it can be repeated. This declaration is recorded as `user-declared`, not independently verified. A directory name or display name alone never authorizes a public advisory match. Private components are never matched to that catalogue and retain incomplete advisory coverage. A feed snapshot supplied by the operator must be complete and current for its `no-match` results to be meaningful; vigievuln cannot prove those properties from the JSON file alone. Coverage records retain its SHA-256 and local file modification time, which do not establish its download date. Advisory records retain Wordfence identifiers, references and copyright notices. See the [Wordfence v3 feed documentation](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/) for obtaining a key and the feed usage terms.
+`--wordfence-feed` reads a local JSON snapshot of the Wordfence Intelligence v3 **production** feed. It makes no network request. `--public-component path=slug` is only needed when an extension was installed under a renamed directory: it declares the catalogue slug to use instead of the directory name, is recorded as `user-declared`, and can be repeated. Private components are never matched to that catalogue; they are listed as private. A feed snapshot supplied by the operator must be complete and current for its `no-match` results to be meaningful; vigievuln cannot prove those properties from the JSON file alone. Coverage records retain its SHA-256 and local file modification time, which do not establish its download date. Advisory records retain Wordfence identifiers, references and copyright notices. See the [Wordfence v3 feed documentation](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/) for obtaining a key and the feed usage terms.
 
 `--drupal-advisories` reads a local snapshot of the [official Drupal Composer security-advisories response](https://packages.drupal.org/8/packages.json). Save it as `{ "queriedPackages": ["drupal/core", ...], "advisories": { ... } }`; `queriedPackages` must list every package requested from the API, including those omitted from its response because no advisory was returned. Unlisted packages retain `CMS_PACKAGE_NOT_QUERIED` and no negative conclusion. Drupal 7 remains outside the current community security-advisory coverage. Drupal's advisory ratings are kept separately from CVSS scores; the report shows their original rating and the derived gate severity.
 
@@ -272,13 +273,18 @@ An explicitly configured advisory file requires its corresponding `--app-plugins
 
 `--max-advisory-age <duration>` (e.g. `72h`, `30d`) bounds the age of every configured advisory snapshot. A snapshot's file modification time proves nothing about when it was collected, so the date must be declared **inside the snapshot file**: a top-level `collectedAt` or `generatedAt` ISO 8601 string, or a reserved `_fadSnapshot: { "collectedAt": "..." }` object (the Wordfence v3 feed is a flat UUID-keyed map, so the reserved key is the only metadata it tolerates). A snapshot without a declared date, a malformed date, or one older than the limit exits with code `2` before any report is written. A declared date also travels with the coverage provenance (`sourceSnapshot.collectedAt`) whether or not the limit is set.
 
-Live advisory options query their respective sources:
+An online scan consults the publisher advisories of each CMS it detects, with no option
+to set. `--offline` never fetches and reuses the cached snapshots; a local snapshot file
+(`--drupal-advisories <file>` …) replaces the query; the regional source profiles exclude
+CMS plugins. The sources consulted:
 
-- `--spip-advisories-live` queries NVD's SPIP core CPE. An NVD key is optional.
-- `--drupal-advisories-live` queries the official Drupal endpoint for inventoried
-  public `drupal/*` identities. Private components are excluded.
-- `--prestashop-advisories-live` and `--typo3-advisories-live` query the publishers'
-  GitHub advisory feeds; GitHub rate limits apply.
+- SPIP: NVD's SPIP core CPE. An NVD key is optional.
+- Drupal: the official endpoint, for inventoried public `drupal/*` identities. Private
+  components are excluded.
+- PrestaShop and TYPO3: the publishers' GitHub advisory feeds; GitHub rate limits apply.
+
+The `--spip-advisories-live`, `--drupal-advisories-live`, `--prestashop-advisories-live`
+and `--typo3-advisories-live` options remain for a mirror URL of the same API.
 - `--wp-checksums-live` fetches WordPress core checksums. These sources accept their
   documented URL override for a mirror of the same API.
 - Wordfence requires `WORDFENCE_API_KEY` or `--wordfence-api-key <key>` in direct
@@ -372,7 +378,7 @@ Exit `1` means a blocking finding; exit `2` means a scan/output error or a faile
 vigievuln scan . --fail-on kev --ignore .fadignore --report-sarif fad.sarif
 ```
 
-## Differential audits (`--baseline` / `fad diff`)
+## Differential audits (`--baseline` / `vigievuln diff`)
 
 Repeat audits care about **what changed**. Diff the current scan against a prior
 findings JSON (from `--report-json`): the report gains a **"Δ Changes since baseline"**
@@ -382,7 +388,7 @@ chapter, the JSON export gains a `diff` block, and CI can gate on *new* findings
 | --- | --- |
 | `--baseline <file>` | Diff this scan against a prior `findings.json`. Adds the Δ chapter to the report + a `diff` block (summary + new/fixed CVEs) to `--report-json`. |
 | `--fail-on-new` | Exit non-zero if any **new production CVE finding** appeared vs the baseline. |
-| `fad diff <baseline.json> <current.json>` | Standalone diff of two exports (no scan). Prints new/fixed/unchanged per category + the new CVEs; `--report-json <out>` writes a `fad-diff/1` document; `--fail-on-new` sets exit 1 on new production CVEs. |
+| `vigievuln diff <baseline.json> <current.json>` | Standalone diff of two exports (no scan). Prints new/fixed/unchanged per category + the new CVEs; `--report-json <out>` writes a `fad-diff/1` document; `--fail-on-new` sets exit 1 on new production CVEs. |
 
 A finding's identity is `CVE id + ecosystem + coordinate + version`, so a version bump
 shows the old finding *resolved* and the new one *added*. Suppressed / CPE-filtered CVEs
@@ -452,10 +458,10 @@ vigievuln scan . --offline
 vigievuln scan . --osv-db-refresh                # revalidate package/version queries
 
 # Cache export / import (useful for air-gapped boxes)
-vigievuln --export-cache fad-cache.tar.gz
-vigievuln --import-cache fad-cache.tar.gz                    # merge into the existing cache
-vigievuln --import-cache fad-cache.tar.gz --replace           # replace, keeping a SQLite backup
-vigievuln --import-cache fad-cache.tar.gz --replace --force   # replace without a backup
+vigievuln cache export vigievuln-cache.tar.gz
+vigievuln cache import vigievuln-cache.tar.gz                    # merge into the existing cache
+vigievuln cache import vigievuln-cache.tar.gz --replace           # replace, keeping a SQLite backup
+vigievuln cache import vigievuln-cache.tar.gz --replace --force   # replace without a backup
 ```
 
 The archive contains one preindexed SQLite database. Retire.js findings and its warmed
@@ -467,7 +473,8 @@ At startup it removes old cache files while preserving configuration and account
 cached responses according to their source timestamps. Whole-corpus snapshots such as
 KEV and the CVE lookup use the fresher snapshot. Pass `--replace` to install the incoming
 database as a whole and keep the previous one as `~/.vigie-vuln.bak-<timestamp>.sqlite`.
-Add `--force` to omit that backup. Configuration and API keys are never part of the bundle.
+Add `--force` to omit that backup; without `--replace`, `--force` has no effect and the import still merges.
+Configuration and API keys are never part of the bundle (`--include-config` is accepted for compatibility and ignored).
 
 ### Offline operation
 
@@ -476,7 +483,7 @@ Add `--force` to omit that backup. Configuration and API keys are never part of 
 complete as the evidence prepared for it. To run in a network-free namespace:
 
 ```bash
-unshare -rn node vigievuln.js -s ./proj --offline --report-json /tmp/airgap.json
+unshare -rn node vigievuln.js scan ./proj --offline --report-json /tmp/airgap.json
 ```
 
 The compiled binary includes retire.js and does not require Node.js or a separate
@@ -655,7 +662,7 @@ Behaviour worth knowing:
 - The scanner sends `POST /v1/resource` with a provider, data type and subject. The server builds the upstream request and caches by resource identity. OSV, Packagist and EPSS batches are split into individual cache entries; custom/private registry URLs go direct through the same router.
 - Resource responses carry `x-fad-proxy` (including `pass`/`error` for failures); `GET /__stats`
   shows the counters, `POST /__clear` wipes the base.
-- A dead proxy-cache server uses the local resource cache when that cache covers the request. Otherwise the source-health retry schedule runs and the scan writes a coverage warning. Failed required checks cancel the scan before report generation.
+- A dead proxy-cache server uses the local resource cache when that cache covers the request. Otherwise the source-health retry schedule runs and the scan writes a coverage warning. Failed required checks mark the report incomplete, or cancel the scan under `--fail-on-incomplete`.
 - `--proxy-cache` and `--offline` are exclusive (offline makes no requests at all).
 
 GitHub pagination links are retained in both caches; a headerless page cannot establish
@@ -858,7 +865,7 @@ VIGIEVULN_ENV='--fail-on high --no-nuget' vigievuln scan ./proj   # flag string 
 ```jsonc
 // ./.vigievuln-env.json — keys mirror the CLI options (camelCase)
 {
-  "source": "./my-project",            // alias of --src / "src"
+  "source": "./my-project",            // or "src"; same as the path given to `vigievuln scan`
   "exclude": "^(com\\.acme|client)\\.",
   "excludePath": ["packages/legacy/**", "**/fixtures/**"],
   "failOn": "high",
@@ -871,7 +878,7 @@ VIGIEVULN_ENV='--fail-on high --no-nuget' vigievuln scan ./proj   # flag string 
 }
 ```
 
-The source directory accepts `-s`, `--src`, `--source` and the JSON key `"source"`/`"src"` interchangeably.
+The source directory is the positional argument of `vigievuln scan <path>`; a configuration file may name it with the JSON key `"source"` or `"src"`. The former `-s`, `--src` and `--source` flags are rejected.
 
 ## NVD API key
 

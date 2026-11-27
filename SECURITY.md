@@ -53,7 +53,7 @@ Under `--offline`, **nothing**: no network call is made at all, only the warmed
 reproducible in a network-free namespace:
 
 ```bash
-unshare -rn node vigievuln.js -s ./proj --offline
+unshare -rn node vigievuln.js scan ./proj --offline
 ```
 
 Online, vigievuln sends **package coordinates and versions** to the data sources listed in

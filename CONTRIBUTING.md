@@ -8,7 +8,7 @@ contribution isn't necessarily code — it's **telling me where the output is wr
 Run it on a real project and report what it got wrong:
 
 ```bash
-npx vigievuln -s ./your-project
+npx vigievuln scan ./your-project
 ```
 
 A [false positive / false negative report](https://github.com/9pings/VigieVuln/issues/new?template=false_positive.yml)
@@ -27,7 +27,7 @@ the server has its own repository.
 npm ci
 npm test
 node --test test/core.test.js # a single file
-node vigievuln.js -s test/fixtures/monorepo-mixed --offline --no-report
+node vigievuln.js scan test/fixtures/monorepo-mixed --offline --no-report
 ```
 
 Building the single-file binaries needs [bun](https://bun.sh): `npm run build`.

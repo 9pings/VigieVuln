@@ -10,6 +10,20 @@
 - Report unique advisory identifiers alongside active occurrences, show distribution urgency beside CVSS, and distinguish security maintenance from end of life. Supply verified remediation versions for RubyGems, PyPI and stable Composer releases where the advisory establishes a safe boundary.
 - Compare upstream language advisories for distribution-owned components and retain uncertain downstream applicability with its evidence. Identify the PrestaShop Docker installation template separately from the deployed tree.
 
+- Run system work with `vigievuln system collect` and `vigievuln system scan`; they replace the `collect`, `analyse` and `image` commands. Scan a project with `vigievuln scan <path>`; the `-s`, `--src` and `--source` flags are rejected.
+- Publish the reports of a scan with coverage gaps, marked incomplete: a banner and chapter 0 list each gap, `summary.scanReliable` is `false`, and the terminal names the checks that did not complete. A scan is cancelled only without any inventory or any assessing advisory source. `--fail-on-incomplete` restores cancellation for the listed capabilities.
+- Scan images and systems that contain systemd: backslashes in file names are accepted on POSIX hosts. Clamp symbolic links that climb above the root, keep a symlink target when an opaque whiteout replaces the link, and read the dpkg `status.d` directory of distroless images.
+- Treat the members of pnpm, npm and Yarn workspaces as covered by the root lockfile, and stop warning about manifests that declare no dependency. Report a Maven type or classifier variant only when it resolves to another version, and name the coordinates.
+- Read every OSV severity entry, so a CVSS v4 vector listed first no longer hides a scorable v3 vector or the distribution rating. Take severity, score and vector from one source when merging, the highest rating first. Honour OSV `versions` lists beside ranges for system packages and Composer pre-release rules for Drupal advisories.
+- Assess signed Debian and Ubuntu kernel images under the `linux` source. Match RPM errata for packages with an epoch, and apply a module-stream erratum only to packages of that stream. Name Go applications whose main module has no verifiable version.
+- Record each package's CVEProject consultation in a project cache archive, so an air-gapped scan of a prepared project is no longer reported as lacking a second advisory source. Keep `cache prepare` free of finding gates.
+- Assess WordPress plugins and themes by default, under their header or directory slug, and read plugin headers as WordPress does (Akismet was not inventoried). List private CMS extensions, including those the public catalogue does not know, with the private packages of the other ecosystems instead of marking the report incomplete.
+- Consult the publisher advisories of a detected Drupal, PrestaShop, TYPO3 or SPIP installation in every online scan; the `--…-advisories-live` options are no longer needed.
+- Let `--fail-on-incomplete` pass on a complete project that contains no CMS application. Stop warning about Composer, PyPI and NuGet manifests that declare no dependency.
+- Bind registry credentials to one host with `registry` in the `--registry-auth` file or `VIGIEVULN_REGISTRY_HOST`; bound credentials are never sent to another registry.
+- Do not apply a malicious-package advisory to a same-named dependency that the lockfile resolves from a Git forge or a local path.
+- Fail a project scan on a known-malicious package without `--fail-on`, as system scans do. Keep `cache import --force` a merge unless `--replace` is given. Warn that the advisory tracker of an end-of-life distribution is frozen.
+
 ## [1.3.4] — 2026-11-25
 
 - Collect Linux filesystems, local container images and supported VM disks offline with `vigievuln collect`. Replay the portable inventory and generate reports on the auditor machine with `vigievuln analyse`.

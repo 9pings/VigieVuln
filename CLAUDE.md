@@ -1,3 +1,4 @@
+
 # VigieVuln CLI repository
 
 This Git repository contains the `vigievuln` npm CLI at its root. Run `npm ci`,
@@ -13,8 +14,9 @@ their historical `fad` prefix; do not infer cache-format compatibility from that
 ## Current implementation and audit limits
 
 - Source-tree image discovery and analysis are off by default; opt in with `--images`.
-  The dedicated `image` command can inspect OCI images, archives, root filesystems and
-  publisher SBOMs. Coverage depends on the available content and supported formats.
+  `vigievuln system scan` inspects OCI images, archives, root filesystems, VM disks,
+  collected inventories and publisher SBOMs; `vigievuln system collect` writes the portable
+  inventory. Coverage depends on the available content and supported formats.
 - The binary codec uses hash lookups and also extracts bounded PE/ELF metadata and Go
   build information where available, including extensionless ELF executables. Metadata
   is evidence, not a guarantee of package identity.
@@ -35,6 +37,9 @@ their historical `fad` prefix; do not infer cache-format compatibility from that
 - Preserve per-version manifest attribution and source evidence when merging findings.
 - Keep dependency discovery, advisory applicability and CVE record enrichment distinct.
 - Retain indeterminate verdicts; missing evidence must not become a clean result or a resolved baseline finding.
+- A scan with coverage gaps publishes its report marked incomplete (`summary.scanReliable` false, banner, chapter 0).
+  It is cancelled only without any inventory or any assessing advisory source, or under `--fail-on-incomplete`
+  (`lib/scan-reliability.js`, `publication`).
 - Keep source and image findings separate in executive summaries and charts.
 - Follow [release instructions](docs/RELEASING.md) for packaging and publication.
 
