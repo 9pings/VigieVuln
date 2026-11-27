@@ -134,3 +134,18 @@ test('manifest digest resolution rejects substituted content before trusting cac
  const {fetchRegistryDigest}=require('../lib/image-registry'),f=await registryFixture();
  await assert.rejects(fetchRegistryDigest('example.org/team/image:latest',{fetcher:async()=>new Response(f.objects.get('latest'),{headers:{'docker-content-digest':'sha256:'+'a'.repeat(64)}})}),/digest mismatch/);
 });
+
+test('credentials bound to a registry host are sent to that host only',async()=>{
+ const seen=[];
+ const fetcher=async(url,init={})=>{seen.push([new URL(url).host,init.headers?.authorization||init.headers?.Authorization||null]);return new Response('',{status:404});};
+ const attempt=(reference,credentials)=>fetchRegistryImage(reference,{fetcher,credentials,tmpdir:os.tmpdir()}).catch(()=>{});
+ await attempt('other.example/app:1',{registry:'registry.example.com',token:'SECRET'});
+ await attempt('nginx:1.27',{registry:'https://registry.example.com/',username:'u',password:'SECRET'});
+ assert.ok(seen.length>=2);assert.ok(seen.every(([,authorization])=>!authorization),JSON.stringify(seen));
+ seen.length=0;
+ await attempt('registry.example.com/app:1',{registry:'registry.example.com',token:'SECRET'});
+ assert.deepEqual(seen[0],['registry.example.com','Bearer SECRET']);
+ seen.length=0;
+ await attempt('nginx:1.27',{registry:'docker.io',token:'HUB'});
+ assert.deepEqual(seen[0],['registry-1.docker.io','Bearer HUB'],'docker.io names the Docker Hub registry');
+});

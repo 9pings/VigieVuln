@@ -75,3 +75,12 @@ test('unpinned image warnings cover all mutable tags and retain locations withou
  assert.equal(unpinnedImageWarnings([...refs,...refs])[0].count,4);
  assert.deepEqual(unpinnedImageWarnings([{reference:'nginx@sha256:bad'}]),[]);
 });
+test('one ARG line declares several names, quoted values and names without defaults',()=>{
+ const text=['ARG NODE=20 DEBIAN=bookworm','ARG TAG="3.20 ignored" ARCH REG=\'docker.io\' FLAVOR=sl"im"','FROM ${REG}/library/node:${NODE}-${DEBIAN}-$FLAVOR','FROM --platform=linux/$ARCH busybox'].join('\n');
+ const refs=dockerfileReferences(text);
+ assert.equal(refs[0].reference,'docker.io/library/node:20-bookworm-slim');assert.deepEqual(refs[0].unresolved,[]);
+ assert.equal(refs[1].reference,'busybox');assert.deepEqual(refs[1].unresolved,['ARCH']);
+ assert.equal(dockerfileReferences('ARG A=1 A=2\nFROM x:$A',{variables:{}})[0].reference,'x:1');
+ assert.equal(dockerfileReferences('ARG V="a b"\nFROM x:$V')[0].reference,'x:a b');
+ assert.equal(dockerfileReferences('ARG NODE=20 DEBIAN=bookworm\nFROM node:$NODE',{variables:{NODE:'22'}})[0].reference,'node:22');
+});

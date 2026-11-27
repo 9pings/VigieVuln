@@ -13,7 +13,7 @@ const { openArtifact } = require('../lib/artifacts');
 async function archive(entries) {
   const pack = tar.pack(); const chunks = []; pack.on('data', b => chunks.push(b));
   const ended = new Promise((resolve, reject) => { pack.on('end', resolve); pack.on('error', reject); });
-  for (const [name, body, type, linkname] of entries) await new Promise((resolve, reject) => pack.entry({ name, type: type || 'file', linkname }, body || '', e => e ? reject(e) : resolve()));
+  for (const [name, body, type, linkname, pax] of entries) await new Promise((resolve, reject) => pack.entry({ name, type: type || 'file', linkname, ...(pax ? { pax } : {}) }, body || '', e => e ? reject(e) : resolve()));
   pack.finalize(); await ended; return Buffer.concat(chunks);
 }
 async function fixture(t) { const d = await fsp.mkdtemp(path.join(os.tmpdir(), 'artifact-test-')); t.after(() => fsp.rm(d, { recursive: true, force: true })); return d; }
@@ -54,8 +54,10 @@ test('rootfs tar, traversal, links and limits', async t => {
   const opened=await openArtifact(file); assert.equal(opened.targets[0].kind,'rootfs'); await opened.cleanup();
   await assert.rejects(openArtifact(file,{limits:{maxFileBytes:1}}),/limit exceeded/);
   await fsp.writeFile(file,await archive([['../escape','bad']])); await assert.rejects(openArtifact(file),/Unsafe archive path/);
-  await fsp.writeFile(file,await archive([['bad','','symlink','../../etc']])); await assert.rejects(openArtifact(file),/Link escapes/);
-  const tmp=path.join(d,'temp'); await fsp.mkdir(tmp); await assert.rejects(openArtifact(file,{tmpdir:tmp}),/Link escapes/); assert.deepEqual(await fsp.readdir(tmp),[]);
+  await fsp.writeFile(file,await archive([['bad','','symlink','../../etc']])); const clamped=await openArtifact(file);
+  assert.equal(path.resolve(path.dirname(path.join(clamped.targets[0].root,'bad')),await fsp.readlink(path.join(clamped.targets[0].root,'bad'))),path.join(clamped.targets[0].root,'etc')); await clamped.cleanup();
+  await fsp.writeFile(file,await archive([['ok','x'],['../escape','bad']]));
+  const tmp=path.join(d,'temp'); await fsp.mkdir(tmp); await assert.rejects(openArtifact(file,{tmpdir:tmp}),/Unsafe archive path/); assert.deepEqual(await fsp.readdir(tmp),[]);
 });
 test('source and compression adapters can extend input handling', async t => {
   const d=await fixture(t), file=path.join(d,'custom'); await fsp.writeFile(file,'test'); let cleaned=false;
@@ -81,8 +83,11 @@ test('PAX long paths and symlink pivots stay within the root',async t=>{
  const d=await fixture(t), file=path.join(d,'root.tar'), long='nested/'.repeat(20)+'long-file';
  await fsp.writeFile(file,await archive([[long,'long'],['abs','','symlink','/nested'],['abs/via','inside']]));
  const opened=await openArtifact(file);t.after(opened.cleanup);assert.equal(await fsp.readFile(path.join(opened.targets[0].root,long),'utf8'),'long');assert.equal(await fsp.readFile(path.join(opened.targets[0].root,'nested/via'),'utf8'),'inside');
- await fsp.writeFile(file,await archive([['pivot','','symlink','../outside'],['pivot/escape','bad']]));await assert.rejects(openArtifact(file),/Link escapes/);assert.equal(fs.existsSync(path.join(d,'outside','escape')),false);
- await fsp.writeFile(file,await archive([['..\\escape','bad']]));await assert.rejects(openArtifact(file),/Unsafe archive path/);
+ await fsp.writeFile(file,await archive([['pivot','','symlink','../outside'],['pivot/escape','bad']]));const pivot=await openArtifact(file);
+ assert.equal(await fsp.readFile(path.join(pivot.targets[0].root,'outside','escape'),'utf8'),'bad');await pivot.cleanup();assert.equal(fs.existsSync(path.join(d,'outside','escape')),false);
+ await fsp.writeFile(file,await archive([['..\\escape','bad']]));const slash=await openArtifact(file);t.after(slash.cleanup);
+ if(path.sep==='/')assert.deepEqual(await fsp.readdir(slash.targets[0].root),['..\\escape']);
+ else {assert.deepEqual(await fsp.readdir(slash.targets[0].root),[]);assert.ok(slash.targets[0].metadata.warnings.some(w=>w.includes('cannot be represented')));}
 });
 test('OCI attestations are skipped with explicit warning',async t=>{
  const d=await fixture(t),dir=path.join(d,'oci'),blobs=path.join(dir,'blobs','sha256');await fsp.mkdir(blobs,{recursive:true});
@@ -107,4 +112,49 @@ test('OCI descriptors support registered digest algorithms with verification',as
  const layerBytes=await archive([['x','ok']]),layer=await blob(layerBytes),config=await blob({rootfs:{type:'layers',diff_ids:['sha256:'+crypto.createHash('sha256').update(layerBytes).digest('hex')]}}),manifest=await blob({config,layers:[layer]});
  await fsp.writeFile(path.join(dir,'index.json'),JSON.stringify({manifests:[manifest]}));await fsp.writeFile(path.join(dir,'oci-layout'),'{"imageLayoutVersion":"1.0.0"}');
  const opened=await openArtifact(dir);assert.equal(await fsp.readFile(path.join(opened.targets[0].root,'x'),'utf8'),'ok');await opened.cleanup();
+});
+async function walk(dir, out=[]) { for (const e of await fsp.readdir(dir,{withFileTypes:true})) { const p=path.join(dir,e.name); out.push(p); if (e.isDirectory()) await walk(p,out); } return out; }
+test('POSIX backslash and drive-like names are ordinary file names; Windows skips them with a warning',async t=>{
+ const d=await fixture(t),file=path.join(d,'root.tar'),slice='usr/lib/systemd/system/system-systemd\\x2dcryptsetup.slice';
+ await fsp.writeFile(file,await archive([[slice,'[Unit]'],['usr/lib/systemd/system/sockets.target.wants/a\\x2db.socket','','symlink','../a\\x2db.socket'],['usr/lib/systemd/system/a\\x2db.socket','sock'],['C:drive','c'],['hard\\link','','link',slice],['keep','k']]));
+ const opened=await openArtifact(file);t.after(opened.cleanup);const root=opened.targets[0].root;
+ if(path.sep==='/'){
+  assert.equal(await fsp.readFile(path.join(root,...slice.split('/')),'utf8'),'[Unit]');
+  assert.equal(await fsp.readFile(path.join(root,'usr/lib/systemd/system/sockets.target.wants/a\\x2db.socket'),'utf8'),'sock');
+  assert.equal(await fsp.readFile(path.join(root,'C:drive'),'utf8'),'c');assert.equal(await fsp.readFile(path.join(root,'hard\\link'),'utf8'),'[Unit]');
+  assert.deepEqual(opened.targets[0].metadata.warnings,[]);
+ } else {
+  assert.equal(await fsp.readFile(path.join(root,'keep'),'utf8'),'k');assert.equal(fs.existsSync(path.join(root,'C:drive')),false);
+  assert.equal(opened.targets[0].metadata.warnings.filter(w=>w.includes('cannot be represented')).length,5);
+ }
+});
+test('NUL, absolute names, dot-dot components and depth overflow are still rejected',async t=>{
+ const d=await fixture(t),file=path.join(d,'root.tar');
+ for(const entries of [[['a','x','file',undefined,{path:'a\0b'}]],[['/etc/x','x']],[['a/../../x','x']],[['a\\..\\..\\b/../x','x']],[['h','','link','../outside']],[['h','','link','a/../../outside']]]){
+  await fsp.writeFile(file,await archive(entries));await assert.rejects(openArtifact(file),/Unsafe archive path/,JSON.stringify(entries));
+ }
+ await fsp.writeFile(file,await archive([['a/b/c','x']]));await assert.rejects(openArtifact(file,{limits:{maxDepth:2}}),/Unsafe archive path/);
+});
+test('relative symlinks climbing above the root clamp at the root and never resolve outside it',async t=>{
+ const d=await fixture(t),file=path.join(d,'root.tar'),outside=path.join(d,'etc');await fsp.mkdir(outside);
+ // e1.js E1: Linux resolves ../../../../etc/os-release from /usr/lib to /etc/os-release.
+ await fsp.writeFile(file,await archive([['etc/os-release','ID=debian\n'],['usr/lib/x','','symlink','../../../../etc/os-release'],['up','','symlink','../../../..'],['up/etc/written','in'],['usr/lib/x2','','symlink','../../../../etc/os-release'],['usr/lib/x2','overwrite']]));
+ const opened=await openArtifact(file);t.after(opened.cleanup);const root=opened.targets[0].root;
+ assert.equal(await fsp.readFile(path.join(root,'usr/lib/x'),'utf8'),'ID=debian\n');
+ assert.equal(path.resolve(path.join(root,'usr/lib'),await fsp.readlink(path.join(root,'usr/lib/x'))),path.join(root,'etc/os-release'));
+ assert.equal(await fsp.readFile(path.join(root,'etc/written'),'utf8'),'in');assert.deepEqual(await fsp.readdir(outside),[]);
+ assert.equal(await fsp.readFile(path.join(root,'etc/os-release'),'utf8'),'ID=debian\n');
+ for(const p of await walk(root)){const real=await fsp.realpath(p).catch(()=>null);if(real)assert.ok(real===root||real.startsWith(root+path.sep),p);}
+});
+test('opaque whiteout over a lower-layer symlink replaces the link and keeps its target',async t=>{
+ const d=await fixture(t),file=path.join(d,'image.tar');
+ // e1.js E8: lib -> usr/lib in layer 1, then lib/ + lib/.wh..wh..opq + lib/new in layer 2.
+ const l1=await archive([['usr/lib/libz.so','Z'],['lib','','symlink','usr/lib'],['opt/data/old','o'],['link2','','symlink','opt/data']]);
+ const l2=await archive([['lib/','','directory'],['lib/.wh..wh..opq',''],['lib/new','N'],['link2/.wh..wh..opq',''],['opt/data/.wh..wh..opq',''],['opt/data/fresh','f']]);
+ await fsp.writeFile(file,await archive([['manifest.json',JSON.stringify([{Config:'c.json',Layers:['l1.tar','l2.tar']}])],['c.json','{"os":"linux","architecture":"amd64"}'],['l1.tar',l1],['l2.tar',l2]]));
+ const opened=await openArtifact(file);t.after(opened.cleanup);const root=opened.targets[0].root;
+ assert.equal(await fsp.readFile(path.join(root,'usr/lib/libz.so'),'utf8'),'Z');
+ assert.ok((await fsp.lstat(path.join(root,'lib'))).isDirectory());assert.deepEqual(await fsp.readdir(path.join(root,'lib')),['new']);
+ assert.ok((await fsp.lstat(path.join(root,'link2'))).isDirectory());assert.deepEqual(await fsp.readdir(path.join(root,'link2')),[]);
+ assert.deepEqual(await fsp.readdir(path.join(root,'opt/data')),['fresh']);
 });
