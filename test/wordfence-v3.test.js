@@ -26,11 +26,12 @@ test("Wordfence v3 checks inclusive version ranges and keeps no-CVE advisory ide
 	assert.equal(assessWordfenceFeed(indexFeed(advisory), [component("a", "1.2")]).matches.length, 1);
 });
 
-test("private or unverified plugin identities are never matched by public slug", () => {
-	const assessed = assessWordfenceFeed(advisory, [component("private", "1.1", { visibility: "private" }),
-		component("unknown", "1.1", { catalogueStatus: "not-queried", visibility: "unknown" })]);
-	assert.equal(assessed.matches.length, 0);
-	assert.ok(assessed.coverage.every(c => c.execution === "not-run"));
+test("a private plugin is never matched by public slug; an undeclared one is assessed by its directory slug", () => {
+	const privateOnly = assessWordfenceFeed(advisory, [component("private", "1.1", { visibility: "private" })]);
+	assert.equal(privateOnly.matches.length, 0);
+	assert.deepEqual(privateOnly.coverage.map(c => [c.execution, c.diagnostic]), [["not-run", "CMS_PRIVATE_COMPONENT"]]);
+	const byDirectory = assessWordfenceFeed(advisory, [component("unknown", "1.1", { catalogueStatus: "not-queried", visibility: "unknown" })]);
+	assert.ok(byDirectory.coverage.every(c => c.execution !== "not-run" || c.diagnostic !== "CMS_IDENTITY_UNVERIFIED"));
 });
 
 test("uncomparable versions stay indeterminate; numeric and prerelease ordering is conservative", () => {

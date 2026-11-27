@@ -281,10 +281,10 @@ test("Wordfence anonymized export carries public software identities without pri
 	assert.deepEqual(descriptor.applications[0].components, ["wordpress:core:wordpress", "wordpress:theme:example"]);
 });
 
-test("Wordfence client sends no paths, versions or private/unverified identities; batches and explicit coverage are checked", async t => {
+test("Wordfence client sends no paths, versions or private identities; batches and explicit coverage are checked", async t => {
 	route(t);
 	const components = [...Array.from({ length: 101 }, (_, i) => component("plugin", `example-${i}`)),
-		component("theme", "private", { visibility: "private" }), component("theme", "unknown", { catalogueStatus: "not-queried" })];
+		component("theme", "private", { visibility: "private" }), component("theme", "by-directory", { catalogueStatus: "not-queried" })];
 	const calls = [];
 	const fetched = await fetchWordfenceFeed(SOURCE_URL, { components, fetchImpl: async (url, init) => {
 		assert.equal(url, "https://proxy.invalid/v1/resource");
@@ -293,8 +293,9 @@ test("Wordfence client sends no paths, versions or private/unverified identities
 		calls.push(request.params.software);
 		return Response.json(projectFeed(indexProductionFeed(feed), request.params.software, Date.now()));
 	} });
-	assert.deepEqual(calls.map(c => c.length), [100, 1]);
-	assert.equal(indexProjection(fetched.snapshot).queriedSoftware.size, 101);
+	// 101 plugins and the undeclared theme (assessed by its directory slug); never the private one.
+	assert.deepEqual(calls.map(c => c.length), [100, 2]);
+	assert.equal(indexProjection(fetched.snapshot).queriedSoftware.size, 102);
 	assert.equal(JSON.stringify(calls).includes("private"), false);
 	assert.ok(calls.flat().every(q => Object.keys(q).sort().join() === "slug,type"));
 	await assert.rejects(fetchWordfenceFeed(SOURCE_URL, { components: [component()],

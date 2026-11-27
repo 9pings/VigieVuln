@@ -348,3 +348,26 @@ test("the TYPO3 live lane fetches once and matches system extensions per coordin
 		assert.ok(require('../lib/application-providers/snapshot-cache').exists(path.join(temp, "cache", "github-typo3-advisories.json")), "the fetched feed is cached for offline reuse");
 	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
 });
+
+test("publisher advisories of a detected CMS are consulted by default online, with no flag; never offline", async () => {
+	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-drupal-auto-"));
+	try {
+		const entry = { advisoryId: "SA-CORE-2099-001", packageName: "drupal/core", title: "Drupal core - Critical - Fixture",
+			link: "https://www.drupal.org/sa-core-2099-001", cve: null, affectedVersions: ">=10.3.0 <10.3.2" };
+		const root = path.join(__dirname, "fixtures", "drupal-custom");
+		const { deps } = await require("../lib/codecs/composer.codec").collect(root);
+		const run = async (name, extra) => {
+			const calls = [];
+			const result = await runApplicationPlugins(root, { plugins: [drupal], selection: "drupal", resolvedDeps: deps, activeCodecIds: ["composer"],
+				advisoryCacheDir: path.join(temp, name), now: NOW, reportProviderFailures: true,
+				fetchImpl: async url => { calls.push(String(url)); return jsonResponse({ advisories: { "drupal/core": [entry] } }); }, ...extra });
+			return { calls, result };
+		};
+		const automatic = await run("auto", { automaticLiveSources: true });
+		assert.equal(automatic.calls.length, 1);
+		assert.match(automatic.calls[0], /^https:\/\/packages\.drupal\.org\/.*drupal%2Fcore/);
+		assert.equal(automatic.result.findings[0].cve.id, "SA-CORE-2099-001");
+		assert.deepEqual((await run("offline", { automaticLiveSources: true, offline: true })).calls, [], "offline never fetches");
+		assert.deepEqual((await run("library", {})).calls, [], "library callers keep the explicit contract");
+	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(temp, { recursive: true, force: true }); }
+});

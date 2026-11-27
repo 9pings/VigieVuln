@@ -14,7 +14,7 @@ const WORD_FENCE_FEED = { "123e4567-e89b-12d3-a456-426614174000": {
 	} }, patched_versions: ["3.1"] }],
 } };
 
-test("Wordfence snapshot only matches an explicitly declared public plugin identity", async () => {
+test("Wordfence snapshot matches a plugin by its directory slug by default; a declared private path is not matched", async () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wordfence-feed-"));
 	const root = path.join(temp, "scan");
 	fs.cpSync(path.join(__dirname, "fixtures", "wordpress-custom"), root, { recursive: true });
@@ -24,10 +24,13 @@ test("Wordfence snapshot only matches an explicitly declared public plugin ident
 	fs.writeFileSync(feedFile, JSON.stringify(WORD_FENCE_FEED));
 	try {
 		const options = { plugins: [wordpress], selection: "wordpress", offline: true, wordfenceFeedPath: feedFile };
-		const unverified = await runApplicationPlugins(root, options);
-		assert.equal(unverified.findings.length, 0);
-		const plugin = unverified.inventory.find(c => c.kind === "plugin");
-		assert.equal(unverified.coverage.find(c => c.occurrenceId === plugin.id).execution, "not-run");
+		// Extensions are assessed by default, under the slug their directory is named after.
+		const byDirectory = await runApplicationPlugins(root, options);
+		assert.equal(byDirectory.findings.length, 1);
+		assert.equal(byDirectory.findings[0].cve.id, "CVE-2099-12345");
+		const plugin = byDirectory.inventory.find(c => c.kind === "plugin");
+		assert.equal(plugin.catalogueStatus, "not-queried");
+		assert.equal(byDirectory.coverage.find(c => c.occurrenceId === plugin.id).result, "affected");
 		const verified = await runApplicationPlugins(root, { ...options,
 			publicComponents: ["site/wp-content/plugins/acme=acme"] });
 		assert.equal(verified.findings.length, 1);
