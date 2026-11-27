@@ -91,7 +91,7 @@ test("a shared occurrence is detailed in each exposed instance section, with its
 		assert.equal((report.match(/Also exposed in/g) || []).length, 2);
 		// global counters stay a union of findings, not the sum of displayed rows
 		assert.match(report, /1\.1 CMS & Frameworks \(1\)/);
-		assert.match(report, /Production \(1\)/);
+		assert.match(report, /Transitive dependencies \(1\)/);
 	}
 });
 
@@ -393,7 +393,7 @@ test("report writer preserves per-application ownership relations", async () => 
 			applicationRelations, projectInfo, htmlPath, docPath: null });
 		const html = fs.readFileSync(htmlPath, "utf8");
 		assert.match(html, /Acme Private/);
-		assert.match(html, /Indirect \(1\)/);
+		assert.match(html, /Transitive dependencies \(1\)/);
 		assert.doesNotMatch(html, /Unknown origin \(1\)/);
 	} finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

@@ -219,21 +219,20 @@ test('hosted Drupal/Retire distinguish confirmed refresh failures from normal re
 			VIGIEVULN_ENV: '', FAD_CHECKER_ENV: '', NODE_OPTIONS: `--require=${hook}`, FORCE_COLOR: '0' };
 		for (const mode of ['refresh-failed', 'revalidating', 'fresh']) {
 			const output = path.join(home, mode+'-report');
-			const args = [path.join(CLI, 'vigievuln.js'), '-s', src, '--proxy-cache', 'default', '--retries', '0',
+			const args = [path.join(CLI, 'vigievuln.js'), 'scan', src, '--proxy-cache', 'default', '--retries', '0',
 				'--no-transitive', '--no-all-libs', '--no-osv', '--no-nvd', '--no-epss', '--no-kev', '--no-euvd', '--no-gcve', '--no-certfr',
 				'--no-eol', '--no-binaries', '--no-jars', '--no-certs', '--no-packagist-audit', '--app-plugins', 'drupal', '--scan-context', 'component',
 				'--report-html', '--report-json', '-o', output, '--fail-on-incomplete', 'sources'];
 			const run = spawnSync(process.execPath, args, { env: { ...env, VV_STALE: mode }, encoding: 'utf8', timeout: 20000 });
 			assert.equal(run.status, mode==='refresh-failed' ? 2 : 0, `${run.error || ''}\n${run.stderr}\n${run.stdout}`);
-			const report = JSON.parse(fs.readFileSync(path.join(output, 'findings.json')));
-			const warnings = report.warnings.filter(w => w.type === 'source-stale');
-			if (mode==='refresh-failed') {
-				for (const source of ['drupal', 'retire']) assert.ok(warnings.some(w => w.message.startsWith(source + ':') && w.message.includes(OLD)));
-				const html = fs.readFileSync(path.join(output, 'cve-report.html'), 'utf8');
-				assert.ok(html.includes(OLD));
-				assert.match(html, /drupal:/i);
-				assert.match(html, /retire:/i);
-			} else {assert.deepEqual(warnings, []);if(mode==='revalidating')for(const source of ['drupal','retire'])assert.ok(report.provenance.notices.some(n=>n.type==='source-stale'&&n.message.startsWith(source+':')&&n.message.includes(OLD)));}
+			if(mode==='refresh-failed'){
+				const log=require('./helpers/cancelled-scan')(run,[path.join(output,'findings.json'),path.join(output,'cve-report.html')]);
+				for(const source of ['drupal','retire'])assert.match(log,new RegExp(source,'i'));
+			}else{
+				const report=JSON.parse(fs.readFileSync(path.join(output,'findings.json')));
+				assert.deepEqual(report.warnings.filter(w=>w.type==='source-stale'),[]);
+				if(mode==='revalidating')for(const source of ['drupal','retire'])assert.ok(report.provenance.notices.some(n=>n.type==='source-stale'&&n.message.startsWith(source+':')&&n.message.includes(OLD)));
+			}
 		}
 		const calls = fs.readFileSync(callsFile, 'utf8').trim().split('\n').map(JSON.parse);
 		assert.deepEqual(calls.map(q => q.provider + '.' + q.type), ['drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures']);

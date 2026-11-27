@@ -417,3 +417,32 @@ test('fanout preserves each request key and unrelated unkeyed outages',()=>{
   assert.equal(h.unreportedOutages(['cve','spip']).length,1);
  } finally {setActiveLedger(null)}
 });
+
+test('direct 429 respects Retry-After and retains the last failure when the budget expires', async () => {
+	const health = createSourceHealth(), delays = [], notices = [];
+	const replies = [
+		new Response(null,{status:429,headers:{'retry-after':'15'}}),
+		new Response('unavailable',{status:503,headers:{'retry-after':'3600'}}),
+	];
+	const fetch = guardedFetch({health,retries:2,fetch:async()=>replies.shift(),sleep:async ms=>delays.push(ms),onRetry:e=>notices.push(e)});
+	const res = await fetch('https://api.osv.dev/test');
+	assert.deepEqual(delays,[15000]);
+	assert.deepEqual(notices.map(n=>[n.code,!!n.exhausted]),[['HTTP 429',false],['HTTP 503',true]]);
+	assert.equal(res.status,503);
+	assert.equal(await res.text(),'unavailable');
+	assert.deepEqual(health.degraded()[0].codes,['HTTP 503']);
+});
+
+test('self-hosted proxy announces source retries for transient failures', async t => {
+	const {configureResourceRoute,getResource} = require('../lib/providers');
+	const notices = [], waits = [];
+	let calls = 0;
+	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:false,health:createSourceHealth(),store:null,
+		fetcher:async()=>++calls===1 ? new Response(null,{status:503}) : Response.json({id:'CVE-2024-12345'}),
+		sleep:async ms=>waits.push(ms),onRetry:notice=>notices.push(notice)});
+	t.after(()=>configureResourceRoute({proxyUrl:null,hosted:false,health:null,store:null,fetcher:null,sleep:null,onRetry:null}));
+	const response = await getResource('osv','vuln',{id:'CVE-2024-12345'});
+	assert.equal(response.status,200);
+	assert.deepEqual(waits,[6000]);
+	assert.deepEqual(notices.map(e=>[e.source,e.code,e.attempt]),[['osv','HTTP 503',1]]);
+});

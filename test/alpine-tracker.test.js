@@ -33,3 +33,20 @@ test('Alpine tracker uses configured proxy, preserves stale evidence, and never 
  invalid=false;result=await assessAlpineTracker(p,d,{cacheDir,fetcher});assert.equal(result.observations[0].status,'possible');assert.equal(result.observations[0].stale,true);assert.equal(result.observations[0].observedAt,at);assert.ok(calls>=3);
  providers.configureResourceRoute({proxyUrl:null,fetcher:null});result=await assessAlpineTracker(p,d,{cacheDir,offline:true,fetcher:()=>assert.fail('network')});assert.equal(result.observations[0].status,'possible');assert.equal(result.observations[0].stale,true);
 });
+
+test('tracker excludes historical numeric CPE ranges before spending the candidate budget', async t=>{
+ const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-alpine-ranges-'));
+ t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})});
+ const base='https://security.alpinelinux.org',source=base+'/srcpkg/demo',id='CVE-2026-12345',calls=[];
+ const fetcher=async url=>{
+  calls.push(url);
+  if(url!==source)return Response.json({id:url,state:[]});
+  return Response.json({id:url,cpeMatch:[
+   {package:source,vuln:base+'/vuln/CVE-2026-12344',maximumVersion:'1.2.0',maximumVersionOp:'<'},
+   {package:source,vuln:base+'/vuln/'+id,maximumVersion:'2.0.0rc2',maximumVersionOp:'<'}]});
+ };
+ const result=await assessAlpineTracker([{manager:'apk',sourceName:'demo',sourceVersion:'1.2.0-r1',name:'demo'}],
+  {id:'alpine',versionId:'3.24'},{cacheDir,fetcher,maxCves:1});
+ assert.deepEqual(calls,[source,base+'/vuln/'+id]);
+ assert.equal(result.coverage.execution,'completed');
+});

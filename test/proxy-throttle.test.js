@@ -240,3 +240,19 @@ test('an exhausted request budget does not cancel or disable a concurrent retry'
  assert.equal((await recovering).status,200);
  assert.equal(calls,2);
 });
+
+test('hosted transport and HTTP outages announce every retry with its resource and delay', async () => {
+  let time=0,calls=0;
+  const messages=[];
+  const limiter=createProxyThrottle({now:()=>time, sleep:async ms=>{time+=ms},warn:m=>messages.push(m)});
+  const result=await limiter.request(async()=>{
+    calls++;
+    if(calls===1) throw Error('connection lost');
+    if(calls===2) return new Response(null,{status:503,headers:{'retry-after':'9'}});
+    return new Response('recovered');
+  },null,{label:'osv.vuln'});
+  assert.equal(await result.text(),'recovered');
+  assert.equal(time,12000);
+  assert.match(messages[0],/osv.vuln.*transport failure.*3s.*retry 1\/2/);
+  assert.match(messages[1],/osv.vuln.*HTTP 503.*9s.*retry 2\/2/);
+});

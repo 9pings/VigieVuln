@@ -635,3 +635,31 @@ test("fixtures: monorepo-mixed yarn v1 — mocha dev, chalk's deps transitive", 
 	assert.deepEqual(m["ansi-styles"].via, ["npm:chalk"]);
 	assert.equal(m["ansi-styles"].isDev, false);
 });
+
+test("pnpm bootstrap and project documents keep separate roots and dependency scopes", t => {
+	const lock = `lockfileVersion: '9.0'
+importers:
+  .:
+    packageManagerDependencies:
+      pnpm: { version: 12.16.1 }
+snapshots:
+  pnpm@12.16.1:
+    dependencies: { helper: 1.0.0 }
+  helper@1.0.0: {}
+---
+lockfileVersion: '9.0'
+importers:
+  .:
+    dependencies:
+      helper: { version: 2.0.0 }
+snapshots:
+  helper@2.0.0: {}
+`;
+	const dir = project("pnpm-lock.yaml", lock);
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	const deps = byNameVersion(parsePnpmLock(path.join(dir, "pnpm-lock.yaml")).deps);
+	assert.equal(deps["pnpm@12.16.1"].scope, "dev");
+	assert.deepEqual(deps["helper@1.0.0"].via, ["npm:pnpm"]);
+	assert.equal(deps["helper@1.0.0"].isDev, true);
+	assert.equal(deps["helper@2.0.0"].scope, "prod");
+});

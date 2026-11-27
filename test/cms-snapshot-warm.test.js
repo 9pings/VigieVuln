@@ -87,13 +87,17 @@ test("warming: a declared prestashop application fetches the publisher feed even
 	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
-test("warming: a declared wordpress application warms its checksums reference per (version, locale)", async () => {
+test("warming: a declared wordpress application warms public advisories and checksums once per version", async () => {
 	const cacheDir = tempCache();
 	const warmed = await warmCmsAdvisorySnapshots(depsOf("ext-lib/lib"), {
-		fetchImpl: async () => jsonResponse({ checksums: { "wp-load.php": "0123456789abcdef0123456789abcdef" }, version: "6.4.2", locale: "en_US" }),
+		fetchImpl: async url => Response.json(String(url).includes('wpvulnerability.net')
+			? {error:0,data:{core:'6.4.2',vulnerability:null},updated:1}
+			: { checksums: { "wp-load.php": "0123456789abcdef0123456789abcdef" }, version: "6.4.2", locale: "en_US" }),
 		advisoryCacheDir: cacheDir, applications: [{ type: "wordpress", version: "6.4.2" }, { type: "wordpress", version: "6.4.2" }], now: NOW });
 	try {
 		assert.deepEqual(warmed.wpChecksums, ["6.4.2"], "duplicate core versions warm ONE reference");
+		assert.equal(warmed.wpvulnerability, 1);
+		assert.equal(read(cacheDir, 'wpvulnerability-v1-core-6.4.2.json').data.core, '6.4.2');
 		const snapshot = read(cacheDir, "wordpress-checksums-6.4.2-en_US.json");
 		assert.equal(snapshot.version, "6.4.2");
 		assert.equal(snapshot.locale, "en_US");

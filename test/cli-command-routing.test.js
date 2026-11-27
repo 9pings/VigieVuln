@@ -106,11 +106,11 @@ test('watch rejects an oversized upload before sign-in but still allows a local 
   assert.ok(fs.statSync(file).size>500000);assert.deepEqual(f.calls(),[]);
 });
 
-test('routing preserves old argv and maps scan/config/cache/auth without consuming option values', () => {
-  for (const args of [['-s','source','--offline'], ['serve-cache','--port','0'], ['--completion','bash'], ['project','status']])
+test('routing rejects removed source flags and maps scan/config/cache/auth without consuming option values', () => {
+  for (const args of [['serve-cache','--port','0'], ['--completion','bash'], ['project','status']])
     assert.deepEqual(routeArguments(args).args, args);
   assert.deepEqual(routeArguments(['scan','source path','--offline','--report-json','a.json']).args, ['--src','source path','--offline','--report-json','a.json']);
-  assert.deepEqual(routeArguments(['scan','--src','source','--offline']).args, ['--src','source','--offline']);
+  assert.throws(()=>routeArguments(['-s','source']),/removed/);
   assert.deepEqual(routeArguments(['config','show']).args, ['--show-config']);
   assert.deepEqual(routeArguments(['cache','import','a.tar.gz','--replace','--force']).args, ['--import-cache','a.tar.gz','--replace','--force']);
   assert.deepEqual(routeArguments(['cache','export','a.tar.gz','--include-config']).args, ['--export-cache','a.tar.gz','--include-config']);
@@ -244,7 +244,7 @@ test('help documents local export, privacy, CAS and 100 distinct direct coordina
 test('scan positional alias and legacy -s produce identical local project descriptors', t => {
   const f=fixture(t,{noNetwork:true});
   const files=['old.json','new.json'].map(file=>path.join(f.home,file));
-  success(f.run(['-s',f.src,'--prepare-project',files[0]]));
+  success(f.run(['scan',f.src,'--prepare-project',files[0]]));
   success(f.run(['scan',f.src,'--prepare-project',files[1]]));
   assert.deepEqual(JSON.parse(fs.readFileSync(files[0])),JSON.parse(fs.readFileSync(files[1])));
   assert.equal(f.calls().length,0);
@@ -307,6 +307,6 @@ test('legacy auth login and project status also prompt when a terminal needs aut
 test('cache prepare routes artifact inventories into native image cache warming',t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-inventory-route-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));const file=path.join(dir,'inventory.json');
  fs.writeFileSync(file,JSON.stringify({schema:'vigievuln-artifact-inventory/1',targets:[]}));
- assert.deepEqual(routeArguments(['cache','prepare',file,'--output','bundle.tar.gz','--source-profile','proxy']).args,['image','--inventory',file,'--no-report','--prepare-cache','bundle.tar.gz','--source-profile','proxy']);
+ assert.deepEqual(routeArguments(['cache','prepare',file,'--output','bundle.tar.gz','--source-profile','proxy']).args,['system','scan','--inventory',file,'--no-report','--prepare-cache','bundle.tar.gz','--source-profile','proxy']);
  assert.throws(()=>routeArguments(['cache','prepare',file]),/--output/);
 });

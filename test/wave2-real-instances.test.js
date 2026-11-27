@@ -59,7 +59,7 @@ test.after(() => { if (WORK) fs.rmSync(WORK, { recursive: true, force: true }); 
 
 test("the live PrestaShop publisher feed finds the real 8.2.1 advisories and no 2020 false positive", { skip: SKIP }, () => {
 	const out = path.join(WORK, "prestashop.json");
-	const run = spawnSync(process.execPath, [CLI, "-s", path.join(WORK, "prestashop"),
+	const run = spawnSync(process.execPath, [CLI, "scan", path.join(WORK, "prestashop"),
 		"--app-plugins", "prestashop", "--prestashop-advisories-live", "--ecosystem", "composer",
 		"-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums"],
 		{ timeout: SCAN_TIMEOUT_MS, encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } });
@@ -86,7 +86,7 @@ test("the live PrestaShop publisher feed finds the real 8.2.1 advisories and no 
 
 test("the live TYPO3 publisher feed finds the real 13.4.2 cms-core advisories", { skip: SKIP }, () => {
 	const out = path.join(WORK, "typo3.json");
-	const run = spawnSync(process.execPath, [CLI, "-s", path.join(WORK, "typo3"),
+	const run = spawnSync(process.execPath, [CLI, "scan", path.join(WORK, "typo3"),
 		"--app-plugins", "typo3", "--typo3-advisories-live", "--ecosystem", "composer",
 		"-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums"],
 		{ timeout: SCAN_TIMEOUT_MS, encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } });

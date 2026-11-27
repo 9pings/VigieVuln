@@ -466,3 +466,14 @@ test('HTTP stale quota fallbacks are retried after the advertised cooldown and p
   }finally{await s.close();}
  }
 });
+
+test('uncached batch replies forward upstream 429 and Retry-After', async t => {
+	const store = memoryStore();
+	const engine = createResourceEngine({store, fetcher:async()=>new Response(null,{status:429,headers:{'retry-after':'120'}})});
+	const server = await serve(engine);
+	t.after(()=>server.close());
+	const res = await server.ask({provider:'epss',type:'scores',params:{ids:['CVE-2024-12345']}});
+	assert.equal(res.status,429);
+	assert.equal(res.headers.get('retry-after'),'120');
+	assert.equal(store.size(),0);
+});

@@ -91,7 +91,7 @@ test.after(() => { if (WORK) fs.rmSync(WORK, { recursive: true, force: true }); 
 
 function scan(root, extraArgs, outName) {
 	const out = path.join(WORK, outName);
-	const run = spawnSync(process.execPath, [CLI, "-s", root, "--offline", "--ecosystem", "composer",
+	const run = spawnSync(process.execPath, [CLI, "scan", root, "--offline", "--ecosystem", "composer",
 		"-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums", ...extraArgs],
 		{ timeout: SCAN_TIMEOUT_MS, encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } });
 	assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
@@ -237,7 +237,7 @@ test("online OSV + the live official Drupal API find the real CVEs on the real t
 	// 1-advisory operator snapshot, so this is the test that catches an under-reporting
 	// snapshot or matcher against the authoritative record.
 	const out = path.join(WORK, "online.json");
-	const run = spawnSync(process.execPath, [CLI, "-s", WORK, "--app-plugins", "wordpress,drupal,symfony,laravel",
+	const run = spawnSync(process.execPath, [CLI, "scan", WORK, "--app-plugins", "wordpress,drupal,symfony,laravel",
 		"--wordfence-feed", path.join(WORK, "wordfence.json"),
 		"--drupal-advisories-live",
 		"--wp-checksums-live",
@@ -284,7 +284,7 @@ test("the live WordPress checksums reference finds a tampered core file on the r
 	const wpRoot = path.join(WORK, "wordpress-6.4.2");
 	try {
 		const pristine = path.join(WORK, "wp-integrity-pristine.json");
-		const clean = spawnSync(process.execPath, [CLI, "-s", wpRoot, "--app-plugins", "wordpress",
+		const clean = spawnSync(process.execPath, [CLI, "scan", wpRoot, "--app-plugins", "wordpress",
 			"--wp-checksums-live", "--ecosystem", "composer", "-d", "eol,nvd,epss,kev,retire,transitive",
 			"--report-json", pristine, "--no-checksums"],
 			{ timeout: SCAN_TIMEOUT_MS, encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } });
@@ -300,7 +300,7 @@ test("the live WordPress checksums reference finds a tampered core file on the r
 
 		fs.appendFileSync(path.join(wpRoot, "wp-load.php"), "\n// tampered for the integrity test\n");
 		const tampered = path.join(WORK, "wp-integrity-tampered.json");
-		const dirty = spawnSync(process.execPath, [CLI, "-s", wpRoot, "--app-plugins", "wordpress",
+		const dirty = spawnSync(process.execPath, [CLI, "scan", wpRoot, "--app-plugins", "wordpress",
 			"--wp-checksums-live", "--ecosystem", "composer", "-d", "eol,nvd,epss,kev,retire,transitive",
 			"--report-json", tampered, "--no-checksums"],
 			{ timeout: SCAN_TIMEOUT_MS, encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } });

@@ -4,6 +4,10 @@ const { execFileSync } = require("child_process");
 const fs = require("fs"); const os = require("os"); const path = require("path");
 const CLI = path.join(__dirname, "..", "vigievuln.js");
 
+function runPartial(args,env){
+ let failure;try{run(args,env)}catch(error){failure=error}
+ assert.equal(failure?.status,2);assert.match(failure.stderr,/Scan cancelled/);return failure.stdout+failure.stderr;
+}
 function run(args, env = {}) {
 	return execFileSync("node", [CLI, ...args], { env: { ...process.env, ...env }, encoding: "utf8" });
 }
@@ -36,7 +40,7 @@ test("add-repo requires <eco> <name> <url>", () => {
 test("--source is accepted as a source alias (read-only scan succeeds)", () => {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "fad-home-"));
 	const src = path.join(__dirname, "fixtures", "simple");
-	const out = run(["--source", src, "--offline", "--no-report"], { HOME: home, USERPROFILE: home, FORCE_COLOR: "0" });
+	const out = runPartial(["scan", src, "--offline", "--no-report"], { HOME: home, USERPROFILE: home, FORCE_COLOR: "0" });
 	assert.match(out, /source\s+/);
 	fs.rmSync(home, { recursive: true, force: true });
 });
@@ -46,15 +50,15 @@ test("--config JSON file supplies the source + options", () => {
 	const src = path.join(__dirname, "fixtures", "simple");
 	const cfgPath = path.join(home, "fad.json");
 	fs.writeFileSync(cfgPath, JSON.stringify({ source: src, report: false, offline: true }));
-	const out = run(["--config", cfgPath], { HOME: home, USERPROFILE: home, FORCE_COLOR: "0" });
-	assert.match(out, /no files written|scan \+ gate only/i);
+	const out = runPartial(["--config", cfgPath], { HOME: home, USERPROFILE: home, FORCE_COLOR: "0" });
+	assert.match(out, /Scan cancelled/i);
 	fs.rmSync(home, { recursive: true, force: true });
 });
 
 test("FAD_CHECKER_ENV supplies default flags (CLI-flag string)", () => {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "fad-home-"));
 	const src = path.join(__dirname, "fixtures", "simple");
-	const out = run(["-s", src], { HOME: home, USERPROFILE: home, FORCE_COLOR: "0", FAD_CHECKER_ENV: "--offline --no-report" });
+	const out = runPartial(["scan", src], { HOME: home, USERPROFILE: home, FORCE_COLOR: "0", FAD_CHECKER_ENV: "--offline --no-report" });
 	assert.match(out, /offline/);
 	fs.rmSync(home, { recursive: true, force: true });
 });

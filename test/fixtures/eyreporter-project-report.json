@@ -1,0 +1,171 @@
+{
+  "schema": "fad-findings/1",
+  "tool": {
+    "name": "VigieVuln",
+    "version": "1.3.3"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "project": {
+    "name": "Synthetic integration fixture",
+    "src": "demo"
+  },
+  "provenance": {
+    "mode": "offline"
+  },
+  "summary": {
+    "dependencies": 1,
+    "cve": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "none": 0,
+      "unknown": 0,
+      "kev": 0,
+      "total": 0
+    },
+    "eol": 0,
+    "unsupported": 0,
+    "obsolete": 1,
+    "outdated": 1,
+    "licensesFlagged": 0,
+    "vendored": 0,
+    "unmanaged": 0,
+    "embedded": 0,
+    "vendoredJs": 0,
+    "certificates": 1,
+    "certPrivateKeys": 1,
+    "suppressed": 0,
+    "malicious": 0,
+    "typosquat": 0,
+    "excludedDirs": 0,
+    "applications": 0,
+    "applicationComponents": 0,
+    "applicationCoverageIncomplete": 0,
+    "coverageWarnings": 0,
+    "coverageIncomplete": 0
+  },
+  "findingSummary": {
+    "total": 0,
+    "kev": 0,
+    "applicationUnique": 0,
+    "bySeverity": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "none": 0,
+      "unknown": 0
+    },
+    "byApplication": {},
+    "byApplicationRelation": {
+      "direct": 0,
+      "indirect": 0,
+      "unknown": 0
+    },
+    "applicationExposureOverlaps": false,
+    "excluded": {
+      "suppressed": 0,
+      "cpeFiltered": 0
+    }
+  },
+  "cve": [],
+  "vendored": [],
+  "eol": [],
+  "obsolete": [
+    {
+      "reason": "Synthetic end of maintenance",
+      "replacement": "example-fixture-next",
+      "source": null,
+      "dep": {
+        "ecosystem": "npm",
+        "coord": "example-fixture",
+        "version": "1.0.0",
+        "scope": "runtime",
+        "isDev": false,
+        "provenance": "lockfile",
+        "purl": "pkg:npm/example-fixture@1.0.0",
+        "manifestPaths": [
+          "srv/demo/package-lock.json"
+        ],
+        "versionSource": null,
+        "binaryEvidence": null,
+        "installEvidence": null,
+        "sbomEvidence": null,
+        "artifactTargetId": null,
+        "artifactPath": null,
+        "packageType": null,
+        "manager": null,
+        "distribution": null,
+        "sourceName": null,
+        "sourceVersion": null,
+        "packageMetadata": null,
+        "packageOrigin": null,
+        "osPackageOwners": []
+      }
+    }
+  ],
+  "outdated": [
+    {
+      "latest": "1.1.0",
+      "releaseDate": null,
+      "dep": {
+        "ecosystem": "npm",
+        "coord": "example-fixture",
+        "version": "1.0.0",
+        "scope": "runtime",
+        "isDev": false,
+        "provenance": "lockfile",
+        "purl": "pkg:npm/example-fixture@1.0.0",
+        "manifestPaths": [
+          "srv/demo/package-lock.json"
+        ],
+        "versionSource": null,
+        "binaryEvidence": null,
+        "installEvidence": null,
+        "sbomEvidence": null,
+        "artifactTargetId": null,
+        "artifactPath": null,
+        "packageType": null,
+        "manager": null,
+        "distribution": null,
+        "sourceName": null,
+        "sourceVersion": null,
+        "packageMetadata": null,
+        "packageOrigin": null,
+        "osPackageOwners": []
+      }
+    }
+  ],
+  "licenses": [],
+  "unmanaged": [],
+  "embedded": [],
+  "vendoredJs": [],
+  "certificates": [
+    {
+      "kind": "private-key",
+      "format": "pem",
+      "algorithm": "RSA",
+      "keyVisibility": "private",
+      "encrypted": null,
+      "path": "fixtures/demo.key",
+      "file": "demo.key",
+      "severity": "critical",
+      "issues": [
+        {
+          "type": "private-key-committed",
+          "severity": "critical",
+          "message": "Synthetic metadata only"
+        }
+      ]
+    }
+  ],
+  "typosquat": [],
+  "applications": [],
+  "applicationInventory": [],
+  "applicationRelations": [],
+  "coverage": [],
+  "warnings": [],
+  "excludedDirs": [],
+  "diff": null
+}

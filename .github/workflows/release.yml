@@ -42,15 +42,38 @@ jobs:
       - name: smoke-test the Linux binary offline
         run: |
           build/linux-x64/vigievuln --version
-          build/linux-x64/vigievuln -s test/fixtures/monorepo-mixed --offline --no-report
+          build/linux-x64/vigievuln scan test/fixtures/monorepo-mixed --offline --no-report
+      - name: build and test the musl archive on stock Alpine without network access
+        run: npm run build:linux:musl
+      - name: verify embedded disk reader in both Linux x64 builds
+        run: |
+          set -eu
+          demo="$RUNNER_TEMP/system-disk"
+          mkdir -p "$demo/musl" "$demo/out"
+          mkfs.ext4 -q -F -d test/fixtures/polyglot "$demo/root.img" 32M
+          build/linux-x64/vigievuln system collect "$demo/root.img" --output "$demo/out/glibc.json"
+          tar -xzf "dist/vigievuln-linux-x64-musl-v${VERSION}.tar.gz" -C "$demo/musl"
+          docker run --rm --pull never --network none --read-only --tmpfs /tmp \
+            --user "$(id -u):$(id -g)" -e HOME=/nonexistent \
+            -v "$demo/musl:/vv:ro" -v "$demo/root.img:/root.img:ro" -v "$demo/out:/out" \
+            alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc \
+            /vv/vigievuln system collect /root.img --output /out/musl.json
+          for inventory in "$demo"/out/*.json; do
+            jq -e 'any(.targets[].deps[]; .name == "lodash" and .artifactPath == "js/package-lock.json")' "$inventory" >/dev/null
+          done
       - run: node scripts/pack-release.js
       - name: archive and checksum
         run: |
           set -eu
           for t in linux-x64 linux-arm64 macos-x64 macos-arm64; do
-            tar -czf "dist/vigievuln-$t-v${VERSION}.tar.gz" -C "build/$t" vigievuln
+            mkdir -p "build/$t/licenses/7z-wasm"
+            mkdir -p "build/$t/licenses/pep440"
+            cp node_modules/@renovatebot/pep440/LICENSE* "build/$t/licenses/pep440/"
+            cp node_modules/7z-wasm/{License.txt,unRarLicense.txt} licenses/7z-wasm/LGPL-2.1.txt "build/$t/licenses/7z-wasm/"
+            tar -czf "dist/vigievuln-$t-v${VERSION}.tar.gz" -C "build/$t" vigievuln licenses
           done
-          (cd build/windows-x64 && zip -q -9 "../../dist/vigievuln-windows-x64-v${VERSION}.zip" vigievuln.exe)
+          cp -r build/linux-x64/licenses build/windows-x64/
+          (cd build/windows-x64 && zip -q -9 -r "../../dist/vigievuln-windows-x64-v${VERSION}.zip" vigievuln.exe licenses)
           (cd dist && sha256sum *.tgz *.tar.gz *.zip > SHA256SUMS)
       - name: publish release
         env:

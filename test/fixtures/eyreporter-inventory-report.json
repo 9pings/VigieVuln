@@ -1,0 +1,290 @@
+{
+  "schema": "fad-findings/1",
+  "tool": {
+    "name": "VigieVuln",
+    "version": "1.3.3"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "project": {
+    "name": "Synthetic integration fixture",
+    "src": "(artifact inventory)"
+  },
+  "artifacts": [
+    {
+      "id": "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "kind": "image",
+      "metadata": {
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "format": "oci-layout",
+        "source": "demo-archive.tar",
+        "definitions": [
+          {
+            "id": "demo-ref",
+            "path": "srv/demo/Dockerfile",
+            "line": 1,
+            "location": null,
+            "declared": "registry.example.invalid/demo@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "reference": "registry.example.invalid/demo@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "role": "base",
+            "stage": 0,
+            "stageName": null,
+            "finalStage": true,
+            "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "binding": "manifest-digest"
+          }
+        ],
+        "declarations": [
+          {
+            "reference": "registry.example.invalid/demo@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "unresolved": [],
+            "declared": "registry.example.invalid/demo@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "line": 1,
+            "platform": null,
+            "stage": 0,
+            "stageName": null,
+            "role": "base",
+            "finalStage": true,
+            "classification": "registry",
+            "scanEligible": true,
+            "blockReason": null,
+            "path": "srv/demo/Dockerfile",
+            "id": "demo-ref",
+            "localImageCandidates": [
+              "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            ],
+            "boundArtifactIds": [
+              "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            ]
+          }
+        ]
+      },
+      "components": [
+        {
+          "ecosystem": "npm",
+          "name": "example-fixture",
+          "version": "1.0.0",
+          "scope": "runtime",
+          "provenance": "lockfile",
+          "artifactPath": "srv/demo/package-lock.json",
+          "manifestPaths": [
+            "srv/demo/package-lock.json"
+          ],
+          "artifactTargetId": "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      ],
+      "componentCount": 1,
+      "coverage": [
+        {
+          "artifactTargetId": "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "capability": "sources",
+          "collector": "kev",
+          "execution": "partial",
+          "result": "indeterminate",
+          "reason": "Synthetic missing cache"
+        }
+      ],
+      "componentDetailsFiltered": false
+    }
+  ],
+  "imageReferences": [
+    {
+      "reference": "registry.example.invalid/demo@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "unresolved": [],
+      "declared": "registry.example.invalid/demo@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "line": 1,
+      "platform": null,
+      "stage": 0,
+      "stageName": null,
+      "role": "base",
+      "finalStage": true,
+      "classification": "registry",
+      "scanEligible": true,
+      "blockReason": null,
+      "path": "srv/demo/Dockerfile",
+      "id": "demo-ref",
+      "localImageCandidates": [
+        "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      ],
+      "boundArtifactIds": [
+        "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      ]
+    }
+  ],
+  "provenance": {
+    "mode": "offline"
+  },
+  "summary": {
+    "dependencies": 1,
+    "cve": {
+      "critical": 0,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "none": 0,
+      "unknown": 0,
+      "kev": 0,
+      "total": 1
+    },
+    "eol": 0,
+    "unsupported": 0,
+    "obsolete": 0,
+    "outdated": 0,
+    "licensesFlagged": 0,
+    "vendored": 0,
+    "unmanaged": 0,
+    "embedded": 0,
+    "vendoredJs": 0,
+    "certificates": 0,
+    "certPrivateKeys": 0,
+    "suppressed": 0,
+    "malicious": 0,
+    "typosquat": 0,
+    "excludedDirs": 0,
+    "applications": 0,
+    "applicationComponents": 0,
+    "applicationCoverageIncomplete": 0,
+    "coverageWarnings": 0,
+    "artifacts": 1,
+    "artifactCoverageIncomplete": 1,
+    "coverageIncomplete": 1
+  },
+  "findingSummary": {
+    "total": 1,
+    "kev": 0,
+    "applicationUnique": 0,
+    "bySeverity": {
+      "critical": 0,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "none": 0,
+      "unknown": 0
+    },
+    "byApplication": {},
+    "byApplicationRelation": {
+      "direct": 0,
+      "indirect": 0,
+      "unknown": 0
+    },
+    "applicationExposureOverlaps": false,
+    "excluded": {
+      "suppressed": 0,
+      "cpeFiltered": 0
+    }
+  },
+  "cve": [
+    {
+      "id": "DEMO-ADVISORY-0001",
+      "aliases": [],
+      "upstream": [],
+      "related": [],
+      "advisorySource": null,
+      "historicalEvidence": null,
+      "applicabilityEvidence": [],
+      "vendorEvidence": null,
+      "publisherEvidence": null,
+      "summary": "Synthetic advisory for an integration test",
+      "published": null,
+      "modified": null,
+      "description": null,
+      "copyrightNotice": null,
+      "references": [],
+      "relatedAdvisories": [],
+      "findingId": null,
+      "applicationIds": [],
+      "applicationExposures": [],
+      "ownerComponentIds": [],
+      "applicationRelation": null,
+      "attributionStatus": null,
+      "dependencyPaths": [],
+      "severity": "HIGH",
+      "severityOriginal": null,
+      "severityScheme": null,
+      "severitySource": null,
+      "scoreSource": null,
+      "riskEvidence": null,
+      "cveEvidence": [],
+      "kevEvidence": null,
+      "epssEvidence": null,
+      "cvss": null,
+      "cvssVector": null,
+      "epss": null,
+      "epssPercentile": null,
+      "kev": false,
+      "kevDueDate": null,
+      "euvd": null,
+      "euvdExploited": false,
+      "euvdExploitedSince": null,
+      "gcve": null,
+      "gcveSource": null,
+      "gcveRecordType": null,
+      "gcveRelationships": [],
+      "certfr": [],
+      "priority": null,
+      "cwes": [],
+      "nvdEvidence": null,
+      "nvdRecordEvidence": null,
+      "euvdDetails": null,
+      "fixVersion": "1.1.0",
+      "fixScope": "advisory",
+      "packageFixVerified": false,
+      "source": "cache",
+      "confidence": null,
+      "malicious": false,
+      "cpeFiltered": false,
+      "suppressed": false,
+      "suppressedReason": null,
+      "suppressionStatus": null,
+      "dep": {
+        "ecosystem": "npm",
+        "coord": "example-fixture",
+        "version": "1.0.0",
+        "scope": "runtime",
+        "isDev": false,
+        "provenance": "lockfile",
+        "purl": "pkg:npm/example-fixture@1.0.0",
+        "manifestPaths": [
+          "srv/demo/package-lock.json"
+        ],
+        "versionSource": null,
+        "binaryEvidence": null,
+        "installEvidence": null,
+        "sbomEvidence": null,
+        "artifactTargetId": "oci:sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "imageProduct": null,
+        "imageRole": null,
+        "imageSource": {
+          "category": "project",
+          "manager": "npm",
+          "root": "srv/demo"
+        },
+        "artifactPath": "srv/demo/package-lock.json",
+        "packageType": null,
+        "manager": null,
+        "distribution": null,
+        "sourceName": null,
+        "sourceVersion": null,
+        "packageMetadata": null,
+        "packageOrigin": null,
+        "osPackageOwners": []
+      }
+    }
+  ],
+  "vendored": [],
+  "eol": [],
+  "obsolete": [],
+  "outdated": [],
+  "licenses": [],
+  "unmanaged": [],
+  "embedded": [],
+  "vendoredJs": [],
+  "certificates": [],
+  "typosquat": [],
+  "applications": [],
+  "applicationInventory": [],
+  "applicationRelations": [],
+  "coverage": [],
+  "warnings": [],
+  "excludedDirs": [],
+  "diff": null
+}

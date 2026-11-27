@@ -21,7 +21,7 @@ const run = (cmd, args, opts = {}) => {
 	return result.stdout;
 };
 console.log(`Evidence: ${root}`);
-run("docker", ["image", "inspect", image]);
+run("docker", ["system","scan", "inspect", image]);
 const packed = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", root]))[0];
 run("tar", ["-xzf", path.join(root, packed.filename), "-C", root]);
 fs.cpSync(path.join(repo, "node_modules"), path.join(root, "package/node_modules"), { recursive: true, verbatimSymlinks: true });
@@ -85,14 +85,14 @@ async function main() {
 		console.log("ISOLATION_OK: loopback only, external TCP ENETUNREACH, empty cache");
 	}
 	if (phase === "export") {
-		cli(["-s", "/fixture", "--export-anonymized", "/out/deps.json"]);
+		cli(["scan", "/fixture", "--export-anonymized", "/out/deps.json"]);
 		assert.equal(JSON.parse(fs.readFileSync("/out/deps.json")).summary.total, 2);
 	} else if (phase === "warm") {
 		cli(["cache", "prepare", "/out/deps.json", "--output", "/out/cache.tar.gz", ...flags]);
-		cli(["-s", "/fixture", ...flags, "--report-json", "/out/online.json"]);
+		cli(["scan", "/fixture", ...flags, "--report-json", "/out/online.json"]);
 	} else {
 		cli(["--import-cache", "/out/cache.tar.gz"]);
-		cli(["-s", "/fixture", "--offline", ...flags, "--fail-on", "kev",
+		cli(["scan", "/fixture", "--offline", ...flags, "--fail-on", "kev",
 			"--report-output", "/out/report", "--report-json", "--report-html",
 			"--report-doc", "--report-xlsx", "--report-sbom", "--report-sarif", "--report-csaf"], 1);
 		const online = JSON.parse(fs.readFileSync("/out/online.json"));

@@ -464,8 +464,8 @@ test("server: a keyless instance is served by the server's NVD key (shared quota
 
 test("parseProxyFlag: --proxy and serve-cache --upstream-proxy, never --proxy-cache", () => {
 	// exact-token match: --proxy-cache must NOT be read as --proxy
-	assert.equal(parseProxyFlag(["node", "vigievuln.js", "-s", ".", "--proxy-cache", "http://127.0.0.1:8321"]), null);
-	assert.equal(parseProxyFlag(["node", "vigievuln.js", "-s", ".", "--proxy", "http://corp:3128"]), "http://corp:3128");
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "scan", ".", "--proxy-cache", "http://127.0.0.1:8321"]), null);
+	assert.equal(parseProxyFlag(["node", "vigievuln.js", "scan", ".", "--proxy", "http://corp:3128"]), "http://corp:3128");
 	assert.equal(parseProxyFlag(["node", "vigievuln.js", "serve-cache", "--upstream-proxy", "http://corp:3128", "--port", "9000"]), "http://corp:3128");
 	assert.equal(parseProxyFlag(["node", "vigievuln.js", "serve-cache", "--proxy", "http://x:1"]), null); // serve-cache uses --upstream-proxy
 	// a missing/bad value is ignored, not fatal

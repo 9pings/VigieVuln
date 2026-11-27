@@ -57,7 +57,7 @@ test('anonymous HTTP setup, seed and online scan require consent and never send 
  const project=path.join(root,'project');fs.mkdirSync(project);fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0',dependencies:{lodash:'4.17.20'}}));
  const report=path.join(root,'report.json');
  const scan=await run(['scan',project,'--advisory-query-ttl','0','--no-gcve','--no-euvd','--no-certfr','--no-nvd','--no-epss','--no-eol','--no-kev','--no-retire','--no-all-libs','--no-transitive','--report-json',report],root);
- assert.equal(scan.status,0,scan.stdout+scan.stderr);assert.ok(hits.some(x=>x.path==='/v1/resource'));assert.match(fs.readFileSync(report,'utf8'),/CVE-2024-12345/);
+ assert.equal(scan.status,2,scan.stdout+scan.stderr);assert.ok(hits.some(x=>x.path==='/v1/resource'));require('./helpers/cancelled-scan')(scan,[report]);
  assert.ok(hits.every(x=>!x.authorization && !x.token),'no stored credential is transmitted to anonymous server');
  const before=hits.length;
  const other=await run(['scan',project,'--proxy-cache',`http://localhost:${server.address().port}`],root);
@@ -107,5 +107,5 @@ test('explicit login records anonymous mode without changing the saved key; stat
  const project=path.join(root,'project');fs.mkdirSync(project);fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0',dependencies:{lodash:'4.17.20'}}));
  const report=path.join(root,'report.json');
  const scan=await run(['scan',project,'--advisory-query-ttl','0','--no-gcve','--no-euvd','--no-certfr','--no-nvd','--no-epss','--no-eol','--no-kev','--no-retire','--no-all-libs','--no-transitive','--report-json',report],root);
- assert.equal(scan.status,0,scan.stdout+scan.stderr);assert.ok(hits.some(x=>x.url==='/v1/resource'));assert.ok(hits.every(x=>!x.authorization && !x.token));
+ assert.equal(scan.status,2,scan.stdout+scan.stderr);assert.ok(hits.some(x=>x.url==='/v1/resource'));assert.ok(hits.every(x=>!x.authorization && !x.token));
 });

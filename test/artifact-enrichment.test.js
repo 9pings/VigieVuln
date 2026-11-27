@@ -101,3 +101,15 @@ test('NVD confirmed absence is scoped and replayed offline; failed and missing l
   const missing=await run({cacheDir:other,offline:true});assert.equal(missing.coverage[0].execution,'partial');assert.equal(missing.warnings.length,1);
  }finally{providers.getResource=original;require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});fs.rmSync(other,{recursive:true,force:true});}
 });
+
+test('KEV counts distinct missing consultations and a complete negative catalogue is silent',async t=>{
+ const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'kev-count-'));
+ t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});});
+ const matches=Array.from({length:3},()=>({cve:{id:'CVE-2024-12345'}}));
+ const options={cacheDir,offline:true,enrich:['kev']};
+ const missing=await enrichArtifactFindings(matches,options);
+ assert.match(missing.warnings[0].message,/1 distinct CVE/);
+ createCacheRepository(cacheDir).put('catalogue','kev',{_fetchedAt:Date.now(),body:{byId:{}}});
+ assert.deepEqual((await enrichArtifactFindings(matches,options)).warnings,[]);
+ assert.ok(matches.every(m=>!m.cve.kev));
+});

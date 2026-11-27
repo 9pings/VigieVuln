@@ -1,5 +1,22 @@
 # Release notes — VigieVuln
 
+## [1.3.5] — 2026-11-25
+
+- Group system-scan advisories by project or CMS instance, with direct and transitive findings and their source paths.
+- Keep CMS modules and themes under their instance. Group extension advisories by owner, give private extensions their own dependency breakdown, and collapse component inventories by default.
+- Give the host its own inventory and findings for interpreters, services and system dependencies. Show the container images chapter when local image inspection was requested.
+
+- Recognise Ghost and Redmine through the shared application plugins, read multi-document pnpm lockfiles, and attribute direct, indirect and development dependencies to the owning application.
+- Report unique advisory identifiers alongside active occurrences, show distribution urgency beside CVSS, and distinguish security maintenance from end of life. Supply verified remediation versions for RubyGems, PyPI and stable Composer releases where the advisory establishes a safe boundary.
+- Compare upstream language advisories for distribution-owned components and retain uncertain downstream applicability with its evidence. Identify the PrestaShop Docker installation template separately from the deployed tree.
+
+## [1.3.4] — 2026-11-25
+
+- Collect Linux filesystems, local container images and supported VM disks offline with `vigievuln collect`. Replay the portable inventory and generate reports on the auditor machine with `vigievuln analyse`.
+- Identify CMS and framework instances, keep their evidence paths, and report installed libraries and other system dependencies separately. Add local Docker image selection from project declarations.
+- Include a Linux x86_64 musl archive for Alpine alongside the glibc release.
+- Show progress while processing CVEProject records during advisory preparation.
+
 ## [1.3.3] — 2026-11-22
 
 - Identify interpreters, embedded runtimes and network services in container images with 75 product fingerprints. Extract versions from supported ELF binaries, Windows resources and installation metadata.

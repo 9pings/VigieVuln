@@ -16,7 +16,7 @@ function run(args) {
 test("--export-anonymized writes a valid, path-free descriptor (offline, no report)", () => {
 	const out = tmp("deps.json");
 	try {
-		const r = run(["-s", FIX("python-pyproject"), "--export-anonymized", out]);
+		const r = run(["scan", FIX("python-pyproject"), "--export-anonymized", out]);
 		assert.strictEqual(r.status, 0, r.stderr);
 		assert.ok(fs.existsSync(out), "descriptor file should be written");
 		const raw = fs.readFileSync(out, "utf8");
@@ -33,7 +33,7 @@ test("--export-anonymized writes a valid, path-free descriptor (offline, no repo
 test("--export-anonymized respects -e exclusions", () => {
 	const out = tmp("excl.json");
 	try {
-		const r = run(["-s", FIX("python-pyproject"), "-e", "^requests$", "--export-anonymized", out]);
+		const r = run(["scan", FIX("python-pyproject"), "-e", "^requests$", "--export-anonymized", out]);
 		assert.strictEqual(r.status, 0, r.stderr);
 		const d = JSON.parse(fs.readFileSync(out, "utf8"));
 		assert.ok(!d.deps.some(x => x.name === "requests"), "excluded dep must be absent from the descriptor");
@@ -41,10 +41,10 @@ test("--export-anonymized respects -e exclusions", () => {
 	} finally { fs.rmSync(out, { force: true }); }
 });
 
-test("missing --src without --import-anonymized errors out", () => {
+test("missing source input without a descriptor errors out", () => {
 	const r = run(["--no-report"]);
 	assert.notStrictEqual(r.status, 0);
-	assert.match(r.stderr + r.stdout, /--src/);
+	assert.match(r.stderr + r.stdout, /scan requires an input/);
 });
 
 test('cache prepare requires an output and rejects offline preparation', () => {
@@ -68,7 +68,7 @@ test("--import-anonymized warms caches but writes NO report by default", () => {
 	const desc = tmp("warm.json");
 	const outDir = tmp("warm-report");
 	try {
-		const e = run(["-s", FIX("python-pyproject"), "--export-anonymized", desc]);
+		const e = run(["scan", FIX("python-pyproject"), "--export-anonymized", desc]);
 		assert.strictEqual(e.status, 0, e.stderr);
 		// import is a cache-warming step (here offline → no-op warm) — it must NOT emit a report.
 		const r = run(["--import-anonymized", desc, "--offline", "--report-output", outDir]);
@@ -81,7 +81,7 @@ test("--import-anonymized warms caches but writes NO report by default", () => {
 test("export → import round-trip: descriptor re-imports to the same coordinates", () => {
 	const out = tmp("rt.json");
 	try {
-		const e = run(["-s", FIX("python-pyproject"), "--export-anonymized", out]);
+		const e = run(["scan", FIX("python-pyproject"), "--export-anonymized", out]);
 		assert.strictEqual(e.status, 0, e.stderr);
 		const { deserializeDeps } = require("../lib/deps-descriptor");
 		const back = deserializeDeps(JSON.parse(fs.readFileSync(out, "utf8")));

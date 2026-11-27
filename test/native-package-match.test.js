@@ -84,3 +84,12 @@ test('CVE semver open lower bound zero supports bounded ranges without guessing 
  assert.equal(versionVerdict('v2.11.0',a,'Go'),true);assert.equal(versionVerdict('v2.11.55',a,'Go'),false);assert.equal(versionVerdict('v2.12.0',a,'Go'),false);
  assert.equal(versionVerdict('v2.11.0',{...a,versions:[{...a.versions[0],versionType:'custom'}]},'Go'),null);
 });
+
+test('native advisory platform restrictions do not exclude a matching package version',t=>{
+ const store=fixture(t);
+ store.commit({records:[gcve([{packageURL:'pkg:npm/demo',platforms:['Windows','arm64'],versions:[{version:'1.2.3',status:'affected'}]}])]});
+ const dep={ecosystem:'npm',name:'demo',version:'1.2.3',coordKey:'demo'};
+ const found=matchNativePackages(new Map([[dep.coordKey,dep]]),store);
+ assert.equal(found.matches.length,1);assert.deepEqual(found.unknown,[]);
+ assert.equal(matchNativePackages(new Map([[dep.coordKey,{...dep,version:'2.0.0'}]]),store).matches.length,0);
+});

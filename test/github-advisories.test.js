@@ -65,6 +65,12 @@ test("validateSnapshot rejects malformed feeds instead of guessing", () => {
 		{ package: { ecosystem: "composer", name: "a/b" }, vulnerable_version_range: 12 }] }] }), /invalid vulnerability/);
 });
 
+test("publisher CWE identifiers survive analysis and both GitHub representations count once", () => {
+	const advisory = {...FEED[0],cwe_ids:["CWE-918","invalid"],cwes:[{cwe_id:"CWE-918"},{cwe_id:"CWE-20"},null]};
+	const {matches} = assessGithubAdvisories([advisory],[component()],{sourceId:"github-prestashop-advisories"});
+	assert.deepEqual(matches[0].cve.cwes,["CWE-918","CWE-20"]);
+});
+
 test("the empty-package PrestaShop record attributes to the configured core coordinate", () => {
 	const { index } = validateSnapshot(FEED, { fallbackCoord: "prestashop/prestashop" });
 	assert.equal(index.get("prestashop/prestashop").length, 3);

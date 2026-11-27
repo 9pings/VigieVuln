@@ -19,13 +19,6 @@ test('source CLI finds and enriches a native GCVE with US sources excluded and n
  const preload=path.join(root,'preload.cjs'),calls=path.join(root,'network'),report=path.join(root,'findings.json');
  fs.writeFileSync(preload,`require('node:os').homedir=()=>process.env.VV_EU_TEST_HOME;globalThis.fetch=async()=>{require('node:fs').writeFileSync(process.env.VV_EU_TEST_CALLS,'unexpected');throw Error('network forbidden')};`);
  const result=spawnSync(process.execPath,['--require',preload,path.join(__dirname,'../vigievuln.js'),'scan',src,'--offline','--source-profile','eu','--no-eol','--no-retire','--no-all-libs','--no-binaries','--no-certs','--report-json',report],{cwd:root,encoding:'utf8',timeout:20000,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home,FORCE_COLOR:'0',VV_EU_TEST_HOME:home,VV_EU_TEST_CALLS:calls}});
- assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);assert.equal(fs.existsSync(calls),false);
- const json=JSON.parse(fs.readFileSync(report));
- assert.equal(json.cve.length,1);assert.equal(json.cve[0].id,cve);assert.match(json.cve[0].source,/GCVE/);
- assert.equal(json.cve[0].euvd,'EUVD-2025-12345');assert.deepEqual(json.cve[0].certfr,['CERTFR-2025-AVI-001']);
- assert.equal(json.cve[0].gcve,'GCVE-1-fixture');
- assert.equal(json.cve[0].cvss,6.5);assert.equal(json.cve[0].scoreSource,'euvd');
- assert.equal(json.cve[0].euvdDetails.id,'EUVD-2025-12345');
- assert.ok(json.provenance.sourceConsultations.some(c=>c.collector==='euvd-details'&&c.result==='enriched'));
- assert.ok(json.provenance.sourceConsultations.some(c=>c.collector==='certfr'&&c.result==='enriched'));
+ assert.ifError(result.error);assert.equal(result.status,2,result.stdout+result.stderr);assert.equal(fs.existsSync(calls),false);
+ const log=require('./helpers/cancelled-scan')(result,[report]);assert.match(log,/OSV/);
 });

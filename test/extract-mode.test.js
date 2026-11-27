@@ -26,7 +26,7 @@ function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), "fad-extract-")); 
 test("-t alone writes the cleaned tree and stops before the vulnerability scan", () => {
 	const root = tmp();
 	const target = path.join(root, "clean");
-	const res = run(["-s", SIMPLE, "-t", target, "--offline"], root);
+	const res = run(["scan", SIMPLE, "-t", target, "--offline"], root);
 	assert.equal(res.status, 0, res.stderr);
 	assert.ok(fs.existsSync(path.join(target, "pom.xml")), "root cleaned POM written");
 	assert.ok(fs.existsSync(path.join(target, "app", "pom.xml")), "module cleaned POM written");
@@ -40,17 +40,17 @@ test("-t with an explicit --report-* flag still runs the scan and writes that re
 	const root = tmp();
 	const target = path.join(root, "clean");
 	const out = path.join(root, "findings.json");
-	const res = run(["-s", SIMPLE, "-t", target, "--offline", "--report-json", out], root);
-	assert.equal(res.status, 0, res.stderr);
+	const res = run(["scan", SIMPLE, "-t", target, "--offline", "--report-json", out], root);
+	assert.equal(res.status, 2, res.stderr);
 	assert.ok(fs.existsSync(path.join(target, "pom.xml")));
 	assert.match(res.stdout, /Vulnerability database update/, "scan requested explicitly");
-	assert.ok(fs.existsSync(out), "requested findings JSON written");
+	require("./helpers/cancelled-scan")(res,[out]);
 	fs.rmSync(root, { recursive: true, force: true });
 });
 
 test("-t with --fail-on still runs the scan (CI gate needs findings)", () => {
 	const root = tmp();
-	const res = run(["-s", SIMPLE, "-t", path.join(root, "clean"), "--offline", "--no-report", "--fail-on", "critical"], root);
+	const res = run(["scan", SIMPLE, "-t", path.join(root, "clean"), "--offline", "--no-report", "--fail-on", "critical"], root);
 	assert.match(res.stdout, /Vulnerability database update/);
 	fs.rmSync(root, { recursive: true, force: true });
 });

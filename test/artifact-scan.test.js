@@ -51,13 +51,21 @@ test('artifact inventory prepares transferable offline advisories through a flee
  const root=path.join(work,'root');write(root,'etc/os-release','ID=alpine\nVERSION_ID=3.20\n');write(root,'lib/apk/db/installed','P:foo\nV:1-r0\nA:x86_64\no:foo\n\n');
  const targets=await acquireInventories(root,{offline:true}),inventory=path.join(work,'inventory.json');fs.writeFileSync(inventory,JSON.stringify(createSnapshot(targets)));
  const rec={id:'ALPINE-X',affected:[{package:{ecosystem:'Alpine:v3.20',name:'foo'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-r0'}]}]}]};const zip=zipSync({'v.json':strToU8(JSON.stringify(rec))});
- const store=createCacheStore(path.join(work,'server'));let requests=0;const {server,url}=await startProxyCacheServer({port:0,host:'127.0.0.1',store,fetcher:async()=>{requests++;return new Response(zip,{status:200,headers:{'content-type':'application/zip'}});}});
+ const pack=require('tar-stream').pack(), packed=require('node:stream/consumers').buffer(pack);
+ pack.entry({name:'APKINDEX'},'P:foo\nV:3-r0\nA:x86_64\no:foo\n\n');pack.finalize();
+ const apkIndex=require('node:zlib').gzipSync(await packed);
+ const store=createCacheStore(path.join(work,'server'));let advisories=0, catalogues=0;
+ const {server,url}=await startProxyCacheServer({port:0,host:'127.0.0.1',store,fetcher:async source=>{
+  if(String(source).endsWith('/APKINDEX.tar.gz')) {catalogues++;return new Response(apkIndex,{headers:{'content-type':'application/gzip'}});}
+  advisories++;return new Response(zip,{headers:{'content-type':'application/zip'}});
+ }});
  const bundle=path.join(work,'cache.tar.gz'),source=path.join(work,'source'),dest=path.join(work,'dest');const originalExit=process.exitCode;
  try {
-  const route=require('../lib/cli-command-routing').routeArguments(['cache','prepare',inventory,'--output',bundle,'--cache-dir',source,'--source-profile','proxy','--proxy-cache',url,'--allow-insecure-http','--no-gcve','--no-distro-advisories','--enrich','none']);
-  assert.equal(route.args[0],'image');const result=await require('../lib/cli-image').run(route.args.slice(1));assert.equal(result.exitCode,0);assert.equal(requests,2);assert.ok(fs.existsSync(bundle));
+  const route=require('../lib/cli-command-routing').routeArguments(['cache','prepare',inventory,'--retries','0','--output',bundle,'--cache-dir',source,'--source-profile','proxy','--proxy-cache',url,'--allow-insecure-http','--no-gcve','--no-distro-advisories','--enrich','none']);
+  assert.deepEqual(route.args.slice(0,2),['system','scan']);const result=await require('../lib/cli-image').run(route.args.slice(2));assert.equal(result.exitCode,0);assert.equal(advisories,2);assert.equal(catalogues,2);assert.ok(fs.existsSync(bundle));
   await require('../lib/cache-archive-sqlite').importCache(bundle,{targetDir:dest,proxyOrigin:url});
   const offline=await assessInventories(targets,{cacheDir:dest,offline:true,enrich:[],fetcher:()=>{throw Error('network')}});assert.equal(offline.cveMatches.length,1);
+  assert.equal(offline.artifacts[0].components.find(c=>c.name==='foo').releaseVersions.distribution.version,'3-r0');
  } finally {process.exitCode=originalExit;await new Promise(resolve=>server.close(resolve));store.close?.();}
 });
 test('online system OSV refresh respects complete fresh snapshots, expiry, incompleteness and exclusion',async t=>{
@@ -68,7 +76,7 @@ test('online system OSV refresh respects complete fresh snapshots, expiry, incom
  for(const scenario of ['fresh','expired','incomplete','disabled']){
   const cacheDir=path.join(root,scenario);await importSystemAdvisories([rec],{distribution,cacheDir,complete:scenario!=='incomplete'});
   if(scenario==='expired'){const repo=createCacheRepository(cacheDir),snapshot=repo.getSnapshot('system-osv:Alpine:v3.20');repo.putSnapshot('system-osv:Alpine:v3.20',{...snapshot,fetchedAt:Date.now()-7*3600000});}
-  let calls=0;const result=await assessInventories([target],{cacheDir,osv:scenario!=='disabled',distroAdvisories:false,disableGcve:true,disableCveProject:true,enrich:[],fetcher:async()=>{calls++;return new Response(zip,{headers:{'content-type':'application/zip'}})}});
+  let calls=0;const result=await assessInventories([target],{cacheDir,allLibs:false,osv:scenario!=='disabled',distroAdvisories:false,disableGcve:true,disableCveProject:true,enrich:[],fetcher:async()=>{calls++;return new Response(zip,{headers:{'content-type':'application/zip'}})}});
   assert.equal(calls,['expired','incomplete'].includes(scenario)?1:0,scenario);if(scenario==='disabled')assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='system-osv').execution,'not-applicable');
  }
 });

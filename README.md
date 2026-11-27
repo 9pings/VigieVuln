@@ -10,9 +10,9 @@
 [![CI](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml)
 
 
-**VigieVuln 1.3.3** is a polyglot dependency auditor for code audits.
+**VigieVuln 1.3.5** is a polyglot dependency auditor for code audits.
 
-It scans dependencies and **9 CMS/frameworks** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
+It scans dependencies and **11 CMS/frameworks** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
 
 
 🌐 **[Project site & docs →](https://9pings.github.io/VigieVuln/)**
@@ -31,7 +31,7 @@ It scans dependencies and **9 CMS/frameworks** in one pass without build tools, 
 - **CMS & frameworks audited as instances**; Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP with per-instance inventory (core, plugins, themes, bundles, components) → [the dedicated guide](docs/CMS-FRAMEWORKS.md)
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
 - **Air-gapped flow**; **zero network under `--offline`** → [Benchmark](docs/BENCHMARK.md) · [Air-gapped](#air-gapped-audits)
-- **Native image audits**; Docker/OCI archives, registries and rootfs inventories without Docker; Linux packages, ELF/Go metadata and publisher SBOMs, with explicit coverage. Image analysis in source scans is off by default; use `--images` or the separate `vigievuln image` command → [image guide](docs/IMAGES.md)
+- **Native image audits**; Docker/OCI archives, registries and rootfs inventories without Docker; Linux packages, ELF/Go metadata and publisher SBOMs, with explicit coverage. Image analysis in source scans is off by default; use `--images` or the separate `vigievuln system scan` command → [image guide](docs/IMAGES.md)
 - **Hosted proxy with a verified account**; `--set-proxy-cache vigievuln` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
 - **Project monitoring**; `vigievuln watch ./project --name 'My Project'` — one free project with up to **100 distinct direct dependency coordinates** → [monitoring guide](docs/USAGE.md#project-monitoring)
 - **Shared cache for a scanner fleet**; `vigievuln serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
@@ -109,16 +109,16 @@ for versions, sources and limitations. `⚠️` indicates partial or conditional
 ## More examples
 
 ```bash
-vigievuln -s ./proj -e "^com\.acme\."                        # exclude private libs (coord regex)
-vigievuln -s ./proj -t ../clean -e "^com\.acme\."            # extract only: normalised descriptors, private modules flagged
-vigievuln -s ./proj -t ../clean -e "^com\.acme\." -a snyk   # same extraction + scan + merge Snyk
-vigievuln -s ./proj --offline                                # fully offline (zero network, needs a warmed cache)
-vigievuln -s ./proj -a osv-db,typosquat                      # OSV advisory matching + typosquat
-vigievuln -s ./proj -a licenses --fail-on high               # license chapter + CI gate
-vigievuln -s ./proj --report-json --baseline last.json --fail-on-new   # differential audit: fail CI on NEW findings
+vigievuln scan ./proj -e "^com\.acme\."                        # exclude private libs (coord regex)
+vigievuln scan ./proj -t ../clean -e "^com\.acme\."            # extract only: normalised descriptors, private modules flagged
+vigievuln scan ./proj -t ../clean -e "^com\.acme\." -a snyk   # same extraction + scan + merge Snyk
+vigievuln scan ./proj --offline                                # fully offline (zero network, needs a warmed cache)
+vigievuln scan ./proj -a osv-db,typosquat                      # OSV advisory matching + typosquat
+vigievuln scan ./proj -a licenses --fail-on high               # license chapter + CI gate
+vigievuln scan ./proj --report-json --baseline last.json --fail-on-new   # differential audit: fail CI on NEW findings
 vigievuln diff last.json this.json                           # standalone diff of two findings JSONs
-vigievuln -s ./proj -r html,json,xlsx                        # include the Excel workbook
-vigievuln -s ./site --app-plugins wordpress --private-component wp-content/plugins/acme --offline
+vigievuln scan ./proj -r html,json,xlsx                        # include the Excel workbook
+vigievuln scan ./site --app-plugins wordpress --private-component wp-content/plugins/acme --offline
 ```
 
 > [!IMPORTANT]
@@ -153,14 +153,14 @@ Scan a confidential or disconnected project by preparing its advisory and depend
 
 ```bash
 # Offline: export coordinates, excluding internal packages; review before transfer
-vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
+vigievuln scan ./proj -e "^(client|internal)\." --export-anonymized deps.json
 
 # Online: prepare a project-specific cache from the reviewed descriptor
 vigievuln cache prepare deps.json --output vigievuln-cache.tar.gz
 
 # Offline: import the cache and generate the report locally
 vigievuln --import-cache vigievuln-cache.tar.gz
-vigievuln -s ./proj --offline
+vigievuln scan ./proj --offline
 ```
 
 Review the descriptor before sharing and the report's coverage and freshness information after scanning. An incomplete or outdated cache can limit results. [Offline workflow and cache options](docs/USAGE.md).

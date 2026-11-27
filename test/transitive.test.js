@@ -388,3 +388,25 @@ test('different Maven artifact classifiers cannot silently collapse without cove
  });
  assert.equal(found.get('g:lib')?.version,'1');assert.deepEqual(warnings,[{groupId:'g',artifactId:'lib'}]);
 });
+
+test('Gradle Android jar/aar packaging is one module identity, without suppressing actual classifier collisions', async()=>{
+ const {upstream}=require('./helpers/maven-scenario');
+ const root=`<project><groupId>g</groupId><artifactId>root</artifactId><version>1</version><dependencies>
+ <dependency><groupId>g</groupId><artifactId>android</artifactId><version>1</version></dependency>
+ <dependency><groupId>g</groupId><artifactId>android</artifactId><version>1</version><type>aar</type></dependency>
+ </dependencies></project>`;
+ const responses=upstream([{g:'g',a:'android',v:'1',deps:[{g:'g',a:'child',v:'2'}]},{g:'g',a:'child',v:'2'}]);
+ responses[`${MC_URL}/g/root/1/root-1.pom`]=root;
+ const roots=[{groupId:'g',artifactId:'root',version:'1',scope:'compile'}];
+ const gradleWarnings=[],mavenWarnings=[];
+ const found=await resolveTransitiveDeps(roots,{gradleComponents:true,fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
+ assert.deepEqual(gradleWarnings,[]);assert.equal(found.get('g:android').version,'1');assert.equal(found.get('g:child').version,'2');
+ const collected=new Map([['g:root',{ecosystem:'maven',ecosystemType:'gradle',groupId:'g',artifactId:'root',version:'1',versions:['1'],scope:'compile'}]]);
+ await require('../lib/cve-match').expandWithTransitives(collected,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
+ assert.equal(collected.get('g:child').version,'2');assert.deepEqual(gradleWarnings,[]);
+ await resolveTransitiveDeps(roots,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>mavenWarnings.push(x)});
+ assert.deepEqual(mavenWarnings,[{groupId:'g',artifactId:'android'}]);
+ responses[`${MC_URL}/g/root/1/root-1.pom`]=root.replace('<type>aar</type>','<classifier>tests</classifier>');
+ await resolveTransitiveDeps(roots,{gradleComponents:true,fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
+ assert.deepEqual(gradleWarnings,[{groupId:'g',artifactId:'android'}]);
+});

@@ -164,7 +164,7 @@ test('NVD uses product identity and version, replays offline, respects ownership
       { cpeMatch: [{ criteria: 'cpe:2.3:o:vendor:os:*:*:*:*:*:*:*:*', vulnerable: false }] }
     ]
   };
-  assert.equal(evaluateConfiguration(restricted, 'php:php', '8.3.1'), null);
+  assert.equal(evaluateConfiguration(restricted, 'php:php', '8.3.1'), true);
   assert.equal(evaluateConfiguration({ ...restricted, negate: true }, 'php:php', '8.3.1'), null);
 });
 
@@ -257,4 +257,104 @@ test('CPython uses the exported constant and rejects non-final releases', async 
   fs.writeFileSync(fp, b);
   [target] = await acquireInventories(root, { offline: true });
   assert.equal(target.deps[0].version, null);
+});
+
+test('Apache and PHP critical advisory ranges distinguish the affected and fixed upstream releases offline',async t=>{
+  const cacheDir=temp(t);
+  // Release boundaries from the Apache 2.4 security notices and PHP 7.4.33
+  // changelog. Use the matching NVD CPE leaves, including the exclusive fix.
+  const pin=(product,version)=>({vulnerable:true,criteria:'cpe:2.3:a:'+product+':'+version+':*:*:*:*:*:*:*'});
+  const records=[
+    ['CVE-2021-41773',[pin('apache:http_server','2.4.49')]],
+    ['CVE-2021-42013',[pin('apache:http_server','2.4.49'),pin('apache:http_server','2.4.50')]],
+    ['CVE-2022-37454',[{...pin('php:php','*'),versionStartIncluding:'7.2.0',versionEndExcluding:'7.4.33'}]],
+  ].map(([id,cpeMatch])=>({cve:{id,published:'2022-11-03T00:00:00Z',lastModified:'2022-11-03T00:00:00Z',
+    descriptions:[{lang:'en',value:id}],references:[],configurations:[{nodes:[{operator:'OR',cpeMatch}]}]}}));
+  for (const [product,name,version,expected] of [
+    ['apache','httpd','2.4.49',['CVE-2021-41773','CVE-2021-42013']],['apache','httpd','2.4.51',[]],
+    ['php','php-fpm','7.4.0',['CVE-2022-37454']],['php','php-fpm','7.4.33',[]],
+  ]){
+    const artifactPath='usr/local/bin/'+name,dep={ecosystem:'binary',name,version,artifactPath,binaryEvidence:{product}};
+    const target={packages:[],deps:[dep]};
+    const relevant=records.filter(({cve})=>cve.configurations[0].nodes[0].cpeMatch[0].criteria.includes(':'+catalog.get(product).cpe+':'));
+    const fetcher=()=>Response.json({startIndex:0,totalResults:relevant.length,resultsPerPage:relevant.length,vulnerabilities:relevant});
+    for(const offline of [false,true]){
+      const result=await assessProductAdvisories(target,{cacheDir,offline,fetcher:offline?()=>assert.fail('unexpected offline query'):fetcher});
+      assert.equal(result.coverage[0].execution,'completed',result.coverage[0].reason);
+      assert.deepEqual(result.matches.map(m=>m.cve.id),expected);
+    }
+  }
+});
+
+test('OS-owned upstream matches remain candidates and yield to an exact downstream assessment', () => {
+  const owner={manager:'apk',name:'py3-example',version:'2.0-r1'};
+  const match={dep:{osPackageOwners:[owner],ecosystem:'pypi',name:'example',version:'2.0',artifactPath:'lib/example/METADATA'},
+    cve:{id:'CVE-2099-1234',sourceAdvisoryId:'GHSA-example'}};
+  const observations=require('../lib/artifacts/applications').upstreamPackageObservations;
+  const [obs]=observations([match],[],[]);
+  assert.equal(obs.source,'osv-upstream');
+  assert.equal(obs.status,'possible');
+  assert.deepEqual(obs.evidence.packageOwner,owner);
+  assert.deepEqual(observations([match],[{dep:{...owner,ecosystem:'system'},cve:match.cve}],[]),[]);
+  assert.deepEqual(observations([match],[],[{id:match.cve.id,dep:owner,status:'fixed'}]),[]);
+});
+
+test('product lookups retry HTTP 429 with fresh per-attempt deadlines and retain confirmed empty answers offline',async t=>{
+ const cacheDir=temp(t),waits=[],notices=[],signals=[];
+ const {guardedFetch,createSourceHealth}=require('../lib/source-health');
+ const target={packages:[],deps:[{name:'php',ecosystem:'binary',version:'8.3.1',binaryEvidence:{product:'php'},artifactPath:'usr/local/bin/php'}]};
+ const fetcher=guardedFetch({health:createSourceHealth(),retries:2,sleep:async ms=>waits.push(ms),onRetry:n=>notices.push(n),fetch:async(url,opts)=>{
+  signals.push(opts.signal);
+  return signals.length<3?new Response(null,{status:429,headers:{'retry-after':'12'}}):Response.json({startIndex:0,totalResults:0,resultsPerPage:0,vulnerabilities:[]});
+ }});
+ const live=await assessProductAdvisories(target,{cacheDir,fetcher});
+ assert.equal(live.coverage[0].execution,'completed');assert.equal(live.coverage[0].result,'no-match');
+ assert.deepEqual(waits,[12000,12000]);assert.equal(notices.length,2);
+ assert.notEqual(signals[0],signals[1]);assert.notEqual(signals[1],signals[2]);
+ const repository=require('../lib/cache-repository').createCacheRepository(cacheDir);
+ const key=JSON.stringify(['php:php','8.3.1']);
+ const old=repository.get('image-product-nvd/2',key);
+ repository.put('image-product-nvd/2',key,old.value,{fetchedAt:Date.now()-86400000});
+ const replay=await assessProductAdvisories(target,{cacheDir,offline:true,fetcher:()=>assert.fail('offline network')});
+ assert.equal(replay.coverage[0].execution,'completed');assert.deepEqual(replay.matches,[]);
+});
+
+test('unidentified runtime version records the applicability limit without a network outage',async t=>{
+ const cacheDir=temp(t),target={packages:[],deps:[{name:'php',ecosystem:'binary',version:null,binaryEvidence:{product:'php'},artifactPath:'usr/local/bin/php'}]};
+ const result=await assessProductAdvisories(target,{cacheDir,fetcher:()=>assert.fail('no exact version to query')});
+ assert.equal(result.coverage[0].execution,'not-applicable');
+ assert.equal(result.coverage[0].affectsCompleteness,false);
+ assert.match(result.coverage[0].reason,/No exact runtime version/);
+});
+
+test('deployment prerequisites are assumed while the vulnerable product and version remain required',()=>{
+ const apache={vulnerable:true,criteria:'cpe:2.3:a:apache:http_server:*:*:*:*:*:windows:x64:*',versionEndExcluding:'2.4.62'};
+ const windows={vulnerable:false,criteria:'cpe:2.3:o:microsoft:windows:-:*:*:*:*:*:*:*'};
+ const config={operator:'AND',nodes:[{cpeMatch:[apache]},{cpeMatch:[windows]}]};
+ assert.equal(evaluateConfiguration(config,'apache:http_server','2.4.49'),true);
+ assert.equal(evaluateConfiguration(config,'apache:http_server','2.4.62'),false);
+ assert.equal(evaluateConfiguration({...config,operator:'OR'},'apache:http_server','2.4.62'),false);
+ const odoo={vulnerable:true,criteria:'cpe:2.3:a:odoo:odoo:*:*:*:*:community:*:*:*',versionEndIncluding:'13.0'};
+ const python={vulnerable:false,criteria:'cpe:2.3:a:python:python:*:*:*:*:*:*:*:*',versionStartIncluding:'3.6'};
+ assert.equal(evaluateConfiguration({operator:'AND',nodes:[{cpeMatch:[odoo]},{cpeMatch:[python]}]},'python:python','3.13.18'),false);
+ assert.equal(evaluateConfiguration({cpeMatch:[{...apache,criteria:'cpe:2.3:a:apache:http_server:2.4.49:alpha1:*:*:*:*:*:*'}]},'apache:http_server','2.4.49'),null);
+});
+
+test('product cache from the previous environment policy cannot hide newly included findings',async t=>{
+ const cacheDir=temp(t),repo=require('../lib/cache-repository').createCacheRepository(cacheDir);
+ repo.put('image-product-nvd/1',JSON.stringify(['php:php','8.3.1']),{records:[],unknown:['CVE-2025-12345']},{fetchedAt:Date.now()});
+ const target={packages:[],deps:[{name:'php',ecosystem:'binary',version:'8.3.1',binaryEvidence:{product:'php'},artifactPath:'usr/local/bin/php'}]};
+ let requests=0;
+ const result=await assessProductAdvisories(target,{cacheDir,fetcher:async()=>{
+  requests++;
+  return Response.json({startIndex:0,totalResults:1,resultsPerPage:1,vulnerabilities:[{cve:{
+   id:'CVE-2025-12345',published:'2025-01-01T00:00:00Z',lastModified:'2025-01-02T00:00:00Z',
+   descriptions:[{lang:'en',value:'Example advisory'}],references:[],
+   configurations:[{operator:'AND',nodes:[{cpeMatch:[{vulnerable:true,criteria:'cpe:2.3:a:php:php:*:*:*:*:*:*:*:*',versionEndExcluding:'8.3.2'}]},
+    {cpeMatch:[{vulnerable:false,criteria:'cpe:2.3:o:microsoft:windows:-:*:*:*:*:*:*:*'}]}]}]
+  }}]});
+ }});
+ assert.equal(requests,1);assert.equal(result.matches.length,1);assert.equal(result.coverage[0].unknown,0);
+ const replay=await assessProductAdvisories(target,{cacheDir,offline:true,fetcher:()=>assert.fail('offline network')});
+ assert.deepEqual(replay.matches.map(m=>m.cve.id),['CVE-2025-12345']);
 });

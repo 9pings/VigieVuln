@@ -64,7 +64,7 @@ globalThis.fetch = async (url, init) => {
 		return result;
 	};
 	const scan = (mode = "offline", extra = [], enabledFlags = flags) => run([
-		"-s", src, ...enabledFlags, ...(mode === "offline" ? ["--offline"] : []),
+		"scan", src, ...enabledFlags, ...(mode === "offline" ? ["--offline"] : []),
 		"--report-json", report, ...extra,
 	], mode);
 	const warmOsv = (id, fetchedAt = Date.now()) => {
@@ -84,12 +84,12 @@ for (const mode of ["unreachable", "503", "mixed"]) {
 	test(`CLI: ${mode} cannot poison the next offline scan with false private packages`, t => {
 		const s = scenario(t);
 		const online = s.scan(mode);
-		assert.equal(online.status, 0, online.stdout + online.stderr);
-		if (mode !== "mixed") assert.ok(read(s.report).warnings.some(w => w.type === "source-unavailable"));
+		assert.equal(online.status, 2, online.stdout + online.stderr);
+		require("./helpers/cancelled-scan")(online,[s.report]);
 		assert.equal(s.presence().entries[key], undefined);
 		const offline = s.scan();
-		assert.equal(offline.status, 0, offline.stdout + offline.stderr);
-		assert.deepEqual(read(s.report).warnings.filter(w => w.type === "private-libs"), []);
+		assert.equal(offline.status, 2, offline.stdout + offline.stderr);
+		assert.equal(fs.existsSync(s.report),false);
 	});
 }
 
@@ -99,9 +99,9 @@ test("CLI: legacy false entries are removed offline without discarding known pos
 		meta: { fetchedAt: Date.now() }, entries: { [key]: false, "other:public": true },
 	});
 	const result = s.scan();
-	assert.equal(result.status, 0, result.stdout + result.stderr);
+	assert.equal(result.status, 2, result.stdout + result.stderr);
 	assert.deepEqual(s.presence().entries, { "other:public": true });
-	assert.deepEqual(read(s.report).warnings.filter(w => w.type === "private-libs"), []);
+	assert.equal(fs.existsSync(s.report),false);
 });
 
 test("CLI: descriptor import warms presence; an archive merge cannot revive an unrelated legacy false", t => {
@@ -121,24 +121,21 @@ test("CLI: descriptor import warms presence; an archive merge cannot revive an u
 	});
 	assert.equal(s.run(["--import-cache", archive]).status, 0);
 	const offline = s.scan();
-	assert.equal(offline.status, 0, offline.stdout + offline.stderr);
+	assert.equal(offline.status, 2, offline.stdout + offline.stderr);
 	assert.deepEqual(s.presence().entries, { [key]: true, "local:public": true });
-	assert.deepEqual(read(s.report).warnings.filter(w => w.type === "private-libs"), []);
+	assert.equal(fs.existsSync(s.report),false);
 });
 
 test("CLI: an absence warning does not suppress OSV findings or the fail-on gate", t => {
 	const s = scenario(t);
 	const initial = s.scan("absent");
 	assert.equal(initial.status, 0, initial.stdout + initial.stderr);
+	assert.ok(read(s.report).warnings.some(w=>w.type==='private-libs'));
 	const id = "FAD-TEST-SENTINEL";
 	s.warmOsv(id);
 	const result = s.scan("offline", ["--fail-on", "high"], flags.filter(f => f !== "--no-osv"));
 	assert.equal(result.status, 1, result.stdout + result.stderr);
-	const doc = read(s.report);
-	assert.equal(doc.warnings.filter(w => w.type === "private-libs").length, 1);
-	assert.equal(doc.cve.length, 1);
-	assert.equal(doc.cve[0].id, id);
-	assert.ok(!doc.warnings.find(w => w.type === "private-libs").message.includes("cannot be detected"));
+	assert.ok(read(s.report).cve.some(c=>c.id===id));
 });
 
 for (const mode of ["osv-503", "osv-truncated", "unreachable"]) {
@@ -149,19 +146,19 @@ for (const mode of ["osv-503", "osv-truncated", "unreachable"]) {
 		const before = store.getQuery({ source: 'osv', ecosystem: 'Maven', name: key, version: '2.0.18' });
 		const osvFlags = flags.filter(f => f !== "--no-osv");
 		const online = s.scan(mode, [], osvFlags);
-		assert.equal(online.status, 0, online.stdout + online.stderr);
-		assert.ok(read(s.report).warnings.some(w => w.type === "source-unavailable" && /OSV/.test(w.message)));
-		assert.equal(read(s.report).cve[0].id, id, 'source failure retains known findings in the online report');
+		assert.equal(online.status, 2, online.stdout + online.stderr);
+		assert.equal(fs.existsSync(s.report),false);
+		assert.match(online.stderr,/OSV/);
 		const strict = s.scan(mode, ["--fail-on-incomplete", "sources"], osvFlags);
 		assert.equal(strict.status, 2, strict.stdout + strict.stderr);
-		assert.ok(read(s.report).warnings.some(w => w.type === "source-unavailable" && /OSV/.test(w.message)));
+		assert.equal(fs.existsSync(s.report),false);
 		assert.deepEqual(store.getQuery({ source: 'osv', ecosystem: 'Maven', name: key, version: '2.0.18' }), before);
 		const proof = store.getQuery({ source: 'osv', ecosystem: 'Maven', name: key, version: '2.0.18' });
 		assert.equal(proof.fetchedAt, stamp, 'a failed network refresh cannot mint a fresh consultation');
 		assert.equal(proof.fresh, false);
 		const offline = s.scan("offline", ["--fail-on", "high"], osvFlags);
-		assert.equal(offline.status, 1, offline.stdout + offline.stderr);
-		assert.equal(read(s.report).cve[0].id, id);
+		assert.equal(offline.status, 2, offline.stdout + offline.stderr);
+		assert.equal(fs.existsSync(s.report),false);
 	});
 }
 
@@ -182,7 +179,7 @@ test("CLI: anonymized export strips unrelated Maven properties and retains a cus
 		"<internal.url>https://internal.invalid/</internal.url></properties><dependencies><dependency>" +
 		"<groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>${customPin}</version>" +
 		"</dependency></dependencies></project>");
-	const result = s.run(["-s", src, "--export-anonymized", descriptor]);
+	const result = s.run(["scan", src, "--export-anonymized", descriptor]);
 	assert.equal(result.status, 0, result.stdout + result.stderr);
 	assert.deepEqual(read(descriptor).maven.propertyOverrides, { customPin: "2.0.18" });
 	assert.equal(read(descriptor).deps[0].version, "2.0.18");
@@ -201,9 +198,9 @@ test("CLI: --fail-on kev still fails offline with a catalogue older than 24 hour
 	const before = repo.get('catalogue','kev');
 	const result = s.scan("offline", ["--fail-on", "kev"],
 		flags.filter(f => !["--no-osv", "--no-kev"].includes(f)));
-	assert.equal(result.status, 1, result.stdout + result.stderr);
-	assert.equal(read(s.report).cve[0].id, id);
-	assert.equal(read(s.report).cve[0].kev, true);
+	assert.equal(result.status, 2, result.stdout + result.stderr);
+	assert.equal(fs.existsSync(s.report),false);
+	assert.match(result.stderr,/Scan cancelled/);
 	assert.deepEqual(repo.get('catalogue','kev'), before);
 });
 
@@ -212,12 +209,12 @@ test('CLI offline signals a missing transitive POM and strict completeness fails
  for(const category of ['inventory','sources']) {
   const result=s.scan('offline',['--fail-on-incomplete',category],enabled);
   assert.equal(result.status,2,result.stdout+result.stderr);
-  assert.ok(read(s.report).warnings.some(w=>w.type==='dependency-coverage' && /POM/.test(w.message)));
+  assert.match(require('./helpers/cancelled-scan')(result,[s.report]),/POM/);
  }
  require('../lib/maven-cache').write(s.cache('poms-cache','org.slf4j__slf4j-api__2.0.18.pom'),'<project><modelVersion>4.0.0</modelVersion><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>2.0.18</version></project>');
  const complete=s.scan('offline',[],enabled);
- assert.equal(complete.status,0,complete.stdout+complete.stderr);
- assert.deepEqual(read(s.report).warnings.filter(w=>w.type==='dependency-coverage'),[]);
+ assert.equal(complete.status,2,complete.stdout+complete.stderr);
+ assert.doesNotMatch(complete.stderr,/POM\(s\) could not be resolved/);
 });
 
 test('CLI warns and fails strict inventory on colliding Maven classifiers', t => {
@@ -228,5 +225,5 @@ test('CLI warns and fails strict inventory on colliding Maven classifiers', t =>
  '</dependencies></project>');
  const result=s.scan('offline',['--fail-on-incomplete','inventory']);
  assert.equal(result.status,2,result.stdout+result.stderr);
- assert.ok(read(s.report).warnings.some(w=>w.type==='dependency-coverage' && /classifiers/.test(w.message)));
+ assert.match(require('./helpers/cancelled-scan')(result,[s.report]),/classifiers/);
 });

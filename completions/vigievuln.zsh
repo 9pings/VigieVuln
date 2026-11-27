@@ -1,13 +1,19 @@
 #compdef vigievuln fad-checker fad
 # Zsh completion for vigievuln (VigieVuln — autonomous dependency auditor)
 _fad_check() {
+	if (( CURRENT == 2 )); then
+		compadd scan system watch login logout whoami setup config cache
+		return
+	fi
+	if [[ ${words[2]} == system && $CURRENT == 3 ]]; then
+		compadd collect scan
+		return
+	fi
 	local -a opts
 	opts=(
 		'--vigievuln-proxy[Use the hosted proxy]::domain:(fr com)'
 		'--proxy-cache[Shared proxy URL]:url:'
 		'--proxy-cache-token[Proxy authentication key]:token:'
-		'-s[root directory containing pom.xml files]:directory:_directories'
-		'--src[root directory containing pom.xml files]:directory:_directories'
 		'-t[output directory]:directory:_directories'
 		'--target[output directory]:directory:_directories'
 		'-e[regex of groupId to exclude]:regex:'

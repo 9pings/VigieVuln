@@ -129,3 +129,13 @@ test('global ignore and mismatched project baselines are visible in terminal and
 	assert.equal(standalone.status, 0, standalone.stdout + standalone.stderr);
 	assert.match(standalone.stderr, /another-project/);
 });
+
+test('fail-on-new returns 2 when baseline coverage cannot establish a current production finding is new', t => {
+	const { root, run } = fixture(t);
+	const base = path.join(root, 'base.json'), current = path.join(root,'current.json');
+	fs.writeFileSync(base, JSON.stringify({cve:[],provenance:{sourceLimitations:['partial catalogue']}}));
+	fs.writeFileSync(current, JSON.stringify({cve:[{id:'CVE-2026-12345',dep:{ecosystem:'npm',coord:'demo',version:'1.0',isDev:false}}]}));
+	const result=run(['diff',base,current,'--fail-on-new']);
+	assert.equal(result.status,2,result.stderr);
+	assert.match(result.stderr,/Cannot determine/);
+});

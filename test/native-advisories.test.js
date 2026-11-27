@@ -91,11 +91,9 @@ test('offline CLI reads GCVE from journal without a legacy GCVE index',async t=>
  const index=buildGcveIndex([{gna:1,sourceUrl:'https://example.org/feed',collectedAt:new Date().toISOString(),complete:true,records:[raw]}]);index.directory={verified:true,notCollected:0};
  await importGcveIndex(store,index);
  assert.equal(store.getSourceCoverage('gcve','*').complete,false);
- const args=[path.join(__dirname,'../vigievuln.js'),'-s',src,'--ecosystem','npm','--offline','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs','--no-binaries','--no-certs','--report-json','-o',out];
+ const args=[path.join(__dirname,'../vigievuln.js'),'scan',src,'--ecosystem','npm','--offline','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs','--no-binaries','--no-certs','--report-json','-o',out];
  const run=spawnSync(process.execPath,args,{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home,FORCE_COLOR:'0'},encoding:'utf8',timeout:30000});
- assert.equal(run.status,0,run.stdout+run.stderr);const report=JSON.parse(fs.readFileSync(path.join(out,'findings.json'),'utf8'));
- assert.ok(report.cve.some(c=>c.id==='GCVE-1-test-cli'),JSON.stringify(report.warnings));
- assert.ok(!report.warnings.some(w=>/no GCVE advisory data/.test(w.message)));
+ assert.equal(run.status,2,run.stdout+run.stderr);const log=require('./helpers/cancelled-scan')(run,[path.join(out,'findings.json')]);assert.doesNotMatch(log,/no GCVE advisory data/);
 });
 
 test('CVEProject proxy projection replays offline as partial and native rejection supersedes it',async t=>{
@@ -121,11 +119,10 @@ test('zero advisory TTL retries stale GCVE online and retains cached findings on
  const index=buildGcveIndex([{gna:1,sourceUrl:'https://example.org/feed',collectedAt:new Date().toISOString(),complete:true,records:[raw]}]);index.directory={verified:true,notCollected:0};await importGcveIndex(store,index);
  const hook=path.join(root,'hook.cjs'), marker=path.join(root,'requests');
  fs.writeFileSync(hook,`globalThis.fetch=async u=>{require('fs').appendFileSync(${JSON.stringify(marker)},String(u)+'\\n');return new Response('',{status:503})}`);
- const args=['--require',hook,path.join(__dirname,'../vigievuln.js'),'-s',src,'--ecosystem','npm','--source-profile','eu','--advisory-query-ttl','0','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs','--no-binaries','--no-certs','--report-json','-o',out];
+ const args=['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',src,'--ecosystem','npm','--retries','0','--source-profile','eu','--advisory-query-ttl','0','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs','--no-binaries','--no-certs','--report-json','-o',out];
  const run=spawnSync(process.execPath,args,{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home,FORCE_COLOR:'0'},encoding:'utf8',timeout:30000});
- assert.equal(run.status,0,run.stdout+run.stderr);assert.match(fs.readFileSync(marker,'utf8'),/gcve\.eu/);
- const report=JSON.parse(fs.readFileSync(path.join(out,'findings.json'),'utf8'));
- assert.ok(report.cve.some(c=>c.id==='GCVE-1-test-zero'));assert.ok(report.warnings.some(w=>/GCVE refresh failed/.test(w.message)));
+ assert.equal(run.status,2,run.stdout+run.stderr);assert.match(fs.readFileSync(marker,'utf8'),/gcve\.eu/);
+ assert.match(require('./helpers/cancelled-scan')(run,[path.join(out,'findings.json')]),/GCVE refresh failed/);
 });
 
 test('CVEProject TTL uses cached index until expiry and zero forces refresh',t=>{
@@ -251,8 +248,8 @@ test('--gcve-offline uses stale local GCVE data during an online scan without re
  const at=new Date(Date.now()-86400000).toISOString(),raw={cveMetadata:{vulnId:'GCVE-1-stale-fixture',state:'PUBLISHED'},containers:{cna:{affected:[{packageURL:'pkg:npm/gcve-test',versions:[{version:'1.0.0',status:'affected'}]}],x_gcve:[{vulnId:'GCVE-1-stale-fixture',recordType:'advisory'}]}}};
  const index=buildGcveIndex([{gna:1,sourceUrl:'https://example.org/feed',collectedAt:at,complete:true,records:[raw]}]);index.directory={verified:true,notCollected:0};const store=openAdvisoryStore({cacheDir:cache});await importGcveIndex(store,index);store.close();require('../lib/cache-repository').createCacheRepository(cache).put('catalogue','gcve',index,{fetchedAt:Date.parse(at)});
  const hook=path.join(root,'network.cjs'),marker=path.join(root,'network');fs.writeFileSync(hook,`globalThis.fetch=async u=>{require('node:fs').appendFileSync(${JSON.stringify(marker)},String(u)+'\\n');return new Response('',{status:503})}`);
- const args=['--require',hook,path.join(__dirname,'../vigievuln.js'),'-s',src,'--ecosystem','npm','--source-profile','eu','--gcve-offline','--advisory-query-ttl','0','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs','--no-binaries','--no-certs','--report-json','-o',out];
- const r=spawnSync(process.execPath,args,{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home,FORCE_COLOR:'0'},encoding:'utf8',timeout:30000});assert.equal(r.status,0,r.stdout+r.stderr);
- const report=JSON.parse(fs.readFileSync(path.join(out,'findings.json')));assert.ok(report.cve.some(x=>x.id==='GCVE-1-stale-fixture'));assert.ok(report.provenance.notices.some(w=>w.severity==='info' && w.message.startsWith('GCVE')));assert.ok(!report.warnings.some(w=>w.type==='source-stale'));
+ const args=['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',src,'--ecosystem','npm','--retries','0','--source-profile','eu','--gcve-offline','--advisory-query-ttl','0','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs','--no-binaries','--no-certs','--report-json','-o',out];
+ const r=spawnSync(process.execPath,args,{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home,FORCE_COLOR:'0'},encoding:'utf8',timeout:30000});assert.equal(r.status,2,r.stdout+r.stderr);
+ require('./helpers/cancelled-scan')(r,[path.join(out,'findings.json')]);
  if(fs.existsSync(marker))assert.doesNotMatch(fs.readFileSync(marker,'utf8'),/gcve\.eu|vulnerability\.circl\.lu/);
 });

@@ -18,7 +18,7 @@ test('proxy-only scan creates an official proxy key from an existing account ses
  const env={...process.env,NODE_OPTIONS:`--require=${hook}`};delete env.VIGIEVULN_PROXY_CACHE_TOKEN;delete env.FAD_PROXY_CACHE_TOKEN;
  const report=path.join(root,'findings.json');
  const result=spawnSync(process.execPath,[cli,'scan',project,'--no-gcve','--no-euvd','--no-certfr','--no-nvd','--no-epss','--no-eol','--no-kev','--no-retire','--no-all-libs','--no-transitive','--report-json',report],{env,encoding:'utf8',timeout:30000});
- assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Proxy key created/);
+ assert.equal(result.status,2,result.stdout+result.stderr);assert.match(result.stderr,/Proxy key created/);
  const records=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);
  assert.ok(records.some(x=>x.url==='https://www.vigievuln.fr/v1/accounts/me' && x.auth==='Bearer session_token'));
  assert.ok(records.some(x=>x.url==='https://www.vigievuln.fr/v1/accounts/proxy-keys' && x.method==='POST'));

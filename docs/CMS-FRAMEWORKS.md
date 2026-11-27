@@ -17,6 +17,8 @@ instance.
 
 | Product | Requires | Core version evidence | Components inventoried |
 | --- | --- | --- | --- |
+| **Ghost** | root `ghost` npm package, `index.js` and `core/boot.js` | root package version | core and themes with a Ghost engine declaration |
+| **Redmine** | `Gemfile`, `config/application.rb` and `lib/redmine/version.rb` | literal `Redmine::VERSION` constants | core and locked gem dependencies |
 | **WordPress** | `wp-load.php` + `wp-includes/version.php` + `wp-admin/index.php` | `$wp_version` | core, plugins (`Plugin Name`, `Update URI`), themes (`style.css`) |
 | **Drupal 8–11** | `composer.json` `require.drupal/core` + `core/lib/Drupal.php` + `core.services.yml` | lock pin, observed `Drupal.php`, conflict reported | core, modules (`.info.yml`, incl. `modules/contrib`), themes, profiles |
 | **Drupal 7** | `includes/bootstrap.inc` with the literal 7.x `VERSION` define + `modules/system/system.module` | `VERSION` | core, legacy `.info` extensions |
@@ -47,6 +49,7 @@ to publisher feeds. Public dependencies can still be queried through dependency 
 
 | Product | Advisory lane | Notes |
 | --- | --- | --- |
+| **WordPress** | **[WPVulnerability](https://docs.wpvulnerability.com/)** (automatic, public, no key) | core version, plugins and themes identified by their official WordPress.org header URL or an explicit public identity; cached responses travel with the air-gapped cache; unknown components, invalid responses and exhausted source retries cancel publication |
 | **WordPress** | **Wordfence v3 production feed** (`--wordfence-feed <file>` snapshot, or live with `WORDFENCE_API_KEY` / `--wordfence-api-key`) | matches only explicitly declared public plugin/theme identities; `--wordfence-live --proxy-cache <url>` uses the server key; without a key on either side the request fails |
 | **WordPress** (integrity) | **core checksums** (`--wp-checksums-live` / `--wp-checksums <file>`, `--wp-checksums-locale`) | modified / missing / extra core files are **diagnostics**, never CVE findings; `wp-content/` is user land |
 | **Drupal** | **packages.drupal.org** per-package security advisories (`--drupal-advisories[-live]`) | queried for exactly the inventoried **public** `drupal/*` identities; `--max-advisory-age` bounds snapshot age |
@@ -76,8 +79,10 @@ source results until execution is recorded per package/version.
 
 - **« CMS & Frameworks » chapter** — first CVE section whenever an instance was
   inventoried: an instance synthesis (observed version, direct/indirect counts, worst
-  priority, aggregated coverage), then per-instance CVE groups split Direct / Indirect /
-  Private, with cross-references for shared occurrences. A **zero-finding instance keeps
+  priority, aggregated coverage), then direct and transitive findings for the root project and its
+  development dependencies. The modules and themes section groups direct advisories and
+  indirect findings by owner. Each explicitly private extension has its own direct,
+  transitive and development subsections. Component inventories open on demand. A **zero-finding instance keeps
   its chapter** with inventory and coverage. No findings do not prove a clean installation;
   review incomplete checks and activation evidence.
 - **Application inventory & coverage chapter** — every inventoried component with its
@@ -99,7 +104,7 @@ to prepare supported publisher snapshots:
    descriptor justifies, in one run: the Drupal feed (union of lock coordinates and
    inventoried identities — exactly the set the live source would query), the
    PrestaShop/TYPO3 repository feeds, the SPIP NVD product snapshot, one WordPress checksums reference per declared core
-   version, and the Wordfence catalogue **with a client API key, or `--wordfence-live` and a key on the proxy** (the
+   version, and public WPVulnerability component responses by default. An explicitly selected Wordfence catalogue still works **with a client API key, or `--wordfence-live` and a key on the proxy** (the
    key itself never travels). Each snapshot is validated with its provider's schema before
    being written. The same command writes the project archive.
 3. **Phase 3 (offline)** — `--import-cache` + the plain `--offline` scan. Cached snapshots

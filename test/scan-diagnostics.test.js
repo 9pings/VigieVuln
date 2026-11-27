@@ -36,11 +36,11 @@ test('undecidable native comparison remains indeterminate without a source retri
  assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='native-comparisons').affectsAssessment,true);
  assert.ok(result.notices.some(w=>/undecidable/.test(w.message)));assert.ok(!result.warnings.some(w=>/undecidable|native-comparisons/.test(w.message)));
 });
-test('explicitly excluded image advisory sources produce neither alerts nor failed coverage gates',async t=>{
+test('excluded OSV cannot satisfy mandatory discovery coverage',async t=>{
  const {cacheDir}=fixture(t),distribution={id:'debian',versionId:'12'},pkg={manager:'dpkg',name:'demo',version:'1-1',sourceName:'demo',sourceVersion:'1-1',architecture:'amd64'};
  const target={id:'image',kind:'rootfs',metadata:{},distribution,packages:[pkg],deps:[systemDep(pkg,'image',distribution)],warnings:[],coverage:[]};
  const result=await assessInventories([target],{cacheDir,offline:true,osv:false,disableCveProject:true,disableGcve:true,enrich:[]});
- assert.deepEqual(result.warnings,[]);assert.deepEqual(incompleteCapabilities(result,['advisories','sources']),[]);
+ assert.ok(result.warnings.some(w=>w.code==='package-advisory-coverage'));assert.ok(incompleteCapabilities(result,['advisories','sources']).length);
  assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='system-osv').execution,'not-applicable');
 });
 test('OS-owned archive notice leaves alerts only after its installed package was assessed',async t=>{
@@ -51,7 +51,7 @@ test('OS-owned archive notice leaves alerts only after its installed package was
  const unprepared=await assessInventories([target],opts);assert.ok(unprepared.warnings.some(w=>w.manifestPath===warning.manifestPath));
  await require('../lib/system-inventory').importSystemAdvisories([{id:'TEST-unrelated',affected:[{package:{ecosystem:'Debian:12',name:'unrelated'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'1-1'}]}]}]}],{cacheDir,distribution,complete:true});
  const assessed=await assessInventories([target],opts);
- assert.deepEqual(assessed.warnings,[]);assert.equal(assessed.notices[0].type,'os-owned-component');
+ assert.ok(assessed.warnings.every(w=>w.code==='package-advisory-coverage'));assert.equal(assessed.notices[0].type,'os-owned-component');
  assert.equal(assessed.artifacts[0].coverage.find(c=>c.collector==='installed-applications').execution,'completed');
  const broken=await assessInventories([{...target,warnings:[{...warning,message:'invalid ZIP archive'}]}],opts);
  assert.ok(broken.warnings.some(w=>w.message==='invalid ZIP archive'));assert.equal(broken.notices.length,0);

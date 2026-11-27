@@ -274,7 +274,7 @@ test("Wordfence anonymized export carries public software identities without pri
 	const dir = temp(t), output = path.join(dir, "descriptor.json"), preload = path.join(dir, "offline.cjs");
 	fs.writeFileSync(preload, 'require("node:os").homedir = () => __dirname; globalThis.fetch = () => { throw new Error("network forbidden"); };');
 	require("node:child_process").execFileSync(process.execPath, ["--require", preload,
-		path.join(__dirname, "../vigievuln.js"), "-s", path.join(__dirname, "fixtures/wordpress-custom"),
+		path.join(__dirname, "../vigievuln.js"), "scan", path.join(__dirname, "fixtures/wordpress-custom"),
 		"--ecosystem", "composer", "--app-plugins", "wordpress", "--export-anonymized", output,
 		"--public-component", "site/wp-content/themes/acme-theme=example"], { timeout: 15000, stdio: "pipe" });
 	const descriptor = JSON.parse(fs.readFileSync(output, "utf8"));

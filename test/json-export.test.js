@@ -125,6 +125,8 @@ test("eol entries carry status / cycle / support / anchor / components; summary 
 	assert.equal(doc.summary.eol, 2);
 	assert.equal(doc.summary.unsupported, 1);
 	assert.equal(doc.eol[0].status, "unsupported");
+	assert.equal(doc.eol[0].supportPhase, "security-only");
+	assert.equal(doc.eol[0].securitySupportUntil, "2029-02-28");
 	assert.equal(doc.eol[0].cycle, "5.4");
 	assert.equal(doc.eol[0].support, "2024-11-30");
 	assert.equal(doc.eol[0].anchor, "symfony/framework-bundle");

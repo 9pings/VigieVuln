@@ -50,10 +50,8 @@ test('CLI reports undecidable npm evidence once without an unavailable-source or
  store.commit({records:[require('../lib/native-advisories').cveEnvelope({cveMetadata:{cveId:'CVE-2024-12345',state:'PUBLISHED'},containers:{cna:{affected:[affected('affected')]},adp:[{affected:[affected('unaffected')]}]}},{fetchedAt:Date.now()})]});store.close();
  const hook=path.join(dir,'hook.cjs');fs.writeFileSync(hook,"require('node:os').homedir=()=>__dirname;globalThis.fetch=()=>{throw Error('network forbidden')};");
  const out=path.join(dir,'report');
- const run=spawnSync(process.execPath,['--require',hook,path.resolve('vigievuln.js'),'-s',src,'--offline','--ecosystem','npm','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs,gcve','--no-binaries','--no-certs','--report-json','--fail-on-incomplete','sources','-o',out],{cwd:dir,encoding:'utf8',timeout:20000});
- assert.equal(run.status,0,run.stdout+run.stderr);
- const report=JSON.parse(fs.readFileSync(path.join(out,'findings.json')));
- assert.equal(report.warnings.filter(w=>w.type==='source-unavailable').length,0);
- const notes=report.provenance.notices.filter(w=>w.type==='advisory-evidence');assert.equal(notes.length,1);assert.equal(notes[0].count,1);
- assert.equal(report.summary.coverageIncomplete,0);assert.equal(report.cve.length,0);
+ const run=spawnSync(process.execPath,['--require',hook,path.resolve('vigievuln.js'),'scan',src,'--offline','--ecosystem','npm','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs,gcve','--no-binaries','--no-certs','--report-json','--fail-on-incomplete','sources','-o',out],{cwd:dir,encoding:'utf8',timeout:20000});
+ assert.equal(run.status,2,run.stdout+run.stderr);
+ const log=require('./helpers/cancelled-scan')(run,[path.join(out,'findings.json')]);
+ assert.match(log,/OSV/);
 });

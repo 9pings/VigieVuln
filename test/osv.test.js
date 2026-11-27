@@ -95,7 +95,8 @@ test("severityFromOsv computes the v3 base score from the vector, not the versio
 
 test("vulnToMatch carries the CVSS vector + version from OSV severity", () => {
 	const m = vulnToMatch({ ecosystem: "npm", name: "x", version: "1.0.0", coordKey: "npm:x" },
-		{ id: "GHSA-aaaa", severity: [{ type: "CVSS_V3", score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }] });
+		{ id: "GHSA-aaaa", database_specific:{cwe_ids:["CWE-94","cwe-94",null]}, severity: [{ type: "CVSS_V3", score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }] });
+	assert.deepEqual(m.cve.cwes,["CWE-94"]);
 	assert.equal(m.cve.score, 9.8);
 	assert.equal(m.cve.cvssVersion, "CVSS:3.1");
 	assert.ok(m.cve.cvssVector.startsWith("CVSS:3.1/"));
@@ -119,4 +120,29 @@ test("offline serves the warmed OSV cache even past the 12h TTL (no network)", a
 		assert.strictEqual(matches.length, 1, "stale-but-warmed cache entry still matched offline");
 		assert.strictEqual(matches[0].cve.id, "CVE-2026-99999");
 		assert.strictEqual(matches[0].cve.severity, "HIGH");
+});
+
+test('OSV preserves its original advisory ID when the primary identifier is a CVE alias', () => {
+ const advisory = {id:'GHSA-2586-8ghr-69fj',aliases:['CVE-2026-126076']};
+ const match = vulnToMatch({ecosystem:'ruby',name:'actionpack',version:'7.2.4'},advisory);
+ assert.equal(match.cve.id,'CVE-2026-126076');
+ assert.equal(match.cve.sourceAdvisoryId,advisory.id);
+ assert.ok(match.cve.aliases.includes(advisory.id));
+});
+
+test('remediation compares RubyGems, PEP 440 and stable Composer release boundaries', () => {
+ for (const [ecosystem,osv,name,version,fixed] of [
+  ['ruby','RubyGems','doorkeeper','5.8.2','5.9.1'],
+  ['pypi','PyPI','urllib3','2.8.0rc1','2.8.0'],
+  ['composer','Packagist','example/package','v1.2.0','1.2.1'],
+ ]) {
+  const dep={ecosystem,name:name.split('/').at(-1),namespace:name.includes('/')?'example':null,artifactId:name,version};
+  const affected={package:{ecosystem:osv,name},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed}]}]};
+  const advisory={id:'TEST-FIX',affected:[affected]};
+  assert.equal(vulnToMatch(dep,advisory).cve.fixVersion,fixed,ecosystem);
+  advisory.affected.push({...affected,versions:[fixed],ranges:[]});
+  assert.equal(vulnToMatch(dep,advisory).cve.fixVersion,null);
+  advisory.affected[1]={...affected,ranges:[{type:'GIT',events:[{introduced:'0'}]}]};
+  assert.equal(vulnToMatch(dep,advisory).cve.fixVersion,null);
+ }
 });

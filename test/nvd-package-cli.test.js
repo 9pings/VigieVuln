@@ -18,6 +18,9 @@ for(const native of [false,true,'legacy']) test(`CLI finds an isolated release f
  t.after(()=>{store.close();require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true});});
  store.commit({records:[{source:'osv',document:osv,fetchedAt:Date.now()}]});
  const db=require('../lib/cache-db').getCacheDb(cache),nvdBytes=Buffer.from(JSON.stringify(nvd));
+ const index=require('../lib/cve-download').newIndex();
+ Object.assign(index.meta,{builtAt:new Date().toISOString(),cveCount:0});
+ db.prepare('INSERT INTO cache_snapshots VALUES(?,?,?,?,?,?)').run('cve_lookup',Date.now(),1,0,0,JSON.stringify(index.meta));
  const savedNvd=[nvd.id,'live',Date.now(),null,require('../lib/advisory-compression').compress(nvdBytes),nvdBytes.length,
   JSON.stringify({schema:require('../lib/nvd').NVD_CACHE_SCHEMA})];
  db.prepare('INSERT OR REPLACE INTO nvd_records(cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)').run(...savedNvd);
@@ -34,10 +37,12 @@ for(const native of [false,true,'legacy']) test(`CLI finds an isolated release f
  };
  `);
  const flags=['--cve-offline','--no-gcve','--no-transitive','--no-all-libs','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0'];
- function scan(offline,extra=[],absent=false) {
+ function scan(offline,extra=[],absent=false,missing=false) {
   fs.rmSync(calls,{force:true});fs.rmSync(report,{force:true});
   const result=spawnSync(process.execPath,['--require',preload,path.join(__dirname,'../vigievuln.js'),'scan',src,...flags,...(offline?['--offline']:['--advisory-query-ttl','0']),'--report-json',report,...extra],{cwd:root,encoding:'utf8',timeout:15000,env:{...process.env,VV_NVD_TEST_HOME:home,VV_NVD_TEST_CALLS:calls,VV_NVD_TEST_OFFLINE:offline?'1':'0',VV_NVD_TEST_ABSENT:absent?'1':'0',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''}});
-  assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
+  assert.ifError(result.error);
+  if(missing){assert.match(require('./helpers/cancelled-scan')(result,[report]),/NVD:.*package-bound/);return;}
+  assert.equal(result.status,0,result.stdout+result.stderr);
   if(offline)assert.equal(fs.existsSync(calls),false,'offline performed no network requests');
   else assert.match(fs.readFileSync(calls,'utf8'),/api\.osv\.dev\/v1\/querybatch/);
   return JSON.parse(fs.readFileSync(report)).cve.filter(c=>!c.suppressed&&!c.cpeFiltered);
@@ -49,8 +54,7 @@ for(const native of [false,true,'legacy']) test(`CLI finds an isolated release f
  }
  assert.deepEqual(scan(true,['--no-nvd']),[],'disabled sources cannot be used through the binding stage');
  db.prepare('DELETE FROM nvd_records WHERE cve=?').run(nvd.id);
- assert.deepEqual(scan(true),[]);
- assert.ok(JSON.parse(fs.readFileSync(report)).warnings.some(w=>w.type==='source-unavailable' && /NVD:.*package-bound/.test(w.message)),'missing NVD coverage is visible');
+ scan(true,[],false,true);
  assert.deepEqual(scan(false,['--no-nvd-mirror'],true),[]);
  const absentReport=JSON.parse(fs.readFileSync(report));
  assert.ok(!absentReport.warnings.some(w=>/NVD:.*package-bound/.test(w.message)),'an answered NVD absence is not an outage');

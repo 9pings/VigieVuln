@@ -1,12 +1,29 @@
 # USAGE
 
+The scan entry points are:
+
+```bash
+vigievuln scan <path|zip|descriptor.json> [options]
+vigievuln system collect [root] -o collect.json
+vigievuln system scan <inventory.json|path|docker-image|archive|disk> [options]
+```
+
+A system collection defaults to `/`. System scans first resolve an existing local path,
+then a local Docker image, then download the image from its registry. `--offline`
+requires local data. JSON inputs are identified by their schema. Dependency descriptors
+and extracted project trees use `scan`; system inventories and publisher SBOMs use
+`system scan`. ZIP project input is extracted to a temporary directory that is removed
+after the scan. Air-gapped export, import, cache preparation and scan options keep their
+existing meanings.
+
+
 Every flag, every common workflow, with copy-pasteable commands.
 
 ## Synopsis
 
 ```text
 vigievuln scan <src> [scan options]
-vigievuln image <archive|rootfs|reference> [image options]
+vigievuln system scan <archive|rootfs|reference> [image options]
 vigievuln login
 vigievuln whoami
 vigievuln watch <src> --name 'My Project'
@@ -14,19 +31,19 @@ vigievuln watch <src> --export fichier.json
 vigievuln logout
 
 # Compatible flag-based scan syntax:
-vigievuln -s <src> [-t <target>] [-e <regex>] [other options]
+vigievuln scan <src> [-t <target>] [-e <regex>] [other options]
 ```
 
-`vigievuln scan ./code` scans a source tree and writes the usual reports. It accepts the existing scan options. `vigievuln -s ./code` remains supported; the examples below using `-s` continue to work.
+`vigievuln scan ./code` scans a source tree and writes the usual reports. It accepts the existing scan options. The old collect, analyse, image commands and source flags have been removed.
 
-- `-s, --src <src>` — source tree in the flag-based syntax; `scan <src>` supplies it positionally. Contains `pom.xml` and/or `package(-lock).json` / `yarn.lock` or other supported manifests.
+- `scan <path|zip|descriptor.json>` selects a source tree, project ZIP or dependency descriptor. Contains `pom.xml` and/or `package(-lock).json` / `yarn.lock` or other supported manifests.
 - `-t, --target <dir>` — optional. **Extraction mode.** Write a parallel directory of "cleaned" POMs (private/excluded deps stripped, reactor modules linked to each other) to `<dir>` **and mirror every non-Maven lockfile/manifest** (`package-lock.json`/`yarn.lock`/`pnpm-lock.yaml`, `composer.lock`/`symfony.lock`, `poetry.lock`/`Pipfile.lock`/…, `*.csproj`/`packages.lock.json`, `go.mod`/`go.sum`, `Gemfile.lock`, …) into it — so **any** scanner pointed at `<dir>` (`snyk test --all-projects` among them) sees **every** ecosystem, not just Maven. Each POM is reduced to the dependency-relevant nodes (coordinates, `properties`, `dependencyManagement`, `dependencies`, `modules`), reactor parents are rewired to their real in-tree `relativePath`, and `${…}` is resolved in coordinates. The run then **stops**: the only network action is the Maven-repository *existence* check, which is also what **identifies your private/internal modules** (coordinates that exist in no configured repository) — skipped under `--offline`, or when no repository answers a 5 s preflight. No CVE/EOL/outdated pass, no report — add `--snyk`, a `--report-<type>`, `--fail-on`/`--fail-on-new` or `--baseline` to also run the scan. A non-empty target requires `--force` because its contents are replaced. Without `-t`, the run is read-only and produces the full report.
 
 ## Output
 
 Add `--images` or `-a images` to include referenced container images in a project
 scan (off by default). See [Native images and Linux binaries](IMAGES.md) for this
-workflow, then the dedicated `vigievuln image` command for archives, registry
+workflow, then the dedicated `vigievuln system scan` command for archives, registry
 images, root filesystems, publisher SBOMs and offline inventories.
 Discovered references that cannot be inspected are identified in coverage warnings.
 
@@ -36,29 +53,29 @@ By default the HTML report and a `findings.json` land in `./vigievuln-report/` (
 
 ```bash
 # Auto-detect (default): scan whatever pom.xml / package(-lock).json / yarn.lock exists
-vigievuln -s .
+vigievuln scan .
 
 # Pick ecosystems (codecs). --ecosystem is a list: auto (default) | all | comma list.
 # Codec ids: maven, gradle, npm, yarn, composer, pypi, nuget, go, ruby.
-vigievuln -s . --ecosystem maven            # Maven only
-vigievuln -s . --ecosystem gradle           # Gradle only
-vigievuln -s . --ecosystem maven,npm,go     # several, even if only one is auto-detected
-vigievuln -s . --ecosystem all              # every supported codec
-vigievuln -s . --ecosystem both             # legacy alias for maven,npm
+vigievuln scan . --ecosystem maven            # Maven only
+vigievuln scan . --ecosystem gradle           # Gradle only
+vigievuln scan . --ecosystem maven,npm,go     # several, even if only one is auto-detected
+vigievuln scan . --ecosystem all              # every supported codec
+vigievuln scan . --ecosystem both             # legacy alias for maven,npm
 
 # Opt out of specific codecs (combine freely)
-vigievuln -s . -d npm                       # skip npm
-vigievuln -s . -d js                        # alias: skip npm + yarn (Maven-only)
-vigievuln -s . -d gradle                    # skip Gradle
-vigievuln -s . -d pypi,nuget                # skip Python + C#
-vigievuln -s . -d go,ruby                   # skip Go + Ruby
-vigievuln -s . -d jars                      # skip embedded .jar/.war/.ear scanning
-vigievuln -s . -d binaries                  # skip committed native-binary scanning
-vigievuln -s . -d certs                     # skip certificate / key-material scanning
-vigievuln -s . -d nvd,epss,certs -a licenses,typosquat -o ./audit   # the general shape
+vigievuln scan . -d npm                       # skip npm
+vigievuln scan . -d js                        # alias: skip npm + yarn (Maven-only)
+vigievuln scan . -d gradle                    # skip Gradle
+vigievuln scan . -d pypi,nuget                # skip Python + C#
+vigievuln scan . -d go,ruby                   # skip Go + Ruby
+vigievuln scan . -d jars                      # skip embedded .jar/.war/.ear scanning
+vigievuln scan . -d binaries                  # skip committed native-binary scanning
+vigievuln scan . -d certs                     # skip certificate / key-material scanning
+vigievuln scan . -d nvd,epss,certs -a licenses,typosquat -o ./audit   # the general shape
 
-vigievuln -s . -a eol-support               # also flag "security-only" frameworks (e.g. Symfony 5.4 LTS since 2024-11-30)
-vigievuln -s . --cert-expiry-days 30        # warn on certs expiring within 30 days (default 90)
+vigievuln scan . -a eol-support               # also flag "security-only" frameworks (e.g. Symfony 5.4 LTS since 2024-11-30)
+vigievuln scan . --cert-expiry-days 30        # warn on certs expiring within 30 days (default 90)
 ```
 
 > The individual `--no-npm`, `--licenses`, … flags still work; they are hidden from `--help`
@@ -66,7 +83,7 @@ vigievuln -s . --cert-expiry-days 30        # warn on certs expiring within 30 d
 
 > **Embedded JARs**: committed `.jar`/`.war`/`.ear` archives (vendored libs, Spring-Boot fat-jars, shaded uber-jars) are unzipped in-memory and their Maven coordinates — read from `META-INF/maven/.../pom.properties`, then `MANIFEST.MF`, then the file name — are reported in their own **Embedded binaries** section, grouped by containing archive. The section is a **full inventory** of every embedded coordinate — vulnerable or not (the JAR counterpart of the native-binary and vendored-JS inventories) — with a CVE-status column per coord and the full CVE detail for vulnerable ones. So a committed fat-jar shows up even when nothing inside it is currently vulnerable. Auto when archives are present; `--no-jars` disables it. Archives with no resolvable coordinate are listed in chapter 0.
 
-> **Committed native binaries**: supported PE/ELF/Mach-O files are identified by their content, including extensionless ELF executables, then hashed (SHA-1 + SHA-256). Bounded PE/ELF metadata and Go build information can provide additional evidence. Online checksum lookups use **deps.dev** and **CIRCL hashlookup**; missing or unverified evidence does not establish identity. Results appear in the unmanaged binaries section and JSON export, are cache-aware, and can be disabled with `--no-binaries`. This is not an antivirus scan.
+> **Committed native binaries**: supported PE/ELF/Mach-O files are identified by their content, including extensionless ELF executables, then hashed (SHA-1 + SHA-256). Bounded PE/ELF metadata and Go build information can provide additional evidence. Online checksum lookups use **deps.dev** and **CIRCL hashlookup**; missing or unverified evidence does not establish identity. Results appear in the unmanaged binaries section and JSON export, are cache-aware, and can be disabled with `--no-binaries`. This is not an antivirus scan. Python environments (`.venv`, `venv`, `.tox`, `site-packages`) are excluded from this source-project pass by default; `--no-default-excludes` restores their traversal. ELF core dumps are not executables and are excluded before hashing. Raw binary identification, including a missing identity or a product/version without a package coordinate, does not by itself cancel publication. Dependencies extracted with explicit package coordinates (for example Go build metadata) retain the required advisory-source checks.
 
 Native files over 512 MiB and unreadable files produce a coverage warning with their path; other files remain scanned. Hashing uses bounded buffers. Failed POM parsing likewise marks dependency coverage incomplete and does not count the failed module as parsed.
 
@@ -103,32 +120,38 @@ Native files over 512 MiB and unreadable files produce a coverage warning with t
 `-e <regex>` filters out coords whose **groupId** (Maven) or **name** (npm) matches the regex. Useful for private/internal libs that you know aren't on a public registry.
 
 ```bash
-vigievuln -s . -e "^(com\.acme|org\.private)\."
-vigievuln -s . -e "^@acme/"
+vigievuln scan . -e "^(com\.acme|org\.private)\."
+vigievuln scan . -e "^@acme/"
 ```
 
 The excluded coords are listed at the end of the run so you can audit the regex.
 
 ### Ignoring sub-paths (`--exclude-path`)
 
-`-e` drops *dependencies* by coordinate; `--exclude-path` prunes the directory **walk** itself — nothing under a matched path is read, for every ecosystem. Patterns are gitignore-style globs (via `minimatch`, `dot:true`) matched against the path **relative to `--src`**; a pattern matches both the directory and its whole subtree.
+Maven/Gradle lookups try configured repositories first, Maven Central and its mirrors next, then the public Google Maven repository (`https://dl.google.com/dl/android/maven2/`) as the last fallback. Google Maven has its own catalogue; it is not treated as a redundant Central mirror. No Android-project detection or build execution is required.
+
+A coordinate confirmed absent (404/410) from every configured registry keeps the existing private-package classification and does not require public advisory-source coverage. Available cached advisories are still matched. A timeout, authentication error, 405, 429 or server failure does not establish absence. This also applies to POMs: a confirmed 404/410 from every repository produces an alert without cancelling publication. Cached absence is valid only for the same repository configuration; an unavailable POM with no such evidence remains a resolution failure.
+
+Legacy clib/C manifests also named `package.json` are recognized from their C-specific metadata and reported as outside npm assessment; their GitHub coordinates are not queried as npm packages.
+
+`-e` drops *dependencies* by coordinate; `--exclude-path` prunes the directory **walk** itself — nothing under a matched path is read, for every ecosystem. Patterns are gitignore-style globs (via `minimatch`, `dot:true`) matched against the path **relative to the scanned source root**; a pattern matches both the directory and its whole subtree.
 
 This applies to the **retire.js vendored-JS scan** too: retire skips the same default dirs (`node_modules` etc.) at **any depth** and honors your `--exclude-path` / `--no-default-excludes`, anchored to `--src` — so a deeply-nested `node_modules` is never scanned.
 
 All patterns are **anchored to the `--src` root** — `truc`, `/truc` and `./truc` are equivalent (a leading `/` or `./` is stripped). To match a name at any depth, use `**/` (e.g. `**/fixtures/**`).
 
 ```bash
-vigievuln -s . --exclude-path "packages/legacy/**" --exclude-path "**/fixtures/**"
-vigievuln -s . --exclude-path "apps/*/e2e"          # repeatable
-vigievuln -s . --no-default-excludes                # also walk node_modules/vendor/target/.git/…
+vigievuln scan . --exclude-path "packages/legacy/**" --exclude-path "**/fixtures/**"
+vigievuln scan . --exclude-path "apps/*/e2e"          # repeatable
+vigievuln scan . --no-default-excludes                # also walk node_modules/vendor/target/.git/…
 ```
 
 | Flag | Effect |
 | --- | --- |
-| `--exclude-path <glob...>` | Prune matching sub-paths (relative to `--src`). Repeatable; also settable as `excludePath: [...]` in a trusted file selected with `--config` and unioned across all config layers. |
+| `--exclude-path <glob...>` | Prune matching sub-paths (relative to the scanned source root). Repeatable; also settable as `excludePath: [...]` in a trusted file selected with `--config` and unioned across all config layers. |
 | `--no-default-excludes` | Don't prune the built-in ignored dirs (`node_modules`, `bower_components`, `vendor`, `dist`, `build`, `out`, `target`, `.git`, `.gradle`, `__pycache__`, …). Walks everything — slower, but nothing is hidden. |
 
-For full transparency about what was *not* scanned, the report includes an **"Ignored directories" section** in scan context listing the actual directories the scan skipped — relative to `--src`, each tagged with the rule that pruned it (`default` vs `--exclude-path`). The same list is in the findings JSON as `excludedDirs[]`.
+For full transparency about what was *not* scanned, the report includes an **"Ignored directories" section** in scan context listing the actual directories the scan skipped — relative to the scanned source root, each tagged with the rule that pruned it (`default` vs `--exclude-path`). The same list is in the findings JSON as `excludedDirs[]`.
 
 ## Per-source toggles
 
@@ -172,8 +195,8 @@ When using the VigieVuln service, reviewed and published VigieVuln advisories fo
 | `--lang <en\|fr>` | Language of the HTML / Word report (default `en`). Translates the report's own chrome — **all of it**: chapter titles and their counts, table headers, scope chips, every intro paragraph, every status pill, the warning headings, the licence categories, the methodology limitations, the per-ecosystem fix recipes, the empty states, and the executive summary both on screen and as the 📋 button pastes it — plus the CWE titles. **Not** the evidence: CVE descriptions, advisory text and registry reasons stay as published, and a CVSS severity keeps NVD's own wording where it is a finding's value. French CWE titles are fad's own (MITRE publishes English only) and carry MITRE's original with them |
 | `--no-eol` | Skip the end-of-life check (endoflife.date) — the flag the run suggests when that source is unreachable |
 | `--no-nvd-mirror` | Disable the [fkie-cad NVD mirror](https://github.com/fkie-cad/nvd-json-data-feeds). Without an NVD API key the mirror is queried first; with a key it is the fallback. Cached stale data may be used with a warning. Missing CVE enrichment is reported separately from discovery coverage. |
-| `--retries <n>` | Retries before a data source is marked unavailable (default `5`, waiting 5+n s each: 6, 7, 8, 9, 10 s). `0` = no retry — the first failed answer declares the source down. Shared per source, so one dead host runs ONE schedule however many lookups hit it. Requests whose caller rotates across mirrors/registries are not retried (the rotation moves on). Also settable as `"retries"` in a trusted file selected with `--config` |
-| *(source unavailable)* | **By default, provider failures produce partial reports with explicit warnings and incomplete coverage, without failing the scan.** Use `--fail-on-incomplete sources` (or `advisories` for application checks) to return code 2 **after** writing the reports. Invalid configuration and unusable explicitly supplied local snapshots still fail. |
+| `--retries <n>` | Retries before a data source is marked unavailable (default `5`, waiting 5+n s each: 6, 7, 8, 9, 10 s). `0` = no retry — the first failed answer declares the source down. For direct 429/503 responses the scanner honors Retry-After. If the requested delay exceeds the remaining time budget (two minutes or the configured schedule, whichever is longer), it reports the exhausted budget and stops retrying. Shared per source, so one dead host runs ONE schedule however many lookups hit it. Requests whose caller rotates across mirrors/registries are not retried (the rotation moves on). Also settable as `"retries"` in a trusted file selected with `--config` |
+| *(source unavailable)* | **A vulnerability scan cancels before publishing any report and exits 2 if required dependency structure, package advisory discovery or CVE record evidence is missing.** This applies in every source profile, including offline scans. Invalid configuration and unusable explicitly supplied local snapshots still fail. |
 | *(EOL + paid support)* | When endoflife.date lists **paid** support past the open-source end of life (`extendedSupport` — e.g. Broadcom for Spring 5.3/6.x), the EOL row stays an EOL finding (those fixes are builds from the vendor's private repository, for subscribers) and states: the support end date, the build of the dependency's own branch that fixes the CVEs found (`A 5.3 build > 5.3.40 fixes 7 of the 9 CVEs found`), and — when the vendor repository is configured with `--add-repo maven <name> <url> --token <TOKEN>` — the newest vendor build of the branch. A project already on a vendor build (newer than the branch's last public release and absent from Maven Central) is not reported as EOL; chapter 0 notes it. |
 | `--eol-support` | Also report frameworks/runtimes whose **active (bug-fix) support has ended** while security fixes are still provided (endoflife.date `support` field) — rendered as an "Out of active support" band under the maintenance chapter, status `unsupported` in the JSON. Off by default: the default EOL set is unchanged. |
 | `--ignore-test` | Drop test-scoped Maven deps and dev npm deps from the scan entirely (the dev-CVE section will be absent) |
@@ -184,8 +207,7 @@ When using the VigieVuln service, reviewed and published VigieVuln advisories fo
 If Packagist answers successfully but omits a package from its advisory data, the scan
 continues and names that package in a report warning; omission is never treated as a
 clean result. An unreachable Packagist endpoint or malformed response produces a
-source-unavailable warning. An explicit `--fail-on-incomplete sources` gate returns
-code 2 after the partial report is written.
+source-unavailable warning. These discovery failures cancel publication and return code 2.
 
 ## Application inventory (experimental)
 
@@ -198,19 +220,19 @@ See [CMS & frameworks](CMS-FRAMEWORKS.md) for detection and coverage by product.
 Every subtree is also scanned through its supported dependency descriptors. Findings with proven component ownership are attributed to the CMS instance; findings without proven ownership remain in the ordinary dependency sections.
 
 ```bash
-vigievuln -s ./project --app-plugins symfony --offline --report-json
-vigievuln -s ./project --app-plugins wordpress --private-component site/wp-content/plugins/acme --offline
-vigievuln -s ./project --app-plugins wordpress --wordfence-feed ./wordfence-production.json --public-component site/wp-content/plugins/example=example --offline
-vigievuln -s ./project --app-plugins drupal --offline --fail-on-incomplete inventory,advisories
-vigievuln -s ./project --app-plugins drupal --drupal-advisories ./drupal-advisories.json --offline
-vigievuln -s ./shop --app-plugins prestashop,typo3 --prestashop-advisories ./ps-advisories.json --typo3-advisories ./t3-advisories.json --offline
-vigievuln -s ./shop --app-plugins prestashop,typo3 --prestashop-advisories-live --typo3-advisories-live
-vigievuln -s ./project --app-plugins wordpress --wp-checksums-live
-vigievuln -s ./project --app-plugins wordpress --wp-checksums ./wp-checksums-6.4.2-en_US.json --wp-checksums-locale en_US --offline
-vigievuln -s ./project --app-plugins laravel --offline --report-json
-vigievuln -s ./my-wordpress-plugin --app-plugins wordpress --scan-context component --offline --report-json
-vigievuln -s ./shop --app-plugins magento --offline --report-json
-vigievuln -s ./cms --app-plugins joomla,prestashop,typo3 --offline --report-json
+vigievuln scan ./project --app-plugins symfony --offline --report-json
+vigievuln scan ./project --app-plugins wordpress --private-component site/wp-content/plugins/acme --offline
+vigievuln scan ./project --app-plugins wordpress --wordfence-feed ./wordfence-production.json --public-component site/wp-content/plugins/example=example --offline
+vigievuln scan ./project --app-plugins drupal --offline --fail-on-incomplete inventory,advisories
+vigievuln scan ./project --app-plugins drupal --drupal-advisories ./drupal-advisories.json --offline
+vigievuln scan ./shop --app-plugins prestashop,typo3 --prestashop-advisories ./ps-advisories.json --typo3-advisories ./t3-advisories.json --offline
+vigievuln scan ./shop --app-plugins prestashop,typo3 --prestashop-advisories-live --typo3-advisories-live
+vigievuln scan ./project --app-plugins wordpress --wp-checksums-live
+vigievuln scan ./project --app-plugins wordpress --wp-checksums ./wp-checksums-6.4.2-en_US.json --wp-checksums-locale en_US --offline
+vigievuln scan ./project --app-plugins laravel --offline --report-json
+vigievuln scan ./my-wordpress-plugin --app-plugins wordpress --scan-context component --offline --report-json
+vigievuln scan ./shop --app-plugins magento --offline --report-json
+vigievuln scan ./cms --app-plugins joomla,prestashop,typo3 --offline --report-json
 ```
 
 Additional supported layouts and advisory coverage:
@@ -224,9 +246,11 @@ Additional supported layouts and advisory coverage:
 
 A missing `composer.lock` leaves package versions and dependency origins incomplete. These four plugins also mark product lifecycle as `not-run`: community support, paid support and deployed patches need separate evidence. Magento product packages from `repo.magento.com` are not queried against Packagist; their publisher bulletins require separate review. Components found on disk do not prove activation, and no plugin infers that a patch file was applied. `--scan-context component` also recognizes a standalone extension for each of these CMSs when its local metadata is valid.
 
-`--private-component` takes a path relative to `--src` and can be repeated. A WordPress plugin with an `Update URI` header is also classified as private automatically, even if a public slug was declared; [WordPress documents this header for third-party updates](https://developer.wordpress.org/plugins/plugin-basics/header-requirements/). A private WordPress plugin or custom Drupal module stays separate from public catalogue identities; Composer CVEs in its own lockfile are attributed to that component. Shared dependencies retain one physical finding with multiple proven owners. WordPress classic and Bedrock layouts and Drupal Composer and Drupal 7 layouts are recognized. Components found on disk are inventoried even when runtime activation cannot be established.
+`--private-component` takes a path relative to the scanned source root and can be repeated. A WordPress plugin with an `Update URI` header is also classified as private automatically, even if a public slug was declared; [WordPress documents this header for third-party updates](https://developer.wordpress.org/plugins/plugin-basics/header-requirements/). A private WordPress plugin or custom Drupal module stays separate from public catalogue identities; Composer CVEs in its own lockfile are attributed to that component. Shared dependencies retain one physical finding with multiple proven owners. WordPress classic and Bedrock layouts and Drupal Composer and Drupal 7 layouts are recognized. Components found on disk are inventoried even when runtime activation cannot be established.
 
-`--scan-context component` treats `--src` as a standalone WordPress plugin or theme directory when its root header identifies it. It inventories that component and its Composer dependencies without inventing a WordPress core installation. The default `source` and explicit `installation` contexts describe how the input was obtained; neither proves runtime activation or a deployed configuration.
+`--scan-context component` treats the scan input as a standalone WordPress plugin or theme directory when its root header identifies it. It inventories that component and its Composer dependencies without inventing a WordPress core installation. The default `source` and explicit `installation` contexts describe how the input was obtained; neither proves runtime activation or a deployed configuration.
+
+WordPress scans use [WPVulnerability](https://docs.wpvulnerability.com/) automatically when no Wordfence source is selected. No API key is required. Core versions and public plugin/theme identities are queried; an official WordPress.org URL in the component header or `--public-component path=slug` identifies an extension. Validated responses are included in cache exports and reused offline. An unknown component is distinguished from a known component with no advisories. Failed required queries cancel publication after the normal retry policy.
 
 `--wordfence-feed` reads a local JSON snapshot of the Wordfence Intelligence v3 **production** feed. It makes no network request. `--public-component path=slug` explicitly declares the public WordPress catalogue slug for an installed plugin or theme; it can be repeated. This declaration is recorded as `user-declared`, not independently verified. A directory name or display name alone never authorizes a public advisory match. Private components are never matched to that catalogue and retain incomplete advisory coverage. A feed snapshot supplied by the operator must be complete and current for its `no-match` results to be meaningful; vigievuln cannot prove those properties from the JSON file alone. Coverage records retain its SHA-256 and local file modification time, which do not establish its download date. Advisory records retain Wordfence identifiers, references and copyright notices. See the [Wordfence v3 feed documentation](https://www.wordfence.com/help/wordfence-intelligence/v3-accessing-and-consuming-the-vulnerability-data-feed/) for obtaining a key and the feed usage terms.
 
@@ -277,13 +301,14 @@ installed package versions come from `composer.lock`, and extraction with `-t` m
 `dependency-lanes` application coverage row is currently marked `completed` based on
 inventory membership; it does **not** verify that OSV or Packagist evaluated each
 package and version. The same limitation applies to dependency-lane rows for some
-Joomla and Magento components. Check source coverage separately: disabling sources can
-still satisfy `--fail-on-incomplete advisories`. Publisher lanes that are unconfigured or
+Joomla and Magento components. The mandatory discovery check separately requires OSV and a second advisory source for each package/version. Publisher lanes that are unconfigured or
 unqualified remain `not-run` with their diagnostic. `--fail-on-incomplete` exits with code
-2 after writing the partial report when a requested capability is incomplete; its default
+2 before publication when a requested capability is incomplete; its default
 capabilities are `inventory,advisories`.
 
-For CI, `--fail-on-incomplete sources` exits with code 2 when source failures leave discovery or assessment coverage incomplete. NVD/EUVD enrichment of already identified CVEs is summarized in one warning: records available from either source, missing records and failed updates. These enrichment diagnostics do not invalidate dependency coverage.
+Environment prerequisites in advisory configurations are assumed satisfied. OS, architecture and deployment restrictions remain documented in the source advisory. Matching still requires a vulnerable entry for the audited product and an affected version.
+
+A source must assess the package/version, through a query or a verified local catalogue, to count toward discovery. Looking up a known CVE in NVD or EUVD only supplies record evidence. Each reported CVE requires one attributable advisory record, regardless of how many providers list it. Unavailable providers or missing cache entries never establish that a package cannot be checked. An inapplicable check needs an explicit reason. A cancelled scan leaves any previous report untouched and writes its reason to the terminal. A failure of a redundant record provider or of optional EPSS enrichment can leave a warning while the mandatory checks pass. JSON exports expose the outcome in `summary.scanReliable`.
 
 Indeterminate comparisons from available advisory data are listed in scan context, with the affected packages; they are not source outages or proof that a package is safe. Image retrieval and advisory-source issues share one report warning, “Unavailable from public sources”, with per-image reasons. Actual failed consultations remain coverage gaps.
 
@@ -315,14 +340,14 @@ JSON source locations use the project basename and relative paths; structured pa
 
 ```bash
 # default: HTML + findings.json into ./vigievuln-report
-vigievuln -s ./proj
+vigievuln scan ./proj
 
 # only the machine artifacts, default names under a custom dir
-vigievuln -s ./proj --report-output ./out --report-sbom --report-csaf --report-json --report-sarif
+vigievuln scan ./proj --report-output ./out --report-sbom --report-csaf --report-json --report-sarif
 
 # explicit paths
-vigievuln -s ./proj --report-sbom sbom.cdx.json --report-sarif fad.sarif
-vigievuln -s ./proj -r html,json,xlsx            # add an Excel workbook to the default pair
+vigievuln scan ./proj --report-sbom sbom.cdx.json --report-sarif fad.sarif
+vigievuln scan ./proj -r html,json,xlsx            # add an Excel workbook to the default pair
 ```
 
 All honour `--offline` (they render from whatever the scan already resolved).
@@ -344,7 +369,7 @@ Exit `1` means a blocking finding; exit `2` means a scan/output error or a faile
 
 ```bash
 # Fail the pipeline only on exploited-in-the-wild vulns, minus accepted risks
-vigievuln -s . --fail-on kev --ignore .fadignore --report-sarif fad.sarif
+vigievuln scan . --fail-on kev --ignore .fadignore --report-sarif fad.sarif
 ```
 
 ## Differential audits (`--baseline` / `fad diff`)
@@ -361,13 +386,13 @@ chapter, the JSON export gains a `diff` block, and CI can gate on *new* findings
 
 A finding's identity is `CVE id + ecosystem + coordinate + version`, so a version bump
 shows the old finding *resolved* and the new one *added*. Suppressed / CPE-filtered CVEs
-and development findings are diffed but excluded from the `--fail-on-new` signal (embedded binaries still count). A missing or invalid baseline, including `--fail-on-new` without `--baseline`, returns code 2. Findings absent during a source outage or incomplete inventory are marked unassessed rather than fixed. Any failed requested machine-readable export also returns code 2.
+and development findings are diffed but excluded from the `--fail-on-new` signal (embedded binaries still count). A missing or invalid baseline, including `--fail-on-new` without `--baseline`, returns code 2. If current production findings cannot be classified as new because baseline coverage is incomplete, `--fail-on-new` returns 2. Findings absent during a source outage or incomplete inventory are marked unassessed rather than fixed. Any failed requested machine-readable export also returns code 2.
 
 Different project names in the baseline and current report produce a warning. Comparison continues because a renamed checkout may still be the same project.
 
 ```bash
 # CI: fail only when this build introduces NEW vulnerabilities vs main's last report
-vigievuln -s . --report-json this.json --baseline main.json --fail-on-new
+vigievuln scan . --report-json this.json --baseline main.json --fail-on-new
 
 # Ad-hoc comparison of two historical reports
 vigievuln diff audit-q1.json audit-q2.json --report-json delta.json
@@ -405,26 +430,26 @@ Two signals beyond known CVEs:
   hit, and add legitimate near-misses to the popular list to suppress them.
 
 ```bash
-vigievuln -s . --typosquat                       # add the typosquat heuristic
-vigievuln -s . --fail-on critical                # malware blocks even below 'critical'
+vigievuln scan . --typosquat                       # add the typosquat heuristic
+vigievuln scan . --fail-on critical                # malware blocks even below 'critical'
 ```
 
 ## Offline / cache control
 
 ```bash
 # Use cached data only, no network (works for everything)
-vigievuln -s . --offline
+vigievuln scan . --offline
 
 # Per-source offline
-vigievuln -s . --cve-offline                  # use cached CVE index only
-vigievuln -s . --cve-refresh                  # force re-download of CVE bundle
-vigievuln -s . --retire-refresh               # force re-scan with retire.js (ignore cache)
+vigievuln scan . --cve-offline                  # use cached CVE index only
+vigievuln scan . --cve-refresh                  # force re-download of CVE bundle
+vigievuln scan . --retire-refresh               # force re-scan with retire.js (ignore cache)
 
 # Matching uses the same stored advisories online and offline. Initialise a broad
 # seed with setup; later online queries add/update advisory documents locally.
 vigievuln setup
-vigievuln -s . --offline
-vigievuln -s . --osv-db-refresh                # revalidate package/version queries
+vigievuln scan . --offline
+vigievuln scan . --osv-db-refresh                # revalidate package/version queries
 
 # Cache export / import (useful for air-gapped boxes)
 vigievuln --export-cache fad-cache.tar.gz
@@ -468,7 +493,7 @@ and run:
 vigievuln login             # selects the official proxy if none is configured
 vigievuln scan ./project    # creates a proxy key interactively when needed
 # Or for just one scan:
-vigievuln -s ./project --proxy-cache default
+vigievuln scan ./project --proxy-cache default
 ```
 
 Both `vigievuln` and `default` select `https://api.vigievuln.fr`. Authentication is checked before scanning. Invalid,
@@ -485,9 +510,11 @@ your source code or create a monitored project. A failed proxy request does not
 silently switch to direct upstream access.
 
 The CLI paces requests to the hosted proxy. When it receives HTTP 429 or a proxy
-upstream-budget denial, it reports the wait and retries according to `Retry-After`
-(up to three retries). If the requested delay exceeds one minute or a request's
-deadline expires, the request stops and the report may indicate incomplete coverage.
+upstream-budget denial, it reports each wait and respects `Retry-After`. The
+default limit is 15 retries within 45 seconds of scheduled waits per request.
+Temporary server and transport failures get up to two retries within that budget.
+If the next wait exceeds the remaining budget, the request stops and the report
+can indicate incomplete coverage.
 The server's retained mirror can supply older NVD data when the primary source is
 unavailable or rate-limited; the report marks that data as stale.
 
@@ -563,7 +590,7 @@ The existing authentication and two-step preparation/upload workflow remains sup
 
 ```bash
 vigievuln auth login
-vigievuln -s ./project --prepare-project ./project-deps.json
+vigievuln scan ./project --prepare-project ./project-deps.json
 vigievuln project push --file ./project-deps.json --name "My project"
 vigievuln project status
 # For an existing project, use the id from `project status`:
@@ -595,8 +622,8 @@ vigievuln serve-cache --nvd-key <key> --wordfence-key <key> --github-token <t>
 vigievuln serve-cache --upstream-proxy http://corp-proxy:3128     # the server itself behind a corporate proxy
 
 # Then every scan (same machine, CI runners, other developers) points at it:
-vigievuln -s ./proj --proxy-cache http://127.0.0.1:8321
-FAD_PROXY_CACHE_TOKEN=s3cret vigievuln -s ./proj --proxy-cache http://cache-host:9000
+vigievuln scan ./proj --proxy-cache http://127.0.0.1:8321
+FAD_PROXY_CACHE_TOKEN=s3cret vigievuln scan ./proj --proxy-cache http://cache-host:9000
 ```
 
 | Flag (serve-cache) | Effect |
@@ -628,7 +655,7 @@ Behaviour worth knowing:
 - The scanner sends `POST /v1/resource` with a provider, data type and subject. The server builds the upstream request and caches by resource identity. OSV, Packagist and EPSS batches are split into individual cache entries; custom/private registry URLs go direct through the same router.
 - Resource responses carry `x-fad-proxy` (including `pass`/`error` for failures); `GET /__stats`
   shows the counters, `POST /__clear` wipes the base.
-- A dead proxy-cache server uses the local resource cache when that cache covers the request. Otherwise the source-health retry schedule runs and the scan writes a coverage warning. `--fail-on-incomplete sources` opts into exit 2 after report generation.
+- A dead proxy-cache server uses the local resource cache when that cache covers the request. Otherwise the source-health retry schedule runs and the scan writes a coverage warning. Failed required checks cancel the scan before report generation.
 - `--proxy-cache` and `--offline` are exclusive (offline makes no requests at all).
 
 GitHub pagination links are retained in both caches; a headerless page cannot establish
@@ -657,7 +684,7 @@ an untrusted network.
 
 ```bash
 vigievuln serve-cache --wordfence-key <key> --max-store-mb 4096 --upstream-timeout 180
-vigievuln -s ./wordpress --proxy-cache http://127.0.0.1:8321 --wordfence-live
+vigievuln scan ./wordpress --proxy-cache http://127.0.0.1:8321 --wordfence-live
 vigievuln cache prepare deps.json --output cache.tar.gz --proxy-cache http://127.0.0.1:8321 --wordfence-live
 ```
 
@@ -695,7 +722,7 @@ per-entry guarantee, not a transaction spanning the entire imported cache.
 ### Corporate forward proxy (`--proxy`)
 
 ```bash
-vigievuln -s ./proj --proxy http://corp-proxy:3128
+vigievuln scan ./proj --proxy http://corp-proxy:3128
 ```
 
 Routes **every** outbound request through a corporate forward proxy (Node >= 24 or
@@ -718,7 +745,7 @@ before transfer. The detailed report is produced **back offline**.
 ```bash
 # Phase 1 — OFFLINE (audited machine): export the anonymized descriptor, then stop.
 #   -e excludes private/internal packages (offline we can't classify private vs public).
-vigievuln -s ./proj -e "^(client|internal)\." --export-anonymized deps.json
+vigievuln scan ./proj -e "^(client|internal)\." --export-anonymized deps.json
 #   deps.json is plain JSON (schema "fad-deps/1") — review it before transfer.
 
 # Phase 2 — ONLINE (any machine, NO --src): prepare the project archive.
@@ -726,7 +753,7 @@ vigievuln cache prepare deps.json --output vigievuln-cache.tar.gz
 
 # Phase 3 — OFFLINE (audited machine): full report with real paths/manifests.
 vigievuln --import-cache vigievuln-cache.tar.gz   # merged into the enclave's own cache
-vigievuln -s ./proj --offline               # re-collect locally + cache hits → full report
+vigievuln scan ./proj --offline               # re-collect locally + cache hits → full report
 ```
 
 Why it works: vigievuln's caches are keyed by *coordinate* / *vuln id*, never by path,
@@ -812,7 +839,7 @@ vigievuln --add-repo npm     verdaccio https://npm.acme.com/                    
 vigievuln --add-repo nuget   azure     https://pkgs.dev.azure.com/org/_packaging/feed/nuget/v3/index.json --token "$AZ_TOKEN"
 vigievuln --add-repo composer satis    https://composer.acme.com/                       --auth alice:s3cr3t
 vigievuln --list-repos
-vigievuln -s ./proj --repo npm=https://npm.acme.com/ --repo maven=https://nexus.acme.com/repository/maven-public/
+vigievuln scan ./proj --repo npm=https://npm.acme.com/ --repo maven=https://nexus.acme.com/repository/maven-public/
 ```
 
 Registries are tried **in declared order, the public registry last** (first 2xx wins). `--auth user:pass` → `Basic <base64>`; `--token TOK` → `Bearer TOK`. Responses are cached per coordinate. Same-API constraint per ecosystem: **PyPI/Ruby** custom bases must expose the same JSON API as the public one (`<base>/<pkg>/json`, `<base>/<gem>.json`), not a bare PEP 503 simple index; **NuGet** bases speak the v3 registration API — a service index (`…/index.json`) is auto-resolved to its `RegistrationsBaseUrl`; **Composer** bases are queried via the v2 metadata API (`<base>/p2/<vendor>/<pkg>.json`).
@@ -825,7 +852,7 @@ Reusable defaults come from (lowest priority first): **`~/.vigie-vuln/config.jso
 
 ```bash
 vigievuln --config ./ci/vigievuln-env.json                         # JSON file of defaults
-VIGIEVULN_ENV='--fail-on high --no-nuget' vigievuln -s ./proj   # flag string of defaults
+VIGIEVULN_ENV='--fail-on high --no-nuget' vigievuln scan ./proj   # flag string of defaults
 ```
 
 ```jsonc
@@ -863,7 +890,7 @@ Or pass it ad-hoc via the `NVD_API_KEY` env var.
 If you have `snyk` installed and authenticated, `vigievuln` can drive it:
 
 ```bash
-vigievuln -s ./proj -t ../proj-clean -e "^com\.acme\." --snyk
+vigievuln scan ./proj -t ../proj-clean -e "^com\.acme\." --snyk
 ```
 
 This:
@@ -893,7 +920,7 @@ The `--target` guardrails refuse:
 ## Verbosity
 
 ```bash
-vigievuln -s . --verbose   # progress per source (OSV batches, NVD pages, retire scan, …)
+vigievuln scan . --verbose   # progress per source (OSV batches, NVD pages, retire scan, …)
 ```
 
 ## Help & version
@@ -929,14 +956,14 @@ Use the severity gate; reports are written before the exit status is set:
 vigievuln scan . --fail-on critical
 ```
 
-Exit 1 means a blocking production or embedded-binary finding. Use `--fail-on-incomplete sources` as well to return code 2 when source coverage is incomplete.
+Exit 1 means a blocking production or embedded-binary finding. Missing mandatory coverage returns code 2 and takes precedence over the findings threshold.
 
 ### Diff two runs
 
 Keep dated copies of the report:
 
 ```bash
-vigievuln -s . --report-output reports/$(date +%F)
+vigievuln scan . --report-output reports/$(date +%F)
 diff reports/2026-04-01/cve-report.html reports/2026-05-01/cve-report.html
 ```
 
@@ -948,14 +975,14 @@ version hints before they leave the secure machine.
 
 ```bash
 # OFFLINE (audited machine)
-vigievuln -s ./real-project -e "^(client|internal)\." --export-anonymized deps.json
+vigievuln scan ./real-project -e "^(client|internal)\." --export-anonymized deps.json
 
 # ONLINE (connected machine, no source needed)
 vigievuln cache prepare deps.json --output fad-cache.tar.gz
 
 # OFFLINE again — full report with real paths
 vigievuln --import-cache fad-cache.tar.gz    # merged, the enclave keeps what it had
-vigievuln -s ./real-project --offline
+vigievuln scan ./real-project --offline
 ```
 
 See the **Anonymized descriptor** section above for what the descriptor contains and why

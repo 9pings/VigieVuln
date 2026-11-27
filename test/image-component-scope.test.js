@@ -68,3 +68,12 @@ test('image sub-dependencies without a CVE are omitted from the report projectio
  const components=[{ecosystem:'binary',name:'app',imageRole:'direct'},{ecosystem:'npm',name:'tool',imageRole:'transitive',osPackageOwners:[{name:'npm'}]}];
  const [result]=reportArtifacts([{id:'img',components}],[]);assert.deepEqual(result.components,[]);assert.equal(result.componentDetailsFiltered,true);assert.equal(result.componentCount,2);
 });
+
+test('an exported distribution observation keeps the package evidence without duplicating its installed file list',()=>{
+ const {reportArtifacts}=require('../lib/artifacts/report-inventory');
+ const dep={name:'libc6',version:'2.36',manifestPath:'/var/lib/dpkg/status',ownedPaths:['/lib/libc.so']};
+ const [reported]=reportArtifacts([{id:'host',components:[],advisoryObservations:[{id:'CVE-2099-1000',dep}]}],[]);
+ assert.equal(reported.advisoryObservations[0].dep.manifestPath,dep.manifestPath);
+ assert.equal(reported.advisoryObservations[0].dep.ownedPaths,undefined);
+ assert.equal(dep.ownedPaths.length,1);
+});

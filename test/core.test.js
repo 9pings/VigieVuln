@@ -176,3 +176,31 @@ test("rewritePoms interpolates ${project.groupId} in dep coords (no false 'priva
 	assert.ok(store.byId["com.acme:module-b"], "sibling module-b is known locally → would be filtered from the private-lib list");
 	fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('Maven selects the matching relative parent regardless of reactor discovery order', async t => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-local-parent-'));
+	t.after(() => fs.rmSync(root, {recursive:true, force:true}));
+	const gav = '<groupId>org.example</groupId><artifactId>build</artifactId><version>1</version>';
+	function pom(dir, body) {
+		const folder = path.join(root,dir);
+		fs.mkdirSync(folder,{recursive:true});
+		const file = path.join(folder,'pom.xml');
+		fs.writeFileSync(file,'<project>'+body+'</project>');
+		return file;
+	}
+	const left = pom('left', gav + '<properties><widget>1.0</widget></properties>');
+	const right = pom('right', gav + '<properties><widget>2.0</widget></properties>');
+	const child = pom('left/app', '<parent>'+gav+'</parent><artifactId>app</artifactId>');
+	const ambiguous = pom('other', '<parent>'+gav+'<relativePath/></parent><artifactId>other</artifactId>');
+	for (const files of [[left,right,child,ambiguous], [ambiguous,child,right,left]]) {
+		const store = core.newMetadataStore();
+		for (const file of files) await core.parsePom(file,store);
+		const inherited = await core.getAllInheritedProps(child,store,{});
+		assert.equal(store.byPath[child].parentDescr.pomPath,left);
+		assert.deepEqual(inherited.properties.widget,['1.0']);
+		await core.getAllInheritedProps(ambiguous,store,{});
+		assert.equal(store.byPath[ambiguous].ambiguousParent,'org.example:build:1');
+	}
+	const collected = await require('../lib/codecs/maven.codec').collect(root,{scanJars:false});
+	assert.ok(collected.warnings.some(w=>w.reason==='ambiguous-parent' && w.manifestPath===ambiguous));
+});

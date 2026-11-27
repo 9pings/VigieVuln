@@ -7,7 +7,7 @@ const { spawnSync } = require('node:child_process');
 
 for (const hosted of [true, false]) {
   for (const strict of [null, 'advisories', 'sources']) {
-    test(`CLI Wordfence 503 writes warning reports: hosted=${hosted}, strict=${strict}`, t => {
+    test(`CLI Wordfence 503 cancels publication: hosted=${hosted}, strict=${strict}`, t => {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-source-outage-'));
       t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
       const src = path.join(dir, 'source');
@@ -32,27 +32,23 @@ for (const hosted of [true, false]) {
         };
       `);
       const out = path.join(dir, 'report');
-      const args = ['--require', hook, path.join(__dirname, '../vigievuln.js'), '-s', src,
+      const args = ['--require', hook, path.join(__dirname, '../vigievuln.js'), 'scan', src,
         '--wordfence-live', '--retries', '0', '--report-html', '--report-json', '-o', out];
       if (hosted) args.push('--proxy-cache', 'default');
       if (strict) args.push('--fail-on-incomplete', strict);
       const env = { PATH: process.env.PATH, FORCE_COLOR:'0',
         ...(hosted ? {VIGIEVULN_PROXY_CACHE_TOKEN:'fixture-proxy-token'} : {WORDFENCE_API_KEY:'fixture-wordfence-key'}) };
       const run = spawnSync(process.execPath, args, { env, cwd:dir, encoding:'utf8', timeout:30000 });
-      assert.equal(run.status, strict ? 2 : 0, `${run.error || ''}\n${run.stdout}\n${run.stderr}`);
+      assert.equal(run.status, 2, `${run.error || ''}\n${run.stdout}\n${run.stderr}`);
       assert.match(fs.readFileSync(path.join(dir, 'requests'), 'utf8'), /wordfence/);
-      const report = JSON.parse(fs.readFileSync(path.join(out, 'findings.json'), 'utf8'));
-      const failed = report.coverage.find(c => c.sourceId === 'wordfence-v3' && c.capability === 'advisories');
-      assert.equal(failed.execution, 'failed');
-      assert.equal(failed.result, 'indeterminate');
-      assert.ok(report.warnings.some(w => /assessment failed.*503/i.test(w.message)));
-      assert.match(fs.readFileSync(path.join(out, 'cve-report.html'), 'utf8'), /503/);
-      assert.equal(report.coverage.some(c => c.sourceId === 'wordfence-v3' && c.result === 'no-match'), false);
+      assert.match(run.stdout+run.stderr,/wordfence.*503/is);
+      assert.match(run.stderr,/Scan cancelled/);
+      assert.deepEqual(fs.existsSync(out)?fs.readdirSync(out):[],[]);
     });
   }
 }
 
-for (const strict of [false, true]) test(`CLI Packagist 503 writes partial reports, strict=${strict}`, t => {
+for (const strict of [false, true]) test(`CLI Packagist 503 cancels publication, strict=${strict}`, t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-packagist-outage-'));
   t.after(() => fs.rmSync(dir, {recursive:true,force:true}));
   const src = path.join(dir,'source'); fs.mkdirSync(src);
@@ -62,13 +58,13 @@ for (const strict of [false, true]) test(`CLI Packagist 503 writes partial repor
   fs.writeFileSync(hook, `require('node:os').homedir=()=>__dirname;
     globalThis.fetch=async()=>Response.json({error:'Unavailable'},{status:503});`);
   const out = path.join(dir,'report');
-  const args = ['--require',hook,path.join(__dirname,'../vigievuln.js'),'-s',src,'--ecosystem','composer',
+  const args = ['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',src,'--ecosystem','composer',
     '-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs',
     '--retries','0','--report-html','--report-json','-o',out];
   if(strict) args.push('--fail-on-incomplete','sources');
   const run=spawnSync(process.execPath,args,{cwd:dir,env:{PATH:process.env.PATH,FORCE_COLOR:'0'},encoding:'utf8',timeout:30000});
-  assert.equal(run.status,strict?2:0,run.stdout+run.stderr);
-  const report=JSON.parse(fs.readFileSync(path.join(out,'findings.json'),'utf8'));
-  assert.ok(report.warnings.some(w=>w.type==='source-unavailable' && /Packagist:.*coverage is incomplete/i.test(w.message)), JSON.stringify(report.warnings));
-  assert.match(fs.readFileSync(path.join(out,'cve-report.html'),'utf8'),/503/);
+  assert.equal(run.status,2,run.stdout+run.stderr);
+  assert.match(run.stderr,/Scan cancelled/);
+  assert.match(run.stderr,/Packagist.*503/i);
+  assert.deepEqual(fs.existsSync(out)?fs.readdirSync(out):[],[]);
 });

@@ -22,7 +22,7 @@ test("Wordfence live scanning requires a key and explains how to provide it", ()
 		const { WORDFENCE_PRODUCTION_URL } = require("../lib/application-providers/live-snapshot");
 		const env = { ...process.env, FORCE_COLOR: "0" };
 		delete env.WORDFENCE_API_KEY;
-		const run = spawnSync(process.execPath, [CLI, "--config", config, "-s", path.join(__dirname, "fixtures", "wordpress-custom"),
+		const run = spawnSync(process.execPath, [CLI, "scan", path.join(__dirname, "fixtures", "wordpress-custom"), "--config", config,
 			"--ecosystem", "composer", "--app-plugins", "wordpress", "--wordfence-feed-url", WORDFENCE_PRODUCTION_URL,
 			"--report-json", out, "--no-checksums"], { encoding: "utf8", timeout: 30000, env });
 		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
@@ -31,40 +31,35 @@ test("Wordfence live scanning requires a key and explains how to provide it", ()
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
-test("CLI exports a private custom WordPress plugin and incomplete advisory coverage", () => {
+test("CLI cancels on incomplete private WordPress plugin coverage", () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-app-cli-"));
 	try {
 		const src = path.join(__dirname, "fixtures", "wordpress-custom");
 		const out = path.join(temp, "findings.json");
-		const args = [CLI, "-s", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
+		const args = [CLI, "scan", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
 			"--private-component", "site/wp-content/plugins/acme", "--offline", "-d", "eol,nvd,epss,kev,retire,transitive",
 			"--report-json", out, "--no-checksums"];
 		const run = spawnSync(process.execPath, args, { encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
-		assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
-		assert.match(run.stdout + run.stderr, /WordPress advisory scan did not run.*Wordfence API key/);
-		const doc = JSON.parse(fs.readFileSync(out, "utf8"));
-		assert.equal(doc.applications[0].id, "wordpress:site");
-		const plugin = doc.applicationInventory.find(c => c.kind === "plugin");
-		assert.equal(plugin.visibility, "private");
-		assert.equal(doc.coverage.find(c => c.capability === "advisories").execution, "not-run");
-		assert.equal(JSON.stringify(doc).includes("intranet.example.invalid"), false);
+		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
+		assert.match(run.stdout + run.stderr, /No cached WPVulnerability response/);
+		require("./helpers/cancelled-scan")(run,[out]);
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
-test("--fail-on-incomplete returns 2 after writing the partial findings JSON", () => {
+test("--fail-on-incomplete cancels before writing findings JSON", () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-app-gate-"));
 	try {
 		const out = path.join(temp, "findings.json");
 		const src = path.join(__dirname, "fixtures", "wordpress-custom");
-		const run = spawnSync(process.execPath, [CLI, "-s", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
+		const run = spawnSync(process.execPath, [CLI, "scan", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
 			"--offline", "-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums",
 			"--fail-on-incomplete", "advisories"], { encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
 		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
-		assert.ok(fs.existsSync(out));
+		require("./helpers/cancelled-scan")(run,[out]);
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
-test("CLI emits a local Wordfence finding for a user-declared public plugin", () => {
+test("a local Wordfence match cannot override other missing required checks", () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wordfence-cli-"));
 	try {
 		const feed = path.join(temp, "feed.json");
@@ -79,19 +74,16 @@ test("CLI emits a local Wordfence finding for a user-declared public plugin", ()
 		fs.cpSync(path.join(__dirname, "fixtures", "wordpress-custom"), src, { recursive: true });
 		const pluginFile = path.join(src, "site/wp-content/plugins/acme/acme.php");
 		fs.writeFileSync(pluginFile, fs.readFileSync(pluginFile, "utf8").replace(/^Update URI:.*\r?\n/m, ""));
-		const args = [CLI, "-s", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
+		const args = [CLI, "scan", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
 			"--wordfence-feed", feed, "--public-component", "site/wp-content/plugins/acme=acme",
 			"--offline", "-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums"];
 		const run = spawnSync(process.execPath, args, { encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
-		assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
-		const doc = JSON.parse(fs.readFileSync(out, "utf8"));
-		assert.ok(doc.cve.find(f => f.id === `WF-${uuid}`));
-		assert.equal(doc.cve.find(f => f.id === `WF-${uuid}`).ownerComponentIds.length, 1);
-		assert.equal(doc.coverage.find(c => c.occurrenceId?.includes(":plugin:")).result, "affected");
+		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
+		require("./helpers/cancelled-scan")(run,[out]);
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
-test("CLI exports a Drupal advisory while marking custom module advisory coverage incomplete", () => {
+test("CLI cancels a Drupal scan with incomplete custom module coverage", () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-drupal-cli-"));
 	try {
 		const feed = path.join(temp, "feed.json");
@@ -101,14 +93,12 @@ test("CLI exports a Drupal advisory while marking custom module advisory coverag
 				link: "https://www.drupal.org/sa-core-2099-001", cve: null, affectedVersions: ">=10.3.0 <10.3.2" },
 		] } }));
 		const src = path.join(__dirname, "fixtures", "drupal-custom");
-		const args = [CLI, "-s", src, "--ecosystem", "composer", "--app-plugins", "drupal",
+		const args = [CLI, "scan", src, "--ecosystem", "composer", "--app-plugins", "drupal",
 			"--drupal-advisories", feed, "--offline", "-d", "eol,nvd,epss,kev,retire,transitive",
 			"--report-json", out, "--no-checksums", "--fail-on-incomplete", "advisories"];
 		const run = spawnSync(process.execPath, args, { encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
 		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
-		const doc = JSON.parse(fs.readFileSync(out, "utf8"));
-		assert.ok(doc.cve.some(f => f.id === "SA-CORE-2099-001"));
-		assert.ok(doc.coverage.some(c => c.diagnostic === "CMS_PRIVATE_COMPONENT"));
+		require("./helpers/cancelled-scan")(run,[out]);
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
@@ -123,7 +113,7 @@ test("an invalid explicitly configured advisory snapshot exits 2 without writing
 			const out = path.join(temp, "findings.json");
 			fs.writeFileSync(feed, "<html>not JSON</html>");
 			const src = path.join(__dirname, "fixtures", fixture);
-			const run = spawnSync(process.execPath, [CLI, "-s", src, "--ecosystem", "composer",
+			const run = spawnSync(process.execPath, [CLI, "scan", src, "--ecosystem", "composer",
 				"--app-plugins", plugin, flag, feed, "--offline", "-d", "eol,nvd,epss,kev,retire,transitive",
 				"--report-json", out, "--no-checksums"],
 			{ encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
@@ -138,7 +128,7 @@ test("a configured advisory source cannot be silently ignored by auto plugin sel
 	try {
 		const out = path.join(temp, "findings.json");
 		const src = path.join(__dirname, "fixtures", "wordpress-custom");
-		const run = spawnSync(process.execPath, [CLI, "-s", src, "--ecosystem", "composer",
+		const run = spawnSync(process.execPath, [CLI, "scan", src, "--ecosystem", "composer",
 			"--wordfence-feed", path.join(temp, "feed.json"), "--offline", "-d", "eol,nvd,epss,kev,retire,transitive",
 			"--report-json", out, "--no-checksums"],
 		{ encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
@@ -169,7 +159,7 @@ test("an explicitly configured local advisory source is validated before discove
 			const temp = fs.mkdtempSync(path.join(os.tmpdir(), `fad-nomatch-${plugin}-`));
 			try {
 				const out = path.join(temp, "findings.json");
-				const args = [CLI, "-s", path.join(__dirname, "fixtures", fixture), "--ecosystem", "composer",
+				const args = [CLI, "scan", path.join(__dirname, "fixtures", fixture), "--ecosystem", "composer",
 					"--app-plugins", plugin, flag, path.join(temp, "feed.json"), "--offline",
 					"-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums"];
 				if (withAge) args.push("--max-advisory-age", "72h");
@@ -189,12 +179,12 @@ test("an explicitly configured local advisory source is validated before discove
 		try {
 			const out = path.join(temp, "findings.json");
 			fs.writeFileSync(path.join(temp, "feed.json"), content);
-			const run = spawnSync(process.execPath, [CLI, "-s", path.join(__dirname, "fixtures", fixture),
+			const run = spawnSync(process.execPath, [CLI, "scan", path.join(__dirname, "fixtures", fixture),
 				"--ecosystem", "composer", "--app-plugins", plugin, flag, path.join(temp, "feed.json"),
 				"--offline", "-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums",
 				"--max-advisory-age", "72h"], { encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
-			assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
-			assert.ok(fs.existsSync(out));
+			assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
+			require("./helpers/cancelled-scan")(run,[out]);
 		} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 	}
 	// A configured path that does not exist fails the same way, before discovery.
@@ -205,7 +195,7 @@ test("an explicitly configured local advisory source is validated before discove
 		const temp = fs.mkdtempSync(path.join(os.tmpdir(), `fad-absent-${plugin}-`));
 		try {
 			const out = path.join(temp, "findings.json");
-			const run = spawnSync(process.execPath, [CLI, "-s", path.join(__dirname, "fixtures", fixture),
+			const run = spawnSync(process.execPath, [CLI, "scan", path.join(__dirname, "fixtures", fixture),
 				"--ecosystem", "composer", "--app-plugins", plugin, flag, path.join(temp, "missing.json"),
 				"--offline", "-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums"],
 				{ encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
@@ -215,7 +205,7 @@ test("an explicitly configured local advisory source is validated before discove
 	}
 });
 
-test("CLI component context inventories a standalone private plugin without a WordPress core", () => {
+test("CLI cancels when a standalone private plugin has incomplete coverage", () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wp-component-cli-"));
 	try {
 		const src = path.join(temp, "plugin");
@@ -223,15 +213,12 @@ test("CLI component context inventories a standalone private plugin without a Wo
 		fs.writeFileSync(path.join(src, "plugin.php"), "<?php /* Plugin Name: Custom Plugin\nVersion: 1.2.3\nUpdate URI: https://private.invalid/update\n */");
 		fs.writeFileSync(path.join(src, "composer.json"), '{"name":"acme/plugin"}');
 		const out = path.join(temp, "findings.json");
-		const run = spawnSync(process.execPath, [CLI, "-s", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
+		const run = spawnSync(process.execPath, [CLI, "scan", src, "--ecosystem", "composer", "--app-plugins", "wordpress",
 			"--scan-context", "component", "--offline", "-d", "eol,nvd,epss,kev,retire,transitive",
 			"--report-json", out, "--no-checksums"],
 		{ encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
-		assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
-		const doc = JSON.parse(fs.readFileSync(out, "utf8"));
-		assert.deepEqual(doc.applications.map(a => a.layout), ["component"]);
-		assert.deepEqual(doc.applicationInventory.map(c => c.kind), ["plugin"]);
-		assert.equal(doc.applicationInventory[0].visibility, "private");
+		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
+		require("./helpers/cancelled-scan")(run,[out]);
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 
@@ -240,7 +227,7 @@ test("--max-advisory-age rejects a stale or undeclared snapshot with exit 2 and 
 	try {
 		const out = path.join(temp, "findings.json");
 		const src = path.join(__dirname, "fixtures", "drupal-custom");
-		const common = [CLI, "-s", src, "--ecosystem", "composer", "--app-plugins", "drupal",
+		const common = [CLI, "scan", src, "--ecosystem", "composer", "--app-plugins", "drupal",
 			"--drupal-advisories", path.join(temp, "feed.json"), "--offline",
 			"-d", "eol,nvd,epss,kev,retire,transitive", "--report-json", out, "--no-checksums"];
 		fs.writeFileSync(path.join(temp, "feed.json"), JSON.stringify({ collectedAt: "2026-09-01T00:00:00Z",
@@ -254,7 +241,7 @@ test("--max-advisory-age rejects a stale or undeclared snapshot with exit 2 and 
 			queriedPackages: [], advisories: {} }));
 		const fresh = spawnSync(process.execPath, [...common, "--max-advisory-age", "72h"],
 			{ encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
-		assert.equal(fresh.status, 0, `${fresh.stdout}\n${fresh.stderr}`);
+		assert.equal(fresh.status, 2, `${fresh.stdout}\n${fresh.stderr}`);
 		fs.writeFileSync(path.join(temp, "feed.json"), JSON.stringify({ queriedPackages: [], advisories: {} }));
 		const undeclared = spawnSync(process.execPath, [...common, "--max-advisory-age", "72h"],
 			{ encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });

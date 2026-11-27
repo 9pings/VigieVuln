@@ -165,3 +165,34 @@ test('queryTtlMs zero refreshes both the OSV proof and the underlying local HTTP
   assert.deepEqual(await query(cacheDir, fetcher, { queryTtlMs: 0 }), [], 'forced refresh sees the new empty answer');
   assert.equal(batchCalls, 2, 'a still-fresh HTTP response must not override TTL zero');
 });
+
+test('one missing detail retains verified positives without committing partial package coverage', async t => {
+  const cacheDir = setup(t), warnings = [];
+  const other = { ...dep, version: '2.0' };
+  const fetcher = async url => {
+    if (url.endsWith('/querybatch')) return Response.json({results: [
+      {vulns: [{id: record.id}, {id: 'GHSA-unavailable'}]}, {vulns: [{id: record.id}]},
+    ]});
+    return url.endsWith(record.id) ? Response.json(record) : new Response(null, {status:503});
+  };
+  const matches = await queryBatch([dep, other], {cacheDir, fetcher, allowStaleFallback:true, onWarning:w => warnings.push(w)});
+  assert.deepEqual(matches.map(m => [m.dep.version, m.cve.id]), [['1.0', record.id], ['2.0', record.id]]);
+  assert.ok(warnings.some(w => w.type === 'source-unavailable' && /503/.test(w.message)));
+  const store = openAdvisoryStore({cacheDir});
+  assert.equal(store.getQuery(tuple), null);
+  assert.deepEqual(store.getQuery({...tuple, version:'2.0'}).ids, [record.id]);
+});
+
+test('failed continuation preserves known hits and complete siblings', async t => {
+  const cacheDir = setup(t);
+  const fetcher = async (url, init) => {
+    if (!url.endsWith('/querybatch')) return Response.json(record);
+    if (JSON.parse(init.body).queries[0].page_token) return new Response(null, {status:503});
+    return Response.json({results:[{vulns:[{id:record.id}],next_page_token:'next'},{}]});
+  };
+  const matches = await queryBatch([dep, {...dep,version:'2.0'}], {cacheDir, fetcher, allowStaleFallback:true});
+  assert.deepEqual(matches.map(m=>m.cve.id), [record.id]);
+  const store = openAdvisoryStore({cacheDir});
+  assert.equal(store.getQuery(tuple), null);
+  assert.deepEqual(store.getQuery({...tuple,version:'2.0'}).ids, []);
+});

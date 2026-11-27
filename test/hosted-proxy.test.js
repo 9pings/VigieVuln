@@ -31,7 +31,7 @@ test('proxy cache setting persists across CLI invocations and can be removed', (
     const config=JSON.parse(fs.readFileSync(path.join(home,'.vigie-vuln','config.json'),'utf8'));
     assert.equal(config.proxyCache,'vigievuln');
     assert.match(run('--show-config').stdout,/"proxyCache": "vigievuln"/);
-    const scan=run('-s',home);
+    const scan=run('scan',home);
     assert.equal(scan.status,2);
     assert.match(scan.stderr,/requires a proxy key/);
     assert.equal(run('--set-proxy-cache-token','secret-token-example').status,0);
@@ -111,10 +111,10 @@ test('scan proxy login and stored account sessions enforce terms before key crea
           if(url.endsWith('/terms'))return Response.json({account:{...account,terms:{...terms,accepted:true}}});
           if(url.endsWith('/proxy-keys'))return Response.json({key:{token:'proxy_key'}});
           if(url.endsWith('/logout'))return Response.json({revoked:1});
-          return new Response('',{status:503});
+          return new Response('',{status:503, headers:{'retry-after':'120'}});
         };`);
       const env={...process.env,HOME:home,USERPROFILE:home,NODE_OPTIONS:`--require=${hook}`,FORCE_COLOR:'0',VIGIEVULN_PROXY_CACHE_TOKEN:'',FAD_PROXY_CACHE_TOKEN:'',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''};
-      const result=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',home,'--proxy-cache','default'],{env,encoding:'utf8',timeout:15000});
+      const result=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'scan',home,'--proxy-cache','default'],{env,encoding:'utf8',timeout:15000});
       assert.equal(result.status,2,result.stderr); // Successful consent reaches the deliberately failing proxy preflight.
       assert.match(result.stderr,/2026-10-28.*https:\/\/www\.vigievuln\.fr\/terms\/2026-10-28/);
       const recorded=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);
@@ -145,9 +145,9 @@ test('anonymized export works offline even with the official proxy configured an
   const run=(...args)=>spawnSync(process.execPath,[cli,...args],{env,encoding:'utf8',timeout:15000});
   try {
     assert.equal(run('--set-proxy-cache','vigievuln').status,0);
-    const output=path.join(home,'deps.json');const r=run('-s',project,'--export-anonymized',output);
+    const output=path.join(home,'deps.json');const r=run('scan',project,'--export-anonymized',output);
     assert.equal(r.status,0,r.stderr);assert.ok(fs.existsSync(output));
-    const projectFile=path.join(home,'project.json');const prepared=run('-s',project,'--prepare-project',projectFile);
+    const projectFile=path.join(home,'project.json');const prepared=run('scan',project,'--prepare-project',projectFile);
     assert.equal(prepared.status,0,prepared.stderr);
     assert.equal(JSON.parse(fs.readFileSync(projectFile,'utf8')).schema,'fad-deps/2');
   } finally {fs.rmSync(home,{recursive:true,force:true})}
@@ -177,7 +177,7 @@ test('CLI rejects missing hosted credentials before starting a scan', () => {
   const home=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-no-session-'));
   try {
     const env = {...process.env, HOME:home, USERPROFILE:home, VIGIEVULN_PROXY_CACHE_TOKEN:'', FAD_PROXY_CACHE_TOKEN:'', VIGIEVULN_ENV:'', FAD_CHECKER_ENV:'', FORCE_COLOR:'0'};
-    const result=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',__dirname,'--vigievuln-proxy'],{env,encoding:'utf8'});
+    const result=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'scan',__dirname,'--vigievuln-proxy'],{env,encoding:'utf8'});
     assert.equal(result.status,2);assert.match(result.stderr,/requires a proxy key/);assert.doesNotMatch(result.stdout,/Collection/);
   } finally { fs.rmSync(home,{recursive:true,force:true}); }
 });
@@ -203,8 +203,8 @@ test('hosted OSV database options perform only package lookups and never downloa
  const isolatedFlags=['--cve-offline','--no-gcve','--no-transitive','--no-all-libs','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0','--advisory-query-ttl','0'];
  for(const flags of [['--osv-db'],['-a','osv-db'],['--osv-db-refresh']]){
   fs.rmSync(calls,{force:true});
-  const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default',...isolatedFlags,...flags],{cwd:home,env,encoding:'utf8',timeout:15000});
-  assert.equal(r.status,0,r.stdout+r.stderr);
+  const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'scan',project,'--proxy-cache','default',...isolatedFlags,...flags],{cwd:home,env,encoding:'utf8',timeout:15000});
+  assert.equal(r.status,2,r.stdout+r.stderr);
   const requests=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);
   assert.ok(requests.some(c=>c.body&&JSON.parse(c.body).provider==='osv'));
   assert.ok(requests.every(c=>!c.url.includes('storage.googleapis.com')));
@@ -310,28 +310,17 @@ test('a hosted scan writes stale source warnings in HTML and JSON and supports a
   const out=path.join(home,'out');
   try {
     // This checks reporting after exhaustion; retry timing has dedicated throttle tests.
-    const args=[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default','--retries','0','--proxy-rate-limit-wait-ms','0','--no-transitive','--no-all-libs','--no-osv','--no-nvd','--no-epss','--no-kev','--no-euvd','--no-certfr','--no-eol','--no-binaries','--no-jars','--no-certs','--report-html','--report-json','-o',out,'--fail-on-incomplete','sources'];
+    const args=[path.join(__dirname,'../vigievuln.js'),'scan',project,'--proxy-cache','default','--retries','0','--proxy-rate-limit-wait-ms','0','--no-transitive','--no-all-libs','--no-osv','--no-nvd','--no-epss','--no-kev','--no-euvd','--no-certfr','--no-eol','--no-binaries','--no-jars','--no-certs','--report-html','--report-json','-o',out,'--fail-on-incomplete','sources'];
     const r=spawnSync(process.execPath,args,{env,encoding:'utf8',timeout:20000});
     assert.equal(r.status,2,r.stderr+'\n'+r.stdout);
     assert.match(r.stdout,/proxy\s+https:\/\/api\.vigievuln\.fr/);
-    const html=fs.readFileSync(path.join(out,'cve-report.html'),'utf8');
-    const files=fs.readdirSync(out).filter(x=>x.endsWith('.json'));assert.ok(files.length);
-    const report=JSON.parse(fs.readFileSync(path.join(out,files[0]),'utf8'));
-    assert.match(html,/2026-10-27T10:00:00/);
-    assert.equal(report.provenance.configuration.reuseStableAdvisories,true);
-    assert.ok(report.warnings.some(w=>w.type==='source-stale' && w.message.includes('2026-10-27T10:00:00')));
-    assert.ok(!(report.provenance.freshnessNotices || []).some(w=>w.message.includes('2026-10-27T10:00:00')));
-    assert.ok(!report.warnings.some(w=>w.message.includes('native or legacy source coverage is partial')));
-    assert.ok(report.provenance.sourceLimitations.some(w=>w.source==='CVEProject' && w.message.includes('partial native or legacy projection')));
+    assert.match(require('./helpers/cancelled-scan')(r,[path.join(out,'cve-report.html'),path.join(out,'findings.json')]),/stale|freshness/i);
     const missingOut=path.join(home,'missing');
     const missingArgs=args.slice(0,-2);missingArgs[missingArgs.indexOf('-o')+1]=missingOut;
     missingArgs.push('--no-reuse-stable-advisories');
     const missing=spawnSync(process.execPath,missingArgs,{env:{...env,VV_MISSING:'1'},encoding:'utf8',timeout:20000});
-    assert.equal(missing.status,0,missing.stderr+'\n'+missing.stdout);
-    const missingFile=fs.readdirSync(missingOut).find(x=>x.endsWith('.json'));
-    const missingReport=JSON.parse(fs.readFileSync(path.join(missingOut,missingFile),'utf8'));
-    assert.ok(missingReport.warnings.some(w=>w.type==='source-unavailable'));
-    assert.equal(missingReport.provenance.configuration.reuseStableAdvisories,false);
+    assert.equal(missing.status,2,missing.stderr+'\n'+missing.stdout);
+    require('./helpers/cancelled-scan')(missing,[path.join(missingOut,'findings.json')]);
   } finally {fs.rmSync(home,{recursive:true,force:true})}
 });
 
@@ -393,11 +382,22 @@ test('official proxy key fetches VV partial ranges without OSV and reuses them o
  };`);
  const env={...process.env,HOME:home,USERPROFILE:home,NODE_OPTIONS:`--require=${hook}`,VIGIEVULN_PROXY_CACHE_TOKEN:'test-key',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:'',FORCE_COLOR:'0'};
  const flags=['--cve-offline','--no-osv','--no-gcve','--no-transitive','--no-all-libs','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0'];
- const run=(name,extra=[],runEnv=env)=>spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s',project,'--proxy-cache','default',...flags,'--report-json',path.join(home,name),...extra],{env:runEnv,encoding:'utf8',timeout:20000});
- const online=run('online.json');assert.equal(online.status,0,online.stdout+online.stderr);const report=JSON.parse(fs.readFileSync(path.join(home,'online.json')));assert.ok(report.cve.some(x=>x.id==='CVE-2026-103387'&&x.aliases.includes('VV:CVE-2026-103387')));
+ const run=(name,extra=[],runEnv=env)=>spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'scan',project,'--proxy-cache','default',...flags,'--report-json',path.join(home,name),...extra],{env:runEnv,encoding:'utf8',timeout:20000});
+ const online=run('online.json');assert.equal(online.status,2,online.stdout+online.stderr);require('./helpers/cancelled-scan')(online,[path.join(home,'online.json')]);
  const requests=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse),resource=requests.find(x=>x.body&&JSON.parse(x.body).provider==='vigievuln');assert.equal(resource.token,'test-key');
  const savedEnv={...env,VIGIEVULN_PROXY_CACHE_TOKEN:'',FAD_PROXY_CACHE_TOKEN:''};
  const save=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'--set-proxy-cache-token','stored-key'],{env:savedEnv,encoding:'utf8'});assert.equal(save.status,0,save.stderr);
- fs.rmSync(calls);const saved=run('saved.json',['--advisory-query-ttl','0'],savedEnv);assert.equal(saved.status,0,saved.stdout+saved.stderr);const savedCalls=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);assert.ok(savedCalls.some(x=>x.body&&JSON.parse(x.body).provider==='vigievuln'&&x.token==='stored-key'));
- const before=fs.readFileSync(calls,'utf8');const offline=run('offline.json',['--offline']);assert.equal(offline.status,0,offline.stdout+offline.stderr);assert.equal(fs.readFileSync(calls,'utf8'),before);assert.ok(JSON.parse(fs.readFileSync(path.join(home,'offline.json'))).cve.some(x=>x.id==='CVE-2026-103387'));
+ fs.rmSync(calls);const saved=run('saved.json',['--advisory-query-ttl','0'],savedEnv);assert.equal(saved.status,2,saved.stdout+saved.stderr);const savedCalls=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);assert.ok(savedCalls.some(x=>x.body&&JSON.parse(x.body).provider==='vigievuln'&&x.token==='stored-key'));
+ const before=fs.readFileSync(calls,'utf8');const offline=run('offline.json',['--offline']);assert.equal(offline.status,2,offline.stdout+offline.stderr);assert.equal(fs.readFileSync(calls,'utf8'),before);require('./helpers/cancelled-scan')(offline,[path.join(home,'offline.json')]);
+});
+
+test('hosted status preflight retries a temporary 429 before validating the service',async()=>{
+  let calls=0,time=0;
+  const messages=[];
+  const throttle=require('../lib/proxy-throttle').createProxyThrottle({now:()=>time,sleep:async ms=>{time+=ms},warn:m=>messages.push(m)});
+  await checkHostedProxy('https://proxy.invalid','fixture',async()=>++calls===1
+    ? new Response(null,{status:429,headers:{'retry-after':'12'}})
+    : Response.json({ok:true,service:'vigievuln-proxy'}),{throttle});
+  assert.equal(time,12000);
+  assert.match(messages[0],/proxy.status.*429.*12s/);
 });

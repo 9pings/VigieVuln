@@ -1,7 +1,7 @@
 # VigieVuln CLI repository
 
 This Git repository contains the `vigievuln` npm CLI at its root. Run `npm ci`,
-`npm test`, and `npm run pack:release` here. The package version is 1.3.3;
+`npm test`, and `npm run pack:release` here. The package version is 1.3.5;
 `package.json` is authoritative for the version and supported Node.js releases.
 The independent server repository lives alongside this checkout at `../server`.
 It consumes the CLI through its npm dependency. There is no parent repository.

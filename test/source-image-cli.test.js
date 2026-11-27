@@ -14,39 +14,40 @@ async function fixture(t){
 }
 const flags=['--cve-offline','--no-gcve','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--no-transitive','--no-all-libs','--retries','0'];
 const imageFlags=[...flags,'--images'];
+const cancelled=require('./helpers/cancelled-scan');
 const ok=r=>assert.equal(r.status,0,r.stdout+'\n'+r.stderr);
 
 test('source image descriptor prepares cache online and replays real project offline',async t=>{
  const {dir,src,run,manifestDigest}=await fixture(t),isolated=path.join(dir,'isolated'),online=path.join(dir,'online'),offline=path.join(dir,'offline'),descriptor=path.join(dir,'descriptor.json'),bundle=path.join(dir,'prepared.tar.gz'),report=path.join(dir,'live.json'),replay=path.join(dir,'replay.json');
- let result=run(['-s',src,'--export-anonymized',descriptor,...imageFlags],isolated,true);ok(result);assert.deepEqual(result.calls,[]);
+ let result=run(['scan',src,'--export-anonymized',descriptor,...imageFlags],isolated,true);ok(result);assert.deepEqual(result.calls,[]);
  const doc=JSON.parse(fs.readFileSync(descriptor));assert.ok(doc.imageReferences.some(x=>x.reference==='example.test/team/demo:1'));assert.ok(doc.imageReferences.every(x=>!String(x.reference).includes('private-local')&&!String(x.reference).includes('$')));
  const cacheDir=path.join(online,'.vigie-vuln');fs.mkdirSync(cacheDir,{recursive:true});await require('../lib/system-inventory').importSystemAdvisories([{id:'DEBIAN-CVE-X',aliases:['CVE-2024-12345'],affected:[{package:{ecosystem:'Debian:12',name:'foo',purl:'pkg:deb/debian/foo?arch=source'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'1.0-2'}]}]}]}],{distribution:{id:'debian',versionId:'12'},cacheDir,complete:true});require('../lib/cache-db').closeCacheDbs();
- result=run(['-s',src,'--report-json',report,...imageFlags],online);ok(result);assert.match(result.stdout,/Image inventories: 1 image/);assert.match(result.stdout,/Image vulnerability analysis: 1 image/);assert.ok(result.calls.some(x=>x.includes('example.test')));assert.ok(result.calls.every(x=>x.includes('example.test')));
- const live=JSON.parse(fs.readFileSync(report));assert.equal(live.artifacts.length,1);assert.equal(live.warnings.find(w=>w.type==='image-unpinned').count,2);assert.doesNotMatch(result.stdout,/Unmanaged binaries/);assert.equal(live.unmanaged.length,0);assert.ok(!JSON.stringify(live.artifacts[0].components).includes('unaffected-os-helper.so'));assert.equal(live.artifacts[0].metadata.digest,manifestDigest);assert.equal(live.artifacts[0].metadata.platform.architecture,'amd64');assert.ok(live.cve.some(x=>x.id==='CVE-2024-12345'));assert.equal(live.imageReferences.filter(x=>x.imageScan?.status==='scanned').length,2);assert.ok(live.imageReferences.some(x=>x.classification==='local-build'&&x.imageScan?.status==='not-scannable'));assert.ok(live.imageReferences.some(x=>x.classification==='unresolved'&&x.imageScan?.status==='not-scannable'));
+ result=run(['scan',src,'--report-json',report,...imageFlags],online);cancelled(result);assert.match(result.stdout,/Image inventories: 1 image/);assert.match(result.stdout,/Image vulnerability analysis: 1 image/);assert.ok(result.calls.some(x=>x.includes('example.test')));assert.ok(result.calls.every(x=>x.includes('example.test')));
+ assert.equal(fs.existsSync(report),false);
  result=run(['cache','prepare',descriptor,'--output',bundle,...imageFlags],online);ok(result);assert.ok(fs.existsSync(bundle));assert.ok(result.calls.some(url=>url.includes('/manifests/')));assert.ok(!result.calls.some(url=>url.includes('/blobs/')),'cache prepare reuses the unchanged image inventory');
  result=run(['--import-cache',bundle],offline,true);ok(result);assert.deepEqual(result.calls,[]);
- result=run(['-s',src,'--offline','--report-json',replay,...imageFlags],offline,true);ok(result);assert.deepEqual(result.calls,[]);
- const saved=JSON.parse(fs.readFileSync(replay));assert.equal(saved.artifacts.length,1);assert.equal(saved.warnings.find(w=>w.type==='image-unpinned').count,2);assert.equal(saved.artifacts[0].metadata.digest,manifestDigest);assert.deepEqual(saved.artifacts[0].metadata.platform,live.artifacts[0].metadata.platform);assert.deepEqual(saved.artifacts[0].metadata.definitions.map(x=>[x.path,x.role,x.reference]).sort(),live.artifacts[0].metadata.definitions.map(x=>[x.path,x.role,x.reference]).sort());assert.deepEqual(saved.cve.map(x=>[x.dep.coord,x.dep.version,x.id]).sort(),live.cve.map(x=>[x.dep.coord,x.dep.version,x.id]).sort());assert.equal(saved.imageReferences.filter(x=>x.imageScan?.status==='scanned').length,2);
+ result=run(['scan',src,'--offline','--report-json',replay,...imageFlags],offline,true);cancelled(result);assert.deepEqual(result.calls,[]);
+ assert.equal(fs.existsSync(replay),false);
 });
 
 test('images are disabled by default and respect explicit flags, groups and configuration',async t=>{
  const {dir,src,run}=await fixture(t),home=path.join(dir,'home'),config=path.join(dir,'config.json');fs.writeFileSync(config,JSON.stringify({images:false}));
- for(const [i,args] of [['default',[]],['flag',['--no-images']],['group',['-d','images']],['config',['--config',config]]]){const out=path.join(dir,i+'.json'),html=path.join(dir,i+'.html'),r=run(['-s',src,'--offline','--report-json',out,'--report-html',html,...flags,...args],home,true);ok(r);assert.deepEqual(r.calls,[]);const doc=JSON.parse(fs.readFileSync(out));assert.equal((doc.artifacts||[]).length,0);assert.equal((doc.imageReferences||[]).length,0);assert.ok(!doc.warnings.some(w=>/image/i.test(w.reason||'')));assert.doesNotMatch(fs.readFileSync(html,'utf8'),/id="chimages"/);}
- const out=path.join(dir,'override.json'),r=run(['-s',src,'--config',config,'--images','--offline','--report-json',out,...flags],home,true);ok(r);assert.ok((JSON.parse(fs.readFileSync(out)).imageReferences||[]).length>0);
+ for(const [i,args] of [['default',[]],['flag',['--no-images']],['group',['-d','images']],['config',['--config',config]]]){const out=path.join(dir,i+'.json'),html=path.join(dir,i+'.html'),r=run(['scan',src,'--offline','--report-json',out,'--report-html',html,...flags,...args],home,true);ok(r);assert.deepEqual(r.calls,[]);const doc=JSON.parse(fs.readFileSync(out));assert.equal((doc.artifacts||[]).length,0);assert.equal((doc.imageReferences||[]).length,0);assert.ok(!doc.warnings.some(w=>/image/i.test(w.reason||'')));assert.doesNotMatch(fs.readFileSync(html,'utf8'),/id="chimages"/);}
+ const out=path.join(dir,'override.json'),r=run(['scan',src,'--config',config,'--images','--offline','--report-json',out,...flags],home,true);cancelled(r,[out]);assert.match(r.stderr,/image/i);
  const enabledConfig=path.join(dir,'enabled.json');fs.writeFileSync(enabledConfig,JSON.stringify({images:true}));
  for(const [name,args] of [['group',['-a','images']],['configured',['--config',enabledConfig]]]){
-  const target=path.join(dir,name+'.json'),enabled=run(['-s',src,'--offline','--report-json',target,...flags,...args],home,true);ok(enabled);assert.ok(JSON.parse(fs.readFileSync(target)).imageReferences.length>0);
+  const target=path.join(dir,'enabled-'+name+'.json'),enabled=run(['scan',src,'--offline','--report-json',target,...flags,...args],home,true);cancelled(enabled,[target]);assert.match(enabled.stderr,/image/i);
  }
- const disabled=path.join(dir,'config-overridden.json');ok(run(['-s',src,'--config',enabledConfig,'--no-images','--offline','--report-json',disabled,...flags],home,true));assert.equal((JSON.parse(fs.readFileSync(disabled)).imageReferences||[]).length,0);
+ const disabled=path.join(dir,'config-overridden.json');ok(run(['scan',src,'--config',enabledConfig,'--no-images','--offline','--report-json',disabled,...flags],home,true));assert.equal((JSON.parse(fs.readFileSync(disabled)).imageReferences||[]).length,0);
 
 });
 
 test('anonymized image descriptor keeps only resolvable registry references and never source paths',async t=>{
- const {dir,src,run}=await fixture(t),out=path.join(dir,'descriptor-only.json'),r=run(['-s',src,'--export-anonymized',out,...imageFlags],path.join(dir,'phase-one'),true);ok(r);assert.deepEqual(r.calls,[]);const body=fs.readFileSync(out,'utf8'),doc=JSON.parse(body);assert.ok(doc.imageReferences.length>=1);assert.ok(doc.imageReferences.every(x=>x.reference==='example.test/team/demo:1'));assert.ok(!body.includes(src));assert.ok(!body.includes('private-local'));assert.ok(!body.includes('CI_DEPENDENCY_PROXY'));
+ const {dir,src,run}=await fixture(t),out=path.join(dir,'descriptor-only.json'),r=run(['scan',src,'--export-anonymized',out,...imageFlags],path.join(dir,'phase-one'),true);ok(r);assert.deepEqual(r.calls,[]);const body=fs.readFileSync(out,'utf8'),doc=JSON.parse(body);assert.ok(doc.imageReferences.length>=1);assert.ok(doc.imageReferences.every(x=>x.reference==='example.test/team/demo:1'));assert.ok(!body.includes(src));assert.ok(!body.includes('private-local'));assert.ok(!body.includes('CI_DEPENDENCY_PROXY'));
 });
 
 test('cache prepare rejects an unavailable image and never writes an incomplete archive',async t=>{
- const {dir,src,run}=await fixture(t),desc=path.join(dir,'descriptor.json'),bundle=path.join(dir,'incomplete.tar.gz');ok(run(['-s',src,'--export-anonymized',desc,...imageFlags],path.join(dir,'phase-one'),true));
+ const {dir,src,run}=await fixture(t),desc=path.join(dir,'descriptor.json'),bundle=path.join(dir,'incomplete.tar.gz');ok(run(['scan',src,'--export-anonymized',desc,...imageFlags],path.join(dir,'phase-one'),true));
  const body=JSON.parse(fs.readFileSync(desc));body.imageReferences=body.imageReferences.map(x=>({...x,reference:'example.test/team/missing:1'}));fs.writeFileSync(desc,JSON.stringify(body));
  const defaultBundle=path.join(dir,'without-images.tar.gz'),withoutImages=run(['cache','prepare',desc,'--output',defaultBundle,...flags],path.join(dir,'default-prepare'));ok(withoutImages);assert.deepEqual(withoutImages.calls,[]);assert.equal(fs.existsSync(defaultBundle),false,'image-only descriptor has no enabled inventory to prepare');
  const result=run(['cache','prepare',desc,'--output',bundle,...imageFlags],path.join(dir,'phase-two'));assert.notEqual(result.status,0,result.stdout+'\n'+result.stderr);assert.equal(fs.existsSync(bundle),false);assert.ok(result.calls.some(url=>url.includes('/team/missing/')));
@@ -54,12 +55,11 @@ test('cache prepare rejects an unavailable image and never writes an incomplete 
 
 test('standalone registry CLI reports mutable references in JSON and French HTML, including offline replay',async t=>{
  const {dir,run}=await fixture(t),home=path.join(dir,'home'),cache=path.join(home,'.vigie-vuln'),out=path.join(dir,'registry-report');
- const args=['image','example.test/team/demo:1','--registry','--platform','linux/amd64','--cache-dir',cache,'--no-osv','--no-distro-advisories','--no-gcve','--enrich','none','--lang','fr','--report-output',out];
- ok(run(args,home));
+ const args=['system','scan','example.test/team/demo:1','--registry','--retries','0','--platform','linux/amd64','--cache-dir',cache,'--no-osv','--no-distro-advisories','--no-gcve','--enrich','none','--lang','fr','--report-output',out];
+ cancelled(run(args,home),[path.join(out,'findings.json')]);
  for(const offline of [false,true]){
-  if(offline){const result=run([...args,'--offline'],home,true);ok(result);assert.deepEqual(result.calls,[]);}
-  const doc=JSON.parse(fs.readFileSync(path.join(out,'findings.json')));assert.equal(doc.warnings.filter(w=>w.type==='image-unpinned').length,1);
-  assert.equal(doc.warnings.find(w=>w.type==='image-unpinned').items[0].reference,'example.test/team/demo:1');
-  assert.match(fs.readFileSync(path.join(out,'cve-report.html'),'utf8'),/Références d’images sans digest/);
+  if(offline){const result=run([...args,'--offline'],home,true);cancelled(result);assert.deepEqual(result.calls,[]);}
+  assert.equal(fs.existsSync(path.join(out,'findings.json')),false);
+  assert.equal(fs.existsSync(path.join(out,'cve-report.html')),false);
  }
 });

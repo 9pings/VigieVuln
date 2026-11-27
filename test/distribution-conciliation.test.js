@@ -60,3 +60,14 @@ test('refiner shares configured throttle, allows larger budgets, and preserves a
  const failed=await refineFreexianEvidence(mk(),{distribution:d},{resolveReleaseEvidence:async()=>({status:'unknown',evidence:{failure:'HTTP 503'}})});assert.match(failed.warnings[0].message,/HTTP 503/);
  await assert.rejects(refineFreexianEvidence(mk(),{distribution:d},{resolveReleaseEvidence:async()=>{throw Object.assign(Error('stopped'),{name:'AbortError'});}}),e=>e.name==='AbortError');
 });
+test('Freexian rate limit is announced once and cache-only CVEs are counted separately',async()=>{
+ const second='CVE-2099-2345',notes=[];
+ const result={observations:[obs(),{...obs(),cveId:second}],assessments:[a('unknown'),{...a('unknown'),cveId:second}]};
+ const out=await require('../lib/system-inventory/distribution-sources').refineFreexianEvidence(result,{distribution:d},{
+  lang:'fr',freexianReleaseConcurrency:1,onSourceWarning:m=>notes.push(m),
+  resolveReleaseEvidence:async(input,opts)=>({status:'unknown',evidence:opts.offline?{}:{failure:'HTTP 429'}})
+ });
+ assert.equal(notes.length,1);assert.match(notes[0],/autres sources/);
+ assert.equal(out.coverage[0].execution,'partial');assert.equal(out.coverage[0].queriedCves,1);assert.equal(out.coverage[0].cacheOnlyCves,1);
+ assert.match(out.warnings[0].message,/HTTP 429.*1 CVE vérifiées uniquement/);
+});

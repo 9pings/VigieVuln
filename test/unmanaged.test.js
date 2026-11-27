@@ -44,3 +44,22 @@ test("enrichUnmanaged offline does not call the fetcher", async () => {
 	assert.equal(called, false);
 	assert.equal(resolved.get("binary:/p/a.dll").integrity, "unknown");
 });
+
+test('image and system binaries never enter source-project hash identification, including cached identities',async()=>{
+ const source=rec('vendored.dll',{sha1:'a'.repeat(40),sha256:'1'.repeat(64)});
+ const image={...rec('image.so',{sha1:'b'.repeat(40),sha256:'2'.repeat(64)}),artifactTargetId:'image:1'};
+ const system={...rec('host.so',{sha1:'c'.repeat(40),sha256:'3'.repeat(64)}),artifactTargetId:'host:1'};
+ const untouched=JSON.stringify([image,system]),calls=[],progress=[];
+ const result=await enrichUnmanaged(new Map([['project',source],['image',image],['host',system]]),{
+   cache:{},fetcher:async url=>{calls.push(url);return {ok:true,json:async()=>({results:[{version:{versionKey:{system:'NUGET',name:'Source.Package',version:'1.0'}}}]})};},
+   onProgress:(done,total)=>progress.push([done,total]),
+ });
+ assert.equal(result.total,1);assert.equal(result.identified,1);assert.equal(calls.length,1);
+ assert.equal(source.identity.name,'Source.Package');assert.deepEqual(progress,[[1,1]]);
+ assert.equal(JSON.stringify([image,system]),untouched);
+ const excluded=await enrichUnmanaged(new Map([['image',image],['host',system]]),{
+   cache:{},fetcher:()=>{throw Error('image binary must not be queried');},
+   onProgress:()=>{throw Error('image binary must not enter progress');},
+ });
+ assert.equal(excluded.total,0);
+});

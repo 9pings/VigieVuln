@@ -48,7 +48,7 @@ test('force-update revalidates cached Maven POMs and preserves them offline',asy
 });
 
 test('force-update and offline are rejected together',()=>{
- const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'-s','.','--offline','--force-update'],{encoding:'utf8'});
+ const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'scan','.','--offline','--force-update'],{encoding:'utf8'});
  assert.equal(r.status,2);assert.match(r.stderr,/requires an online scan/);
 });
 

@@ -9,3 +9,27 @@ test('numeric fixes require installed version at least fixed and ambiguity remai
 test('malformed pages, HTTP failure and changed proxy origin retain uncertainty',async t=>{const dir=fixture(t);providers.configureResourceRoute({proxyUrl:'https://one.example',hosted:true});const fetchResource=async()=>new Response(page(),{headers:{'x-fad-proxy-fetched-at':new Date().toISOString()}});assert.equal((await resolveReleaseEvidence(input,{cacheDir:dir,fetchResource})).status,'not-affected');providers.configureResourceRoute({proxyUrl:'https://two.example',hosted:true});const failed=await resolveReleaseEvidence(input,{cacheDir:dir,fetchResource:async()=>new Response('',{status:503})});assert.equal(failed.status,'unknown');assert.match(failed.evidence.failure,/503/);assert.throws(()=>parsePage(page('(not affected)').replace('<td>source</td>','<td rowspan="2">source</td>'),id),/unsupported/);});
 test('rate limiting retries within shared budget and forced failed refresh persists offline',async t=>{const dir=fixture(t);let calls=0,now=0;const throttle=require('../lib/proxy-throttle').createProxyThrottle({intervalMs:0,maxWaitMs:45000,now:()=>now,sleep:async ms=>{now+=ms;},warn:()=>{},subscribeSkip:()=>null});const fetchResource=async()=>{calls++;return calls===1?new Response('',{status:429,headers:{'retry-after':'3'}}):new Response(page())};const first=await resolveReleaseEvidence(input,{cacheDir:dir,fetchResource,freexianReleaseThrottle:throttle});assert.equal(first.status,'not-affected');assert.equal(calls,2);assert.equal(now,3000);const failed=await resolveReleaseEvidence(input,{cacheDir:dir,forceUpdate:true,fetchResource:async()=>new Response('',{status:503}),freexianReleaseThrottle:throttle});assert.match(failed.evidence.failure,/503/);const offline=await resolveReleaseEvidence(input,{cacheDir:dir,offline:true});assert.equal(offline.status,'not-affected');assert.match(offline.evidence.failure,/503/);});
 test('user abort does not publish successful evidence',async t=>{const dir=fixture(t),controller=new AbortController();controller.abort();await assert.rejects(resolveReleaseEvidence(input,{cacheDir:dir,signal:controller.signal,fetchResource:()=>assert.fail('network')}),{name:'AbortError'});const offline=await resolveReleaseEvidence(input,{cacheDir:dir,offline:true});assert.equal(offline.status,'unknown');});
+test('an adapter deadline during rate limiting does not abort the audit',async t=>{
+ const dir=fixture(t);
+ const timedOut=await resolveReleaseEvidence(input,{cacheDir:dir,fetchResource:async()=>{
+  throw Object.assign(Error('Proxy request aborted while waiting for rate limit.'),{name:'AbortError'});
+ }});
+ assert.equal(timedOut.status,'unknown');
+ assert.match(timedOut.evidence.failure,/rate limit/);
+});
+
+test('Retry-After waits do not consume the next Freexian request timeout',async t=>{
+ const dir=fixture(t),signals=[],messages=[];let time=0;
+ const throttle=require('../lib/proxy-throttle').createProxyThrottle({
+  intervalMs:0,now:()=>time,sleep:async ms=>{time+=ms;await new Promise(r=>setTimeout(r,20));},
+  warn:m=>messages.push(m),subscribeSkip:()=>null
+ });
+ const result=await resolveReleaseEvidence(input,{cacheDir:dir,freexianReleaseTimeoutMs:5,freexianReleaseThrottle:throttle,
+  fetchResource:async(type,params,signal)=>{
+   signals.push(signal);assert.equal(signal.aborted,false);
+   return signals.length===1?new Response(null,{status:429,headers:{'retry-after':'6'}}):new Response(page());
+  }});
+ assert.equal(result.status,'not-affected');
+ assert.equal(signals.length,2);assert.notEqual(signals[0],signals[1]);assert.equal(time,6000);
+ assert.match(messages[0],/freexian.vulnerability.*429.*6s/);
+});

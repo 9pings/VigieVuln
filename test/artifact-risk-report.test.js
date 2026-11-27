@@ -13,6 +13,17 @@ test('linked CVEs and per-CVE metadata remain distinct from distribution advisor
  const compact=renderLinkedCves(cve,'en');assert.match(compact,/CVE-2024-8096/);assert.match(compact,/MEDIUM · 6.5/);assert.doesNotMatch(compact,/<table/);
  const detail=renderRiskEvidence(cve,'en');assert.match(detail,/Upstream CVE/);assert.doesNotMatch(detail,/<table/);assert.match(detail,/class="kv"/);assert.match(detail,/https:\/\/www\.vigievuln\.fr\/cve\/CVE-2024-8096/);assert.match(detail,/https:\/\/nvd\.nist\.gov\/vuln\/detail\/CVE-2024-8096/);assert.match(detail,/original advisory remains/);assert.match(detail,/CWE-295/);assert.match(detail,/example.org\/advisory/);assert.match(renderRiskAttribution(cve,'en'),/associated CVE/);
 });
+test('advisory cell shows six distinct linked CVEs and counts the rest',()=>{
+ const ids=Array.from({length:8},(_,i)=>'CVE-2024-'+(1000+i));
+ const cve={id:'DSA-1',upstream:[...ids.slice(0,6),ids[0]]};
+ assert.doesNotMatch(renderLinkedCves(cve,'fr'),/…/);
+ cve.nvdEvidence={records:ids.map(id=>({id,score:5.5}))};
+ const preview=renderLinkedCves(cve,'fr');
+ assert.equal((preview.match(/<a /g)||[]).length,6);
+ assert.match(preview,/CVE-2024-1005<\/a> <small>\(5\.5\)<\/small> … \(\+2\)/);
+ assert.doesNotMatch(preview,/CVE-2024-1006/);
+ assert.match(renderRiskEvidence(cve,'fr'),/CVE-2024-1007/);
+});
 test('multi-CVE records preserve per-CVE severity, language and secure links',()=>{
  const cve={id:'DLA-1',upstream:['CVE-2024-12345','CVE-2024-56789'],related:['CVE-2024-11111'],nvdEvidence:{records:[{id:'CVE-2024-12345',relationship:'upstream',severity:'HIGH',score:8.1,description:'<script>alert(1)</script>',references:[{url:'javascript:alert(1)'},{url:'https://example.com/?a=1&b=2'}]},{id:'CVE-2024-56789',relationship:'upstream',severity:'LOW',score:2.4}]}};
  const html=renderRiskEvidence(cve,'fr');assert.match(html,/CVE en amont/);assert.match(html,/8\.1/);assert.match(html,/2\.4/);assert.doesNotMatch(html,/&lt;script&gt;/);assert.doesNotMatch(html,/<script>|javascript:/);assert.match(html,/a=1&amp;b=2/);assert.doesNotMatch(renderLinkedCves(cve,'fr'),/CVE-2024-11111/);

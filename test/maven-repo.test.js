@@ -18,11 +18,11 @@ test('hosted Maven Central uses the proxy for preflight and artifact requests; p
 	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher});
 	try {
 		const repos=buildRepoList([{name:'private',url:'https://private.invalid/'}]);
-		assert.equal(repos.length,2);
+		assert.equal(repos.length,3);
 		await reachableRepos(repos,{fetcher});
 		await tryRepos([repos[1]],'org/example/demo/maven-metadata.xml',{fetcher,readBody:true});
 		assert.ok(calls.some(c=>c.url==='https://private.invalid/'));
-		assert.deepEqual(calls.filter(c=>c.url==='https://proxy.invalid/v1/resource').map(c=>c.body.type),['preflight','artifact']);
+		assert.deepEqual(calls.filter(c=>c.url==='https://proxy.invalid/v1/resource').map(c=>c.body.type),['preflight','preflight','artifact']);
 		assert.equal(calls.some(c=>c.url.includes('repo1.maven.org') || c.url.includes('storage-download.googleapis.com')),false);
 	} finally {configureResourceRoute({proxyUrl:null,hosted:false,store:null,health:null,token:null,fetcher:null});}
 });
@@ -56,7 +56,7 @@ test("Maven Bearer tokens survive configuration and are used by preflight and ar
 	};
 	await reachableRepos(repos, { fetcher });
 	await tryRepos(repos, "g/a/maven-metadata.xml", { fetcher });
-	assert.equal(calls.length, 4);
+	assert.equal(calls.length, 6);
 	for (const call of calls) {
 		assert.equal(call.authorization, call.url.startsWith("https://private.invalid/") ? "Bearer test-token" : undefined);
 	}
@@ -85,7 +85,9 @@ test("buildRepoList puts user repos first, then Central ahead of its mirrors, de
 	const centralAt = list.findIndex(r => r.url === MAVEN_CENTRAL.url);
 	assert.ok(centralAt >= 0, "Central present");
 	assert.ok(list.slice(0, centralAt).every(r => !r.central), "a mirror jumped ahead of Central");
-	assert.ok(list.slice(centralAt + 1).every(r => r.mirror), "only mirrors follow Central");
+	assert.ok(list.slice(centralAt + 1,-1).every(r => r.mirror), "mirrors follow Central");
+	assert.equal(list.at(-1).name,'google-android');
+	assert.equal(list.at(-1).mirror,false);
 });
 
 test("buildRepoList strips and stores embedded user:pass auth", () => {

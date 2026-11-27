@@ -130,7 +130,7 @@ test("the WordPress plugin runs the integrity check with a local reference snaps
 	}, _fadSnapshot: { collectedAt: "2026-09-23T10:00:00Z" } });
 	const { deps } = await require("../lib/codecs/composer.codec").collect(root);
 	const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress",
-		resolvedDeps: deps, activeCodecIds: [], wpChecksumsPath: snapshotFile,
+		resolvedDeps: deps, activeCodecIds: [], wpChecksumsPath: snapshotFile, offline: true,
 		requiredProviderIds: ["wordpress-checksums"] });
 	const integrity = result.coverage.find(c => c.capability === "integrity");
 	assert.ok(integrity, "the integrity capability is reported");

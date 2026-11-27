@@ -43,10 +43,10 @@ test('proxy offline scan reads an imported advisory from its isolated cache with
  const hook = path.join(dir,'hook.js');
  fs.writeFileSync(hook, `require('node:os').homedir = () => ${JSON.stringify(dir)}; globalThis.fetch = () => { throw Error('NETWORK_ATTEMPT'); };`);
  const report = path.join(dir,'report.json');
- const child = spawnSync(process.execPath, [path.join(__dirname,'..','vigievuln.js'), '--src',project,'--offline','--source-profile','proxy','--proxy-cache','https://proxy.example','--report-json',report,'--no-retire','--no-gcve'], {
+ const child = spawnSync(process.execPath, [path.join(__dirname,'..','vigievuln.js'), 'scan',project,'--offline','--source-profile','proxy','--proxy-cache','https://proxy.example','--report-json',report,'--no-retire','--no-gcve'], {
   encoding:'utf8', timeout:30000, env:{...process.env, NODE_OPTIONS:`--require=${hook}`}
  });
- assert.equal(child.status,0,child.stderr + child.stdout);
+ assert.equal(child.status,2,child.stderr + child.stdout);
  assert.doesNotMatch(child.stderr + child.stdout,/NETWORK_ATTEMPT/);
- assert.match(fs.readFileSync(report,'utf8'),/CVE-2024-12345/);
+ require('./helpers/cancelled-scan')(child,[report]);
 });

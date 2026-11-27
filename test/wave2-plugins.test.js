@@ -53,12 +53,25 @@ test("PrestaShop reads an installed core version and module/theme versions, whil
 	put(root, "config/config.inc.php", "<?php // marker\n");
 	put(root, "config/settings.inc.php", "<?php define('_PS_VERSION_', '8.2.1');\n");
 	put(root, "install-dev/install_version.php", "<?php define('_PS_INSTALL_VERSION_', '8.2.2');\n");
+	put(root, "composer.lock", {packages:[
+		{name:"prestashop/ps_banner",version:"2.0.3",type:"prestashop-module"},
+		{name:"prestashop/classic",version:"1.7.1",type:"prestashop-theme"}
+	]});
 	put(root, "modules/ps_banner/ps_banner.php", "<?php class Ps_Banner extends PaymentModule { function __construct() { $this->name = 'ps_banner'; $this->version = '2.0.3'; } }");
+	put(root, "admin123/index.php","<?php");
+	put(root, "admin123/themes/default/template/layout.tpl","layout");
+	put(root, "admin123/themes/default/package-lock.json",{lockfileVersion:3,packages:{"":{name:"default",version:"1.7.5"}}});
 	put(root, "themes/classic/config/theme.yml", "name: Classic\nversion: 1.7.0\n");
 	const result = await scan(root, "prestashop");
 	assert.equal(result.inventory.find(c => c.kind === "core").version, "8.2.1");
-	assert.equal(result.inventory.find(c => c.kind === "module").version, "2.0.3");
-	assert.equal(result.inventory.find(c => c.kind === "theme").version, "1.7.0");
+	assert.equal(result.inventory.filter(c=>c.kind==="module").length,1);
+	assert.equal(result.inventory.filter(c=>c.kind==="theme").length,2);
+	const banner = result.inventory.find(c=>c.coord==="prestashop/ps_banner");
+	assert.equal(banner.version, "2.0.3");
+	assert.ok(banner.evidence.some(e=>e.path==="composer.lock"));
+	assert.equal(result.inventory.find(c=>c.name==="Classic").versionConflict.locked,"1.7.1");
+	assert.equal(result.inventory.find(c=>c.name==="Classic").version,"1.7.0");
+	assert.equal(result.inventory.find(c=>c.path==="admin123/themes/default").version,"1.7.5");
 	assert.ok(result.diagnostics.some(d => d.code === "CMS_VERSION_CONFLICT"));
 	assertAdvisoriesNotRun(result, "prestashop");
 }));

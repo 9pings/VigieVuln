@@ -51,7 +51,7 @@ test("an unknown token is a hard error, never silently ignored", () => {
 	assert.match(errors[0], /unknown --disable value "nope"/);
 	assert.match(errors[0], /expected one of: .*nvd/);
 	assert.match(errors[1], /unknown --activate value "alsonope"/);
-	const out = help(["-s", "test/fixtures/polyglot", "-d", "nope"]);
+	const out = help(["scan", "test/fixtures/polyglot", "-d", "nope"]);
 	assert.match(out, /unknown --disable value "nope"/);
 });
 

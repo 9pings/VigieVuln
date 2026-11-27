@@ -26,8 +26,9 @@ test('image CVEs group installation sources and declarations lead the image chap
  payload.projectInfo.imageReferences=[{reference:'example:latest',path:'compose.yaml',line:3,classification:'registry'}];
  for(const render of [generateHtmlReport,generateWordReport]){
   const html=render(payload),cves=detailsById(html,'chimages-cves'),inventory=detailsById(html,'chimages');
-  const headings=['System packages — APT / dpkg','Global installations — npm -g','Applications with a root descriptor — srv/app','Bundled JavaScript (RetireJS)','Other components and sub-dependencies'];
+  const headings=['System packages — APT / dpkg','Global installations — npm -g','Applications with a root descriptor — /srv/app','Bundled JavaScript (RetireJS)','Other components and sub-dependencies'];
   for(let i=0;i<headings.length;i++){assert.ok(cves.includes(headings[i]),headings[i]);if(i)assert.ok(cves.indexOf(headings[i])>cves.indexOf(headings[i-1]));}
+  assert.match(cves,/<code>\/srv\/app\/package\.json<\/code>/);
   assert.equal((cves.match(/class="cve-row/g)||[]).length,5);
   assert.ok(inventory.indexOf('Declared image references')<inventory.indexOf('class="image-totals"'));
   assert.ok(inventory.indexOf('Declared image references')<inventory.indexOf('<th>Components</th>'));
@@ -164,6 +165,26 @@ test('image CVE renderer receives the associated image as context',()=>{
  const {payload}=fixture(),{renderImageCves}=require('../lib/artifacts/report'),seen=[];
  renderImageCves(payload.projectInfo,payload.cveMatches,'en',{renderCveTable:(rows,options)=>{seen.push({rows,options});return '';}});
  assert.equal(seen.length,2);assert.equal(seen[0].options.image,payload.projectInfo.artifacts[0]);assert.equal(seen[1].options.image,payload.projectInfo.artifacts[1]);
+});
+test('merged image keeps the normal CVE lists and appends the original inventory tables',()=>{
+ const {parseDocument,DomUtils}=require('htmlparser2');
+ const {renderImageCves,renderArtifactEvidence}=require('../lib/artifacts/report');
+ const {projectImageCves}=require('../lib/artifacts/cve-view');
+ const {payload}=fixture(),image=payload.projectInfo.artifacts[0],base=payload.cveMatches[0];
+ const info={artifacts:[image]};
+ const raw=[{...base,cve:{...base.cve,id:'DLA-1',upstream:['CVE-2099-1001','CVE-2099-1002']}},
+  {...base,cve:{...base.cve,id:'DLA-2',upstream:[],fixVersion:'3.1'}}];
+ const helpers={renderCveTable:rows=>rows.map(m=>m.cve.id).join(' ')};
+ const normal=parseDocument(renderImageCves(info,projectImageCves(raw),'en',helpers));
+ const inventory=parseDocument(renderArtifactEvidence(info,'en',raw));
+ const merged=parseDocument(renderImageCves(info,raw,'en',{...helpers,merged:true}));
+ const lists=doc=>DomUtils.findAll(n=>n.name==='details' && n.attribs['data-image-source'],doc.children).map(n=>DomUtils.getOuterHTML(n));
+ const tables=doc=>DomUtils.findAll(n=>n.name==='table' && n.attribs.class==='image-inventory',doc.children).map(n=>DomUtils.getOuterHTML(n));
+ assert.ok(lists(normal).length && tables(inventory).length);
+ assert.deepEqual(lists(merged),lists(normal));
+ assert.deepEqual(tables(merged),tables(inventory));
+ assert.match(tables(merged).join(''),/DLA-2/);
+ assert.deepEqual(tables(normal),[]);
 });
 test('mixed image and source reports retain source scope totals and valid executive links',()=>{
  const {payload}=fixture(),source=payload.cveMatches[2];
@@ -338,4 +359,16 @@ test('each image groups component sources and omits sub-dependencies without CVE
   assert.match(one.slice(s),new RegExp(`href="#${artifactAnchor(ids[0])}-cves">CVE-2099-3333`));
   assert.doesNotMatch(two,/CVE-2099-3333|>library<\/code>/);assert.match(one,/unknown-role/);
  }
+});
+
+test('a designated image header uses its archive name and a project scan retains its project header',()=>{
+ const {payload}=fixture();
+ payload.projectInfo.src='(artifact inventory)';
+ payload.projectInfo.artifacts=payload.projectInfo.artifacts.slice(0,1);
+ payload.projectInfo.artifacts[0].metadata={source:'/auditor/exports/release.tar',format:'docker'};
+ const header=()=>generateHtmlReport(payload).match(/<header class="report-header">([\s\S]+?)<\/header>/)[1];
+ assert.match(header(),/Audit target\s*<strong>release\.tar<\/strong>/);
+ assert.doesNotMatch(header(),/auditor\/exports/);
+ payload.projectInfo.src='/project';payload.projectInfo.name='dashboard';
+ assert.match(header(),/Project:\s*<strong>dashboard<\/strong>/);
 });

@@ -21,7 +21,7 @@ body:
     id: command
     attributes:
       label: Command you ran
-      placeholder: "vigievuln -s ./proj --licenses --fail-on high"
+      placeholder: "vigievuln scan ./proj --licenses --fail-on high"
     validations:
       required: true
 

@@ -39,7 +39,132 @@ cannot be built during online preparation. An absent or invalid required invento
 prevents a successful image-cache preparation; other incomplete advisory coverage is
 reported separately.
 
-## Scan a standalone image with `vigievuln image`
+## Collect evidence on a production Linux host
+
+On Alpine x86_64, extract the full `vigievuln-linux-x64-musl-v<VERSION>.tar.gz` archive
+and run `./vigievuln` beside its supplied `lib/` directory.
+On the audited host, supply a filesystem root and the destination of the inventory.
+For a workstation without containers:
+
+```bash
+vigievuln system collect / --output /mnt/audit/workstation.json
+```
+
+The primary input may also be a local Docker/OCI archive, an OCI layout, an
+extracted root, or a standalone VM disk. Use the same command for each input.
+
+```bash
+vigievuln system collect ./server.vhdx --output ./server.json
+vigievuln system collect ./store.tar --output ./store.json
+vigievuln system collect / --images --projects /srv/apps --output /mnt/audit/server.json
+```
+
+The CVE chapter starts with **Host system**. It identifies the disk, partition or
+archive, lists host interpreters and services with their advisory results, and
+shows findings on other system dependencies. Each subsequent section covers one
+project, CMS or framework instance, identified
+by target and project root. HTML and Word reports show paths from the root of the
+inspected filesystem, for example `/var/www/html/composer.lock` or `/usr/local/bin/php`.
+Each section shows findings for direct dependencies,
+then transitive dependencies, with the paths that establish each occurrence.
+Uncertain relationships are labelled explicitly. A project's installed libraries
+stay attributable to that project.
+The final **Images** section appears when local container inspection was requested
+with `--images`, `--docker` or an additional `--image` input.
+
+With `--images`, the collector inspects locally available images referenced in
+the project's Dockerfiles and YAML. An additional `--image` can supply an archive
+for a declaration. The collector can also export a matching image from a local
+Docker Engine. Each additional image has its own ordinary image inventory.
+An unresolved or missing reference remains visible and returns exit code 2.
+
+On the auditor machine, `analyse` uses the project report layout, including
+the maintenance, licenses, remediation and scan-context chapters. CMS modules,
+themes and plugins belong to their CMS instance. A nested module manifest supplies
+ownership and version evidence. Its dependencies appear under that module in the
+instance report. The collapsed project component inventory lists the affected
+occurrences and their advisory IDs. The module inventory lists the extensions
+installed in the CMS. **Outdated** compares their installed versions against
+identified public catalogues and shows how many could be checked. Each update
+identifies the package descriptor when available and the file containing the
+observed installed version when they differ. A missing
+catalogue record or an unverified identity counts as unchecked.
+Collection records Composer ownership evidence and metadata for
+certificates and keys in project directories. The JSON contains paths and
+fingerprints without key material. Earlier inventories can still be replayed.
+
+Use `analyse server.json --lang fr` for the default assessment, including versions
+past active support. Add `--licenses` to assess licenses. Add `--offline` to use only the auditor’s cache
+and supplied advisory snapshots. Missing lifecycle data is recorded in coverage.
+
+On a Docker server, add `--docker` to inventory all images in the local Engine
+cache, including untagged images. `--docker-socket` selects a local Unix socket
+(default `/var/run/docker.sock`). Optionally supply existing Docker save, OCI or
+rootfs archives, OCI layouts or extracted directories with `--image`. For example:
+
+```bash
+vigievuln system collect / --docker --projects /srv/apps --image /srv/exports/app.tar --output /mnt/audit/server.json
+```
+
+The collector reads files locally and does not initialise a user cache, consult
+advisory databases, contact a registry or execute an image. Archive and Engine
+layer extraction use the system temporary directory, serially per input. Allow space for the expanded filesystem and layer processing. A target with a small tmpfs can select another approved temporary directory with `TMPDIR=/mnt/audit/tmp vigievuln system collect ...`. Normal
+completion and handled failures remove temporary files. The JSON is replaced
+atomically in the chosen destination directory. The collecting account needs
+permission to connect to the local Docker socket. An inaccessible Engine or failed image
+acquisition is recorded in the partial inventory and returns exit code 2.
+
+The inventory retains installed package versions, supported binary identities,
+paths to package metadata, and lockfile evidence for Composer, npm, pnpm, Yarn,
+RubyGems, Poetry, uv, PDM, Pipenv, Gradle and NuGet.
+Locked versions are labelled `lockfile`. Dockerfile and YAML declarations keep
+their paths and locations. `--projects` narrows declaration discovery within
+the root. Matching a local tag is recorded as a candidate. A declaration alone
+does not establish which image is running. Virtual system directories and
+standard container storage directories are excluded from the host filesystem walk.
+Unreadable files, active RPM database journals and unsupported components can
+limit coverage.
+
+### Standalone Linux VM disks
+
+The CLI embeds the 7-Zip WebAssembly reader. Tested standalone files include
+RAW/IMG, QCOW2, VHD, VHDX, VMDK and VDI with ext4, directly or inside an MBR or
+GPT partition table. Each readable partition becomes a separate target. Supply a
+self-contained disk. LVM, encrypted volumes, external backing chains, multi-file
+VMDK and non-ext filesystems are outside this reader's supported scope. A mixed
+disk can produce a partial inventory (exit 2). If no readable partition is
+found, collection fails and preserves any existing output.
+
+Decoding uses the system temporary directory. Set `TMPDIR` to a writable
+filesystem with sufficient space. The reader accesses raw partitions by offset, stages partitions from wrapped
+disks when necessary, extracts regular files, skips links and special files, and limits expansion to 20 GiB cumulatively
+or 80% of the initially available space, whichever is smaller. It limits the
+reader process to 15 minutes per disk and omits files over 512 MiB with a coverage
+warning. A directly readable filesystem root avoids disk extraction.
+The distribution includes the reader's notices. [7z-wasm source](https://github.com/use-strict/7z-wasm)
+
+### Auditor-side report
+
+Transfer the JSON to the auditor and run the existing inventory assessment
+there. This step consults the auditor's configured sources and writes the reports.
+
+```bash
+vigievuln system scan ./server.json --report-output ./server-report
+```
+
+Use `--offline` for auditor-side replay with a prepared cache. CMS-specific
+advisories use cached snapshots or explicit local feeds such as
+`--wordfence-feed <file>` and `--prestashop-advisories <file>`. A missing source
+is recorded in coverage. WordPress core file integrity requires file contents
+and is outside the scope of inventory replay.
+
+The existing `vigievuln system scan --inventory ./server.json` accepts the same report and offline options.
+
+For a trusted inventory above the default 128 MiB input limit, set
+`maxSnapshotBytes` in a JSON file and pass it with `image --limits <file>`
+on the auditor's machine.
+
+## Scan a standalone image with `vigievuln system scan`
 
 Use the dedicated command for a Docker/OCI archive, registry reference, root
 filesystem or publisher SBOM. It scans the supplied input directly, without
@@ -47,17 +172,17 @@ requiring a project scan or `--images`.
 
 ```bash
 # Docker save, OCI archive, docker export/rootfs tar, OCI layout or rootfs directory
-vigievuln image ./image.tar --offline
-vigievuln image ./rootfs --offline
+vigievuln system scan ./image.tar --offline
+vigievuln system scan ./rootfs --offline
 
 # Native registry HTTP client; no Docker daemon or credential helper
-vigievuln image alpine:3.20 --registry --platform linux/amd64
+vigievuln system scan alpine:3.20 --registry --platform linux/amd64
 
 # Try the publisher inventory first; fall back to image layers if unusable
-vigievuln image alpine:3.20 --registry --platform linux/amd64 --prefer-sbom
+vigievuln system scan alpine:3.20 --registry --platform linux/amd64 --prefer-sbom
 
 # An existing publisher document
-vigievuln image ./publisher.spdx.json --sbom --offline
+vigievuln system scan ./publisher.spdx.json --sbom --offline
 ```
 
 Without `--platform`, all image platforms available in the input are inspected
@@ -78,7 +203,7 @@ Use `--definitions <directory>` to include Dockerfile, Containerfile and YAML
 image declarations in the report and exported inventory:
 
 ```bash
-vigievuln image ./image.tar --offline --definitions ./source
+vigievuln system scan ./image.tar --offline --definitions ./source
 ```
 
 A declaration is associated with an image only when it explicitly names an
@@ -151,13 +276,13 @@ Use the same default local cache for the scan and cache export:
 
 ```bash
 # Connected machine: inventory exact content and prepare vulnerability data
-vigievuln image alpine:3.20 --registry --platform linux/amd64 \
+vigievuln system scan alpine:3.20 --registry --platform linux/amd64 \
   --export-inventory alpine.inventory.json --report-output online-report
 vigievuln cache export image-cache.tar.gz
 
 # Transfer the inventory and cache archive to the disconnected machine
 vigievuln cache import image-cache.tar.gz
-vigievuln image alpine.inventory.json --inventory --offline \
+vigievuln system scan alpine.inventory.json --inventory --offline \
   --report-output offline-report --lang fr
 ```
 
@@ -199,13 +324,13 @@ treated as proxy-confirmed evidence. The explicit registry acquisition remains a
 separate access to the OCI registry. `--proxy` configures a forward network proxy.
 
 ```bash
-vigievuln image ./image.tar --proxy-cache https://scanner.example \
+vigievuln system scan ./image.tar --proxy-cache https://scanner.example \
   --source-profile proxy --cache-dir ./client-cache
 vigievuln cache export image-cache.tar.gz --proxy-cache https://scanner.example \
   --source-profile proxy --cache-dir ./client-cache
 vigievuln cache import image-cache.tar.gz --proxy-cache https://scanner.example \
   --source-profile proxy --cache-dir ./airgap-cache
-vigievuln image ./image.tar --offline --proxy-cache https://scanner.example \
+vigievuln system scan ./image.tar --offline --proxy-cache https://scanner.example \
   --source-profile proxy --cache-dir ./airgap-cache
 ```
 
@@ -290,8 +415,8 @@ of CVEs. Reacquire inventories made before this collector to obtain binary evide
 
 ```bash
 vigievuln scan ./code --images --image-retire
-vigievuln image nginx:stable-alpine --registry --image-retire
-vigievuln image ./rootfs --image-retire --offline
+vigievuln system scan nginx:stable-alpine --registry --image-retire
+vigievuln system scan ./rootfs --image-retire --offline
 ```
 
 `--image-retire` is off by default and independent of the source-tree RetireJS
@@ -357,7 +482,7 @@ assumed to provide a complete distribution corpus; the report marks this
 limitation. `--offline` reads only existing caches and never refreshes sources.
 The `eu` and `us` source profiles exclude sources outside their region, and a
 source excluded by a profile cannot be used through a different source name.
-Prepare and transfer caches ahead of an air-gapped scan; missing data is reported.
+Prepare the auditor cache against the same inventory before offline replay, including the distribution release and language ecosystems found on the target. A Debian snapshot cannot cover Alpine APK packages. See the cache preparation example above.
 
 EUVD and CERT-FR supply contextual information for identifiers they actually
 cite. Their identifier-level references, descriptions or scores alone do not
@@ -372,8 +497,8 @@ distribution's vulnerability verdict. EUVD detail retrieval runs even when NVD m
 Explicit OS data preparation/import is also available:
 
 ```bash
-vigievuln image --sync-advisories --distribution debian:12
-vigievuln image --import-advisories ./advisories.zip \
+vigievuln system scan --sync-advisories --distribution debian:12
+vigievuln system scan --import-advisories ./advisories.zip \
   --distribution debian:12 --snapshot-complete --offline
 ```
 
@@ -454,7 +579,7 @@ with an advisory or CVE. Image warnings are grouped separately from project
 warnings; CVE-record enrichment has one shared summary.
 
 ```bash
-vigievuln image ./image.tar --offline --lang fr \
+vigievuln system scan ./image.tar --offline --lang fr \
   --fail-on high --fail-on-incomplete inventory,advisories,sources
 ```
 

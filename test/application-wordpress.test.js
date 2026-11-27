@@ -23,7 +23,7 @@ test("Wordfence snapshot only matches an explicitly declared public plugin ident
 	const feedFile = path.join(temp, "feed.json");
 	fs.writeFileSync(feedFile, JSON.stringify(WORD_FENCE_FEED));
 	try {
-		const options = { plugins: [wordpress], selection: "wordpress", wordfenceFeedPath: feedFile };
+		const options = { plugins: [wordpress], selection: "wordpress", offline: true, wordfenceFeedPath: feedFile };
 		const unverified = await runApplicationPlugins(root, options);
 		assert.equal(unverified.findings.length, 0);
 		const plugin = unverified.inventory.find(c => c.kind === "plugin");
@@ -45,7 +45,7 @@ test("Wordfence snapshot only matches an explicitly declared public plugin ident
 
 test("third-party Update URI marks a WordPress plugin private even when a public slug is declared", async () => {
 	const root = path.join(__dirname, "fixtures", "wordpress-custom");
-	const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress",
+	const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress", offline: true,
 		publicComponents: ["site/wp-content/plugins/acme=acme"] });
 	const plugin = result.inventory.find(c => c.kind === "plugin");
 	assert.equal(plugin.visibility, "private");
@@ -59,7 +59,7 @@ test("private WordPress plugin remains distinct from the public catalogue and ow
 	const root = path.join(__dirname, "fixtures", "wordpress-custom");
 	const { deps } = await composer.collect(root);
 	const result = await runApplicationPlugins(root, {
-		plugins: [wordpress], selection: "wordpress", resolvedDeps: deps, activeCodecIds: ["composer"],
+		plugins: [wordpress], selection: "wordpress", offline: true, resolvedDeps: deps, activeCodecIds: ["composer"],
 		privateComponentPaths: ["./site/wp-content/plugins/acme"],
 	});
 	assert.deepEqual(result.applications.map(a => a.id), ["wordpress:site"]);
@@ -79,8 +79,8 @@ test("private WordPress plugin remains distinct from the public catalogue and ow
 	assert.deepEqual(findings[0].ownerComponentIds, [plugin.id]);
 	assert.equal(findings[0].applicationRelation, "indirect");
 	assert.equal(findings[0].dep.version, "1.0.0");
-	assert.equal(result.coverage.find(c => c.capability === "advisories").execution, "not-run");
-	assert.equal(result.coverage.find(c => c.capability === "advisories").expected, result.inventory.length);
+	assert.equal(result.coverage.find(c => c.occurrenceId === plugin.id && c.capability === "advisories").execution, "not-run");
+	assert.equal(result.coverage.find(c => c.occurrenceId === plugin.id && c.capability === "advisories").expected, 1);
 });
 
 test("Bedrock maps web/wp core and web/app private plugins to one application", async () => {
@@ -94,7 +94,7 @@ test("Bedrock maps web/wp core and web/app private plugins to one application", 
 		fs.writeFileSync(path.join(site, "web/wp/wp-admin/index.php"), '<?php');
 		fs.writeFileSync(path.join(site, "web/wp/wp-load.php"), '<?php');
 		fs.writeFileSync(path.join(site, "web/app/plugins/acme/acme.php"), '<?php /* Plugin Name: Acme\n Version: 1.2.0 */');
-		const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress",
+		const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress", offline: true,
 			privateComponentPaths: ["site/web/app/plugins/acme"] });
 		assert.deepEqual(result.applications.map(a => [a.id, a.layout]), [["wordpress:site", "bedrock"]]);
 		assert.equal(result.inventory.find(c => c.kind === "core").version, "6.6.2");
@@ -114,7 +114,7 @@ test("WordPress inventories drop-ins and flags a missing parent theme", async ()
 		fs.writeFileSync(path.join(site, "wp-content/object-cache.php"), '<?php /* Plugin Name: Cache Layer\n Version: 1.0 */');
 		fs.writeFileSync(path.join(site, "wp-content/themes/child/style.css"), '/* Theme Name: Child\n Version: 1.0\n Template: absent-parent */');
 		fs.writeFileSync(path.join(site, "wp-content/mu-plugins/loader/loader.php"), '<?php /* Plugin Name: Loader\n Version: 1.0 */');
-		const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress" });
+		const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress", offline: true });
 		assert.ok(result.inventory.some(c => c.kind === "drop-in" && c.name === "Cache Layer"));
 		assert.ok(result.inventory.some(c => c.kind === "mu-plugin" && c.name === "Loader" && c.activation === "unknown"));
 		assert.ok(result.diagnostics.some(d => d.code === "CMS_PARENT_MISSING"));

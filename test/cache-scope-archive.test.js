@@ -58,7 +58,7 @@ test('explicit --no-osv-db overrides a configured group even with the EU source 
  const project=path.join(dir,'project');fs.mkdirSync(project);
  fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0'}));
  const r=spawnSync(process.execPath,['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',project,'--config',config,'--offline','--source-profile','eu','--no-osv-db','-d','report'],{encoding:'utf8',env:{PATH:process.env.PATH,FORCE_COLOR:'0'},timeout:30000});
- assert.equal(r.status,0,r.stderr+r.stdout);
+ assert.equal(r.status,2,r.stderr+r.stdout);
 });
 test('cache transfer uses explicitly selected proxy-scoped cache root',t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-custom-scope-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));

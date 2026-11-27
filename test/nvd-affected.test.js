@@ -26,9 +26,10 @@ test('real native package identity and separate Jackson release branches survive
  assert.equal(match(jackson,'tools.jackson.core:jackson-core','3.0.0').length,1);
  assert.equal(match(jackson,'tools.jackson.core:jackson-core','3.1.0').length,0);
 });
-test('platform restrictions, rejected records and provider conflicts cannot become findings',()=>{
+test('platform prerequisites are assumed while rejected records and conflicting versions remain excluded',()=>{
+ const windows=structuredClone(raw);windows.affected[0].affectedData[0].platforms=['Windows'];
+ assert.equal(match(windows,'ch.qos.logback:logback-core','1.2.2').length,1);
  for(const change of [
-  r=>r.affected[0].affectedData[0].platforms=['Windows'],
   r=>r.vulnStatus='Rejected',
   r=>{const other=structuredClone(r.affected[0]);other.source='another-cna';other.affectedData[0].versions=[{version:'1.2.2',status:'unaffected',versionType:'maven'}];r.affected.push(other);}
  ]){const r=structuredClone(raw);change(r);assert.equal(match(r,'ch.qos.logback:logback-core','1.2.2').length,0);}
