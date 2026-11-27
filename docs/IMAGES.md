@@ -708,10 +708,14 @@ A Go binary whose `(devel)` main module cannot be given a verified version is li
 the scan notices: advisories for the application itself are then not assessed, while its
 embedded module dependencies and standard library are.
 
-Go binaries with a `(devel)` main module can acquire a version when embedded clean
-VCS metadata, the image's declared source/version and the module proxy record
-agree on the exact revision and repository. Only the necessary standard OCI
-labels are retained. Resolution is cached and exportable; offline assessment uses
+Go binaries with a `(devel)` main module acquire a version when the module proxy
+records that a proposed version was cut from the exact revision embedded in the
+binary, itself built from an unmodified checkout. The version is proposed by the
+image's declared source and version labels (`1.23.8` and `v1.23.8` are the same
+version) or by the build's own linker flag (`-ldflags -X main.Version=1.23.8`), which
+also covers a module served from a vanity path (`code.gitea.io/gitea`) and a binary
+on a plain filesystem. Neither a label nor a linker flag binds a version without that
+proof. Only the necessary standard OCI labels are retained. Resolution is cached and exportable; offline assessment uses
 that evidence without executing the binary or contacting a service. Conflicting
 metadata does not produce an identity. A cached proof reused after a failed
 refresh is explicitly marked stale.

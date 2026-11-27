@@ -24,3 +24,55 @@ test('offline image assessment matches a versioned Go main module after cache tr
 });
 test('online lookup failure preserves cached version as explicitly stale, including offline replay',async t=>{const cacheDir=dir(t),target=fixture(),at=Date.now()-10000;await resolveGoMainIdentities(target,{cacheDir,lookup:async()=>({info:info(),observedAt:at})});const out=await resolveGoMainIdentities(target,{cacheDir,lookup:async()=>{throw Error('temporary outage')}});assert.equal(out.deps.length,1);assert.equal(out.deps[0].binaryEvidence.observedAt,at);assert.equal(out.deps[0].binaryEvidence.stale,true);assert.equal(out.coverage.execution,'partial');assert.match(out.warnings[0].message,/refresh failed.*temporary outage/);const replay=await resolveGoMainIdentities(target,{cacheDir,offline:true});assert.equal(replay.deps[0].binaryEvidence.stale,true);assert.equal(replay.coverage.execution,'partial');});
 test('fleet proxy observation preserves its actual timestamp and stale status',async t=>{const providers=require('../lib/providers'),cacheDir=dir(t),at=Date.now()-60000;providers.configureResourceRoute({proxyUrl:'https://fleet.example',hosted:false,store:null,hostedStore:null});try{let calls=0;const out=await resolveGoMainIdentities(fixture(),{cacheDir,fetcher:async(url,opts)=>{calls++;assert.equal(url,'https://fleet.example/v1/resource');assert.equal(JSON.parse(opts.body).type,'module-info');return Response.json(info(),{headers:{'x-fad-proxy-fetched-at':new Date(at).toISOString(),'x-fad-proxy':'stale'}});}});assert.equal(calls,1);assert.equal(out.deps[0].binaryEvidence.observedAt,at);assert.equal(out.deps[0].binaryEvidence.stale,true);assert.equal(out.coverage.execution,'partial');assert.match(out.warnings[0].message,/stale/);}finally{providers.configureResourceRoute({proxyUrl:null,hosted:false,store:null,hostedStore:null});}});
+
+// Gitea 1.23.8 as published: vanity module path, version label without "v", version in the linker flags.
+function vanity(){
+ const x=fixture(),rev2='cccd54999a6c3b9f2573d2ba20d83d7c4cac77c3';
+ x.metadata.imageConfig.labels={'org.opencontainers.image.source':'https://github.com/go-gitea/gitea','org.opencontainers.image.version':'1.23.8'};
+ const go=x.deps[0].binaryMetadata.go;go.modules[0].path='code.gitea.io/gitea';
+ go.settings={...go.settings,'vcs.revision':rev2,'-ldflags':'"-s -w  -X \\"main.MakeVersion=GNU Make 4.4.1\\" -X \\"main.Version=1.23.8\\" -X \\"main.Tags=bindata sqlite\\""'};
+ return {target:x,info:{Version:'v1.23.8',Time:'2025-05-12T22:01:45Z',Origin:{VCS:'git',URL:'https://github.com/go-gitea/gitea',Hash:rev2,Ref:'refs/tags/v1.23.8'}}};
+}
+test('linker flags propose the application version and exclude the toolchain versions',()=>{
+ const {linkerVersions,moduleVersion}=require('../lib/artifacts/go-main-identity');
+ assert.deepEqual(linkerVersions(vanity().target.deps[0].binaryMetadata.go.settings),['v1.23.8']);
+ assert.deepEqual(linkerVersions({'-ldflags':'-X main.GoVersion=1.22.0 -X github.com/a/b/version.Version=v2.1.0 -X main.gitVersion=v2.1.0 -X main.version=dev'}),['v2.1.0']);
+ assert.deepEqual(linkerVersions({}),[]);
+ assert.equal(moduleVersion('1.23.8'),'v1.23.8');assert.equal(moduleVersion('latest'),null);
+});
+test('a vanity-path module is versioned from its linker flag once the proxy records the same revision',async t=>{
+ const cacheDir=dir(t),{target,info:i}=vanity();const asked=[];
+ const out=await resolveGoMainIdentities(target,{cacheDir,lookup:async(m,v)=>{asked.push(`${m}@${v}`);return {info:i,observedAt:1700000000000};}});
+ assert.deepEqual(asked,['code.gitea.io/gitea@v1.23.8']);
+ assert.equal(out.deps.length,1);assert.equal(out.deps[0].name,'code.gitea.io/gitea');assert.equal(out.deps[0].version,'v1.23.8');
+ assert.equal(out.deps[0].binaryEvidence.versionProposedBy,'linker-flag');assert.deepEqual(out.warnings,[]);
+ // The same binary on a plain filesystem, without any image label.
+ const bare=vanity().target;bare.metadata={};
+ assert.equal((await resolveGoMainIdentities(bare,{cacheDir:dir(t),lookup:async()=>i})).deps.length,1);
+ const offline=await resolveGoMainIdentities(vanity().target,{cacheDir,offline:true,lookup:()=>{throw Error('network used');}});
+ assert.equal(offline.deps.length,1);
+});
+test('a linker flag alone never binds a version',async t=>{
+ const cacheDir=dir(t);
+ // Another revision than the tagged one: a fork or a later commit carrying the same version string.
+ const moved=vanity();moved.info.Origin.Hash='f'.repeat(40);
+ let out=await resolveGoMainIdentities(moved.target,{cacheDir,lookup:async()=>moved.info});
+ assert.equal(out.deps.length,0);assert.equal(out.coverage.result,'conflicting-evidence');
+ // A version the proxy does not know is a wrong proposal, not an unavailable source.
+ out=await resolveGoMainIdentities(vanity().target,{cacheDir,lookup:async()=>{throw Object.assign(Error('Go proxy HTTP 404'),{status:404});}});
+ assert.equal(out.deps.length,0);assert.deepEqual(out.warnings,[]);
+ // A real outage is reported.
+ out=await resolveGoMainIdentities(vanity().target,{cacheDir,lookup:async()=>{throw Object.assign(Error('Go proxy HTTP 503'),{status:503});}});
+ assert.equal(out.deps.length,0);assert.equal(out.coverage.result,'unavailable');assert.equal(out.warnings.length,1);
+ // Modified or unstamped checkouts offer nothing to verify.
+ for(const change of [s=>s['vcs.modified']='true',s=>{delete s.vcs;delete s['vcs.revision'];}]){
+  const x=vanity();change(x.target.deps[0].binaryMetadata.go.settings);
+  out=await resolveGoMainIdentities(x.target,{cacheDir,lookup:()=>{throw Error('must not be asked');}});
+  assert.equal(out.deps.length,0);assert.equal(out.coverage.result,'no-candidate');assert.deepEqual(out.warnings,[]);
+ }
+});
+test('a version label without the v prefix is the same module version',async t=>{
+ const x=fixture();x.metadata.imageConfig.labels['org.opencontainers.image.version']='2.11.0';
+ const out=await resolveGoMainIdentities(x,{cacheDir:dir(t),lookup:async()=>info()});
+ assert.equal(out.deps.length,1);assert.equal(out.deps[0].version,'v2.11.0');assert.equal(out.deps[0].binaryEvidence.versionProposedBy,'oci-label');
+});
