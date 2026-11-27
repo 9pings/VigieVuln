@@ -291,3 +291,54 @@ test('npm representative version uses full SemVer precedence and retains all obs
   assert.equal(dep.version,'1.0.0');assert.deepEqual([...dep.versions].sort(),['1.0.0','1.0.0-rc.1']);
  } finally {fs.rmSync(temp,{recursive:true,force:true});}
 });
+
+test("workspace members are covered by the root lockfile; only genuinely lockless manifests warn", () => {
+	const fs = require("fs"), os = require("os");
+	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "vv-workspace-"));
+	const write = (rel, value) => {
+		const file = path.join(temp, rel);
+		fs.mkdirSync(path.dirname(file), { recursive: true });
+		fs.writeFileSync(file, typeof value === "string" ? value : JSON.stringify(value));
+	};
+	try {
+		// pnpm: importers name the members.
+		write("pnpm/package.json", { name: "pnpm-root", private: true });
+		write("pnpm/pnpm-lock.yaml", [
+			"lockfileVersion: '6.0'",
+			"importers:",
+			"  .: {}",
+			"  packages/a:",
+			"    dependencies:",
+			"      left-pad:",
+			"        specifier: ^1.3.0",
+			"        version: 1.3.0",
+			"packages:",
+			"  /left-pad@1.3.0:",
+			"    resolution: {integrity: sha512-x}",
+			"",
+		].join("\n"));
+		write("pnpm/packages/a/package.json", { name: "a", dependencies: { "left-pad": "^1.3.0" } });
+		write("pnpm/templates/t/package.json", { name: "t", dependencies: { "left-pad": "^1.0.0" } });
+		// npm: member keys in the v3 `packages` map.
+		write("npm/package.json", { name: "npm-root", workspaces: ["packages/*"] });
+		write("npm/package-lock.json", { name: "npm-root", lockfileVersion: 3, packages: {
+			"": { name: "npm-root", workspaces: ["packages/*"] },
+			"packages/b": { name: "b", version: "1.0.0", dependencies: { "left-pad": "^1.3.0" } },
+			"node_modules/b": { resolved: "packages/b", link: true },
+			"node_modules/left-pad": { version: "1.3.0" },
+		} });
+		write("npm/packages/b/package.json", { name: "b", dependencies: { "left-pad": "^1.3.0" } });
+		// Yarn: yarn.lock records no member path, the root manifest's globs do.
+		write("yarn/package.json", { name: "yarn-root", private: true, workspaces: { packages: ["apps/*", "!apps/skipped"] } });
+		write("yarn/yarn.lock", "# yarn lockfile v1\n\nleft-pad@^1.3.0:\n  version \"1.3.0\"\n  resolved \"https://registry.yarnpkg.com/left-pad/-/left-pad-1.3.0.tgz\"\n");
+		write("yarn/apps/c/package.json", { name: "c", dependencies: { "left-pad": "^1.3.0" } });
+		write("yarn/apps/skipped/package.json", { name: "skipped", dependencies: { "left-pad": "^1.3.0" } });
+		// A marker manifest declares nothing a lockfile would resolve.
+		write("pnpm/packages/a/types/package.json", { "//": "typescript marker" });
+
+		const map = collectNpmDeps(temp);
+		const warned = map.warnings.filter(w => w.type === "no-lockfile").map(w => path.relative(temp, w.manifestPath).split(path.sep).join("/")).sort();
+		assert.deepEqual(warned, ["pnpm/templates/t/package.json", "yarn/apps/skipped/package.json"]);
+		assert.equal(map.get("npm:left-pad").version, "1.3.0");
+	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+});

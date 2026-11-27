@@ -386,7 +386,21 @@ test('different Maven artifact classifiers cannot silently collapse without cove
  const warnings=[];const found=await resolveTransitiveDeps([{groupId:'g',artifactId:'root',version:'1',scope:'compile'}],{
   fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>warnings.push(x),
  });
- assert.equal(found.get('g:lib')?.version,'1');assert.deepEqual(warnings,[{groupId:'g',artifactId:'lib'}]);
+ assert.equal(found.get('g:lib')?.version,'1');assert.deepEqual(warnings,[{groupId:'g',artifactId:'lib',versions:['1','2']}]);
+});
+
+test('a classifier variant at the retained version shares its POM and advisory identity: no coverage warning', async () => {
+ const root=`<project><groupId>g</groupId><artifactId>root</artifactId><version>1</version><dependencies>
+ <dependency><groupId>g</groupId><artifactId>lib</artifactId><version>1</version></dependency>
+ <dependency><groupId>g</groupId><artifactId>lib</artifactId><version>1</version><classifier>tests</classifier></dependency>
+ <dependency><groupId>g</groupId><artifactId>lib</artifactId><version>1</version><type>test-jar</type></dependency>
+ </dependencies></project>`;
+ const lib=`<project><groupId>g</groupId><artifactId>lib</artifactId><version>1</version></project>`;
+ const responses={ [`${MC}/g/root/1/root-1.pom`]:root,[`${MC}/g/lib/1/lib-1.pom`]:lib };
+ const warnings=[];const found=await resolveTransitiveDeps([{groupId:'g',artifactId:'root',version:'1',scope:'compile'}],{
+  fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>warnings.push(x),
+ });
+ assert.equal(found.get('g:lib')?.version,'1');assert.deepEqual(warnings,[]);
 });
 
 test('Gradle Android jar/aar packaging is one module identity, without suppressing actual classifier collisions', async()=>{
@@ -404,9 +418,14 @@ test('Gradle Android jar/aar packaging is one module identity, without suppressi
  const collected=new Map([['g:root',{ecosystem:'maven',ecosystemType:'gradle',groupId:'g',artifactId:'root',version:'1',versions:['1'],scope:'compile'}]]);
  await require('../lib/cve-match').expandWithTransitives(collected,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
  assert.equal(collected.get('g:child').version,'2');assert.deepEqual(gradleWarnings,[]);
+ // Same version: the aar and the jar share one POM, in Maven mode too.
  await resolveTransitiveDeps(roots,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>mavenWarnings.push(x)});
- assert.deepEqual(mavenWarnings,[{groupId:'g',artifactId:'android'}]);
- responses[`${MC_URL}/g/root/1/root-1.pom`]=root.replace('<type>aar</type>','<classifier>tests</classifier>');
+ assert.deepEqual(mavenWarnings,[]);
+ // A variant resolving to another version is an actual collision in both modes.
+ responses[`${MC_URL}/g/root/1/root-1.pom`]=root.replace('<version>1</version><type>aar</type>','<version>3</version><type>aar</type>');
+ await resolveTransitiveDeps(roots,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>mavenWarnings.push(x)});
+ assert.deepEqual(mavenWarnings,[{groupId:'g',artifactId:'android',versions:['1','3']}]);
+ responses[`${MC_URL}/g/root/1/root-1.pom`]=root.replace('<version>1</version><type>aar</type>','<version>3</version><classifier>tests</classifier>');
  await resolveTransitiveDeps(roots,{gradleComponents:true,fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
- assert.deepEqual(gradleWarnings,[{groupId:'g',artifactId:'android'}]);
+ assert.deepEqual(gradleWarnings,[{groupId:'g',artifactId:'android',versions:['1','3']}]);
 });
