@@ -172,3 +172,38 @@ test("the merged rating is independent of source arrival order", () => {
 	for (const r of ratings) assert.deepEqual(r, ratings[0]);
 	assert.equal(ratings[0].severity, "CRITICAL");
 });
+
+test("a distribution's per-CVE record and the CVE itself are one finding", () => {
+	const dep = { coordKey: "system:deb:libc-bin", version: "2.36-9+deb12u3" };
+	const osv = { dep, source: "osv", cve: { id: "DEBIAN-CVE-2023-6246", sourceAdvisoryId: "DEBIAN-CVE-2023-6246", upstream: ["CVE-2023-6246"], severity: "HIGH", score: 7.8,
+		distributionUrgency: { source: "Debian", release: "Debian:12", value: "not yet assigned" } } };
+	const tracker = { dep, source: "freexian-tracker", cve: { id: "CVE-2023-6246", severity: "HIGH", score: 7.8 } };
+	for (const order of [[osv, tracker], [tracker, osv]]) {
+		const merged = mergeBySource([order[0]], [order[1]]);
+		assert.equal(merged.length, 1);
+		assert.equal(merged[0].cve.id, "CVE-2023-6246", "the CVE id is the one displayed");
+		assert.ok(merged[0].cve.aliases.includes("DEBIAN-CVE-2023-6246"));
+		assert.equal(merged[0].source, "freexian-tracker+osv");
+	}
+	// Both lanes arriving in one list (as the system scan builds it) fold as well.
+	assert.equal(mergeBySource([osv, tracker], []).length, 1);
+	// A security announcement covering several CVEs (DSA, RLSA) is not a per-CVE record.
+	const dsa = { dep, source: "osv", cve: { id: "DSA-5611-1", upstream: ["CVE-2023-6246", "CVE-2023-6779"] } };
+	assert.equal(mergeBySource([dsa], [tracker]).length, 2);
+});
+
+test("a distribution announcement whose CVEs are all listed folds into them; a partly covered one is kept", () => {
+	const { foldAnnouncements } = require("../lib/merge-sources");
+	const dep = { coordKey: "system:deb:nginx", version: "1.22.1-9" }, other = { coordKey: "system:deb:curl", version: "7.88.1-10" };
+	const cve = (id, d = dep) => ({ dep: d, source: "osv", cve: { id } });
+	const dsa = { dep, source: "osv", cve: { id: "DSA-6278-1", upstream: ["CVE-2026-0001", "CVE-2026-0002"], severity: "UNKNOWN" } };
+	const partial = { dep, source: "osv", cve: { id: "DLA-4918-1", upstream: ["CVE-2026-0001", "CVE-2026-9999"] } };
+	const elsewhere = { dep: other, source: "osv", cve: { id: "DSA-6278-1", upstream: ["CVE-2026-0001"] } };
+	const rlsa = { dep, source: "osv", cve: { id: "RLSA-2026:1", upstream: [] } };
+	const first = cve("CVE-2026-0001"), second = cve("CVE-2026-0002");
+	const kept = foldAnnouncements([first, second, dsa, partial, elsewhere, rlsa]);
+	assert.deepEqual(kept.map(m => m.cve.id), ["CVE-2026-0001", "CVE-2026-0002", "DLA-4918-1", "DSA-6278-1", "RLSA-2026:1"]);
+	assert.equal(kept[3].dep, other, "the same announcement on another package is judged on that package");
+	assert.deepEqual(first.cve.related, ["DSA-6278-1"]);
+	assert.deepEqual(second.cve.related, ["DSA-6278-1"]);
+});

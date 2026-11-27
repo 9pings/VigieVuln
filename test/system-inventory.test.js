@@ -108,7 +108,7 @@ test('OSV upstream CVE relationships survive offline assessment and JSON export'
  const distribution={id:'debian',versionId:'12'};
  const records=[{id:'DEBIAN-CVE-2009-1300',upstream:['CVE-2009-1300','CVE-2024-12345'],aliases:[],affected:[{package:{ecosystem:'Debian:12',name:'apt'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-1'}]}]}]}];
  const assessed=await assessSystemInventory({distribution,packages:[{name:'apt',sourceName:'apt',version:'1-1',sourceVersion:'1-1'}]},{records,complete:true});
- assert.equal(assessed.matches.length,1);const cve=assessed.matches[0].cve;assert.equal(cve.id,'DEBIAN-CVE-2009-1300');assert.deepEqual(cve.aliases,[]);assert.deepEqual(cve.upstream,['CVE-2009-1300','CVE-2024-12345']);
+ assert.equal(assessed.matches.length,1);const cve=assessed.matches[0].cve;assert.equal(cve.id,'CVE-2009-1300','a per-CVE distribution record is shown under its CVE id');assert.equal(cve.sourceAdvisoryId,'DEBIAN-CVE-2009-1300');assert.deepEqual(cve.aliases,[]);assert.deepEqual(cve.upstream,['CVE-2009-1300','CVE-2024-12345']);
  const result=require('../lib/json-export').buildFindings({cveMatches:assessed.matches});assert.deepEqual(result.cve[0].upstream,cve.upstream);
 });
 test('fleet proxy serves and caches typed OSV distro archive without direct client access',async t=>{
