@@ -51,12 +51,19 @@ test("maven buildRepoList still appends Central after the user repos, and dedups
 	const repos = buildRepoList([{ name: "nexus", url: "https://nexus/m2" }], [{ url: "https://nexus/m2" }]);
 	const centralAt = repos.findIndex(r => r.name === "central");
 	assert.ok(centralAt > 0, "Central sits behind the user repos");
-	assert.ok(repos.slice(centralAt + 1).every(r => r.mirror), "only mirrors follow Central");
+	// After Central: the Central mirrors, then the Google Android repository as the last-resort
+	// fallback (it hosts artifacts Central does not, so it is neither a mirror nor an authority).
+	const after = repos.slice(centralAt + 1);
+	assert.ok(after.slice(0, -1).every(r => r.mirror), "only mirrors sit between Central and the fallback");
+	assert.strictEqual(after.at(-1).name, "google-android");
+	assert.strictEqual(after.at(-1).mirror, false);
+	assert.strictEqual(after.at(-1).fallback, true);
 	assert.strictEqual(repos.filter(r => r.name === "nexus").length, 1);
 });
 
 test("mirrors can be turned off, which restores the pre-mirror list exactly", () => {
 	const repos = buildRepoList([{ name: "nexus", url: "https://nexus/m2" }], [], { mirrors: false });
-	assert.strictEqual(repos[repos.length - 1].name, "central");
+	// No mirror at all; the Google Android fallback is not a mirror and stays after Central.
+	assert.deepStrictEqual(repos.map(r => r.name), ["nexus", "central", "google-android"]);
 	assert.ok(repos.every(r => !r.mirror));
 });

@@ -146,9 +146,12 @@ for (const mode of ["osv-503", "osv-truncated", "unreachable"]) {
 		const before = store.getQuery({ source: 'osv', ecosystem: 'Maven', name: key, version: '2.0.18' });
 		const osvFlags = flags.filter(f => f !== "--no-osv");
 		const online = s.scan(mode, [], osvFlags);
+		// Online, the failed OSV refresh leaves the only package without any consulted
+		// source (CVEProject is offline-only here): fatal gap, still cancelled.
 		assert.equal(online.status, 2, online.stdout + online.stderr);
 		assert.equal(fs.existsSync(s.report),false);
 		assert.match(online.stderr,/OSV/);
+		assert.match(online.stderr,/Scan cancelled[\s\S]*org\.slf4j:slf4j-api@2\.0\.18 — OSV \+ a second advisory source/);
 		const strict = s.scan(mode, ["--fail-on-incomplete", "sources"], osvFlags);
 		assert.equal(strict.status, 2, strict.stdout + strict.stderr);
 		assert.equal(fs.existsSync(s.report),false);
@@ -156,9 +159,13 @@ for (const mode of ["osv-503", "osv-truncated", "unreachable"]) {
 		const proof = store.getQuery({ source: 'osv', ecosystem: 'Maven', name: key, version: '2.0.18' });
 		assert.equal(proof.fetchedAt, stamp, 'a failed network refresh cannot mint a fresh consultation');
 		assert.equal(proof.fresh, false);
+		// Offline, the preserved (stale) OSV consultation is replayed: the report is published
+		// marked incomplete, the cached finding is kept and the --fail-on high gate fires.
 		const offline = s.scan("offline", ["--fail-on", "high"], osvFlags);
-		assert.equal(offline.status, 2, offline.stdout + offline.stderr);
-		assert.equal(fs.existsSync(s.report),false);
+		const { doc } = require("./helpers/incomplete-scan")(offline, s.report, { status: 1 });
+		assert.deepEqual(doc.cve.map(c => c.id), [id]);
+		assert.ok(doc.warnings.some(w => w.type === "source-stale" && /OSV: package\/version consultation for org\.slf4j:slf4j-api@2\.0\.18/.test(w.message)), JSON.stringify(doc.warnings));
+		assert.ok(doc.warnings.some(w => w.code === "package-advisory-coverage" && w.fatal === false && w.items.some(i => i.id === "org.slf4j:slf4j-api@2.0.18" && i.detail === "a second advisory source")), JSON.stringify(doc.warnings));
 	});
 }
 
@@ -198,9 +205,12 @@ test("CLI: --fail-on kev still fails offline with a catalogue older than 24 hour
 	const before = repo.get('catalogue','kev');
 	const result = s.scan("offline", ["--fail-on", "kev"],
 		flags.filter(f => !["--no-osv", "--no-kev"].includes(f)));
-	assert.equal(result.status, 2, result.stdout + result.stderr);
-	assert.equal(fs.existsSync(s.report),false);
-	assert.match(result.stderr,/Scan cancelled/);
+	// The second advisory source is missing, so the report is published marked incomplete;
+	// the 72-hour-old KEV catalogue is still used and the kev gate fails the run (exit 1).
+	const { doc } = require("./helpers/incomplete-scan")(result, s.report, { status: 1 });
+	assert.match(result.stdout, /--fail-on kev: 1 known-exploited \(CISA KEV\) finding/);
+	assert.ok(doc.cve.some(c => c.id === id && c.kev === true), JSON.stringify(doc.cve));
+	assert.ok(doc.warnings.some(w => w.code === "package-advisory-coverage"), JSON.stringify(doc.warnings));
 	assert.deepEqual(repo.get('catalogue','kev'), before);
 });
 

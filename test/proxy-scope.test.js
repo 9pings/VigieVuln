@@ -46,7 +46,10 @@ test('proxy offline scan reads an imported advisory from its isolated cache with
  const child = spawnSync(process.execPath, [path.join(__dirname,'..','vigievuln.js'), 'scan',project,'--offline','--source-profile','proxy','--proxy-cache','https://proxy.example','--report-json',report,'--no-retire','--no-gcve'], {
   encoding:'utf8', timeout:30000, env:{...process.env, NODE_OPTIONS:`--require=${hook}`}
  });
- assert.equal(child.status,2,child.stderr + child.stdout);
  assert.doesNotMatch(child.stderr + child.stdout,/NETWORK_ATTEMPT/);
- require('./helpers/cancelled-scan')(child,[report]);
+ // Only OSV is seeded, so the report is published marked incomplete; the imported
+ // advisory is read from the proxy-scoped cache and matched.
+ const {doc}=require('./helpers/incomplete-scan')(child,report);
+ assert.deepEqual(doc.cve.map(c=>c.id),['CVE-2024-12345']);
+ assert.ok(doc.warnings.some(w=>w.code==='package-advisory-coverage'&&w.items.some(i=>i.id==='lodash@4.17.20'&&i.detail==='a second advisory source')),JSON.stringify(doc.warnings));
 });

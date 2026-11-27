@@ -147,3 +147,39 @@ test('targeted online consultations survive project export without a seed; later
  await queryBatch([later,{...direct,version:'1.1'}],{cacheDir:target,offline:true,fetcher:offlineFetch,onWarning:w=>warnings.push(w)});
  assert.match(warnings.find(w=>w.type==='osv-coverage').message,/2 Maven package\/version/);
 });
+
+test('a project archive built from the complete CVEProject archive records each package consultation; a partial corpus does not',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-native-coverage-'));
+ t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const {cveEnvelope}=require('../lib/native-advisories'),{createDiscoveryCoverage}=require('../lib/scan-reliability'),at=Date.now();
+ const raw=(id,name)=>({cveMetadata:{cveId:id,state:'PUBLISHED',dateUpdated:'2026-01-01T00:00:00Z'},containers:{cna:{affected:[{packageURL:`pkg:npm/${name}`,defaultStatus:'unaffected',versions:[{version:'0',lessThan:'2.0.0',versionType:'semver',status:'affected'}]}]}}});
+ const hit=makeDepRecord({ecosystem:'npm',name:'kept',version:'1.0.0'}),clean=makeDepRecord({ecosystem:'npm',name:'clean',version:'3.0.0'});
+ const resolved=new Map([[hit.coordKey,hit],[clean.coordKey,clean]]);
+ function prepare(name,{fullArchive}){
+  const source=path.join(root,name,'online'),target=path.join(root,name,'offline'),store=openAdvisoryStore({cacheDir:source});
+  store.commit({records:[cveEnvelope(raw('CVE-2026-10001','kept'),{fetchedAt:at})],
+   coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:at,complete:false,provenance:{transport:'direct',releaseTag:'cve_fixture'}}]});
+  store.close();
+  const db=openCacheDb({cacheDir:source});
+  db.prepare("INSERT INTO cache_snapshots VALUES('cve_lookup',?,1,0,1,?)").run(at,JSON.stringify({releaseTag:'cve_fixture',fullArchive}));db.close();
+  buildProjectSnapshot(source,target,buildProjectScope(resolved));
+  return openAdvisoryStore({cacheDir:target});
+ }
+ const offline=prepare('full',{fullArchive:true});
+ try{
+  const kept=offline.getQuery({source:'cveproject',ecosystem:'npm',name:'kept',version:'*'},{ttlMs:1e12});
+  assert.deepEqual(kept.ids,['CVE-2026-10001']);assert.equal(kept.provenance.transport,'project-archive');
+  assert.deepEqual(offline.getQuery({source:'cveproject',ecosystem:'npm',name:'clean',version:'*'},{ttlMs:1e12}).ids,[]);
+  assert.equal(offline.getSourceCoverage('cveproject','*').complete,false,'the project archive never claims the global corpus');
+  const coverage=createDiscoveryCoverage();
+  for(const dep of resolved.values())coverage.consulted(dep,'osv');
+  assert.equal(coverage.assess(resolved,{store:offline,options:{offline:true},nativeSources:['cveproject']}),null);
+ }finally{offline.close()}
+ const partial=prepare('partial',{fullArchive:false});
+ try{
+  assert.equal(partial.getQuery({source:'cveproject',ecosystem:'npm',name:'kept',version:'*'},{ttlMs:1e12}),null);
+  const coverage=createDiscoveryCoverage();
+  for(const dep of resolved.values())coverage.consulted(dep,'osv');
+  assert.equal(coverage.assess(resolved,{store:partial,options:{offline:true},nativeSources:['cveproject']})?.count,2);
+ }finally{partial.close()}
+});

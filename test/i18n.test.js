@@ -227,7 +227,7 @@ const ENGLISH_CHROME = [
 	"Strong copyleft (GPL)", "Advisory candidates address individual advisories only",
 	"manual triage", "Package-wide correction", "Package-wide safety has not been verified.", "Or update the direct dependencies",
 	"Possibly private / internal packages", "Manifests without a lockfile", "ranges / no lockfile",
-	"Overview charts", "CWE — direct vulns", "Most vulnerable components", "Fix priority",
+	"Overview charts", "CWE — findings", "Most vulnerable components", "Fix priority",
 	"not warmed", "ecosystems", "Vulns",
 ];
 

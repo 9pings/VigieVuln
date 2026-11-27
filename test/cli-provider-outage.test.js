@@ -7,7 +7,7 @@ const { spawnSync } = require('node:child_process');
 
 for (const hosted of [true, false]) {
   for (const strict of [null, 'advisories', 'sources']) {
-    test(`CLI Wordfence 503 cancels publication: hosted=${hosted}, strict=${strict}`, t => {
+    test(`CLI Wordfence 503 ${strict ? 'cancels publication' : 'publishes an incomplete report'}: hosted=${hosted}, strict=${strict}`, t => {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-source-outage-'));
       t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
       const src = path.join(dir, 'source');
@@ -39,11 +39,21 @@ for (const hosted of [true, false]) {
       const env = { PATH: process.env.PATH, FORCE_COLOR:'0',
         ...(hosted ? {VIGIEVULN_PROXY_CACHE_TOKEN:'fixture-proxy-token'} : {WORDFENCE_API_KEY:'fixture-wordfence-key'}) };
       const run = spawnSync(process.execPath, args, { env, cwd:dir, encoding:'utf8', timeout:30000 });
-      assert.equal(run.status, 2, `${run.error || ''}\n${run.stdout}\n${run.stderr}`);
       assert.match(fs.readFileSync(path.join(dir, 'requests'), 'utf8'), /wordfence/);
       assert.match(run.stdout+run.stderr,/wordfence.*503/is);
-      assert.match(run.stderr,/Scan cancelled/);
-      assert.deepEqual(fs.existsSync(out)?fs.readdirSync(out):[],[]);
+      // The Wordfence outage names the failed WordPress advisory check on stderr in both outcomes.
+      assert.match(run.stderr,/Incomplete advisories check for wordpress:.*\(wordfence-v3\).*HTTP 503/);
+      if (strict) {
+        // --fail-on-incomplete advisories|sources keeps the strict behaviour.
+        assert.equal(run.status, 2, `${run.error || ''}\n${run.stdout}\n${run.stderr}`);
+        assert.match(run.stderr,/Scan cancelled/);
+        assert.deepEqual(fs.existsSync(out)?fs.readdirSync(out):[],[]);
+      } else {
+        const { doc } = require('./helpers/incomplete-scan')(run, path.join(out, 'findings.json'));
+        assert.deepEqual(fs.readdirSync(out).sort(),['SHA256SUMS','cve-report.html','findings.json']);
+        assert.ok(doc.warnings.some(w => w.type === 'scan-reliability' && /Incomplete advisories check for wordpress:.*\(wordfence-v3\).*HTTP 503/.test(w.message)), JSON.stringify(doc.warnings));
+        assert.match(fs.readFileSync(path.join(out, 'cve-report.html'), 'utf8'), /incomplete-banner/);
+      }
     });
   }
 }
@@ -63,8 +73,12 @@ for (const strict of [false, true]) test(`CLI Packagist 503 cancels publication,
     '--retries','0','--report-html','--report-json','-o',out];
   if(strict) args.push('--fail-on-incomplete','sources');
   const run=spawnSync(process.execPath,args,{cwd:dir,env:{PATH:process.env.PATH,FORCE_COLOR:'0'},encoding:'utf8',timeout:30000});
+  // OSV is disabled (-d osv) and every other source answers 503: no advisory source
+  // assessed the only package, so the scan is still cancelled with or without the gate.
   assert.equal(run.status,2,run.stdout+run.stderr);
   assert.match(run.stderr,/Scan cancelled/);
-  assert.match(run.stderr,/Packagist.*503/i);
+  assert.match(run.stderr,/Advisory discovery is incomplete for 1 package\/version\(s\)[\s\S]*monolog\/monolog@1\.0\.0 — OSV \+ a second advisory source/);
+  // The cancellation names the decisive gap first; the Packagist outage is named in the scan issues too.
+  assert.match(run.stdout+run.stderr,/Packagist.*503/i);
   assert.deepEqual(fs.existsSync(out)?fs.readdirSync(out):[],[]);
 });

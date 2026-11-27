@@ -203,8 +203,13 @@ test('hosted OSV database options perform only package lookups and never downloa
  const isolatedFlags=['--cve-offline','--no-gcve','--no-transitive','--no-all-libs','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--retries','0','--advisory-query-ttl','0'];
  for(const flags of [['--osv-db'],['-a','osv-db'],['--osv-db-refresh']]){
   fs.rmSync(calls,{force:true});
+  const findings=path.join(home,'vigievuln-report','findings.json');fs.rmSync(findings,{force:true});
   const r=spawnSync(process.execPath,[path.join(__dirname,'../vigievuln.js'),'scan',project,'--proxy-cache','default',...isolatedFlags,...flags],{cwd:home,env,encoding:'utf8',timeout:15000});
-  assert.equal(r.status,2,r.stdout+r.stderr);
+  // OSV answers through the hosted proxy but no second source covers the package:
+  // the report is published (default directory), marked incomplete.
+  require('./helpers/incomplete-scan')(r,null);
+  const report=JSON.parse(fs.readFileSync(findings,'utf8'));assert.equal(report.summary.scanReliable,false);
+  assert.ok(report.warnings.some(w=>w.code==='package-advisory-coverage'&&w.items.some(i=>i.id==='org.example:widget@1.0'&&i.detail==='a second advisory source')),JSON.stringify(report.warnings));
   const requests=fs.readFileSync(calls,'utf8').trim().split('\n').map(JSON.parse);
   assert.ok(requests.some(c=>c.body&&JSON.parse(c.body).provider==='osv'));
   assert.ok(requests.every(c=>!c.url.includes('storage.googleapis.com')));

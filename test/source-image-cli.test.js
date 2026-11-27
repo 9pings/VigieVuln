@@ -15,6 +15,7 @@ async function fixture(t){
 const flags=['--cve-offline','--no-gcve','--no-nvd','--no-euvd','--no-certfr','--no-epss','--no-kev','--no-eol','--no-retire','--no-binaries','--no-jars','--no-certs','--no-transitive','--no-all-libs','--retries','0'];
 const imageFlags=[...flags,'--images'];
 const cancelled=require('./helpers/cancelled-scan');
+const incomplete=require('./helpers/incomplete-scan');
 const ok=r=>assert.equal(r.status,0,r.stdout+'\n'+r.stderr);
 
 test('source image descriptor prepares cache online and replays real project offline',async t=>{
@@ -22,12 +23,16 @@ test('source image descriptor prepares cache online and replays real project off
  let result=run(['scan',src,'--export-anonymized',descriptor,...imageFlags],isolated,true);ok(result);assert.deepEqual(result.calls,[]);
  const doc=JSON.parse(fs.readFileSync(descriptor));assert.ok(doc.imageReferences.some(x=>x.reference==='example.test/team/demo:1'));assert.ok(doc.imageReferences.every(x=>!String(x.reference).includes('private-local')&&!String(x.reference).includes('$')));
  const cacheDir=path.join(online,'.vigie-vuln');fs.mkdirSync(cacheDir,{recursive:true});await require('../lib/system-inventory').importSystemAdvisories([{id:'DEBIAN-CVE-X',aliases:['CVE-2024-12345'],affected:[{package:{ecosystem:'Debian:12',name:'foo',purl:'pkg:deb/debian/foo?arch=source'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'1.0-2'}]}]}]}],{distribution:{id:'debian',versionId:'12'},cacheDir,complete:true});require('../lib/cache-db').closeCacheDbs();
- result=run(['scan',src,'--report-json',report,...imageFlags],online);cancelled(result);assert.match(result.stdout,/Image inventories: 1 image/);assert.match(result.stdout,/Image vulnerability analysis: 1 image/);assert.ok(result.calls.some(x=>x.includes('example.test')));assert.ok(result.calls.every(x=>x.includes('example.test')));
- assert.equal(fs.existsSync(report),false);
+ // Only the distribution advisories are seeded, so both scans publish a report marked
+ // incomplete (no second source for the image package); the offline replay must
+ // reproduce the online image finding from the prepared cache.
+ const gap=doc=>doc.warnings.some(w=>w.code==='package-advisory-coverage'&&w.fatal===false&&w.items.some(i=>i.id==='foo@1.0-1'&&i.detail==='a second advisory source'));
+ result=run(['scan',src,'--report-json',report,...imageFlags],online);const live=incomplete(result,report).doc;assert.match(result.stdout,/Image inventories: 1 image/);assert.match(result.stdout,/Image vulnerability analysis: 1 image/);assert.ok(result.calls.some(x=>x.includes('example.test')));assert.ok(result.calls.every(x=>x.includes('example.test')));
+ assert.deepEqual(live.cve.map(c=>c.id),['CVE-2024-12345']);assert.equal(live.artifacts.length,1);assert.ok(gap(live),JSON.stringify(live.warnings));
  result=run(['cache','prepare',descriptor,'--output',bundle,...imageFlags],online);ok(result);assert.ok(fs.existsSync(bundle));assert.ok(result.calls.some(url=>url.includes('/manifests/')));assert.ok(!result.calls.some(url=>url.includes('/blobs/')),'cache prepare reuses the unchanged image inventory');
  result=run(['--import-cache',bundle],offline,true);ok(result);assert.deepEqual(result.calls,[]);
- result=run(['scan',src,'--offline','--report-json',replay,...imageFlags],offline,true);cancelled(result);assert.deepEqual(result.calls,[]);
- assert.equal(fs.existsSync(replay),false);
+ result=run(['scan',src,'--offline','--report-json',replay,...imageFlags],offline,true);const replayed=incomplete(result,replay).doc;assert.deepEqual(result.calls,[]);
+ assert.deepEqual(replayed.cve.map(c=>c.id),live.cve.map(c=>c.id));assert.equal(replayed.artifacts.length,1);assert.ok(gap(replayed),JSON.stringify(replayed.warnings));
 });
 
 test('images are disabled by default and respect explicit flags, groups and configuration',async t=>{

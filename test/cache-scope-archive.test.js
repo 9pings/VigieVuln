@@ -57,8 +57,15 @@ test('explicit --no-osv-db overrides a configured group even with the EU source 
  const config=path.join(dir,'selected.json'); fs.writeFileSync(config,JSON.stringify({activate:'osv-db'}));
  const project=path.join(dir,'project');fs.mkdirSync(project);
  fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0'}));
- const r=spawnSync(process.execPath,['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',project,'--config',config,'--offline','--source-profile','eu','--no-osv-db','-d','report'],{encoding:'utf8',env:{PATH:process.env.PATH,FORCE_COLOR:'0'},timeout:30000});
- assert.equal(r.status,2,r.stderr+r.stdout);
+ const scan=(...extra)=>spawnSync(process.execPath,['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',project,'--config',config,'--offline','--source-profile','eu',...extra,'-d','report'],{encoding:'utf8',env:{PATH:process.env.PATH,FORCE_COLOR:'0'},timeout:30000});
+ // Without the override the configured osv-db group is rejected by the EU profile.
+ const grouped=scan();
+ assert.equal(grouped.status,2,grouped.stderr+grouped.stdout);assert.match(grouped.stderr,/--osv-db is unavailable in the EU-only source profile/);
+ // With --no-osv-db the scan runs. The project has no dependency and no coverage gap,
+ // so nothing is incomplete and nothing is cancelled.
+ const r=scan('--no-osv-db');
+ assert.equal(r.status,0,r.stderr+r.stdout);
+ assert.doesNotMatch(r.stderr+r.stdout,/--osv-db is unavailable|Scan cancelled|Coverage incomplete/);
 });
 test('cache transfer uses explicitly selected proxy-scoped cache root',t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-custom-scope-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));

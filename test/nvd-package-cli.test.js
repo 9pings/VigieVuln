@@ -41,7 +41,14 @@ for(const native of [false,true,'legacy']) test(`CLI finds an isolated release f
   fs.rmSync(calls,{force:true});fs.rmSync(report,{force:true});
   const result=spawnSync(process.execPath,['--require',preload,path.join(__dirname,'../vigievuln.js'),'scan',src,...flags,...(offline?['--offline']:['--advisory-query-ttl','0']),'--report-json',report,...extra],{cwd:root,encoding:'utf8',timeout:15000,env:{...process.env,VV_NVD_TEST_HOME:home,VV_NVD_TEST_CALLS:calls,VV_NVD_TEST_OFFLINE:offline?'1':'0',VV_NVD_TEST_ABSENT:absent?'1':'0',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''}});
   assert.ifError(result.error);
-  if(missing){assert.match(require('./helpers/cancelled-scan')(result,[report]),/NVD:.*package-bound/);return;}
+  if(missing){
+   // The package-bound NVD record is gone from the offline cache: the report is published
+   // marked incomplete and names the unavailable record instead of reporting a clean result.
+   const {log,doc}=require('./helpers/incomplete-scan')(result,report);
+   assert.match(log,/NVD:.*package-bound/);
+   assert.ok(doc.warnings.some(w=>w.type==='source-unavailable'&&/NVD: 1 package-bound CVE record\(s\) unavailable/.test(w.message)),JSON.stringify(doc.warnings));
+   return;
+  }
   assert.equal(result.status,0,result.stdout+result.stderr);
   if(offline)assert.equal(fs.existsSync(calls),false,'offline performed no network requests');
   else assert.match(fs.readFileSync(calls,'utf8'),/api\.osv\.dev\/v1\/querybatch/);

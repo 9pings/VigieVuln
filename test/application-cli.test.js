@@ -205,7 +205,7 @@ test("an explicitly configured local advisory source is validated before discove
 	}
 });
 
-test("CLI cancels when a standalone private plugin has incomplete coverage", () => {
+test("CLI lists a standalone private plugin with the private packages; the report is not marked incomplete", () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wp-component-cli-"));
 	try {
 		const src = path.join(temp, "plugin");
@@ -217,8 +217,15 @@ test("CLI cancels when a standalone private plugin has incomplete coverage", () 
 			"--scan-context", "component", "--offline", "-d", "eol,nvd,epss,kev,retire,transitive",
 			"--report-json", out, "--no-checksums"],
 		{ encoding: "utf8", timeout: 30000, env: { ...process.env, FORCE_COLOR: "0" } });
-		assert.equal(run.status, 2, `${run.stdout}\n${run.stderr}`);
-		require("./helpers/cancelled-scan")(run,[out]);
+		// A private extension is handled like a private package of any other ecosystem:
+		// listed as private, without failing the scan or marking the report incomplete.
+		assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
+		assert.doesNotMatch(run.stdout + run.stderr, /Coverage incomplete|Scan cancelled/);
+		const doc = JSON.parse(fs.readFileSync(out, "utf8"));
+		assert.equal(doc.summary.scanReliable, true);
+		const listed = doc.warnings.find(w => w.type === "private-libs");
+		assert.deepEqual(listed.items.map(i => [i.id, i.ecosystem]), [["plugin · Custom Plugin@1.2.3", "wordpress"]]);
+		assert.ok(!doc.warnings.some(w => w.type === "scan-reliability"), JSON.stringify(doc.warnings));
 	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 

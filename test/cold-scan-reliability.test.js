@@ -73,13 +73,25 @@ test('cold npm scans retain confirmed findings across a partial OSV outage and r
   assert.equal(compared.code,1,compared.log);
   assert.deepEqual(compared.report.diff.cve.added.map(c=>c.id),['CVE-2024-34567']);
   const partial=run('partial','partial',['--fail-on','high','--report-html','--report-xlsx','--report-doc','--report-sbom','--report-csaf','--report-sarif']);
-  const rejected=path.join(root,'partial','out');
-  assert.deepEqual(fs.existsSync(rejected)?fs.readdirSync(rejected):[],[]);
-  assert.equal(partial.code,2,partial.log);
-  assert.equal(partial.report,null);
-  assert.match(partial.log,/Scan cancelled/);
-  assert.doesNotMatch(partial.log,/▸ Results/);
-  assert.equal(run('partial','partial-strict',strict).code,2);
+  // A partial OSV outage (one advisory detail answers 503) no longer cancels: every
+  // requested report is published, marked incomplete, with the confirmed finding kept
+  // and the gap named; the --fail-on high gate still fires on that finding (exit 1).
+  const published=path.join(root,'partial','out');
+  assert.deepEqual(fs.readdirSync(published).sort(),['SHA256SUMS','csaf-vex.json','cve-report.doc','cve-report.html','fad.sarif','findings.json','findings.xlsx','sbom.cdx.json']);
+  require('./helpers/incomplete-scan')({status:partial.code,output:partial.log},path.join(published,'findings.json'),{status:1});
+  assert.match(partial.log,/▸ Results/);
+  assert.match(partial.log,/--fail-on high: 1 finding/);
+  assert.deepEqual(partial.report.cve.map(c=>c.id),['CVE-2024-12345']);
+  assert.deepEqual(partial.report.cve,first.report.cve.filter(c=>c.id==='CVE-2024-12345'));
+  assert.ok(partial.report.warnings.some(w=>w.type==='source-unavailable'&&/CVE-2024-23456: HTTP 503/.test(w.message)),JSON.stringify(partial.report.warnings));
+  assert.ok(partial.report.warnings.some(w=>w.code==='package-advisory-coverage'&&w.fatal===false&&w.items.some(i=>i.id==='widget@1.0.0'&&i.detail==='OSV')),JSON.stringify(partial.report.warnings));
+  assert.match(fs.readFileSync(path.join(published,'cve-report.html'),'utf8'),/incomplete-banner/);
+  // --fail-on-incomplete sources still cancels the same scenario without publishing.
+  const partialStrict=run('partial','partial-strict',strict);
+  assert.equal(partialStrict.code,2,partialStrict.log);
+  assert.match(partialStrict.log,/Scan cancelled/);
+  assert.equal(partialStrict.report,null);
+  assert.deepEqual(fs.existsSync(path.join(root,'partial-strict','out'))?fs.readdirSync(path.join(root,'partial-strict','out')):[],[]);
   const limited=run('limited','retry',strict);
   assert.equal(limited.code,2,limited.log);
   assert.match(limited.log,/npm registry.*HTTP 429.*3600s.*budget/);

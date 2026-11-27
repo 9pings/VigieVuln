@@ -4,6 +4,7 @@ const cwd=path.resolve(__dirname,'..'),cli=path.join(cwd,'vigievuln.js');
 function fixture(t){const d=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cli-image-'));t.after(()=>fs.rmSync(d,{recursive:true,force:true}));const root=path.join(d,'root');fs.mkdirSync(path.join(root,'etc'),{recursive:true});fs.mkdirSync(path.join(root,'var/lib/dpkg'),{recursive:true});fs.writeFileSync(path.join(root,'etc/os-release'),'ID=debian\nVERSION_ID=12\n');fs.writeFileSync(path.join(root,'var/lib/dpkg/status'),'Package: specimen\nStatus: install ok installed\nVersion: 1.0-1\nArchitecture: amd64\n\n');return {d,root,cache:path.join(d,'cache')};}
 function run(args,d){return spawnSync(process.execPath,[cli,...args],{cwd,encoding:'utf8',timeout:30000,env:{...process.env,HOME:d,USERPROFILE:d,NO_COLOR:'1',FAD_CHECKER_ENV:'',HTTP_PROXY:'http://127.0.0.1:9',HTTPS_PROXY:'http://127.0.0.1:9'}});}
 const cancelled=require('./helpers/cancelled-scan');
+const incomplete=require('./helpers/incomplete-scan');
 function seedNative(cacheDir){
  const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir});
  store.commit({coverages:[{source:'cveproject',ecosystem:'*',complete:true,fetchedAt:Date.now()}]});
@@ -42,8 +43,14 @@ test('SBOM import is inventoried with explicit unverified evidence',t=>{
  seedNative(cache);
  const journal=require('../lib/advisory-store').openAdvisoryStore({cacheDir:cache});
  journal.commit({queries:[{source:'osv',ecosystem:'npm',name:'left-pad',version:'1.3.0',ids:[],fetchedAt:Date.now(),complete:true}]});journal.close();
- const rejected=run(['system','scan',file,'--sbom','--offline','--no-gcve','--cache-dir',cache,'--report-output',out],d);
- assert.match(cancelled(rejected,[path.join(out,'findings.json')]),/SBOM.*unverified/i);
+ const published=run(['system','scan',file,'--sbom','--offline','--no-gcve','--cache-dir',cache,'--report-output',out],d);
+ // The unverified publisher inventory no longer cancels: the report is published and marked incomplete.
+ const {log,doc}=incomplete(published,path.join(out,'findings.json'));
+ assert.match(log,/SBOM.*unverified/i);
+ assert.equal(doc.artifacts.length,1);assert.equal(doc.artifacts[0].componentCount,1);
+ assert.ok(doc.warnings.some(w=>w.type==='dependency-coverage'&&w.capability==='inventory'&&/SBOM has no artifact subject digest.*unverified/.test(w.message)),JSON.stringify(doc.warnings));
+ assert.ok(doc.warnings.some(w=>w.type==='dependency-coverage'&&/SBOM publisher identity and signatures were not verified/.test(w.message)),JSON.stringify(doc.warnings));
+ assert.match(fs.readFileSync(path.join(out,'cve-report.html'),'utf8'),/incomplete-banner/);
 });
 test('source image references appear in reports and fail incomplete sources gate',t=>{
  const {d}=fixture(t),src=path.join(d,'src'),out=path.join(d,'source');fs.mkdirSync(src);fs.writeFileSync(path.join(src,'Dockerfile'),'FROM alpine:3.20\n');
@@ -72,11 +79,14 @@ test('fleet proxy routes image advisories and isolates scoped offline cache',asy
  fs.writeFileSync(preload,`const fs=require('node:fs'),real=globalThis.fetch,allowed=${JSON.stringify(url)},log=${JSON.stringify(trace)};globalThis.fetch=(u,o)=>{fs.appendFileSync(log,String(u)+'\\n');if(new URL(String(u)).origin!==allowed)throw Error('direct advisory network tripwire');return real(u,o)};`);
  const launch=args=>new Promise((resolve,reject)=>{const child=spawn(process.execPath,[cli,...args],{cwd,env:{...process.env,HOME:d,USERPROFILE:d,NO_COLOR:'1',FAD_CHECKER_ENV:'',VIGIEVULN_ENV:'',NODE_OPTIONS:`--require=${preload}`}});let output='';child.stdout.on('data',x=>output+=x);child.stderr.on('data',x=>output+=x);child.on('error',reject);child.on('close',status=>resolve({status,output}));});
  const args=['system','scan',sbom,'--sbom','--config',cfg,'--allow-insecure-http','--cache-dir',cache,'--no-report','--enrich','none'];
- const online=await launch(args);assert.equal(online.status,2,online.output);assert.ok(requests.some(r=>r.provider==='osv'&&r.type==='packages'));
- const forward=await launch(['system','scan',sbom,'--sbom','--config',cfg,'--allow-insecure-http','--cache-dir',path.join(d,'forward-cache'),'--no-report','--enrich','none','--proxy','http://127.0.0.1:1']);assert.equal(forward.status,2,forward.output);
+ // OSV answers through the fleet proxy; the other native sources 404 there, so the
+ // package lacks a second advisory source: the scan publishes, marked incomplete.
+ const osvOnly=/Advisory discovery is incomplete for 1 package\/version\(s\)[\s\S]*left-pad@1\.3\.0 — a second advisory source/;
+ const online=await launch(args);assert.match(incomplete(online).log,osvOnly);assert.ok(requests.some(r=>r.provider==='osv'&&r.type==='packages'));
+ const forward=await launch(['system','scan',sbom,'--sbom','--config',cfg,'--allow-insecure-http','--cache-dir',path.join(d,'forward-cache'),'--no-report','--enrich','none','--proxy','http://127.0.0.1:1']);assert.match(incomplete(forward).log,osvOnly);
 
  const snapshot=path.join(d,'sbom-inventory.json'),prepared=path.join(d,'prepared.tar.gz');
- const exported=await launch([...args,'--offline','--export-inventory',snapshot]);cancelled(exported,[snapshot]);
+ const exported=await launch([...args,'--offline','--export-inventory',snapshot]);assert.match(incomplete(exported).log,osvOnly);assert.ok(fs.existsSync(snapshot),'an incomplete scan still exports its inventory');
  const inv=require('../lib/artifacts/scan');
  fs.writeFileSync(snapshot,JSON.stringify(inv.createSnapshot([inv.sbomTarget(sbom)])));
  const warm=await launch(['cache','prepare',snapshot,'--output',prepared,'--config',cfg,'--allow-insecure-http','--cache-dir',cache,'--enrich','none']);assert.equal(warm.status,0,warm.output);assert.ok(fs.existsSync(prepared));
@@ -85,8 +95,8 @@ test('fleet proxy routes image advisories and isolates scoped offline cache',asy
  const partial=path.join(d,'partial.tar.gz'),partialRun=await launch(['cache','prepare',snapshot,'--output',partial,'--config',cfg,'--allow-insecure-http','--cache-dir',cache,'--enrich','none']);assert.equal(partialRun.status,0,partialRun.output);assert.ok(fs.existsSync(partial));assert.match(partialRun.output,/incomplete advisory or source coverage/);
  const strictFile=path.join(d,'partial-strict.tar.gz'),strictRun=await launch(['cache','prepare',snapshot,'--output',strictFile,'--config',cfg,'--allow-insecure-http','--cache-dir',cache,'--enrich','none','--fail-on-incomplete','advisories']);assert.equal(strictRun.status,2,strictRun.output);assert.equal(fs.existsSync(strictFile),false);
  const globalConfig=path.join(d,'.vigie-vuln','config.json');fs.mkdirSync(path.dirname(globalConfig),{recursive:true});fs.writeFileSync(globalConfig,JSON.stringify({sourceProfile:'proxy',proxyCache:url}));
- const saved=await launch(['system','scan',sbom,'--sbom','--offline','--cache-dir',cache,'--no-report','--enrich','none']);assert.equal(saved.status,2,saved.output);
- const count=requests.length, offline=await launch([...args,'--offline']);assert.equal(offline.status,2,offline.output);assert.equal(requests.length,count);assert.ok(fs.readFileSync(trace,'utf8').trim().split('\n').every(line=>new URL(line).origin===url));
+ const saved=await launch(['system','scan',sbom,'--sbom','--offline','--cache-dir',cache,'--no-report','--enrich','none']);assert.match(incomplete(saved).log,osvOnly);
+ const count=requests.length, offline=await launch([...args,'--offline']);assert.match(incomplete(offline).log,osvOnly);assert.equal(requests.length,count);assert.ok(fs.readFileSync(trace,'utf8').trim().split('\n').every(line=>new URL(line).origin===url));
  const denied=await launch(['system','scan',sbom,'--sbom','--config',cfg,'--cache-dir',cache,'--no-report']);assert.notEqual(denied.status,0);assert.match(denied.output,/not encrypted|allow-insecure-http/);
 });
 test('EU advisory profile excludes cached and imported OSV evidence',t=>{

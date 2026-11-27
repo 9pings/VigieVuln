@@ -127,7 +127,12 @@ test("--no-report still runs the gate (and fails on a high finding)", () => {
 	const src = path.join(__dirname, "fixtures", "polyglot");
 	const res = run(["scan", src, "--offline", "--no-report", "--fail-on", "high"],
 		{ env: { ...process.env, HOME: home, USERPROFILE: home } });
-	assert.equal(res.status, 2, `gate must fail on the HIGH sentinel\nstdout:\n${res.stdout}\nstderr:\n${res.stderr}`);
+	// The offline polyglot scan has coverage gaps: it is not cancelled any more, so the
+	// gate runs and its exit code (1) wins over the incomplete notice.
+	require("./helpers/incomplete-scan")(res, null, { status: 1 });
+	assert.match(res.stdout, /CVE-2099-0001/, "the HIGH sentinel is matched");
+	assert.match(res.stdout, /--fail-on high: 1 finding\(s\) at or above high/, "gate must fail on the HIGH sentinel");
+	assert.match(res.stderr, /Advisory discovery is incomplete for \d+ package\/version\(s\)/);
 	fs.rmSync(home, { recursive: true, force: true });
 });
 

@@ -297,6 +297,7 @@ if (process.argv.includes("--export-cache") || process.argv.includes("--import-c
 					console.error(chalk.red("❌  --export-cache requires a destination path (e.g. vigievuln-cache.tar.gz)"));
 					process.exit(1);
 				}
+				if (process.argv.includes("--include-config")) console.warn(chalk.yellow("⚠  --include-config is ignored: the cache bundle never contains config.json (it holds API keys)."));
 				const { path: out, size, excluded, scope } = await exportCache(dest, { sourceDir: cacheDir, proxyOrigin });
 				const mb = (size / 1024 / 1024).toFixed(2);
 				console.log(chalk.green(`✅ Cache exported (${mb} MB) → ${out}`));
@@ -555,7 +556,7 @@ program
 	.option("--export-cache <file>", "export the SQLite cache as a tar.gz bundle (excludes local configuration)")
 	.option("--import-cache <file>", "merge a previously exported archive into ~/.vigie-vuln/ (keeps the local cache + config.json; newest entry wins)")
 	.option("--replace", "with --import-cache: replace ~/.vigie-vuln/ wholesale instead of merging (previous dir kept as .bak unless --force)")
-	.option("--include-config", "with --export-cache: also bundle config.json (contains the NVD API key)")
+	.option("--include-config", "deprecated, ignored: the cache bundle never contains config.json (it holds API keys)")
 	.option("--export-anonymized <file>", "offline: write a path-free dependency descriptor and exit")
 	.option("--prepare-project <file>", "offline: prepare a path-free project descriptor for review")
 	.option("--import-anonymized <file>", "online, no --src: scan a descriptor to warm the caches")
@@ -1406,10 +1407,10 @@ let preparedSource;
 		const srcShown = options.src || "./proj";
 		ui.section("Next steps");
 		ui.info(`${chalk.dim("Phase 2 —")} ${chalk.cyan("ONLINE")} ${chalk.dim("(any box, no --src): warm the caches, then bundle them")}`);
-		ui.info("  " + chalk.white(`vigievuln cache prepare ${descFile} --output fad-cache.tar.gz`));
+		ui.info("  " + chalk.white(`vigievuln cache prepare ${descFile} --output vigievuln-cache.tar.gz`));
 		ui.info(`${chalk.dim("Phase 3 —")} ${chalk.cyan("OFFLINE")} ${chalk.dim("(back here): import the cache, then run the full report")}`);
-		ui.info("  " + chalk.white("vigievuln --import-cache fad-cache.tar.gz"));
-		ui.info("  " + chalk.white(`vigievuln -s ${srcShown} --offline`));
+		ui.info("  " + chalk.white("vigievuln cache import vigievuln-cache.tar.gz"));
+		ui.info("  " + chalk.white(`vigievuln scan ${srcShown} --offline`));
 		return;
 	}
 
@@ -1529,7 +1530,7 @@ let preparedSource;
 	if (extractOnly) {
 		ui.section("Extraction done");
 		ui.info(chalk.dim("-t is an extraction step: cleaned tree + POM analysis only, no vulnerability scan."));
-		ui.info(chalk.dim("for the vigievuln report: ") + chalk.white(`vigievuln -s ${options.src}`) + chalk.dim("  ·  or add --snyk / --report-<type> / --fail-on to this command"));
+		ui.info(chalk.dim("for the vigievuln report: ") + chalk.white(`vigievuln scan ${options.src}`) + chalk.dim("  ·  or add --snyk / --report-<type> / --fail-on to this command"));
 		ui.section("Next step");
 		ui.info(`run Snyk on the cleaned tree:`);
 		console.log("    " + chalk.white(`cd ${options.target} && snyk test --json --all-projects | snyk-to-html -o ../snyk-deps-check.html`));
@@ -1615,6 +1616,8 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			const { buildApplicationRelations } = require("./lib/application-inventory");
 			appState = await runApplicationPlugins(options.src, { plugins: allApplicationPlugins(), selection: options.appPlugins,
 				reportProviderFailures: true,
+				// Publisher advisories of a detected CMS are consulted without a flag.
+				automaticLiveSources: options.sourceProfile === "all",
 				resolvedDeps: resolved, activeCodecIds: activeIds, excludePath, defaultExcludes, scanContext: options.scanContext,
 				privateComponentPaths: options.privateComponent || [], publicComponents: options.publicComponent || [],
 				wordfenceFeedPath: options.wordfenceFeed || null, drupalAdvisoriesPath: options.drupalAdvisories || null,
@@ -1648,11 +1651,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			if (appState.applications.some(app => app.type === "wordpress") && !options.wordfenceFeed && !wordfenceLiveUrl && !laneRan("wordfence-v3") && !laneRan('wpvulnerability'))
 				ui.warn("WordPress advisory scan did not run: check the public component identities and the WPVulnerability cache or source diagnostics.");
 			if (appState.applications.some(app => app.type === "prestashop") && !options.prestashopAdvisories && !prestashopLiveUrl && !laneRan("github-prestashop-advisories"))
-				ui.warn("PrestaShop advisory scan did not run: supply --prestashop-advisories, use --prestashop-advisories-live — or warm it once so the cached snapshot is reused.");
+				ui.warn("PrestaShop advisory scan did not run: no advisory snapshot is cached for an offline or restricted scan. Run once online, or supply --prestashop-advisories.");
 			if (appState.applications.some(app => app.type === "typo3") && !options.typo3Advisories && !typo3LiveUrl && !laneRan("github-typo3-advisories"))
-				ui.warn("TYPO3 advisory scan did not run: supply --typo3-advisories, use --typo3-advisories-live — or warm it once so the cached snapshot is reused.");
+				ui.warn("TYPO3 advisory scan did not run: no advisory snapshot is cached for an offline or restricted scan. Run once online, or supply --typo3-advisories.");
 			if (appState.applications.some(app => app.type === "spip") && !options.spipAdvisories && !spipLiveUrl && !laneRan("spip-security-advisories"))
-				ui.warn("SPIP advisory scan did not run: supply --spip-advisories, use --spip-advisories-live — or warm it once so the cached NVD snapshot is reused.");
+				ui.warn("SPIP advisory scan did not run: no advisory snapshot is cached for an offline or restricted scan. Run once online, or supply --spip-advisories.");
 		} catch (error) {
 			console.error(chalk.red(`❌  application plugin selection failed: ${error.message}`));
 			process.exit(2);
@@ -1830,7 +1833,8 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		items:unresolvedMavenPoms.sort().map(id=>({id})),
 		message:`${unresolvedMavenPoms.length} Maven POM(s) could not be resolved; transitive dependency coverage may be incomplete.`});
 	if (mavenVariantCollisions.size) scanWarnings.push({type:'dependency-coverage',count:mavenVariantCollisions.size,
-		message:`${mavenVariantCollisions.size} Maven coordinate(s) occur with different types or classifiers; version and transitive dependency coverage may be incomplete.`});
+		items:[...mavenVariantCollisions].sort().map(id=>({id})),
+		message:`${mavenVariantCollisions.size} Maven coordinate(s) occur with types or classifiers that resolve to different versions; only one version of each was assessed.`});
 	if (mavenResolutionErrors) scanWarnings.push({type:'dependency-coverage',count:mavenResolutionErrors,
 		message:'Maven transitive resolution failed for part of the dependency graph; coverage is incomplete.'});
 
@@ -2476,7 +2480,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// 6b. Supply-chain risk lane (pure + offline): flag KNOWN-MALICIOUS advisories
 	// (OSV MAL-… already in the match set) always, and detect suspected TYPOSQUATS
 	// (opt-in --typosquat, heuristic — names one edit from a popular package).
-	const { flagMalicious, detectTyposquats } = require("./lib/malware");
+	const { flagMalicious, detectTyposquats, withoutForeignMalicious } = require("./lib/malware");
+	const foreignMalicious = withoutForeignMalicious(cveMatches);
+	cveMatches = foreignMalicious.matches;
+	for (const m of foreignMalicious.dropped) noteSourceLimitation('OSV', `${m.cve.id} designates the registry package ${m.dep.name}; this project resolves ${m.dep.name} from ${m.dep.resolved}, another artifact of the same name. The malicious-package advisory was not applied.`);
 	const maliciousCount = flagMalicious(cveMatches);
 	const typosquats = options.typosquat ? detectTyposquats(resolved) : [];
 	if (maliciousCount || typosquats.length) {
@@ -2703,7 +2710,9 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				return { id, ecosystem: "maven", manifestPaths: paths };
 			});
 			const otherItems = buildPrivateItems(registryPrivateHits, { relativise: p => options.src ? path.relative(options.src, p) : '' });
-			const items = [...mavenItems, ...otherItems];
+			// CMS extensions follow the same rule: declared private, or unknown to the public catalogue.
+			const applicationItems = require("./lib/scan-coverage").privateComponents(appState);
+			const items = [...mavenItems, ...otherItems, ...applicationItems];
 			if (!items.length) return [];
 			const ecos = [...new Set(items.map(i => i.ecosystem))].sort().join(", ");
 			return [{
@@ -2734,9 +2743,15 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 
 	const warmingOnly=options.importAnonymized && options.report===false && (!options.failOn || options.failOn==='none') && !options.failOnNew;
-	const blockers=reportWarnings.filter(reliability.isBlocking);
-	if (!warmingOnly && blockers.length) {
-		console.error(reliability.cancellation(blockers,options.lang));
+	// An incomplete scan publishes its report marked incomplete (chapter 0 lists every
+	// gap, summary.scanReliable is false). It is cancelled only when nothing reliable can
+	// be shown, or when --fail-on-incomplete requires the missing capability.
+	const strictCapabilities = options.failOnIncomplete
+		? (options.failOnIncomplete === true ? "inventory,advisories,sources" : String(options.failOnIncomplete)).split(",").map(x => x.trim()).filter(Boolean)
+		: [];
+	const publication = reliability.publication(reportWarnings, { inventoryCount: resolved.size + appState.inventory.length, strict: strictCapabilities });
+	if (!warmingOnly && publication.cancel) {
+		console.error(reliability.cancellation(publication.reasons,options.lang));
 		process.exitCode=2;
 		return;
 	}
@@ -2745,12 +2760,15 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		const raw = options.failOnIncomplete === true ? "inventory,advisories,sources" : String(options.failOnIncomplete);
 		const required = [...new Set(raw.split(",").map(x => x.trim()).filter(Boolean))];
 		const known = new Set(["inventory", "advisories", "recipes", "sources"]);
+		// Application (CMS/framework) coverage is required when an application was inventoried or
+		// explicitly requested. A project without one has no application check to complete.
+		const applicationCoverageRequired = appState.coverage.length > 0 || !["auto", "none"].includes(String(options.appPlugins || "auto"));
 		if (!required.length || required.some(x => !known.has(x))) {
 			console.error(chalk.red(`❌  invalid --fail-on-incomplete capabilities: ${raw}`));
 			process.exitCode = 2;
 			console.error(reliability.cancellation([],options.lang));
 			return;
-		} else if (imageAcquisitionFailed || require("./lib/artifacts/scan").incompleteCapabilities(imageState,required).length || ((required.includes("inventory") || required.includes("sources")) && (mavenDepthLimited || reportWarnings.some(w => w.type === "dependency-coverage" || w.type === "go-coverage"))) || (required.includes("sources") && (sourceHealth.unreportedOutages(enrichmentRequestKeys).length || sourceHealth.unreportedStale(enrichmentRequestKeys).some(s=>s.blocking) || reportWarnings.some(w => w.affectsCompleteness !== false && (w.type === "source-unavailable" || w.type === "source-stale" || w.type === "osv-coverage" || w.type === "packagist-advisory-data-unknown")))) || !requiredCoverageComplete(appState.coverage, required.filter(x => x !== "sources"))) {
+		} else if (imageAcquisitionFailed || require("./lib/artifacts/scan").incompleteCapabilities(imageState,required).length || ((required.includes("inventory") || required.includes("sources")) && (mavenDepthLimited || reportWarnings.some(w => w.type === "dependency-coverage" || w.type === "go-coverage"))) || (required.includes("sources") && (sourceHealth.unreportedOutages(enrichmentRequestKeys).length || sourceHealth.unreportedStale(enrichmentRequestKeys).some(s=>s.blocking) || reportWarnings.some(w => w.affectsCompleteness !== false && (w.type === "source-unavailable" || w.type === "source-stale" || w.type === "osv-coverage" || w.type === "packagist-advisory-data-unknown")))) || (applicationCoverageRequired && !requiredCoverageComplete(appState.coverage, required.filter(x => x !== "sources")))) {
 			ui.section("Coverage gate");
 			console.log(chalk.red(`✗ required scan checks incomplete: ${required.join(", ")}`));
 			process.exitCode = 2;
@@ -2958,18 +2976,21 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		console.log();
 	}
 
+	if (publication.incomplete) console.error(chalk.yellow("\n  ⚠ " + reliability.incompleteNotice(publication.blockers, options.lang)));
+
 	// CI gating — set a non-zero exit code (after all reports/exports are written)
 	// when a production finding meets the --fail-on threshold, OR (--fail-on-new) when
 	// the scan introduces any new production CVE finding vs the --baseline.
 	const newProd = (options.failOnNew && diff && diff.summary) ? diff.summary.cve.addedProduction : 0;
-	if ((options.failOn && options.failOn !== "none") || options.failOnNew) {
+	// A known-malicious package always blocks, with or without --fail-on (as in system scan).
+	// Cache preparation only warms the caches: it reports the package and writes its archive.
+	const maliciousActive = warmingOnly ? [] : [...prodActive, ...embeddedActive].filter(m => m.malicious);
+	if ((options.failOn && options.failOn !== "none") || options.failOnNew || maliciousActive.length) {
 		const { evaluateGate } = require("./lib/gate");
 		// Embedded-binary findings are real production risk → gate on them too.
 		const gate = (options.failOn && options.failOn !== "none")
 			? evaluateGate([...prodActive, ...embeddedActive], options.failOn)
 			: { failed: false, reason: "" };
-		// A known-malicious package always blocks, regardless of the --fail-on level.
-		const maliciousActive = [...prodActive, ...embeddedActive].filter(m => m.malicious);
 		if (gate.failed || maliciousActive.length || newProd > 0) {
 			ui.section("Gate");
 			if (maliciousActive.length) console.log(chalk.red.bold(`✗ ${maliciousActive.length} known-malicious package(s) detected — always blocks`));

@@ -36,7 +36,7 @@ test('a required POM on a private Maven mirror retries a temporary 429 and keeps
  assert.notEqual(signals[0],signals[1]);
 });
 
-test('analyse publishes a host summary with one CVE record; cancellation preserves the previous reports',async t=>{
+test('analyse publishes a host summary with one CVE record; a strict rerun without OSV is cancelled and preserves the previous reports, a default rerun publishes an incomplete report',async t=>{
  const fs=require('node:fs'), os=require('node:os'), path=require('node:path'), {spawnSync}=require('node:child_process');
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-publish-host-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  const root=path.join(dir,'root'), cacheDir=path.join(dir,'cache'), out=path.join(dir,'out'), input=path.join(dir,'inventory.json');
@@ -59,9 +59,18 @@ test('analyse publishes a host summary with one CVE record; cancellation preserv
  const before=new Map(files.map(file=>[file,fs.readFileSync(path.join(out,file))]));
  const doc=JSON.parse(before.get('findings.json'));assert.equal(doc.summary.scanReliable,true);assert.equal(doc.cve.length,1);
  const html=before.get('cve-report.html').toString();assert.match(html,/href="#chhost">CVE-2024-12345/);assert.match(html,/host-chart-priority/);
- const cancelled=run(['--no-osv']);
+ // Without OSV the package lacks one of its two sources. Under --fail-on-incomplete the
+ // scan is cancelled and the previous reports are left untouched.
+ const cancelled=run(['--no-osv','--fail-on-incomplete','advisories']);
  assert.equal(cancelled.status,2,cancelled.stderr);assert.match(cancelled.stderr,/Scan annulé/);
  for(const [file,body] of before)assert.deepEqual(fs.readFileSync(path.join(out,file)),body,file);
+ // By default the same gap is not fatal (the native source assessed the package): the
+ // report is replaced by one marked incomplete that names the missing OSV consultation.
+ const incomplete=run(['--no-osv']);
+ const {doc:partial}=require('./helpers/incomplete-scan')(incomplete,path.join(out,'findings.json'));
+ assert.match(incomplete.stderr,/Couverture incomplète/);
+ assert.ok(partial.warnings.some(w=>w.code==='package-advisory-coverage'&&w.fatal===false&&w.items.some(i=>i.id==='fixture@1.0-1'&&i.detail==='OSV')),JSON.stringify(partial.warnings));
+ assert.match(fs.readFileSync(path.join(out,'cve-report.html'),'utf8'),/incomplete-banner/);
 });
 
 test('unsupported package managers still block while raw binary identities do not require package advisory coverage',()=>{
@@ -117,4 +126,65 @@ test('a Maven CVE detail is redundant only for versions already known to be affe
  const deps=new Map([['library',dep]]);
  assert.equal(collectPackageNvdBindings(deps,store,[known]).length,1);
  assert.deepEqual(collectPackageNvdBindings(deps,store,[known,{...known,dep:{...dep,version:'2.0'}}]),[]);
+});
+
+test('publication(): a non-fatal blocker publishes an incomplete report; no blocker is neither',()=>{
+ const {publication,coverageWarning}=require('../lib/scan-reliability');
+ const gap=coverageWarning('Advisory discovery is incomplete for 1 package/version(s).',{code:'package-advisory-coverage',fatal:false});
+ const p=publication([gap,{type:'suppressed',severity:'info',message:'note'}],{inventoryCount:3});
+ assert.equal(p.cancel,false);assert.equal(p.incomplete,true);assert.deepEqual(p.blockers,[gap]);assert.deepEqual(p.reasons,[]);
+ const clean=publication([{type:'suppressed',severity:'info',message:'note'}],{inventoryCount:3});
+ assert.equal(clean.cancel,false);assert.equal(clean.incomplete,false);assert.deepEqual(clean.blockers,[]);
+ assert.deepEqual(publication([],{inventoryCount:0}),{blockers:[],cancel:false,incomplete:false,reasons:[]});
+});
+
+test('publication(): a fatal blocker, or no inventory with an inventory blocker, cancels',()=>{
+ const {publication,coverageWarning}=require('../lib/scan-reliability');
+ const fatal=coverageWarning('No advisory source assessed any package.',{code:'package-advisory-coverage',fatal:true});
+ const other={type:'osv-coverage',message:'OSV gap'};
+ const p=publication([other,fatal],{inventoryCount:2});
+ assert.equal(p.cancel,true);assert.equal(p.incomplete,false);assert.deepEqual(p.reasons,[fatal,other],'decisive gap first, then every other gap');
+ const noLock={type:'no-lockfile',message:'package.json without lockfile'};
+ const empty=publication([noLock,other],{inventoryCount:0});
+ assert.equal(empty.cancel,true);assert.deepEqual(empty.reasons,[noLock,other]);
+ // An empty inventory with only an advisory-type blocker is not an inventory failure.
+ assert.equal(publication([other],{inventoryCount:0}).cancel,false);
+ // The same inventory blocker with an inventory publishes.
+ assert.equal(publication([noLock],{inventoryCount:1}).incomplete,true);
+});
+
+test('publication(): --fail-on-incomplete cancels only when a blocker capability is required',()=>{
+ const {publication,warningCapability}=require('../lib/scan-reliability');
+ const structural={type:'dependency-coverage',message:'1 Maven POM(s) could not be resolved'};
+ const advisory={type:'osv-coverage',message:'OSV gap'};
+ const declared={type:'scan-reliability',reliabilityFailure:true,capability:'sources',message:'source gap'};
+ assert.equal(warningCapability(structural),'inventory');assert.equal(warningCapability(advisory),'advisories');assert.equal(warningCapability(declared),'advisories');
+ const inv=publication([structural],{inventoryCount:1,strict:['inventory']});
+ assert.equal(inv.cancel,true);assert.deepEqual(inv.reasons,[structural]);
+ assert.deepEqual(publication([structural],{inventoryCount:1,strict:['advisories']}),{blockers:[structural],cancel:false,incomplete:true,reasons:[]});
+ // 'sources' is treated as 'advisories', in the strict list and in a warning's capability.
+ assert.deepEqual(publication([advisory],{inventoryCount:1,strict:['sources']}).reasons,[advisory]);
+ assert.deepEqual(publication([declared],{inventoryCount:1,strict:['advisories']}).reasons,[declared]);
+ assert.equal(publication([advisory],{inventoryCount:1,strict:['inventory']}).cancel,false);
+ assert.equal(publication([advisory],{inventoryCount:1,strict:['recipes']}).cancel,false);
+});
+
+test('createDiscoveryCoverage().assess is fatal only when every assessed version lacks both sources',()=>{
+ const coverage=createDiscoveryCoverage();
+ const a={ecosystem:'npm',name:'first',artifactId:'first',version:'1.0.0'},b={ecosystem:'npm',name:'second',artifactId:'second',version:'2.0.0'};
+ const both=new Map([['first',a],['second',b]]);
+ let gap=coverage.assess(both);
+ assert.equal(gap.assessed,2);assert.equal(gap.unassessed,2);assert.equal(gap.fatal,true);
+ assert.deepEqual(gap.items.map(i=>i.missing),[['OSV','a second advisory source'],['OSV','a second advisory source']]);
+ // One version consulted by OSV only: still a gap, no longer fatal.
+ coverage.consulted(a,'osv');
+ gap=coverage.assess(both);
+ assert.equal(gap.unassessed,1);assert.equal(gap.fatal,false);assert.ok(isBlocking(gap));
+ // Within a single package, one of two versions assessed by a second source is enough.
+ const multi=createDiscoveryCoverage();
+ multi.consulted(dep,'cveproject','1.0.0');
+ gap=multi.assess(deps);assert.equal(gap.assessed,2);assert.equal(gap.unassessed,1);assert.equal(gap.fatal,false);
+ assert.equal(createDiscoveryCoverage().assess(deps).fatal,true);
+ // Nothing to assess: no warning at all.
+ assert.equal(createDiscoveryCoverage().assess(new Map()),null);
 });

@@ -103,8 +103,14 @@ for(const status of [404,503])test(`CLI POM ${status} after repository fanout: c
   assert.equal(report.summary.scanReliable,true);assert.ok(report.warnings.some(w=>w.type==='private-libs'&&w.items.some(i=>i.id==='private.example:library:1.0')));
   const replay=run(['--offline']);assert.equal(replay.status,0,replay.stdout+'\n'+replay.stderr);
  }else{
+  // Every advisory source is unreachable in this fixture (the hook rejects them), so no
+  // source assessed the only package: the scan is still cancelled (fatal coverage gap).
   assert.equal(result.status,2,result.stdout+'\n'+result.stderr);
-  assert.match(result.stderr,/private.example:library:1.0/);
+  assert.match(result.stderr,/Scan cancelled/);
+  assert.match(result.stderr,/Advisory discovery is incomplete for 1 package\/version\(s\)[\s\S]*private\.example:library@1\.0 — OSV \+ a second advisory source/);
+  // The unresolved POM is reported as a dependency-coverage gap, never as a confirmed absence.
+  assert.match(result.stdout,/\[dependency-coverage\] 1 Maven POM\(s\) could not be resolved[^\n]*\n\s*· private\.example:library:1\.0/);
+  assert.doesNotMatch(result.stdout+result.stderr,/absent from all configured registries/);
   assert.equal(fs.existsSync(path.join(out,'findings.json')),false);
  }
 });

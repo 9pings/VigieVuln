@@ -43,7 +43,7 @@ test("writeChecksums writes a file that `sha256sum -c` accepts", () => {
 		assert.ok(written.includes("report.html"));
 		// Verify with the system tool when available; the format must round-trip.
 		try {
-			const out = execFileSync("sha256sum", ["-c", "SHA256SUMS"], { cwd: dir, encoding: "utf8" });
+			const out = execFileSync("sha256sum", ["-c", "SHA256SUMS"], { cwd: dir, encoding: "utf8", env: { ...process.env, LC_ALL: "C" } });
 			assert.match(out, /report\.html: OK/);
 			assert.match(out, /findings\.json: OK/);
 		} catch (e) {

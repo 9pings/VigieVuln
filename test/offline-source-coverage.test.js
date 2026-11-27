@@ -18,7 +18,10 @@ for (const ecosystem of ['maven', 'npm']) test(`offline ${ecosystem} missing adv
  const run = spawnSync(process.execPath, args, {cwd:dir, env:{PATH:process.env.PATH, FORCE_COLOR:'0'}, encoding:'utf8', timeout:30000});
  assert.equal(run.status, 2, run.stdout + run.stderr);
  assert.match(run.stderr,/Scan cancelled/);
- assert.match(run.stderr,ecosystem==='maven'?/CVEProject/:/OSV/);
+ // No source assessed the only package (fatal gap): the cancellation lists that gap; the
+ // missing source itself is named in the scan issues on stdout.
+ assert.match(run.stderr,/Advisory discovery is incomplete for 1 package\/version\(s\)[\s\S]*— OSV \+ a second advisory source/);
+ assert.match(run.stdout+run.stderr,ecosystem==='maven'?/\[source-unavailable\] CVEProject/:/\[osv-coverage\] OSV/);
  assert.deepEqual(fs.existsSync(output)?fs.readdirSync(output):[],[]);
 });
 
@@ -42,7 +45,9 @@ test('Packagist missing package evidence fails the sources gate online and offli
    '--report-json','-o',out,'--fail-on-incomplete','sources',...(mode==='offline'?['--offline']:[])];
   const run=spawnSync(process.execPath,args,{cwd:home,env:{HOME:home,USERPROFILE:home,PATH:process.env.PATH},encoding:'utf8',timeout:10000});
   assert.equal(run.status,2,run.stdout+run.stderr);
-  assert.match(run.stderr,/Packagist.*example\/widget/i);
+  assert.match(run.stderr,/Scan cancelled[\s\S]*example\/widget@1\.0\.0 — OSV \+ a second advisory source/);
+  // The missing Packagist evidence is named in the scan issues on stdout.
+  assert.match(run.stdout+run.stderr,/\[packagist-advisory-data-unknown\] No (cached )?Packagist advisory data was available for 1 Composer package\(s\): example\/widget/);
   assert.deepEqual(fs.existsSync(out)?fs.readdirSync(out):[],[]);
  }
 });
