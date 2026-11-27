@@ -158,3 +158,16 @@ test('opaque whiteout over a lower-layer symlink replaces the link and keeps its
  assert.ok((await fsp.lstat(path.join(root,'link2'))).isDirectory());assert.deepEqual(await fsp.readdir(path.join(root,'link2')),[]);
  assert.deepEqual(await fsp.readdir(path.join(root,'opt/data')),['fresh']);
 });
+
+test('an interrupted extraction removes its temporary root', async t => {
+ const os=require('node:os'),{spawn}=require('node:child_process');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-sigint-')),tmp=path.join(dir,'tmp');fs.mkdirSync(tmp);
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const script=`const {track}=require(${JSON.stringify(path.resolve(__dirname,'../lib/temp-roots'))});const fs=require('node:fs'),path=require('node:path');
+  const root=track(fs.mkdtempSync(path.join(${JSON.stringify(tmp)},'vigievuln-artifact-')));fs.writeFileSync(path.join(root,'layer'),'x');console.log('ready');setInterval(()=>{},1000);`;
+ const child=spawn(process.execPath,['-e',script],{stdio:['ignore','pipe','inherit']});
+ await new Promise(resolve=>child.stdout.once('data',resolve));
+ assert.equal(fs.readdirSync(tmp).length,1);
+ const code=await new Promise(resolve=>{child.once('exit',resolve);child.kill('SIGINT');});
+ assert.equal(code,130);assert.deepEqual(fs.readdirSync(tmp),[]);
+});
