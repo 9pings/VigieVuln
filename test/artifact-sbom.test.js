@@ -4,3 +4,21 @@ test('DSSE subject binding refuses mismatch; signature remains unverified',()=>{
 test('missing versions and malformed URLs are never invented',()=>{assert.equal(parsePurl('pkg:abc/%GG'),null);const r=readSbom({bomFormat:'CycloneDX',components:[{purl:'pkg:npm/foo'},{purl:'pkg:unknown/foo@1.0'}]});assert.equal(r.deps.size,0);assert(r.warnings.some(w=>w.reason==='sbom-version-unknown'));assert(r.warnings.some(w=>w.reason==='sbom-package-unsupported'));});
 test('explicit OS components and conflicting distro qualifiers never guess from image names',()=>{const c=readSbom({bomFormat:'CycloneDX',metadata:{component:{type:'container',name:'debian',version:'12'}},components:[{type:'operating-system',name:'alpine',version:'3.20.3'},{purl:'pkg:apk/alpine/busybox@1.36.1-r0?arch=x86_64&distro=alpine-3.20.3'}]});assert.equal(c.distribution.id,'alpine');assert.equal(c.distribution.versionId,'3.20.3');const conflict=readSbom({bomFormat:'CycloneDX',components:[{purl:'pkg:deb/debian/a@1?distro=debian-12'},{purl:'pkg:apk/alpine/b@1?distro=alpine-3.20'}]});assert.equal(conflict.distribution,null);assert(conflict.warnings.some(w=>w.reason==='sbom-distribution-conflict'));const named=readSbom({bomFormat:'CycloneDX',metadata:{component:{type:'container',name:'debian',version:'12'}},components:[]});assert.equal(named.distribution,null);});
 test('distribution evidence adapters are injectable and validated',()=>{const value=readSbom({bomFormat:'CycloneDX',components:[{purl:'pkg:apk/x/x@1'}]},{distributionAdapters:[{id:'custom',extract:()=>({id:'customos',versionId:'5',evidence:{type:'custom'}})}]});assert.equal(value.distribution.id,'customos');assert.throws(()=>readSbom({bomFormat:'CycloneDX'},{distributionAdapters:[{}]}),/Invalid/)});
+test('system packages keep the source package their producer declared, and none is guessed',()=>{
+ const component=(purl,properties=[])=>({type:'library',name:'x',purl,properties});
+ const doc={bomFormat:'CycloneDX',specVersion:'1.6',components:[
+  component('pkg:deb/debian/libssl3@3.0.11-1~deb12u2?arch=amd64&distro=debian-12&upstream=openssl'),
+  component('pkg:deb/debian/libgcc-s1@12.2.0-14?arch=amd64&distro=debian-12&upstream=gcc-12%4012.2.0-14'),
+  component('pkg:apk/alpine/ncurses-libs@6.3_p20220521-r1?arch=x86_64&distro=alpine-3.16.0',[{name:'fad:sourceName',value:'ncurses'},{name:'fad:sourceVersion',value:'6.3_p20220521-r1'}]),
+  component('pkg:deb/debian/libc6@2.36-9?arch=amd64&distro=debian-12',[{name:'aquasecurity:trivy:SrcName',value:'glibc'},{name:'aquasecurity:trivy:SrcVersion',value:'2.36'},{name:'aquasecurity:trivy:SrcRelease',value:'9+deb12u4'},{name:'aquasecurity:trivy:SrcEpoch',value:'0'}]),
+  component('pkg:deb/debian/zlib1g@1.2.13.dfsg-1?arch=amd64&distro=debian-12&epoch=1'),
+  component('pkg:deb/debian/odd@1.0?distro=debian-12&upstream=bad%20name'),
+  {type:'file',name:'sbin/apk'},{type:'file',name:'bin/busybox'}]};
+ const x=readSbom(doc),source=x.systemPackages.map(p=>[p.name,p.sourceName,p.sourceVersion]);
+ assert.deepEqual(source,[['libssl3','openssl','3.0.11-1~deb12u2'],['libgcc-s1','gcc-12','12.2.0-14'],['ncurses-libs','ncurses','6.3_p20220521-r1'],
+  ['libc6','glibc','2.36-9+deb12u4'],['zlib1g',null,null],['odd',null,null]]);
+ assert.equal(x.systemPackages[4].version,'1:1.2.13.dfsg-1','the epoch qualifier belongs to the version');
+ assert.match(x.warnings.find(w=>w.reason==='sbom-system-source-unknown').message,/^2 system packages lack/);
+ const unidentified=x.warnings.filter(w=>w.reason==='sbom-package-unidentified');
+ assert.equal(unidentified.length,1,'one notice, not one per component');assert.equal(unidentified[0].count,2);
+});
