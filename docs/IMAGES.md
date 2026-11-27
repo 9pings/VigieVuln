@@ -59,6 +59,22 @@ vigievuln system collect ./store.tar --output ./store.json
 vigievuln system collect / --images --projects /srv/apps --output /mnt/audit/server.json
 ```
 
+On a running system the collector never enters kernel or virtual filesystems (procfs,
+sysfs, devtmpfs, debugfs, tracefs, cgroup, pstore, configfs…), network and FUSE mounts
+(NFS, CIFS, 9p, sshfs…) or the container engine stores: their type is read from
+`/proc/self/mountinfo`. It reads regular files only. Leave out anything else with
+`--exclude-path`, absolute or relative to the collected root; the option also applies to
+`system scan <root>`:
+
+```bash
+vigievuln system collect / --exclude-path opt/collection-kit --exclude-path srv/data --output /mnt/audit/server.json
+```
+
+A collection running for more than 30 seconds reports its progress on stderr every
+30 seconds (elapsed time, files examined, current directory). `system scan` reports the
+stage in progress the same way, and records the duration of each stage in
+`provenance.stageTimings`.
+
 The CVE chapter starts with **Host system**. It identifies the disk, partition or
 archive, lists host interpreters and services with their advisory results, and
 shows findings on other system dependencies. Each subsequent section covers one

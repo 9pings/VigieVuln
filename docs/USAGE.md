@@ -440,6 +440,22 @@ vigievuln scan . --typosquat                       # add the typosquat heuristic
 vigievuln scan . --fail-on critical                # malware blocks even below 'critical'
 ```
 
+## Large reports
+
+A component with thousands of advisories (a kernel package carries more than 9 000) is
+reported in full detail for its 100 highest-priority findings. The HTML and Word reports
+count the others by severity. The JSON, Excel, SBOM, SARIF and CSAF exports still list
+every finding, the ones beyond the limit as compact entries (`detail: "compact"`) with
+their identity, component, rating, fix and distribution evidence but without advisory
+texts; `summary.cve.compact` counts them. A distribution's per-CVE record
+(`DEBIAN-CVE-…`) and the CVE it names are one finding, shown under the CVE id; a DSA or
+DLA announcement whose CVEs are all listed for the package appears in their `related`
+field.
+
+With an NVD API key, a batch of more than 200 CVE records is read from the NVD mirror
+first, then from NVD for what the mirror does not hold yet: NVD's limit of 50 requests
+per 30 seconds would otherwise take about 100 minutes for 10 000 CVEs.
+
 ## Offline / cache control
 
 ```bash

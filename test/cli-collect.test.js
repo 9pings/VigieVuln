@@ -221,3 +221,30 @@ test('Ghost themes, Redmine core and installed Ruby libraries retain their ident
   assert.deepEqual(assessment.matches[0].dep.systemApplicationIds,[redmine.id]);
   assert.match(assessment.matches[0].dep.artifactPath,/lib\/redmine\/version\.rb$/);
 });
+
+test('collect leaves out an excluded directory and never blocks on special files in the tree', async t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-collect-exclude-'));
+  t.after(() => fs.rmSync(dir, {recursive:true,force:true}));
+  const root = path.join(dir, 'server'), home = path.join(dir, 'home'), output = path.join(dir, 'out.json');
+  const put = (rel, text) => { const file = path.join(root, rel); fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, text); };
+  put('etc/os-release', 'ID=debian\nVERSION_ID=12\n');
+  put('var/lib/dpkg/status', 'Package: zlib1g\nStatus: install ok installed\nArchitecture: amd64\nVersion: 1:1.2.13.dfsg-1\n');
+  const lock = name => JSON.stringify({name:'app',version:'1.0.0',lockfileVersion:3,packages:{'':{name:'app',version:'1.0.0',dependencies:{[name]:'1.0.0'}},[`node_modules/${name}`]:{version:'1.0.0'}}});
+  put('srv/app/package.json', JSON.stringify({name:'app',version:'1.0.0',dependencies:{kept:'1.0.0'}}));
+  put('srv/app/package-lock.json', lock('kept'));
+  put('opt/kit/package.json', JSON.stringify({name:'kit',version:'1.0.0',dependencies:{'kit-only':'1.0.0'}}));
+  put('opt/kit/package-lock.json', lock('kit-only'));
+  // A named pipe with a manifest name: reading it would block forever.
+  if (process.platform !== 'win32') require('node:child_process').execFileSync('mkfifo', [path.join(root, 'srv/app/Gemfile.lock'), path.join(root, 'srv/app/server.pem')]);
+  const names = async extra => {
+    await exec(process.execPath, [cli, 'system', 'collect', root, ...extra, '--output', output], {env:{...process.env, HOME:home, USERPROFILE:home}, timeout:30000});
+    return [...new Set(JSON.parse(fs.readFileSync(output, 'utf8')).targets.flatMap(t => (t.deps || []).map(d => d.name)))].sort();
+  };
+  const all = await names([]);
+  assert.ok(all.includes('kept') && all.includes('kit-only'), all.join());
+  const without = await names(['--exclude-path', 'opt/kit']);
+  assert.ok(without.includes('kept') && !without.includes('kit-only'), without.join());
+  const absolute = await names(['--exclude-path', path.join(root, 'opt/kit')]);
+  assert.deepEqual(absolute, without);
+  assert.equal(fs.existsSync(path.join(home, '.vigie-vuln')), false, 'collection does not create the client cache directory');
+});
