@@ -36,10 +36,11 @@ test('proxy offline scan reads an imported advisory from its isolated cache with
   });
  } finally { seedStore.close(); }
  const archive = path.join(dir,'seed.tar.gz');
- const packed = spawnSync('tar',['-czf',archive,'-C',path.join(dir,'seed'),'.vigie-vuln'],{encoding:'utf8'});
- assert.equal(packed.status,0,packed.stderr);
+ // The bundle the CLI itself writes and reads (cache export / cache import).
+ const {exportCache,importCache} = require('../lib/cache-archive-sqlite');
+ await exportCache(archive,{sourceDir:path.join(dir,'seed','.vigie-vuln')});
  const scoped = proxyScope('https://proxy.example',{homeDir:dir});
- await require('../lib/cache-archive').importCache(archive,{targetDir:scoped});
+ await importCache(archive,{targetDir:scoped});
  const hook = path.join(dir,'hook.js');
  fs.writeFileSync(hook, `require('node:os').homedir = () => ${JSON.stringify(dir)}; globalThis.fetch = () => { throw Error('NETWORK_ATTEMPT'); };`);
  const report = path.join(dir,'report.json');
