@@ -74,7 +74,8 @@ test("an addition whose id matches an existing finding's alias list merges", () 
 	const merged = mergeBySource([existing], [addition]);
 	assert.equal(merged.length, 1);
 	assert.equal(merged[0].source, "osv+packagist");
-	assert.equal(merged[0].cve.severity, "MEDIUM");
+	// neither side is scored: the higher qualitative rank wins, whatever the arrival order (B2)
+	assert.equal(merged[0].cve.severity, "HIGH");
 });
 
 test("a publisher-lane application finding merges with the standard lane's constat", () => {
@@ -125,4 +126,49 @@ test("absorbing a second packagist constat keeps the source tokens unique", () =
 	const merged = mergeBySource(mergeBySource([first], [second]), [third]);
 	assert.equal(merged.length, 1);
 	assert.equal(merged[0].source, "osv+packagist");
+});
+
+// Regression (B2): the merge kept the FIRST non-UNKNOWN label but the MAX score and the LAST
+// vector, so {MEDIUM,5.3} then {CRITICAL,9.8} came out {MEDIUM,9.8} and `--fail-on critical`
+// depended on which source arrived first.
+const B2_DEP = { coordKey: "org.example:lib", groupId: "org.example", artifactId: "lib", version: "1.0", ecosystem: "maven" };
+const B2_OSV = { dep: B2_DEP, source: "osv", cve: { id: "CVE-2099-1", severity: "MEDIUM", score: 5.3, cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N", aliases: [] } };
+const B2_CVEPROJECT = { dep: B2_DEP, source: "CVEProject", cve: { id: "CVE-2099-1", severity: "CRITICAL", score: 9.8, cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", aliases: [] } };
+const rating = m => ({ severity: m.cve.severity, score: m.cve.score, cvssVector: m.cve.cvssVector, cvssVersion: m.cve.cvssVersion });
+
+test("severity, score and vector come together from the highest-scored source", () => {
+	const [m] = mergeBySource([B2_OSV], [B2_CVEPROJECT]);
+	assert.deepEqual(rating(m), { severity: "CRITICAL", score: 9.8, cvssVector: B2_CVEPROJECT.cve.cvssVector, cvssVersion: undefined });
+	assert.equal(require("../lib/gate").evaluateGate([m], "critical").failed, true);
+});
+
+test("the merged rating is independent of source arrival order", () => {
+	const cases = [
+		[B2_OSV, B2_CVEPROJECT],
+		// equal scores: the qualitative rank, then the values themselves break the tie
+		[{ ...B2_OSV, cve: { ...B2_OSV.cve, score: 9.8, severity: "HIGH" } }, B2_CVEPROJECT],
+		[{ ...B2_OSV, cve: { ...B2_OSV.cve, score: 9.8, severity: "CRITICAL", cvssVersion: "CVSS:3.0" } }, { ...B2_CVEPROJECT, cve: { ...B2_CVEPROJECT.cve, cvssVersion: "CVSS:3.1" } }],
+		// no scores: the qualitative rank decides
+		[{ ...B2_OSV, cve: { ...B2_OSV.cve, score: null, cvssVector: null } }, { ...B2_CVEPROJECT, cve: { ...B2_CVEPROJECT.cve, score: null, cvssVector: null } }],
+		// the higher label wins even unscored: a second source must not lower the gate
+		[{ ...B2_OSV, cve: { ...B2_OSV.cve, severity: "HIGH", score: 7.5 } }, { ...B2_CVEPROJECT, cve: { ...B2_CVEPROJECT.cve, severity: "CRITICAL", score: null, cvssVector: null, severityScheme: "drupal-rating" } }],
+		// an UNKNOWN unscored side never displaces a rated one
+		[{ ...B2_OSV, cve: { id: "CVE-2099-1", severity: "UNKNOWN", score: null, aliases: [] } }, B2_OSV],
+	];
+	const winners = [];
+	for (const [a, b] of cases) {
+		const ab = rating(mergeBySource([a], [b])[0]), ba = rating(mergeBySource([b], [a])[0]);
+		winners.push(ab);
+		assert.deepEqual(ab, ba, JSON.stringify([a.cve, b.cve]));
+		assert.ok([a.cve, b.cve].some(c => c.severity === ab.severity && c.score === ab.score && (c.cvssVector || null) === ab.cvssVector),
+			"the triple comes from ONE source");
+	}
+	assert.deepEqual(winners.map(w => [w.severity, w.score]),
+		[["CRITICAL", 9.8], ["CRITICAL", 9.8], ["CRITICAL", 9.8], ["CRITICAL", null], ["CRITICAL", null], ["MEDIUM", 5.3]]);
+	// three sources, all six orders → one rating
+	const c = { ...B2_OSV, source: "nvd", cve: { ...B2_OSV.cve, severity: "HIGH", score: 7.5, cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N" } };
+	const perms = [[B2_OSV, B2_CVEPROJECT, c], [B2_OSV, c, B2_CVEPROJECT], [B2_CVEPROJECT, B2_OSV, c], [B2_CVEPROJECT, c, B2_OSV], [c, B2_OSV, B2_CVEPROJECT], [c, B2_CVEPROJECT, B2_OSV]];
+	const ratings = perms.map(([x, y, z]) => rating(mergeBySource(mergeBySource([x], [y]), [z])[0]));
+	for (const r of ratings) assert.deepEqual(r, ratings[0]);
+	assert.equal(ratings[0].severity, "CRITICAL");
 });

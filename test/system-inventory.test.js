@@ -158,3 +158,83 @@ test('Debian advisory keeps dated upstream and related evidence distinct from al
  const out=await assessSystemInventory({distribution,packages:[dep]},{records:[record],complete:true});assert.equal(out.matches.length,1);const cve=out.matches[0].cve;
  assert.equal(cve.id,'DLA-3951-1');assert.deepEqual(cve.aliases,[]);assert.deepEqual(cve.upstream,['CVE-2024-8096','CVE-2024-9999']);assert.deepEqual(cve.related,['DEBIAN-CVE-2024-8096']);assert.equal(cve.severity,'UNKNOWN');assert.equal(cve.published,record.published);assert.equal(cve.modified,record.modified);assert.equal(cve.summary,record.summary);assert.equal(cve.advisorySource,record.affected[0].database_specific.source);
 });
+test('OSV versions[] counts even when ranges exist (B5)',()=>{
+ const {verdict}=require('../lib/system-inventory/advisories');
+ const a={ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'1.0-2'}]}],versions:['1.0-1','1.1-1']};
+ assert.equal(verdict('1.1-1',a,versions.debian),true);
+ // compared by the distribution scheme, not by string: an explicit zero epoch is the same version
+ assert.equal(verdict('0:1.1-1',a,versions.debian),true);
+ assert.equal(verdict('1:1.1-1',a,versions.debian),false);
+ assert.equal(verdict('1.0-1',a,versions.debian),true);assert.equal(verdict('1.2-1',a,versions.debian),false);
+ // an undecidable range still leaves an unlisted version unknown, a listed one is affected
+ const u={ranges:[{type:'GIT',events:[{introduced:'abc'}]}],versions:['1.1-1']};
+ assert.equal(verdict('1.1-1',u,versions.debian),true);assert.equal(verdict('1.2-1',u,versions.debian),null);
+});
+test('distroless dpkg status.d control files are installed packages; md5sums are ignored',async t=>{
+ const dir=root(t);put(dir,'etc/os-release','ID=debian\nVERSION_ID=12\n');
+ put(dir,'var/lib/dpkg/status.d/libssl3','Package: libssl3\nVersion: 3.0.11-1~deb12u2\nArchitecture: amd64\nSource: openssl\n');
+ put(dir,'var/lib/dpkg/status.d/libssl3.md5sums','0123456789abcdef0123456789abcdef  usr/lib/x86_64-linux-gnu/libssl.so.3\n');
+ put(dir,'var/lib/dpkg/status.d/tzdata','Package: tzdata\nVersion: 2024a-0+deb12u1\nArchitecture: all\n');
+ put(dir,'var/lib/dpkg/status.d/removed','Package: removed\nStatus: deinstall ok config-files\nVersion: 1\n');
+ let inv=await collectSystemInventory(dir);const dpkg=inv.coverage.find(c=>c.collector==='dpkg');
+ assert.deepEqual(inv.packages.map(p=>[p.name,p.version,p.sourceName,p.sourceVersion,p.manifestPath]),[['libssl3','3.0.11-1~deb12u2','openssl','3.0.11-1~deb12u2','/var/lib/dpkg/status.d/libssl3'],['tzdata','2024a-0+deb12u1','tzdata','2024a-0+deb12u1','/var/lib/dpkg/status.d/tzdata']]);
+ assert.deepEqual(dpkg,{collector:'dpkg',status:'complete',count:2});assert.deepEqual(inv.warnings,[]);
+ put(dir,'var/lib/dpkg/status','Package: libssl3\nStatus: install ok installed\nVersion: 3.0.11-1~deb12u2\nArchitecture: amd64\nSource: openssl\n\nPackage: base-files\nStatus: install ok installed\nVersion: 12.4\nArchitecture: amd64\n');
+ put(dir,'var/lib/dpkg/status.d/broken','Package: broken\n');
+ inv=await collectSystemInventory(dir);
+ assert.deepEqual(inv.packages.map(p=>[p.name,p.manifestPath]),[['libssl3','/var/lib/dpkg/status'],['base-files','/var/lib/dpkg/status'],['tzdata','/var/lib/dpkg/status.d/tzdata']]);
+ assert.equal(inv.coverage.find(c=>c.collector==='dpkg').status,'incomplete');
+});
+
+test('RPM source version keeps the epoch of a same-build package; module label and signed kernel source are read',async t=>{
+ const header=values=>{let size=0;const chunks=[];for(const item of values){const b=Buffer.from(item[2]+'\0');chunks.push(b);item.push(size);size+=b.length;}
+  const blob=Buffer.alloc(8+values.length*16+size);blob.writeUInt32BE(values.length);blob.writeUInt32BE(size,4);
+  for(let i=0;i<values.length;i++){const [tag,type,,offset]=values[i],p=8+i*16;blob.writeUInt32BE(tag,p);blob.writeUInt32BE(type,p+4);blob.writeUInt32BE(offset,p+8);blob.writeUInt32BE(1,p+12);}
+  Buffer.concat(chunks).copy(blob,8+values.length*16);return rpmHeader(blob);};
+ const epoch=n=>{const b=Buffer.alloc(4);b.writeUInt32BE(n);return b;};
+ // Epoch is an INT32 tag: build it by hand next to the string tags.
+ const withEpoch=(name,version,release,source,label)=>{
+  const strings=[[1000,name],[1001,version],[1002,release],[1044,source],...(label?[[5096,label]]:[])];
+  let size=0;const chunks=[],index=[];
+  for(const [tag,value] of strings){const b=Buffer.from(value+'\0');index.push([tag,6,size,1]);chunks.push(b);size+=b.length;}
+  while(size%4){chunks.push(Buffer.alloc(1));size++;}
+  index.push([1003,4,size,1]);chunks.push(epoch(1));size+=4;
+  const blob=Buffer.alloc(8+index.length*16+size);blob.writeUInt32BE(index.length);blob.writeUInt32BE(size,4);
+  index.forEach(([tag,type,offset,count],i)=>{const p=8+i*16;blob.writeUInt32BE(tag,p);blob.writeUInt32BE(type,p+4);blob.writeUInt32BE(offset,p+8);blob.writeUInt32BE(count,p+12);});
+  Buffer.concat(chunks).copy(blob,8+index.length*16);return rpmHeader(blob);};
+ const dbus=withEpoch('dbus-libs','1.12.8','18.el8','dbus-1.12.8-18.el8.src.rpm');
+ assert.equal(dbus.version,'1:1.12.8-18.el8');assert.equal(dbus.sourceVersion,'1:1.12.8-18.el8','same build: the source shares the epoch');
+ const own=withEpoch('perl-Encode','2.97','3.el8','perl-5.26.3-421.el8.src.rpm');
+ assert.equal(own.sourceVersion,'5.26.3-421.el8');assert.equal(own.sourceEpochUnknown,true,'a subpackage with its own version does not reveal the source epoch');
+ const plain=header([[1000,6,'perl-Errno'],[1001,6,'1.28'],[1002,6,'421.el8'],[1044,6,'perl-5.26.3-421.el8.src.rpm']]);
+ assert.equal(plain.sourceVersion,'5.26.3-421.el8');assert.equal(plain.sourceEpochUnknown,true);
+ assert.equal(dbus.sourceEpochUnknown,undefined);
+ const php=withEpoch('php-cli','7.2.24','1.module+el8.4.0+413+c9202dda','php-7.2.24-1.module+el8.4.0+413+c9202dda.src.rpm','php:7.2:8040020210421:76554e01');
+ assert.equal(php.modularityLabel,'php:7.2:8040020210421:76554e01');
+ const dir=root(t);put(dir,'etc/os-release','ID=debian\nVERSION_ID=12\n');
+ put(dir,'var/lib/dpkg/status','Package: linux-image-6.1.0-17-amd64\nStatus: install ok installed\nArchitecture: amd64\nSource: linux-signed-amd64 (6.1.69+1)\nVersion: 6.1.69-1\n\nPackage: linux-image-amd64\nStatus: install ok installed\nArchitecture: amd64\nSource: linux-signed-amd64 (6.1.69+1)\nVersion: 6.1.69-1\n');
+ const kernel=(await collectSystemInventory(dir)).packages;
+ assert.deepEqual(kernel.map(p=>[p.name,p.sourceName,p.sourceVersion]),[['linux-image-6.1.0-17-amd64','linux','6.1.69-1'],['linux-image-amd64','linux-signed-amd64','6.1.69+1']]);
+});
+
+test('an RPM module-stream erratum applies only to packages of that stream',async t=>{
+ const dir=root(t),distribution={id:'rocky',versionId:'8.6'};
+ const erratum=(id,summary,name,fixed)=>({id,summary,aliases:['CVE-2099-'+id.slice(-4)],affected:[{package:{ecosystem:'Rocky Linux:8',name},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed}]}]}]});
+ await importSystemAdvisories([
+  erratum('RLSA-2099:0001','Moderate: perl:5.32 security update','perl-Carp','0:1.50-439.module+el8.10.0+1616+0d20cc68'),
+  erratum('RLSA-2099:0002','Moderate: php:7.4 security update','php','0:7.4.33-1.module+el8.10.0+1604+6558efc7'),
+  erratum('RLSA-2099:0003','Important: dbus security update','dbus','1:1.12.8-23.el8_7.1'),
+ ],{distribution,cacheDir:dir,complete:true});
+ const pkg=(name,version,sourceName,extra={})=>({name,version,architecture:'x86_64',manager:'rpm',ecosystem:'system',sourceName,sourceVersion:version,...extra});
+ const ids=async packages=>(await assessSystemInventory({distribution,packages},{cacheDir:dir})).matches.map(m=>m.cve.sourceAdvisoryId).sort();
+ assert.deepEqual(await ids([pkg('perl-Carp','1.42-396.el8','perl-Carp')]),[],'a non-modular package is not described by a module erratum');
+ assert.deepEqual(await ids([pkg('php-cli','7.2.24-1.module+el8.4.0+413+c9202dda','php',{modularityLabel:'php:7.2:8040020210421:76554e01'})]),[],'another stream of the module');
+ assert.deepEqual(await ids([pkg('php-cli','7.4.19-1.module+el8.6.0+789+2130c178','php',{modularityLabel:'php:7.4:8060020220527:9a7fc3ab'})]),['RLSA-2099:0002'],'the same stream below its fix');
+ assert.deepEqual(await ids([pkg('php-cli','7.4.19-1.module+el8.6.0+789+2130c178','php')]),['RLSA-2099:0002'],'without a module label the range decides');
+ assert.deepEqual(await ids([pkg('dbus-libs','1:1.12.8-18.el8','dbus')]),['RLSA-2099:0003'],'epoch-qualified source version is matched');
+ // A subpackage with its own version borrows the source epoch from the advisory bounds.
+ await importSystemAdvisories([erratum('RLSA-2099:0004','Moderate: perl security update','perl','4:5.26.3-419.el8')],{distribution,cacheDir:dir,complete:true});
+ const errno=version=>({...pkg('perl-Errno','1.28-421.el8','perl'),sourceVersion:version,sourceEpochUnknown:true});
+ assert.deepEqual(await ids([errno('5.26.3-421.el8')]),[],'4:5.26.3-421 is past the fix 4:5.26.3-419');
+ assert.deepEqual(await ids([errno('5.26.3-416.el8')]),['RLSA-2099:0004'],'4:5.26.3-416 is before the fix');
+});

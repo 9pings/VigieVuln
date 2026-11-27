@@ -93,6 +93,39 @@ test("severityFromOsv computes the v3 base score from the vector, not the versio
 	assert.equal(severityFromOsv(mk("7.5")).score, 7.5);
 });
 
+// Regression (B1): Ubuntu OSV records list CVSS_V4 first, then a scorable CVSS_V3 vector,
+// then Ubuntu's own priority. Stopping at the unscorable v4 entry left the finding UNKNOWN
+// and let it through `--fail-on medium`. Real severity[] of UBUNTU-CVE-2025-6965.
+const UBUNTU_CVE_2025_6965_SEVERITY = [
+	{ type: "CVSS_V4", score: "CVSS:4.0/AV:N/AC:H/AT:P/PR:L/UI:N/VC:L/VI:H/VA:L/SC:L/SI:H/SA:L/S:N/AU:N/R:U/V:D/RE:L/U:Green", source: "CNA" },
+	{ type: "CVSS_V3", score: "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:L/I:H/A:L", source: "NVD" },
+	{ type: "Ubuntu", score: "medium", source: "SELF" },
+];
+test("severityFromOsv reads a scorable v3 vector listed after an unscored v4 one (UBUNTU-CVE-2025-6965)", () => {
+	assert.deepStrictEqual(severityFromOsv({ id: "UBUNTU-CVE-2025-6965", severity: UBUNTU_CVE_2025_6965_SEVERITY }), { severity: "HIGH", score: 7.7 });
+	const m = vulnToMatch({ ecosystem: "npm", name: "x", version: "1.0.0", coordKey: "npm:x" },
+		{ id: "UBUNTU-CVE-2025-6965", severity: UBUNTU_CVE_2025_6965_SEVERITY });
+	assert.strictEqual(m.cve.score, 7.7);
+	assert.strictEqual(m.cve.cvssVector, UBUNTU_CVE_2025_6965_SEVERITY[1].score, "the vector travels with its score");
+	assert.strictEqual(m.cve.cvssVersion, "CVSS:3.1");
+	const { evaluateGate } = require("../lib/gate");
+	assert.strictEqual(evaluateGate([m], "medium").failed, true);
+});
+test("severityFromOsv falls back to the distribution rating when no CVSS entry is scorable", () => {
+	const v4 = UBUNTU_CVE_2025_6965_SEVERITY[0];
+	assert.deepStrictEqual(severityFromOsv({ severity: [v4, { type: "Ubuntu", score: "medium" }] }), { severity: "MEDIUM", score: null });
+	// v4 only: no invented score, the vector is still kept as evidence
+	assert.deepStrictEqual(severityFromOsv({ severity: [v4] }), { severity: "UNKNOWN", score: null });
+	const m = vulnToMatch({ ecosystem: "npm", name: "x", version: "1.0.0", coordKey: "npm:x" }, { id: "X-1", severity: [v4] });
+	assert.strictEqual(m.cve.score, null);
+	assert.strictEqual(m.cve.cvssVector, v4.score);
+	assert.strictEqual(m.cve.cvssVersion, "CVSS:4.0");
+	// a non-band distribution label is not a severity
+	assert.strictEqual(severityFromOsv({ severity: [v4, { type: "Ubuntu", score: "negligible" }] }).severity, "UNKNOWN");
+	// database_specific.severity still wins over the distribution entry
+	assert.deepStrictEqual(severityFromOsv({ database_specific: { severity: "LOW" }, severity: [v4, { type: "Ubuntu", score: "high" }] }), { severity: "LOW", score: null });
+});
+
 test("vulnToMatch carries the CVSS vector + version from OSV severity", () => {
 	const m = vulnToMatch({ ecosystem: "npm", name: "x", version: "1.0.0", coordKey: "npm:x" },
 		{ id: "GHSA-aaaa", database_specific:{cwe_ids:["CWE-94","cwe-94",null]}, severity: [{ type: "CVSS_V3", score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }] });

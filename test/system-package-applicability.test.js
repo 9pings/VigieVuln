@@ -20,3 +20,12 @@ test('source-level evidence is retained outside confirmed binary findings',()=>{
  assert.deepEqual(result.matches,[]);assert.equal(result.observations[0].cveId,match.cve.id);
  assert.equal(result.observations[0].status,'source-package-only');
 });
+test('the installed distribution\'s own advisory is not withdrawn by a CNA record naming another vendor',()=>{
+ // CVE-2026-3497: the CNA (Canonical) lists Ubuntu's OpenSSH builds; Debian tracks the same patch for bookworm.
+ const openssh={...dep,name:'openssh-server',sourceName:'openssh',sourceVersion:'1:9.2p1-2+deb12u2',version:'1:9.2p1-2+deb12u2',distribution:{id:'debian',versionId:'12',codename:'bookworm'}};
+ const own={dep:openssh,source:'osv',cve:{id:'CVE-2026-3497',sourceAdvisoryId:'DEBIAN-CVE-2026-3497',distributionAdvisory:{source:'Debian',release:'Debian:12'}}};
+ assert.equal(sourceOnlyReason(own,ubuntu),null);
+ assert.equal(reconcileSystemFindings([own],{getRecord:()=>({document:ubuntu})}).matches.length,1);
+ const inferred={dep:openssh,source:'cveproject',cve:{id:'CVE-2026-3497'}};
+ assert.equal(sourceOnlyReason(inferred,ubuntu).code,'different-package-distribution','without the distribution\'s own statement the vendor scope still holds');
+});

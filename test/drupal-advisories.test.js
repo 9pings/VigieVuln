@@ -36,8 +36,25 @@ test("Drupal private, legacy and unqueried components stay indeterminate", () =>
 });
 
 test("unknown Drupal constraints never become a no-match", () => {
-	assert.equal(affectedComposerVersion("1.2.3", "^1.2"), "indeterminate");
+	// "^1.2" used to be indeterminate here; the Composer evaluator decides it (>=1.2.0.0-dev <2.0.0.0-dev)
+	assert.equal(affectedComposerVersion("1.2.3", "^1.2"), "affected");
+	assert.equal(affectedComposerVersion("1.2.3", "~>1.2"), "indeterminate");
+	assert.equal(affectedComposerVersion("1.2.3", ">=1.0 foo"), "indeterminate");
+	assert.equal(affectedComposerVersion("1.2.3", ">=2.0 ||"), "indeterminate");
 	assert.equal(affectedComposerVersion("7.x-1.2", "<1.3.0"), "indeterminate");
+	assert.equal(affectedComposerVersion("10.3.x-dev", "<10.3.9"), "indeterminate");
+});
+
+test("Drupal constraints follow Composer pre-release rules (B3)", () => {
+	// Composer reads "<10.3.0" as "<10.3.0.0-dev" and "10.2.*" as ">=10.2.0.0-dev <10.3.0.0-dev":
+	// a 10.3.0 pre-release is OUTSIDE both; ">=10.3.0" is ">=10.3.0.0-dev", so it is inside.
+	assert.equal(affectedComposerVersion("10.3.0-rc1", ">=10.2.0 <10.3.0"), "no-match");
+	assert.equal(affectedComposerVersion("10.3.0-beta1", "10.2.*"), "no-match");
+	assert.equal(affectedComposerVersion("10.3.0-rc1", "<10.3.0"), "no-match");
+	assert.equal(affectedComposerVersion("10.3.0-rc1", ">=8.0.0 <10.2.11 || >=10.3.0 <10.3.9"), "affected");
+	const { satisfiesComposerConstraint } = require("../lib/packagist-audit");
+	for (const [v, c] of [["10.3.0-rc1", ">=10.2.0 <10.3.0"], ["10.3.0-beta1", "10.2.*"], ["10.3.0-rc1", "<10.3.0"], ["10.3.0-rc1", ">=8.0.0 <10.2.11 || >=10.3.0 <10.3.9"]])
+		assert.equal(affectedComposerVersion(v, c), satisfiesComposerConstraint(v, c) ? "affected" : "no-match", `${v} ${c}`);
 });
 
 test("wildcard branches from the official Drupal API are decided, not indeterminate", () => {
