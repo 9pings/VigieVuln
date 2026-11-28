@@ -49,3 +49,5 @@ uses the Alpine musl loader and resolves the supplied GCC runtime libraries
 from the adjacent `lib/` directory. Keep the included `licenses/` files with
 the bundle. The collector requires no Node installation or package installation
 on the audited machine. The release workflow includes the archive in `SHA256SUMS`.
+It starts on Alpine 3.16.9 (`musl-1.2.3-r3`) and later; on an unpatched Alpine 3.16.0
+(`musl-1.2.3-r0`) it stops with a segmentation fault.

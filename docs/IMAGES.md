@@ -42,7 +42,11 @@ reported separately.
 ## Collect evidence on a production Linux host
 
 On Alpine x86_64, extract the full `vigievuln-linux-x64-musl-v<VERSION>.tar.gz` archive
-and run `./vigievuln` beside its supplied `lib/` directory.
+and run `./vigievuln` beside its supplied `lib/` directory. The executable needs the musl
+library of an updated system: it runs on Alpine 3.16.9 (`musl-1.2.3-r3`) and later, and
+stops with a segmentation fault at start on an Alpine 3.16.0 that was never updated
+(`musl-1.2.3-r0`). For such a host, inventory a copy of its root filesystem, an archive or
+a disk image from another machine with `vigievuln system collect <root>`.
 On the audited host, supply a filesystem root and the destination of the inventory.
 For a workstation without containers:
 
