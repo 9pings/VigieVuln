@@ -48,6 +48,8 @@ private packages of the other ecosystems and do not mark the report incomplete.
 **WordPress plugins and themes are assessed by default**, under the slug of their official header URL or of their
 directory. An extension the public catalogue does not know is classified private automatically.
 `--public-component <relative-path>=<slug>` is only needed for an extension installed under a renamed directory.
+A single-file plugin placed directly in `plugins/` (`hello.php`) is not named after its catalogue slug: it is
+assessed under the slug of its official `Plugin URI`, and otherwise listed as a private component.
 
 ## Advisory lanes, per product
 

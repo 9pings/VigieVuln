@@ -124,3 +124,29 @@ test("WordPress inventories drop-ins and flags a missing parent theme", async ()
 		assert.equal(result.coverage.find(c => c.capability === "inventory").execution, "partial");
 	} finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+test("a single-file plugin is inventoried and assessed under the slug of its official Plugin URI only", async () => {
+	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wp-single-"));
+	const root = path.join(temp, "scan");
+	fs.cpSync(path.join(__dirname, "fixtures", "wordpress-custom"), root, { recursive: true });
+	const plugins = path.join(root, "site/wp-content/plugins");
+	// Catalogue slug "acme" comes from the Plugin URI, not from the file name.
+	fs.writeFileSync(path.join(plugins, "greeting.php"), "<?php\n/*\nPlugin Name: Greeting\nPlugin URI: https://wordpress.org/plugins/acme/\nVersion: 2.0\n*/\n");
+	// No official URI: the file name "acme.php" must not be taken for the catalogue's "acme".
+	fs.writeFileSync(path.join(plugins, "acme.php"), "<?php\n/*\nPlugin Name: Local helper\nVersion: 2.0\n*/\n");
+	fs.writeFileSync(path.join(plugins, "index.php"), "<?php // Silence is golden.\n");
+	fs.rmSync(path.join(plugins, "acme"), { recursive: true, force: true });
+	const feedFile = path.join(temp, "feed.json");
+	fs.writeFileSync(feedFile, JSON.stringify(WORD_FENCE_FEED));
+	try {
+		const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress", offline: true, wordfenceFeedPath: feedFile });
+		const single = result.inventory.filter(c => c.kind === "plugin" && c.path.endsWith(".php"));
+		assert.deepEqual(single.map(c => [path.basename(c.path), c.name, c.version, c.visibility, c.releaseSlug || null]).sort(),
+			[["acme.php", "Local helper", "2.0", "private", null], ["greeting.php", "Greeting", "2.0", "unknown", "acme"]]);
+		assert.equal(result.findings.length, 1);
+		assert.equal(result.findings[0].cve.id, "CVE-2099-12345");
+		const greeting = single.find(c => c.name === "Greeting"), helper = single.find(c => c.name === "Local helper");
+		assert.equal(result.coverage.find(c => c.occurrenceId === greeting.id).result, "affected");
+		assert.equal(result.coverage.find(c => c.occurrenceId === helper.id).diagnostic, "CMS_PRIVATE_COMPONENT");
+	} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+});
