@@ -1,2 +1,4 @@
 # Generated audit snapshots preserve upstream advisory whitespace and checksums.
 docs/samples/*.html -whitespace
+# Compared byte for byte with their compressed form: no line-ending conversion.
+test/fixtures/redhat/* -text

@@ -159,7 +159,8 @@ test('opaque whiteout over a lower-layer symlink replaces the link and keeps its
  assert.deepEqual(await fsp.readdir(path.join(root,'opt/data')),['fresh']);
 });
 
-test('an interrupted extraction removes its temporary root', async t => {
+// Windows has no signal delivery to a handler: kill() ends the process at once.
+test('an interrupted extraction removes its temporary root', { skip: process.platform === 'win32' }, async t => {
  const os=require('node:os'),{spawn}=require('node:child_process');
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-sigint-')),tmp=path.join(dir,'tmp');fs.mkdirSync(tmp);
  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
