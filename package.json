@@ -137,7 +137,7 @@
     "@renovatebot/pep440": "3.0.20",
     "7z-wasm": "1.2.0",
     "chalk": "^4.1.2",
-    "commander": "^14.0.3",
+    "commander": "^15.1.0",
     "domutils": "^3.2.2",
     "enquirer": "^2.4.1",
     "fflate": "^0.8.3",
