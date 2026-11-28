@@ -704,6 +704,13 @@ ranges apply only to coherently declared vendor packages; generic distro builds
 are not matched against upstream ranges because distro backports differ. Package
 signatures and runtime configuration are not inferred from these declarations.
 
+AlmaLinux and Rocky Linux packages are assessed against the distribution's published
+errata: a vulnerability the distribution has not fixed yet has no erratum and is not
+listed, which the report states. Debian, Ubuntu and Alpine trackers also record unfixed
+vulnerabilities. An erratum can cite a CVE identifier that is reserved but not published;
+when NVD answers that it holds no such record, the report says so without treating it
+as a coverage gap.
+
 A Go binary whose `(devel)` main module cannot be given a verified version is listed in
 the scan notices: advisories for the application itself are then not assessed, while its
 embedded module dependencies and standard library are.

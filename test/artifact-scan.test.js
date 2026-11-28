@@ -80,3 +80,12 @@ test('online system OSV refresh respects complete fresh snapshots, expiry, incom
   assert.equal(calls,['expired','incomplete'].includes(scenario)?1:0,scenario);if(scenario==='disabled')assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='system-osv').execution,'not-applicable');
  }
 });
+test('RPM signing keys are not packages awaiting advisories',async t=>{
+ const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-rpmkey-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});});
+ const target={id:'host',kind:'rootfs',metadata:{},distribution:{id:'almalinux',versionId:'9.9',name:'AlmaLinux 9.9'},deps:[],coverage:[],warnings:[],
+  packages:[{name:'gpg-pubkey',version:'b86b3716',release:'61e69f29',manager:'rpm',ecosystem:'system',provenance:'installed'}]};
+ const result=await require('../lib/artifacts/scan').assessInventories([target],{offline:true,eol:false,enrich:[],cacheDir});
+ assert.deepEqual(result.artifacts[0].packages||[],[]);
+ assert.equal(result.artifacts[0].metadata.rpmSigningKeys.length,1);
+ assert.equal(result.warnings.filter(w=>/gpg-pubkey/.test(JSON.stringify(w))).length,0);
+});
