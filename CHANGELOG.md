@@ -2,6 +2,7 @@
 
 ## [1.3.5] — 2026-11-25
 
+- Match RubyGems dependencies, in projects and in images, against the Ruby advisory database (rubysec/ruby-advisory-db, the data `bundler-audit` reads), on by default: it carries advisories OSV does not have for gems. On Mastodon v4.0.2 it adds 27 advisories (net-ssh, puma, doorkeeper, sanitize…) and every finding of Trivy is now covered (526 of 526).
 - Reorganise `lib/`: only command entry points and configuration remain at its root; each data source has its folder under `lib/providers/<name>/` holding its requests and its own code, and the other modules are grouped by theme (`cache`, `advisories`, `findings`, `scan`, `inventory`, `reports`, `images`, `applications`, `maintenance`, `service`). `lib/README.md` describes the layout. The `exports` map of `package.json` keeps the module paths used by the server working.
 - Group system-scan advisories by project or CMS instance, with direct and transitive findings and their source paths.
 - Keep CMS modules and themes under their instance. Group extension advisories by owner, give private extensions their own dependency breakdown, and collapse component inventories by default.

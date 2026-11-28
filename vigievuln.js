@@ -510,6 +510,7 @@ program
 	.option("--no-all-libs", "skip Maven Central queries (outdated check + missing-on-central check)")
 	.option("--no-osv", "skip OSV.dev (Google/GitHub aggregated Maven CVE feed)")
 	.option("--advisory-query-ttl <hours>", "hours before refreshing advisory consultations (0–8760; default 4; 0 always refreshes)")
+	.option("--no-ruby-advisories", "skip the Ruby advisory database lane for RubyGems deps (rubysec/ruby-advisory-db, the data `bundler-audit` reads — advisories OSV does not carry)")
 	.option("--no-packagist-audit", "skip the Packagist security-advisories lane for Composer deps (the data `composer audit` queries — closes CVEs OSV carries without composer coordinates)")
 	.option("--no-nvd", "skip NIST NVD enrichment of matched CVEs")
 	.option("--nvd-cpe-match", "ALSO match deps against NVD CPE version ranges (opt-in, LOW PRECISION: ~12% of the findings it adds were corroborated by another scanner — triage aid, not a default)")
@@ -630,7 +631,7 @@ program
 // The -d / -a vocabularies, laid out once under the options instead of wrapped inside two
 // option descriptions where they cost fifteen lines.
 program.addHelpText("after", `
-  -d  eol nvd nvd-mirror osv packagist-audit epss kev euvd gcve certfr retire transitive all-libs checksums
+  -d  eol nvd nvd-mirror osv packagist-audit ruby-advisories epss kev euvd gcve certfr retire transitive all-libs checksums
       osv-db report vendored-js-inventory default-excludes
       maven gradle npm yarn nuget composer pypi go ruby js jars binaries certs images
   -a  images licenses eol-support typosquat snyk osv-db nvd-cpe-match cve-refresh
@@ -1726,6 +1727,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// CVE-2026-46643 on the real-instance corpus) — this lane is their official home.
 	const willPackagistAudit = options.packagistAudit !== false &&
 		[...resolved.values()].some(d => d.ecosystem === "composer");
+	// Ruby advisory database lane (RubyGems): what `bundler-audit` reads. It records
+	// advisories GitHub's reviewed database, hence OSV, does not carry for gems.
+	const willRubyAdvisories = options.rubyAdvisories !== false &&
+		[...resolved.values()].some(d => d.ecosystem === "ruby");
 	const willOutdated = !!options.allLibs;
 	const willNvd = !!options.nvd;
 	const willEpss = !!options.epss;
@@ -2084,6 +2089,22 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		} catch (err) {
 			st.fail(err.message);
 			scanWarnings.push({type:"source-unavailable",message:`Packagist: ${err.message}; advisory coverage is incomplete.`});
+		}
+	}
+
+	// 4b-ter. Ruby advisory database (RubyGems). Default-on like Packagist; one archive is
+	// fetched, no package name leaves the machine.
+	if (willRubyAdvisories) {
+		const st = progress.start("Ruby advisory database");
+		try {
+			const rubyMatches = await require("./lib/providers/rubysec/advisories").queryRubyAdvisories(publicAdvisoryDeps, { offline,
+				forceUpdate: options.forceUpdate, onConsulted: discoveryCoverage.consulted, onWarning: warning => scanWarnings.push(warning) });
+			const before = cveMatches.length;
+			cveMatches = mergeBySource(cveMatches, rubyMatches);
+			st.done(`${rubyMatches.length} advisories matched · +${cveMatches.length - before} after merge`);
+		} catch (err) {
+			st.fail(err.message);
+			scanWarnings.push({type:"source-unavailable",message:`Ruby advisory database: ${err.message}; advisory coverage is incomplete.`});
 		}
 	}
 

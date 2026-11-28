@@ -172,6 +172,7 @@ Each data source can be disabled independently:
 
 When using the VigieVuln service, reviewed and published VigieVuln advisories for the Maven and npm packages in the scan are refreshed by package under this same consultation TTL, independently of OSV. No global seed is required. Project cache preparation includes the relevant cached advisories and consultations for offline scans; proposals awaiting human review are never served as published advisories.
 | `--no-packagist-audit` | Skip the Packagist security-advisories lane for Composer deps — the endpoint `composer audit` queries. OSV misses CVEs it carries only as CVEProject entries without composer coordinates (twig/twig CVE-2026-46636/46627, knp-snappy CVE-2026-46643 on the real-instance corpus); this lane matches them with the official constraints. Only package names are sent |
+| `--no-ruby-advisories` | Skip the Ruby advisory database lane for RubyGems deps (rubysec/ruby-advisory-db, the data `bundler-audit` reads). It carries advisories OSV does not have for gems; it also applies to gems found in images. On by default; one archive is fetched, no package name is sent. |
 | `--no-nvd` | Skip NVD enrichment (no full CVSS, no CPE refinement) |
 | `--no-epss` | Skip EPSS (FIRST.org) exploit-prediction enrichment |
 | `--no-kev` | Skip CISA KEV (known-exploited) enrichment |
@@ -187,7 +188,7 @@ When using the VigieVuln service, reviewed and published VigieVuln advisories fo
 | `--no-binaries` | Skip scanning committed native binaries (`.dll`/`.exe`/`.so`/`.dylib`) — no checksum identity/integrity (the unmanaged-components chapter) |
 | `--no-certs` | Skip the certificate / key-material scan (the unmanaged-components chapter) — committed certs, private/public keys and keystores |
 | `--cert-expiry-days <n>` | Window for the certificate **expiring-soon** warning (default `90`) |
-| `-d, --disable <list>` | Turn features off, comma-separated: `eol nvd nvd-mirror osv packagist-audit epss kev euvd gcve certfr retire transitive all-libs checksums osv-db report vendored-js-inventory default-excludes` and any ecosystem (`maven gradle npm yarn nuget composer pypi go ruby js jars binaries certs`). Replaces the `--no-*` flags, which still work but are hidden from `--help` |
+| `-d, --disable <list>` | Turn features off, comma-separated: `eol nvd nvd-mirror osv packagist-audit ruby-advisories epss kev euvd gcve certfr retire transitive all-libs checksums osv-db report vendored-js-inventory default-excludes` and any ecosystem (`maven gradle npm yarn nuget composer pypi go ruby js jars binaries certs`). Replaces the `--no-*` flags, which still work but are hidden from `--help` |
 | `-a, --activate <list>` | Turn on what is off by default: `licenses eol-support typosquat snyk osv-db nvd-cpe-match cve-refresh cve-offline osv-db-refresh retire-refresh` |
 | `-r, --report <list>` | Outputs to write: `html doc xlsx sbom csaf json sarif` (default `html,json`). `--report-<type> <file>` still takes an explicit path |
 | `-o, --report-output <dir>` | Report output directory |

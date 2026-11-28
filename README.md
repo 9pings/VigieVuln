@@ -32,8 +32,7 @@ It scans dependencies of **10 ecosystems + 11 CMS/frameworks + systems/dockers i
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
 - **Air-gapped flow**; **zero network under `--offline`** → [Benchmark](docs/BENCHMARK.md) · [Air-gapped](#air-gapped-audits)
 - **Native image audits**; Docker/OCI archives, registries and rootfs inventories without Docker; Linux packages, ELF/Go metadata and publisher SBOMs, with explicit coverage. Image analysis in source scans is off by default; use `--images` or the separate `vigievuln system scan` command → [image guide](docs/IMAGES.md)
-- **Hosted proxy with a verified account**; `--set-proxy-cache vigievuln` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
-- **Project monitoring**; `vigievuln watch ./project --name 'My Project'` — one free project with up to **100 distinct direct dependency coordinates** → [monitoring guide](docs/USAGE.md#project-monitoring)
+- **Hosted proxy/cache with a verified account**; `--set-proxy-cache vigievuln` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
 - **Shared cache for a scanner fleet**; `vigievuln serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
 - **Supply-chain risk**; known-**malicious** advisories and suspected **typosquats** (`--typosquat`).
 - **Audit-grade**; every report carries a **provenance manifest** and a **Methodology & limitations** chapter; a `SHA256SUMS`;
@@ -45,7 +44,7 @@ It scans dependencies of **10 ecosystems + 11 CMS/frameworks + systems/dockers i
 📖 **[Usage & all flags](docs/USAGE.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Comparison vs other tools](docs/COMPARISON.md)** · **[Data sources](docs/DATA-SOURCES.md)**
 
 > [!IMPORTANT]
-> **Although VigieVuln is an excellent tool—comprehensive, rigorously tested, and regularly updated—it is still relatively new, and like any other scanner, it may occasionally produce errors.
+> **Although VigieVuln is an excellent tool—comprehensive, rigorously tested, and regularly updated; it is still relatively new, and like any other scanner, it may occasionally produce errors.
 > Whenever possible, cross-check important findings with another analysis tool — though, among the tools we compared, none offers reports as comprehensive as VigieVuln.**
 
 ## Quick start
@@ -80,6 +79,10 @@ vigievuln scan ./code --images
 ```
 
 The report keeps source and image findings in separate summaries and charts, highlighting vulnerable images and their most critical CVEs. [Image inputs, options and coverage](docs/IMAGES.md).
+
+### Scan container / system images
+
+
 
 ## Why use vigievuln ?
 
