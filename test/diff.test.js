@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 
-const { diffFindings, summarizeDiff, findingKey, newProductionCveCount } = require("../lib/diff");
+const { diffFindings, summarizeDiff, findingKey, newProductionCveCount } = require("../lib/findings/diff");
 
 function cve(id, coord, version, extra = {}) {
 	return { id, severity: extra.severity || "HIGH", suppressed: !!extra.suppressed, cpeFiltered: !!extra.cpeFiltered, dep: { ecosystem: extra.ecosystem || "maven", coord, version } };
@@ -75,7 +75,7 @@ test("diffFindings tolerates a baseline document missing a category", () => {
 	assert.strictEqual(d.eol.added.length, 0);
 });
 
-const { eolKey } = require("../lib/diff");
+const { eolKey } = require("../lib/findings/diff");
 
 test("eol identity includes status: unsupported → eol on the same dep is a CHANGE, legacy docs default to eol", () => {
 	const dep = { ecosystem: "composer", coord: "symfony/framework-bundle", version: "5.4.45" };
@@ -132,7 +132,7 @@ test("new production gate excludes dev/test/provided but includes embedded findi
 });
 
 test("baseline validation rejects unrelated JSON and malformed findings but permits legacy exports", () => {
-	const { validateFindingsDocument } = require('../lib/diff');
+	const { validateFindingsDocument } = require('../lib/findings/diff');
 	for (const invalid of [null, [], {}, { schema: 'other', cve: [] }, { cve: {} }, { cve: [null] }, { cve: [{ id: 'CVE-1' }] }])
 		assert.throws(() => validateFindingsDocument(invalid));
 	assert.deepStrictEqual(validateFindingsDocument({ cve: [] }), { cve: [] });
@@ -140,7 +140,7 @@ test("baseline validation rejects unrelated JSON and malformed findings but perm
 });
 
 test('actual source gaps prevent false remediation while normal cached observations do not', () => {
- const {buildFindings}=require('../lib/json-export'),old=cve('CVE-1','lodash','1.0',{ecosystem:'npm'});
+ const {buildFindings}=require('../lib/reports/json-export'),old=cve('CVE-1','lodash','1.0',{ecosystem:'npm'});
  const gaps=[
   {projectInfo:{provenance:{}},warnings:[{type:'source-stale',message:'osv: cached data may be outdated.'}]},
   {projectInfo:{provenance:{freshnessNotices:[{message:'osv: the source could not be refreshed; cached data was used.'}]}},warnings:[]},
@@ -157,7 +157,7 @@ test('actual source gaps prevent false remediation while normal cached observati
 });
 
 test('baseline project mismatch is a warning hint, never a reason to refuse a diff', () => {
- const {baselineProjectWarning}=require('../lib/diff');
+ const {baselineProjectWarning}=require('../lib/findings/diff');
  const base={...doc([cve('CVE-1','g:a','1')]),project:{name:'old-project'}};
  const current={...doc([cve('CVE-1','g:a','1')]),project:{name:'renamed-project'}};
  assert.equal(baselineProjectWarning(base,current).type,'baseline-project-mismatch');

@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { normalizeSpdx, classify, resolveDepLicense, assessLicenses, splitExpression } = require("../lib/license-policy");
+const { normalizeSpdx, classify, resolveDepLicense, assessLicenses, splitExpression } = require("../lib/inventory/license-policy");
 
 test("normalizeSpdx maps free-form strings to canonical SPDX ids", () => {
 	assert.equal(normalizeSpdx("MIT"), "MIT");

@@ -1,8 +1,8 @@
 require('./helpers/isolated-cache')('osv-maven-fixes');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { vulnToMatch } = require('../lib/osv');
-const { makeDepRecord } = require('../lib/dep-record');
+const { vulnToMatch } = require('../lib/providers/osv/query');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 
 const pkg = { ecosystem: 'Maven', name: 'org.example:widget' };
 const range = (introduced, fixed) => ({ type: 'ECOSYSTEM', events: [{ introduced }, { fixed }] });

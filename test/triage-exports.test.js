@@ -1,10 +1,10 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildCsaf } = require('../lib/csaf-export');
-const { buildCycloneDx } = require('../lib/sbom-export');
-const { buildFindings } = require('../lib/json-export');
-const { parseVex, applySuppressions } = require('../lib/suppress');
-const { makeDepRecord } = require('../lib/dep-record');
+const { buildCsaf } = require('../lib/reports/csaf-export');
+const { buildCycloneDx } = require('../lib/reports/sbom-export');
+const { buildFindings } = require('../lib/reports/json-export');
+const { parseVex, applySuppressions } = require('../lib/findings/suppress');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 const a = makeDepRecord({ ecosystem: 'npm', name: 'a', version: '1.0.0' });
 const b = makeDepRecord({ ecosystem: 'npm', name: 'b', version: '1.0.0' });
 const deps = new Map([[a.coordKey, a], [b.coordKey, b]]);

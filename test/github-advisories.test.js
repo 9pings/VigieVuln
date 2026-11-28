@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
-const { validateSnapshot, assessGithubAdvisories, prestashopRangeGrammar, typo3RangeGrammar } = require("../lib/application-providers/github-advisories");
+const { validateSnapshot, assessGithubAdvisories, prestashopRangeGrammar, typo3RangeGrammar } = require("../lib/providers/github/advisories");
 
 // Fixtures reduced from the publishers' real GitHub security-advisory records (2026-09-23):
 //   PrestaShop/PrestaShop GHSA-xrwj-pq6w-f8m4 — two-branch range, no CVE, CVSS 8.2

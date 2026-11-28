@@ -4,11 +4,11 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const core=require('../lib/core');
-const {collectResolvedDeps,settleManagedOnly}=require('../lib/cve-match');
-const {resolveReactor}=require('../lib/maven-reactor');
-const {buildReactorHints,restoreReactorHints}=require('../lib/maven-airgap');
-const {serializeDeps,deserializeDeps}=require('../lib/deps-descriptor');
+const core=require('../lib/codecs/maven/pom');
+const {collectResolvedDeps,settleManagedOnly}=require('../lib/advisories/cve-match');
+const {resolveReactor}=require('../lib/codecs/maven/reactor');
+const {buildReactorHints,restoreReactorHints}=require('../lib/codecs/maven/airgap');
+const {serializeDeps,deserializeDeps}=require('../lib/inventory/deps-descriptor');
 const {G,upstream,writeLocal,run,versionsOf}=require('./helpers/maven-scenario');
 
 test('airgap descriptor retains independent Maven module management without paths or secrets',async()=>{
@@ -28,7 +28,7 @@ test('airgap descriptor retains independent Maven module management without path
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-reactor-'));
  await resolveReactor(imported.resolved,restored,restoredProps,{fetcher,cacheDir,includeTestDeps:true,transitive:true});settleManagedOnly(imported.resolved);
  assert.deepEqual(versionsOf(imported.resolved,'X'),['1.0','2.0']);
- require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(cacheDir,{recursive:true,force:true});
+ require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(cacheDir,{recursive:true,force:true});
 });
 
 test('invalid Maven reactor descriptors fail closed',()=>{
@@ -38,7 +38,7 @@ test('invalid Maven reactor descriptors fail closed',()=>{
 test('descriptor resolution discovers transitives before consultation and replays the same graph offline',async t=>{
  const dir=writeLocal({'pom.xml':{g:'local',a:'app',v:'1',deps:[{a:'direct',v:'1.0'}]}});
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-reactor-replay-'));
- t.after(()=>{require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(cacheDir,{recursive:true,force:true})});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(cacheDir,{recursive:true,force:true})});
  const store=core.newMetadataStore();for(const p of core.findPomFiles(dir))await core.parsePom(p,store);
  const props={};for(const p of Object.keys(store.byPath))await core.getAllInheritedProps(p,store,props);
  const hints=buildReactorHints({store,propsByPom:props});
@@ -61,7 +61,7 @@ test('separate module versions keep their own transitive dependencies in a trans
   'b/pom.xml':{g:'local',a:'b',v:'1',deps:[{a:'shared',v:'2.0'}]},
  });
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-reactor-branches-'));
- t.after(()=>{require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(cacheDir,{recursive:true,force:true})});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(cacheDir,{recursive:true,force:true})});
  const store=core.newMetadataStore();for(const p of core.findPomFiles(dir))await core.parsePom(p,store);
  const props={};for(const p of Object.keys(store.byPath))await core.getAllInheritedProps(p,store,props);
  const descriptor=serializeDeps(collectResolvedDeps(store,props),{reactor:buildReactorHints({store,propsByPom:props})});

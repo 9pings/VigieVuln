@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
-const { moduleNameFor, resolveModuleNames } = require("../lib/module-names");
+const { moduleNameFor, resolveModuleNames } = require("../lib/inventory/module-names");
 
 // The library builds its lookups with path.join / path.dirname, which yield "\\" on Windows
 // while these in-memory trees are keyed with "/". Normalising on the way IN keeps the

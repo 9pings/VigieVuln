@@ -16,9 +16,9 @@ test('Go unresolved inventory fails inventory and sources gates after exporting 
   // Application plugins are disabled here. Their separate empty-coverage gate
   // must not mask whether the real CLI enforces the Go collection warning.
   fs.writeFileSync(preload, `require('node:os').homedir = () => process.env.VV_GO_TEST_HOME;
-require(${JSON.stringify(path.resolve(__dirname, '../lib/scan-coverage.js'))}).requiredCoverageComplete = () => true;
+require(${JSON.stringify(path.resolve(__dirname, '../lib/scan/coverage.js'))}).requiredCoverageComplete = () => true;
 // Isolate the inventory gate from the independently tested native-source availability gate.
-require(${JSON.stringify(path.resolve(__dirname, '../lib/native-source-prepare.js'))}).prepareNativeSources = async () => ({sources:[],coverage:[],warnings:[]});
+require(${JSON.stringify(path.resolve(__dirname, '../lib/advisories/native-source-prepare.js'))}).prepareNativeSources = async () => ({sources:[],coverage:[],warnings:[]});
 globalThis.fetch = async () => { require('node:fs').writeFileSync(process.env.VV_GO_TEST_CALLS, 'called'); throw new Error('unexpected offline network'); };`);
   fs.writeFileSync(path.join(project, 'go.sum'), 'example.org/lib v1.0.0 h1:fixture=\n');
   const setManifest = version => fs.writeFileSync(path.join(project, 'go.mod'),

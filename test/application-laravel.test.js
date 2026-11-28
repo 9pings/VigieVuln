@@ -4,8 +4,8 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const composer = require("../lib/codecs/composer.codec");
-const laravel = require("../lib/application-plugins/laravel");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
+const laravel = require("../lib/applications/plugins/laravel");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
 
 test("Laravel application requires framework dependency and app markers, then inventories lock versions", async () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-laravel-"));

@@ -8,7 +8,7 @@
  */
 const test = require("node:test");
 const assert = require("node:assert");
-const { isPrereleaseVersion, latestStableVersion } = require("../lib/maven-version");
+const { isPrereleaseVersion, latestStableVersion } = require("../lib/codecs/maven/version");
 
 test("known pre-release qualifiers are recognised, in every spelling Maven allows", () => {
 	for (const v of ["3.3.0-BETA", "5.0.0.Alpha2", "2.0.0-rc.7", "2.0.0-rc2", "1.0-M3",

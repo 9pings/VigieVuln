@@ -3,7 +3,7 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {parseDocument,DomUtils} = require('htmlparser2');
-const {generateHtmlReport} = require('../lib/cve-report');
+const {generateHtmlReport} = require('../lib/reports/cve-report');
 
 function fixture() {
   const id = 'host';
@@ -146,14 +146,14 @@ test('an embedded application keeps its publisher advisories during collection a
   const finding = {findingId:'physical-occurrence',applicationIds:[embedded.id],ownerComponentIds:[core.id],applicationRelation:'direct'};
   const inventory = {applications:[app,embedded],inventory:[extension,core],findings:[structuredClone(finding)],
     coverage:[{applicationId:embedded.id,componentId:core.id}]};
-  require('../lib/application-layout').reconcileApplications(inventory);
+  require('../lib/applications/layout').reconcileApplications(inventory);
   assert.deepEqual(inventory.applications,[app]);
   assert.deepEqual(inventory.inventory,[extension]);
   assert.equal(inventory.coverage[0].applicationId,app.id);
   assert.equal(inventory.coverage[0].embeddedComponentId,core.id);
-  const runner = require('../lib/application-plugins/runner');
+  const runner = require('../lib/applications/plugins/runner');
   const replay = await runner.runApplicationPlugins(null,{offline:true,savedInventory:inventory,
-    plugins:[{...require('../lib/application-plugins/prestashop'),async assess(target,components) {
+    plugins:[{...require('../lib/applications/plugins/prestashop'),async assess(target,components) {
       assert.equal(target.id,embedded.id);
       assert.deepEqual(components,[core]);
       return [structuredClone(finding)];
@@ -175,7 +175,7 @@ test('paths in an audited filesystem are rooted in the target in HTML and Word',
   payload.excludedDirs=[{artifactTargetId:target.id,type:'default',dir:'var/lib/docker'}];
   target.metadata.projectDescriptors=['srv/news/composer.lock'];
   const expected=[file,cert,'srv/news','srv/news/composer.lock','var/lib/docker'];
-  for(const render of [generateHtmlReport,require('../lib/cve-report').generateWordReport]){
+  for(const render of [generateHtmlReport,require('../lib/reports/cve-report').generateWordReport]){
     const doc=parseDocument(render(payload));
     const paths=DomUtils.findAll(n=>n.name==='code',doc.children).map(contents);
     for(const path of expected){
@@ -196,7 +196,7 @@ test('audit component tables show affected occurrences and host dependencies onl
   const os={...target.components[3],coordKey:'ignored',name:'ignored-system-lib',artifactPath:'usr/lib/ignored.so'};
   target.components.push(clean,os);
   data.cveMatches.push({dep:os,suppressed:true,cve:{id:'CVE-2099-9999'}});
-  for (const render of [generateHtmlReport,require('../lib/cve-report').generateWordReport]) {
+  for (const render of [generateHtmlReport,require('../lib/reports/cve-report').generateWordReport]) {
     const doc=parseDocument(render(data)),host=byId(doc,'chhost'),app=byId(doc,'system-app-1');
     const subsection=(n,label)=>DomUtils.findOne(c=>c.name==='details' && c.children.some(t=>t.name==='summary' && contents(t).includes(label)),n.children);
     const deps=subsection(host,'Dépendances du système'),inv=subsection(app,'Inventaire des composants');
@@ -252,7 +252,7 @@ test('a PrestaShop module update uses the installed version once per physical in
   const target={id:'system',coverage:[],deps:[declared,independent],metadata:{systemApplications:{
     applications:[{id:'store',type:'prestashop',root:'srv/store'},{id:'other',type:'project',root:'srv/other'}],inventory:[installed]}}};
   const entry={versionChecked:true,latest:'2.0',license:['MIT']};
-  require('../lib/json-cache').save(cacheDir,'packagist',{meta:{fetchedAt:Date.now()},entries:{
+  require('../lib/cache/json').save(cacheDir,'packagist',{meta:{fetchedAt:Date.now()},entries:{
     'prestashop/example@1.0':entry,'prestashop/example@1.2':entry}});
   const result=await require('../lib/artifacts/system-maintenance').assessSystemMaintenance([target],{offline:true,cacheDir,eol:false,licenses:true});
   assert.equal(result.licenseResults.assessed.length,2);
@@ -276,7 +276,7 @@ test('host alerts locate internal evidence while additional image alerts keep th
       items:[{id:app.id}],diagnostic:'CMS_IDENTITY_UNVERIFIED'},
     {type:'source-unavailable',artifactTargetId:'extra',message:'Container advisories unavailable'},
   ];
-  for(const render of [generateHtmlReport,require('../lib/cve-report').generateWordReport]){
+  for(const render of [generateHtmlReport,require('../lib/reports/cve-report').generateWordReport]){
     const doc=parseDocument(render(data));
     const alerts=DomUtils.findAll(n=>n.attribs.class?.split(' ').includes('warnings'),doc.children).map(contents).join(' ');
     assert.doesNotMatch(alerts,/serveur\.vhdx|\/disques\//);
@@ -327,9 +327,9 @@ test('CMS update rows distinguish the package descriptor from the installed vers
     const dep=require('../lib/artifacts/system-module-updates').moduleChecks(target).composer.get(component.id);
     assert.deepEqual(dep.manifestPaths,[expected]);assert.deepEqual(dep.versionPaths,{'1.0':[php]});
     const data=fixture();data.outdatedResults=[{dep,latest:'2.0'}];
-    const json=require('../lib/json-export').buildFindings(data).outdated[0].dep;
+    const json=require('../lib/reports/json-export').buildFindings(data).outdated[0].dep;
     assert.equal(json.artifactPath,expected);assert.equal(json.cmsComponent.versionEvidencePath,php);
-    for(const render of [generateHtmlReport,require('../lib/cve-report').generateWordReport]){
+    for(const render of [generateHtmlReport,require('../lib/reports/cve-report').generateWordReport]){
       const doc=parseDocument(render(data));
       const section=byId(doc,'ch6');
       const lines=DomUtils.findAll(n=>n.attribs.class==='defined-in',section.children).map(contents);

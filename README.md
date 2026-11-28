@@ -12,7 +12,7 @@
 
 **VigieVuln 1.3.5** is a polyglot dependency auditor for code audits.
 
-It scans dependencies and **11 CMS/frameworks** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
+It scans dependencies of **10 ecosystems + 11 CMS/frameworks + systems/dockers images** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
 
 
 🌐 **[Project site & docs →](https://9pings.github.io/VigieVuln/)**

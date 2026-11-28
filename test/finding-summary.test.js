@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { summarizeFindings, coalescePhysicalFindings } = require("../lib/finding-summary");
+const { summarizeFindings, coalescePhysicalFindings } = require("../lib/findings/summary");
 
 const match = (findingId, applicationIds, relation = "indirect") => ({ findingId, applicationIds,
 	applicationRelation: relation, dep: { ecosystem: "composer", coordKey: "composer:vendor/lib", version: "1.0" },

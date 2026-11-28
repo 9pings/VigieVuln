@@ -1,5 +1,5 @@
 /**
- * Paid support past the open-source end of life (lib/commercial-support.js). Zero network:
+ * Paid support past the open-source end of life (lib/maintenance/commercial-support.js). Zero network:
  * in-memory Maven Central + an in-memory "vendor" repository.
  */
 const { test } = require("node:test");
@@ -7,10 +7,10 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { annotateCommercialSupport } = require("../lib/commercial-support");
-const { branchFixFromOsvEvents, branchFixFromRanges, stricterBranchFix } = require("../lib/maven-version");
-const { makeDepRecord } = require("../lib/dep-record");
-const { generateHtmlReport } = require("../lib/cve-report");
+const { annotateCommercialSupport } = require("../lib/maintenance/commercial-support");
+const { branchFixFromOsvEvents, branchFixFromRanges, stricterBranchFix } = require("../lib/codecs/maven/version");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
+const { generateHtmlReport } = require("../lib/reports/cve-report");
 
 const CENTRAL = "https://repo1.maven.org/maven2";
 const VENDOR = "https://vendor.example/spring-enterprise";

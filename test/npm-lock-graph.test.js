@@ -36,7 +36,7 @@ const path = require("path");
 
 const { parseYarnLockV1, parsePnpmLock } = require("../lib/codecs/npm/parse");
 const { collectNpmDeps } = require("../lib/codecs/npm/collect");
-const { attributeMatchOrigins } = require("../lib/attribution");
+const { attributeMatchOrigins } = require("../lib/findings/attribution");
 
 const PKG = { name: "app", version: "1.0.0", dependencies: { "app-prod": "^1.0.0" }, devDependencies: { "jest-fake": "1.0.0" } };
 
@@ -499,7 +499,7 @@ test("collectNpmDeps (yarn v1 / Berry / pnpm): record shape matches the package-
 		assert.equal(map.get("npm:app-prod").scope, "prod", `${lockType}: app-prod scope`);
 		assert.equal(map.get("npm:orphan-pkg").scope, "transitive", `${lockType}: orphan scope`);
 		// Coord-wide record: ms is prod overall (one version is), but each version keeps
-		// its own classification for lib/attribution.js.
+		// its own classification for lib/findings/attribution.js.
 		const ms = map.get("npm:ms");
 		assert.deepEqual([...ms.versions].sort(), ["1.0.0", "2.1.3"]);
 		assert.equal(ms.isDev, false);

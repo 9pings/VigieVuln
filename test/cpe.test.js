@@ -8,7 +8,7 @@ const {
 	cpeMatchesDep,
 	evaluateCveForDep,
 	refineMatchesWithCpe,
-} = require("../lib/cpe");
+} = require("../lib/providers/nvd/cpe");
 
 const FIX = path.join(__dirname, "fixtures", "cve-samples");
 

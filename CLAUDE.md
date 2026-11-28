@@ -33,13 +33,15 @@ their historical `fad` prefix; do not infer cache-format compatibility from that
 
 - Install with `npm ci`; run `npm test` and focused fixture tests for changed behavior.
 - Ordinary tests use local fixtures and fake providers. Network integration tests are opt-in.
+- Code layout: [lib/README.md](lib/README.md). Only command entry points and configuration live at the root of
+  `lib/`; code specific to one data source goes in `lib/providers/<name>/`, to one ecosystem in `lib/codecs/<name>/`.
 - Register ecosystem parsers as codecs; see [architecture](docs/ARCHITECTURE.md).
 - Preserve per-version manifest attribution and source evidence when merging findings.
 - Keep dependency discovery, advisory applicability and CVE record enrichment distinct.
 - Retain indeterminate verdicts; missing evidence must not become a clean result or a resolved baseline finding.
 - A scan with coverage gaps publishes its report marked incomplete (`summary.scanReliable` false, banner, chapter 0).
   It is cancelled only without any inventory or any assessing advisory source, or under `--fail-on-incomplete`
-  (`lib/scan-reliability.js`, `publication`).
+  (`lib/scan/reliability.js`, `publication`).
 - Keep source and image findings separate in executive summaries and charts.
 - Follow [release instructions](docs/RELEASING.md) for packaging and publication.
 

@@ -6,7 +6,7 @@ function run(args,d){return spawnSync(process.execPath,[cli,...args],{cwd,encodi
 const cancelled=require('./helpers/cancelled-scan');
 const incomplete=require('./helpers/incomplete-scan');
 function seedNative(cacheDir){
- const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir});
+ const store=require('../lib/advisories/store').openAdvisoryStore({cacheDir});
  store.commit({coverages:[{source:'cveproject',ecosystem:'*',complete:true,fetchedAt:Date.now()}]});
  store.close();
 }
@@ -41,7 +41,7 @@ test('no-report, strict coverage, and invalid options return useful outcomes',t=
 test('SBOM import is inventoried with explicit unverified evidence',t=>{
  const {d,cache}=fixture(t),file=path.join(d,'publisher.json'),out=path.join(d,'sbom-out');fs.writeFileSync(file,JSON.stringify({bomFormat:'CycloneDX',specVersion:'1.5',components:[{type:'library',name:'left-pad',version:'1.3.0',purl:'pkg:npm/left-pad@1.3.0'}]}));
  seedNative(cache);
- const journal=require('../lib/advisory-store').openAdvisoryStore({cacheDir:cache});
+ const journal=require('../lib/advisories/store').openAdvisoryStore({cacheDir:cache});
  journal.commit({queries:[{source:'osv',ecosystem:'npm',name:'left-pad',version:'1.3.0',ids:[],fetchedAt:Date.now(),complete:true}]});journal.close();
  const published=run(['system','scan',file,'--sbom','--offline','--no-gcve','--cache-dir',cache,'--report-output',out],d);
  // The unverified publisher inventory no longer cancels: the report is published and marked incomplete.

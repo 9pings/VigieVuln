@@ -6,7 +6,7 @@ const os=require('node:os');
 const path=require('node:path');
 const {zipSync,strToU8}=require('fflate');
 const {collectSystemInventory,assessSystemInventory,importSystemAdvisories,syncSystemAdvisories,rpmHeader,versions}=require('../lib/system-inventory');
-const {closeCacheDbs}=require('../lib/cache-db');
+const {closeCacheDbs}=require('../lib/cache/db');
 function root(t){const p=fs.mkdtempSync(path.join(os.tmpdir(),'vv-system-'));t.after(()=>{closeCacheDbs();fs.rmSync(p,{recursive:true,force:true});});return p;}
 function put(dir,file,text){const p=path.join(dir,file);fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,text);}
 test('installed dpkg records preserve source identity and reject host symlinks',async t=>{
@@ -48,7 +48,7 @@ test('RPM SQLite package headers are decoded without invoking rpm',async t=>{
  let size=0;const chunks=[];for(const item of values){const b=Buffer.from(item[2]+'\0');chunks.push(b);item.push(size);size+=b.length;}
  const blob=Buffer.alloc(8+values.length*16+size);blob.writeUInt32BE(values.length);blob.writeUInt32BE(size,4);
  for(let i=0;i<values.length;i++){const [tag,type,,offset]=values[i],p=8+i*16;blob.writeUInt32BE(tag,p);blob.writeUInt32BE(type,p+4);blob.writeUInt32BE(offset,p+8);blob.writeUInt32BE(1,p+12);}Buffer.concat(chunks).copy(blob,8+values.length*16);
- const dbfile=path.join(dir,'usr/lib/sysimage/rpm/rpmdb.sqlite');fs.mkdirSync(path.dirname(dbfile),{recursive:true});const db=require('../lib/sqlite-driver').openSqlite(dbfile);db.exec('CREATE TABLE Packages (hnum INTEGER PRIMARY KEY, blob BLOB NOT NULL)');db.prepare('INSERT INTO Packages VALUES (?,?)').run(1,blob);db.close();
+ const dbfile=path.join(dir,'usr/lib/sysimage/rpm/rpmdb.sqlite');fs.mkdirSync(path.dirname(dbfile),{recursive:true});const db=require('../lib/cache/sqlite-driver').openSqlite(dbfile);db.exec('CREATE TABLE Packages (hnum INTEGER PRIMARY KEY, blob BLOB NOT NULL)');db.prepare('INSERT INTO Packages VALUES (?,?)').run(1,blob);db.close();
  const inventory=await collectSystemInventory(dir);assert.equal(inventory.packages.length,1);assert.equal(inventory.packages[0].sourceName,'foo');assert.equal(inventory.packages[0].version,'1.2-3.el9');assert.equal(inventory.coverage[0].status,'complete');
 });
 test('advisory adapters are injectable and preserve snapshot coverage',async t=>{
@@ -71,7 +71,7 @@ test('explicit RHEL repository scope is identity bound and mirror credentials ar
  const dir=root(t),distribution={id:'rhel',versionId:'9.6'},advisoryConfig={distribution,base:'Red Hat',ecosystem:'Red Hat:rhel_eus:9.6::appstream',versionScheme:'rpm',sourceUrl:'https://mirror.example/db.zip?token=secret'};
  const record={id:'RHSA-X',affected:[{package:{ecosystem:advisoryConfig.ecosystem,name:'pkg'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-1'}]}]}]};
  const zip=zipSync({'one.json':strToU8(JSON.stringify(record))});await syncSystemAdvisories(distribution,{advisoryConfig,cacheDir:dir,fetcher:async()=>({ok:true,arrayBuffer:async()=>zip})});
- const snapshot=require('../lib/cache-repository').createCacheRepository(dir).getSnapshot('system-osv:'+advisoryConfig.ecosystem);assert.equal(snapshot.metadata.source,'https://mirror.example/db.zip');
+ const snapshot=require('../lib/cache/repository').createCacheRepository(dir).getSnapshot('system-osv:'+advisoryConfig.ecosystem);assert.equal(snapshot.metadata.source,'https://mirror.example/db.zip');
  const result=await assessSystemInventory({distribution,packages:[{name:'pkg',version:'1-1'}]},{advisoryConfig,cacheDir:dir});assert.equal(result.matches.length,1);
  const different=await assessSystemInventory({distribution:{id:'rhel',versionId:'9.7'},packages:[]},{advisoryConfig,cacheDir:dir});assert.equal(different.coverage[0].status,'unknown');
  await assert.rejects(syncSystemAdvisories(distribution,{advisoryConfig:{...advisoryConfig,sourceUrl:'http://example.com/db'},cacheDir:dir}),/HTTPS/);
@@ -85,7 +85,7 @@ test('RPM file lists link files to owners without executing package tools',()=>{
 test('offline system snapshots survive cache bundle transfer',async t=>{
  const dir=root(t),source=path.join(dir,'source'),target=path.join(dir,'target'),archive=path.join(dir,'cache.tar.gz'),distribution={id:'debian',versionId:'12'};
  const record={id:'DEBIAN-X',affected:[{package:{ecosystem:'Debian:12',name:'foo'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-1'}]}]}]};
- await importSystemAdvisories([record],{distribution,cacheDir:source,complete:true});const {exportCache,importCache}=require('../lib/cache-archive-sqlite');
+ await importSystemAdvisories([record],{distribution,cacheDir:source,complete:true});const {exportCache,importCache}=require('../lib/cache/archive');
  await exportCache(archive,{sourceDir:source});await importCache(archive,{targetDir:target});
  const result=await assessSystemInventory({distribution,packages:[{name:'foo',sourceName:'foo',version:'1-1',sourceVersion:'1-1'}]},{cacheDir:target,offline:true});assert.equal(result.matches.length,1);assert.equal(result.coverage[0].status,'complete');
 });
@@ -109,12 +109,12 @@ test('OSV upstream CVE relationships survive offline assessment and JSON export'
  const records=[{id:'DEBIAN-CVE-2009-1300',upstream:['CVE-2009-1300','CVE-2024-12345'],aliases:[],affected:[{package:{ecosystem:'Debian:12',name:'apt'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-1'}]}]}]}];
  const assessed=await assessSystemInventory({distribution,packages:[{name:'apt',sourceName:'apt',version:'1-1',sourceVersion:'1-1'}]},{records,complete:true});
  assert.equal(assessed.matches.length,1);const cve=assessed.matches[0].cve;assert.equal(cve.id,'CVE-2009-1300','a per-CVE distribution record is shown under its CVE id');assert.equal(cve.sourceAdvisoryId,'DEBIAN-CVE-2009-1300');assert.deepEqual(cve.aliases,[]);assert.deepEqual(cve.upstream,['CVE-2009-1300','CVE-2024-12345']);
- const result=require('../lib/json-export').buildFindings({cveMatches:assessed.matches});assert.deepEqual(result.cve[0].upstream,cve.upstream);
+ const result=require('../lib/reports/json-export').buildFindings({cveMatches:assessed.matches});assert.deepEqual(result.cve[0].upstream,cve.upstream);
 });
 test('fleet proxy serves and caches typed OSV distro archive without direct client access',async t=>{
  const dir=root(t),record={id:'ALPINE-X',affected:[{package:{ecosystem:'Alpine:v3.20',name:'foo'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-r0'}]}]}]};
  const zip=zipSync({'one.json':strToU8(JSON.stringify(record))});let hits=0;
- const {startProxyCacheServer,createCacheStore}=require('../lib/proxy-cache');
+ const {startProxyCacheServer,createCacheStore}=require('../lib/cache/proxy-cache');
  const store=createCacheStore(path.join(dir,'proxy'));const {server,url}=await startProxyCacheServer({port:0,host:'127.0.0.1',store,fetcher:async target=>{hits++;assert.match(target,/\/Alpine\/all\.zip$/);return new Response(zip,{status:200,headers:{'content-type':'application/zip'}});}});
  const routing=require('../lib/providers');routing.configureResourceRoute({proxyUrl:url,hosted:false,token:null,fetcher:null,store:null});
  try {
@@ -140,7 +140,7 @@ test('targeted distro consultation fails closed for incomplete pages and missing
 test('hosted-style proxy performs distro package consultations and offline cache replay',async t=>{
  const dir=root(t),distribution={id:'debian',versionId:'12'},inv={distribution,packages:[{manager:'dpkg',name:'libfoo',sourceName:'foo',sourceVersion:'1-1',version:'1-1'}]};
  const record={id:'DEBIAN-ONE',affected:[{package:{ecosystem:'Debian:12',name:'foo',purl:'pkg:deb/debian/foo?arch=source'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-1'}]}]}]};
- const {startProxyCacheServer,createCacheStore}=require('../lib/proxy-cache');const store=createCacheStore(path.join(dir,'proxy'));let calls=0;
+ const {startProxyCacheServer,createCacheStore}=require('../lib/cache/proxy-cache');const store=createCacheStore(path.join(dir,'proxy'));let calls=0;
  const {server,url}=await startProxyCacheServer({port:0,host:'127.0.0.1',store,fetcher:async(target,init)=>{calls++;if(String(target).endsWith('/querybatch')){assert.equal(JSON.parse(init.body).queries[0].package.ecosystem,'Debian:12');return Response.json({results:[{vulns:[{id:'DEBIAN-ONE'}]}]});}if(String(target).endsWith('/DEBIAN-ONE'))return Response.json(record);throw Error('unexpected source');}});
  const routing=require('../lib/providers');routing.configureResourceRoute({proxyUrl:url,hosted:true,token:null,fetcher:null,store:null,hostedStore:null});
  try {const {assessTargetedSystemInventory}=require('../lib/system-inventory');const online=await assessTargetedSystemInventory(inv,{cacheDir:path.join(dir,'client')});assert.equal(online.matches.length,1);assert.equal(online.coverage[0].status,'complete');assert.equal(calls,2);routing.configureResourceRoute({proxyUrl:null,hosted:false});const offline=await assessTargetedSystemInventory(inv,{cacheDir:path.join(dir,'client'),offline:true,fetcher:()=>{throw Error('network')}});assert.equal(offline.matches.length,1);}finally{routing.configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,store:null});await new Promise(resolve=>server.close(resolve));store.close?.();}
@@ -149,7 +149,7 @@ test('targeted per-version consultations transfer through cache bundles',async t
  const dir=root(t),source=path.join(dir,'source'),target=path.join(dir,'target'),archive=path.join(dir,'targeted.tar.gz'),distribution={id:'alpine',versionId:'3.20'};
  const inv={distribution,packages:[{manager:'apk',name:'foo',sourceName:'foo',sourceVersion:'1-r0',version:'1-r0'}]};
  const {assessTargetedSystemInventory}=require('../lib/system-inventory');const online=await assessTargetedSystemInventory(inv,{cacheDir:source,fetcher:async()=>Response.json({results:[{}]})});assert.equal(online.coverage[0].status,'complete');
- const {exportCache,importCache}=require('../lib/cache-archive-sqlite');await exportCache(archive,{sourceDir:source});await importCache(archive,{targetDir:target});
+ const {exportCache,importCache}=require('../lib/cache/archive');await exportCache(archive,{sourceDir:source});await importCache(archive,{targetDir:target});
  const result=await assessTargetedSystemInventory(inv,{cacheDir:target,offline:true,fetcher:()=>{throw Error('network')}});assert.equal(result.coverage[0].status,'complete');assert.equal(result.matches.length,0);
 });
 test('Debian advisory keeps dated upstream and related evidence distinct from aliases',async()=>{

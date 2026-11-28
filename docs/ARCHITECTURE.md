@@ -8,26 +8,33 @@ For commands and coverage limitations, see [usage](USAGE.md),
 
 ## Module map
 
+[`lib/README.md`](../lib/README.md) is the guide to the code layout: where each command
+starts, what each folder holds, where a new module goes.
+
 | Area | Main modules | Responsibility |
 | --- | --- | --- |
-| CLI | `vigievuln.js`, `lib/cli-*.js` | Options, source profiles, orchestration, outputs and gates. |
-| Ecosystems | `lib/codecs/`, `lib/dep-record.js` | Discover supported manifests and locks; collect dependency records and registry metadata. |
-| Maven and Gradle | `lib/core.js`, `lib/maven-reactor.js`, `lib/transitive.js`, `lib/maven-bom.js`, `lib/codecs/gradle/` | Parse POMs and build files; resolve supported management, graph and version evidence. |
-| Attribution | `lib/attribution.js`, `lib/application-inventory.js`, `lib/application-plugins/` | Associate version-specific findings with manifests, application instances and proven owners. |
-| Images | `lib/cli-image.js`, `lib/artifacts/`, `lib/image-registry.js`, `lib/image-references.js`, `lib/system-inventory/` | Acquire artifacts, collect installed components, evaluate advisories and retain coverage. |
-| Advisory sources | `lib/advisory-store-sqlite.js`, `lib/cve-match.js`, `lib/osv.js`, `lib/nvd.js`, `lib/finding-enrichment.js`, `lib/providers/` | Store, query, match and enrich source records with explicit coverage. |
-| Other evidence | `lib/certs/`, `lib/retire.js`, `lib/codecs/binary/`, `lib/hash-id.js`, `lib/outdated.js`, `lib/license-policy.js` | Certificate/key inventory, vendored JavaScript, binary identity, maintenance and licenses. |
-| Reports | `lib/cve-report.js`, `lib/json-export.js`, `lib/sbom-export.js`, `lib/csaf-export.js`, `lib/sarif-export.js`, `lib/xlsx-export.js` | Render HTML, Word-compatible HTML and machine-readable exports. |
-| Scan context | `lib/scan-coverage.js`, `lib/scan-completeness.js`, `lib/diagnostics.js`, `lib/provenance.js`, `lib/diff.js`, `lib/gate.js` | Track coverage, provenance, baseline comparisons and gate outcomes. |
-| Cache | `lib/cache-db.js`, `lib/cache-repository.js`, `lib/proxy-cache.js`, `lib/cache-archive-sqlite.js` | SQLite storage, resource caches, proxy and portable cache archives. |
+| CLI | `vigievuln.js`, `lib/cli-*.js`, `lib/options-env.js`, `lib/config.js` | Commands, option resolution, configuration, orchestration, outputs and gates. |
+| Ecosystems | `lib/codecs/`, `lib/inventory/dep-record.js` | Discover supported manifests and locks; collect dependency records and registry metadata. |
+| Maven and Gradle | `lib/codecs/maven/`, `lib/codecs/gradle/` | Parse POMs and build files; resolve supported management, graph and BOM rules. |
+| Data sources | `lib/providers/index.js`, `lib/providers/<name>/` | One folder per source: its requests and everything specific to it (NVD, OSV, CVEProject, EUVD, KEV, EPSS, CERT-FR, GCVE, distribution trackers, CMS publishers, registries). |
+| Advisories | `lib/advisories/` | Store native advisory records and match them against packages. |
+| Findings | `lib/findings/` | Merge sources, rate, prioritise, enrich, attribute, suppress, gate and compare findings. |
+| Applications | `lib/applications/`, `lib/applications/plugins/` | Recognise CMS and framework instances; relate findings to instances and proven owners. |
+| Images and systems | `lib/cli-image.js`, `lib/cli-collect.js`, `lib/artifacts/`, `lib/images/`, `lib/system-inventory/` | Acquire artifacts, collect installed components, evaluate advisories and retain coverage. |
+| Other evidence | `lib/certs/`, `lib/providers/retire/`, `lib/codecs/binary/`, `lib/providers/hashid/`, `lib/maintenance/`, `lib/inventory/license-policy.js` | Certificates and keys, vendored JavaScript, binaries, end of life, licenses. |
+| Reports | `lib/reports/` | Render HTML, Word-compatible HTML, JSON, CycloneDX, CSAF, SARIF and Excel. |
+| Scan context | `lib/scan/` | Coverage, reliability and publication policy, diagnostics, source health, provenance. |
+| Cache | `lib/cache/` | SQLite storage, resource cache, proxy cache and portable cache archives. |
 
 ## Modules loaded by the server
 
 The server repository loads CLI modules by path, `require('vigievuln/lib/<name>')`, about
 forty of them (providers, advisory store, cache, NVD, OSV, CVE download, resource cache).
-The path of a file under `lib/` is therefore a contract: a module with no importer in
-this repository can still be in use (`lib/nvd-bulk.js`, `lib/resource-cache/fs-store.js`,
-`lib/github-publisher-maven.js`). Before moving, renaming or removing a module, run
+Those paths are a contract. The `exports` map of `package.json` binds each path the server
+knows to the module's current file, so a module can move without breaking the server, and
+a module with no importer in this repository can still be in use
+(`lib/providers/nvd/bulk.js`, `lib/cache/resource/fs-store.js`). After moving, renaming or
+removing a module, run
 
 ```bash
 node scripts/check-server-modules.js ../server
@@ -76,7 +83,7 @@ coordinate resolves every version. Composer physical occurrences and application
 ownership remain distinct where proven. Unknown ownership and unresolved versions
 remain explicit; neither is inferred from a package name alone.
 
-## Cleanup pipeline (`lib/core.js`)
+## Cleanup pipeline (`lib/codecs/maven/pom.js`)
 
 The extraction workflow can write normalized descriptors to a separate target
 and exclude configured private coordinates. It does not modify source files in

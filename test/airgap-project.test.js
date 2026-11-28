@@ -1,14 +1,14 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {openAdvisoryStore}=require('../lib/advisory-store');
-const {openCacheDb}=require('../lib/cache-db');
-const {buildProjectScope,buildProjectSnapshot}=require('../lib/airgap-project');
-const {queryBatch}=require('../lib/osv');
-const {makeDepRecord}=require('../lib/dep-record');
+const {openAdvisoryStore}=require('../lib/advisories/store');
+const {openCacheDb}=require('../lib/cache/db');
+const {buildProjectScope,buildProjectSnapshot}=require('../lib/cache/airgap-project');
+const {queryBatch}=require('../lib/providers/osv/query');
+const {makeDepRecord}=require('../lib/inventory/dep-record');
 
 test('project snapshot keeps all versions of selected packages without claiming global coverage',async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-snapshot-')),source=path.join(root,'source'),target=path.join(root,'target');
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
  const dep=makeDepRecord({ecosystem:'maven',namespace:'example',name:'kept',version:'1.0'});
  const unrelated=makeDepRecord({ecosystem:'maven',namespace:'example',name:'other',version:'1.0'});
  const store=openAdvisoryStore({cacheDir:source}),at=Date.now();
@@ -17,11 +17,11 @@ test('project snapshot keeps all versions of selected packages without claiming 
  store.close();
  const db=openCacheDb({cacheDir:source});const ins=db.prepare("INSERT INTO nvd_records VALUES(?,'bulk',?,NULL,?,1,'{}')");ins.run('CVE-2020-12345',at,Buffer.from([1]));ins.run('CVE-2020-54321',at,Buffer.from([1]));db.close();
  const project=buildProjectScope(new Map([['kept',dep]]));
- assert.equal(require('../lib/cache-repository').createCacheRepository(source).get('airgap-project','latest'),null,'project scope is not persisted');
+ assert.equal(require('../lib/cache/repository').createCacheRepository(source).get('airgap-project','latest'),null,'project scope is not persisted');
  buildProjectSnapshot(source,target,project);
- const {exportCache,importCache}=require('../lib/cache-archive-sqlite');
+ const {exportCache,importCache}=require('../lib/cache/archive');
  // An obsolete marker from an older build cannot change full-cache export.
- require('../lib/cache-repository').createCacheRepository(source).put('airgap-project','latest',project);
+ require('../lib/cache/repository').createCacheRepository(source).put('airgap-project','latest',project);
  const archive=path.join(root,'full.tar.gz');
  assert.equal((await exportCache(archive,{sourceDir:source})).scope,'full');
  const restored=path.join(root,'restored');await importCache(archive,{targetDir:restored});
@@ -42,18 +42,18 @@ test('project snapshot keeps all versions of selected packages without claiming 
 });
 
 test('native binaries retain NVD and do not become Maven package identities',t=>{
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-native-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-native-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
  const dep=makeDepRecord({ecosystem:'maven',namespace:'example',name:'kept',version:'1.0'});
  const binary=makeDepRecord({ecosystem:'binary',name:'example.dll',provenance:'binary'});
  const project=buildProjectScope(new Map([['dep',dep],['binary',binary]]));
  assert.equal(project.retainAllNvd,true);assert.equal(project.packages.length,1);
- const descriptor=require('../lib/deps-descriptor').serializeDeps(new Map([['dep',dep],['binary',binary]]));
- assert.equal([...require('../lib/deps-descriptor').deserializeDeps(descriptor).resolved.values()].find(d=>d.ecosystem==='binary').provenance,'binary');
+ const descriptor=require('../lib/inventory/deps-descriptor').serializeDeps(new Map([['dep',dep],['binary',binary]]));
+ assert.equal([...require('../lib/inventory/deps-descriptor').deserializeDeps(descriptor).resolved.values()].find(d=>d.ecosystem==='binary').provenance,'binary');
 });
 
 test('project export retains bulk NVD records for findings without package advisory records', t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-finding-nvd-')),source=path.join(root,'online'),target=path.join(root,'offline');
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
  const at=Date.now(),db=openCacheDb({cacheDir:source});
  const insert=db.prepare("INSERT INTO nvd_records VALUES(?,'bulk',?,NULL,?,1,'{}')");
  insert.run('CVE-2026-10001',at,Buffer.from([1]));insert.run('CVE-2026-10002',at,Buffer.from([1]));db.close();
@@ -66,8 +66,8 @@ test('project export retains bulk NVD records for findings without package advis
 
 test('project export keeps relevant native records, not the global CVE corpus',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-native-cve-')),source=path.join(root,'online'),target=path.join(root,'offline');
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
- const {cveEnvelope,matchNativeNpmCves}=require('../lib/native-advisories'),at=Date.now();
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const {cveEnvelope,matchNativeNpmCves}=require('../lib/advisories/native'),at=Date.now();
  const raw=(id,name)=>({cveMetadata:{cveId:id,state:'PUBLISHED',dateUpdated:'2026-01-01T00:00:00Z'},containers:{cna:{affected:[{packageURL:`pkg:npm/${name}`,defaultStatus:'unaffected',versions:[{version:'0',lessThan:'2.0.0',versionType:'semver',status:'affected'}]}]}}});
  const dep=makeDepRecord({ecosystem:'npm',name:'kept',version:'1.0.0'}),resolved=new Map([[dep.coordKey,dep]]),store=openAdvisoryStore({cacheDir:source});
  store.commit({records:[cveEnvelope(raw('CVE-2026-10001','kept'),{fetchedAt:at}),cveEnvelope(raw('CVE-2026-10002','other'),{fetchedAt:at}),cveEnvelope(raw('CVE-2026-10003','other'),{fetchedAt:at})]});
@@ -89,13 +89,13 @@ test('project export keeps relevant native records, not the global CVE corpus',t
 
 test('project indexes merge by covered bucket without pretending to be global',async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-index-')),source=path.join(root,'source'),target=path.join(root,'target');
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
  const db=openCacheDb({cacheDir:source}),at=Date.now();
  db.prepare("INSERT INTO cache_snapshots VALUES('cve_lookup',?,1,0,2,'{}')").run(at);
  const put=db.prepare('INSERT INTO cve_lookup VALUES(?,?,?,?,?,?)');
  put.run('package','example:one','CVEProject','CVE-2026-10001','a','{}');
  put.run('package','example:two','CVEProject','CVE-2026-10002','b','{}');db.close();
- const {exportCache,importCache}=require('../lib/cache-archive-sqlite');
+ const {exportCache,importCache}=require('../lib/cache/archive');
  for(const name of ['one','two']){
   const dep=makeDepRecord({ecosystem:'maven',namespace:'example',name,version:'1.0'}),archive=path.join(root,`${name}.tar.gz`);
   await exportCache(archive,{sourceDir:source,project:buildProjectScope(new Map([[name,dep]]))});
@@ -110,22 +110,22 @@ test('project indexes merge by covered bucket without pretending to be global',a
 });
 
 test('project export excludes other projects from prewarmed EPSS and EUVD enrichments',t=>{
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-enrichment-')),source=path.join(root,'online'),target=path.join(root,'offline');t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
- const repo=require('../lib/cache-repository').createCacheRepository(source),kept='CVE-2026-10001',other='CVE-2026-10002',at=Date.now()-3600000;
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-enrichment-')),source=path.join(root,'online'),target=path.join(root,'offline');t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const repo=require('../lib/cache/repository').createCacheRepository(source),kept='CVE-2026-10001',other='CVE-2026-10002',at=Date.now()-3600000;
  repo.put('catalogue','epss',{meta:{fetchedAt:at},entries:{[kept]:{score:0.3},[other]:{score:0.8}}},{fetchedAt:at});
  repo.put('catalogue','euvd-targeted',{entries:{[kept]:{item:{id:'EUVD-2026-1'},fetchedAt:at,stale:true},[other]:{item:{id:'EUVD-2026-2'},fetchedAt:at,stale:false}}},{fetchedAt:at});
  repo.put('catalogue','certfr-targeted',{entries:{[kept]:{items:[{ref:'CERTFR-2026-AVI-1'}],fetchedAt:at,stale:true},[other]:{items:[],fetchedAt:at,stale:false}}},{fetchedAt:at});
  repo.put('catalogue','kev-targeted',{entries:{[kept]:{item:{dateAdded:'2026-01-01'},fetchedAt:at,stale:false},[other]:{item:null,fetchedAt:at,stale:false}}},{fetchedAt:at});
  const d=makeDepRecord({ecosystem:'npm',name:'example',version:'1.0.0'});
  buildProjectSnapshot(source,target,buildProjectScope(new Map([['example',d]]),{cves:[kept]}));
- const out=require('../lib/cache-repository').createCacheRepository(target);
+ const out=require('../lib/cache/repository').createCacheRepository(target);
  for(const key of ['epss','euvd-targeted','certfr-targeted','kev-targeted']){const r=out.get('catalogue',key);assert.deepEqual(Object.keys(r.value.entries),[kept]);assert.equal(r.fetchedAt,at)}
  assert.equal(out.get('catalogue','euvd-targeted').value.entries[kept].stale,true);
 });
 
 test('targeted online consultations survive project export without a seed; later discoveries remain unknown',async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-targeted-airgap-')),source=path.join(root,'online'),target=path.join(root,'offline');
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
  const dep=(name,version)=>makeDepRecord({ecosystem:'maven',namespace:'example',name,version});
  const direct=dep('direct','1.0'),transitive=dep('transitive','2.0'),later=dep('later','3.0');
  const resolved=new Map([['direct',direct],['transitive',transitive]]);
@@ -150,8 +150,8 @@ test('targeted online consultations survive project export without a seed; later
 
 test('a project archive built from the complete CVEProject archive records each package consultation; a partial corpus does not',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-project-native-coverage-'));
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
- const {cveEnvelope}=require('../lib/native-advisories'),{createDiscoveryCoverage}=require('../lib/scan-reliability'),at=Date.now();
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const {cveEnvelope}=require('../lib/advisories/native'),{createDiscoveryCoverage}=require('../lib/scan/reliability'),at=Date.now();
  const raw=(id,name)=>({cveMetadata:{cveId:id,state:'PUBLISHED',dateUpdated:'2026-01-01T00:00:00Z'},containers:{cna:{affected:[{packageURL:`pkg:npm/${name}`,defaultStatus:'unaffected',versions:[{version:'0',lessThan:'2.0.0',versionType:'semver',status:'affected'}]}]}}});
  const hit=makeDepRecord({ecosystem:'npm',name:'kept',version:'1.0.0'}),clean=makeDepRecord({ecosystem:'npm',name:'clean',version:'3.0.0'});
  const resolved=new Map([[hit.coordKey,hit],[clean.coordKey,clean]]);

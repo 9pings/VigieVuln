@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { isManifestName, copyEcosystemManifests } = require("../lib/manifest-copy");
+const { isManifestName, copyEcosystemManifests } = require("../lib/inventory/manifest-copy");
 
 test("isManifestName matches non-Maven lockfiles/manifests, not pom.xml or random files", () => {
 	for (const n of ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "symfony.lock", "poetry.lock",

@@ -1,9 +1,9 @@
 'use strict';
 require('./helpers/isolated-cache')('nvd-affected');
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const nvd=require('../lib/nvd');
-const {matchNvdAffected,collectPackageNvdBindings}=require('../lib/nvd-package-ranges');
-const {makeDepRecord}=require('../lib/dep-record');
+const nvd=require('../lib/providers/nvd/enrich');
+const {matchNvdAffected,collectPackageNvdBindings}=require('../lib/providers/nvd/package-ranges');
+const {makeDepRecord}=require('../lib/inventory/dep-record');
 const raw=require('./fixtures/cve-maven-matching/nvd-logback-13006.json');
 const jackson=require('./fixtures/cve-maven-matching/nvd-jackson-18401.json');
 const dep=(coord,version)=>{const [namespace,name]=coord.split(':');return makeDepRecord({ecosystem:'maven',namespace,name,version});};
@@ -48,7 +48,7 @@ test('live fetch, persistent cache and offline enrichment retain full native dat
  await nvd.enrichMatches(bindings,{offline:true,fetcher:()=>{throw Error('offline network');}});
  const d=dep('ch.qos.logback:logback-core','1.2.2');
  assert.equal(matchNvdAffected(new Map([[d.coordKey,d]]),bindings).length,1);assert.equal(calls,1);
- const bulk=require('../lib/nvd-bulk'),writer=bulk.createWriter(nvd.NVD_CACHE_DIR,Date.now());
+ const bulk=require('../lib/providers/nvd/bulk'),writer=bulk.createWriter(nvd.NVD_CACHE_DIR,Date.now());
  writer.add(raw.id,record);writer.finish();
  assert.deepEqual(bulk.readBulk(nvd.NVD_CACHE_DIR,raw.id).body.affected,raw.affected);
 });

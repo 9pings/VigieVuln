@@ -1,5 +1,5 @@
-// The resource engine (lib/resource-cache/engine.js) runs over ANY store implementing the
-// interface documented in lib/resource-cache/fs-store.js — including an asynchronous one,
+// The resource engine (lib/cache/resource/engine.js) runs over ANY store implementing the
+// interface documented in lib/cache/resource/fs-store.js — including an asynchronous one,
 // which is what a PostgreSQL store will be. This suite drives the engine over an in-memory
 // store whose every lookup is async, so single-flight and batch coalescing are proven not
 // to depend on the directory store being synchronous. Zero network.
@@ -7,7 +7,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
 const { Readable, Writable } = require("node:stream");
-const { createResourceEngine } = require("../lib/resource-cache/engine");
+const { createResourceEngine } = require("../lib/cache/resource/engine");
 const { configureResourceRoute, providerKey } = require("../lib/providers");
 
 const tick = () => new Promise(ok => setImmediate(ok));
@@ -178,7 +178,7 @@ test('engine: an invalid background refresh never replaces the good stale entry'
 
 test('engine: JSON validation cleans disk spools and also validates transformed output', async t => {
 	const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
-	const { createCacheStore } = require('../lib/resource-cache/fs-store');
+	const { createCacheStore } = require('../lib/cache/resource/fs-store');
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-engine-format-'));
 	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
 	const store = createCacheStore(dir), old = await seedNvd(store);
@@ -459,9 +459,9 @@ test('HTTP stale quota fallbacks are retried after the advertised cooldown and p
  for(const kind of ['rate-limit','admission']){
   let mode='ok',calls=0,time=1000;const store=memoryStore();const engine=createResourceEngine({store,admit:()=>kind==='admission'&&mode==='limited'?{retryAfterS:2}:true,fetcher:async()=>{calls++;return mode==='limited'?new Response('',{status:429,headers:{'retry-after':'2'}}):Response.json({id:'EUVD-2024-123',description:mode});}}),s=await serve(engine);
   const payload={provider:'euvd',type:'vulnerability',params:{id:'EUVD-2024-123'}};
-  try{assert.equal((await s.ask(payload)).status,200);mode='limited';let attempts=0;const throttle=require('../lib/proxy-throttle').createProxyThrottle({now:()=>time,sleep:async ms=>{time+=ms;mode='new';},warn:()=>{}});
+  try{assert.equal((await s.ask(payload)).status,200);mode='limited';let attempts=0;const throttle=require('../lib/providers/proxy-throttle').createProxyThrottle({now:()=>time,sleep:async ms=>{time+=ms;mode='new';},warn:()=>{}});
    const recovered=await throttle.request(async()=>{attempts++;return s.ask({...payload,revalidate:true});});assert.equal((await recovered.json()).description,'new');assert.equal(attempts,2);assert(time>=3000);
-   mode='limited';const limited=require('../lib/proxy-throttle').createProxyThrottle({maxWaitMs:0,now:()=>time,sleep:async()=>{throw Error('must not sleep')},warn:()=>{}});
+   mode='limited';const limited=require('../lib/providers/proxy-throttle').createProxyThrottle({maxWaitMs:0,now:()=>time,sleep:async()=>{throw Error('must not sleep')},warn:()=>{}});
    const fallback=await limited.request(()=>s.ask({...payload,revalidate:true}));assert.equal(fallback.status,200);assert.equal((await fallback.json()).description,'new');assert.equal(fallback.headers.get('x-fad-proxy'),'stale');assert.equal(fallback.headers.get('x-fad-proxy-refresh-cause'),kind);assert.equal(fallback.headers.get('retry-after'),'2');
   }finally{await s.close();}
  }

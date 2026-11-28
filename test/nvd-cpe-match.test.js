@@ -16,7 +16,7 @@
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { matchDepsAgainstNvdCpe, cpeMatchesDep } = require("../lib/cpe");
+const { matchDepsAgainstNvdCpe, cpeMatchesDep } = require("../lib/providers/nvd/cpe");
 
 const cpe = (vendor, product) => ({
 	criteria: `cpe:2.3:a:${vendor}:${product}:*:*:*:*:*:*:*:*`,

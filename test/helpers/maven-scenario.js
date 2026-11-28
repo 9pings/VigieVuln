@@ -1,14 +1,14 @@
 /**
  * Build a Maven scenario on disk + an in-memory Maven Central, and run fad's real Maven
- * pipeline over it (collectResolvedDeps → lib/maven-reactor → settleManagedOnly), wired
+ * pipeline over it (collectResolvedDeps → lib/codecs/maven/reactor → settleManagedOnly), wired
  * exactly as vigievuln.js does. Zero network.
  */
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const core = require("../../lib/core");
-const { collectResolvedDeps, settleManagedOnly } = require("../../lib/cve-match");
-const { resolveReactor } = require("../../lib/maven-reactor");
+const core = require("../../lib/codecs/maven/pom");
+const { collectResolvedDeps, settleManagedOnly } = require("../../lib/advisories/cve-match");
+const { resolveReactor } = require("../../lib/codecs/maven/reactor");
 
 const MC = "https://repo1.maven.org/maven2";
 const G = "scratch.test";

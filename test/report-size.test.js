@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),vm=require('node:vm');
 const {parseDocument}=require('htmlparser2'),dom=require('domutils');
-const {generateHtmlReport,generateWordReport}=require('../lib/cve-report');
+const {generateHtmlReport,generateWordReport}=require('../lib/reports/cve-report');
 test('identical HTML detail panels share storage, restore before browser actions, and keep differing fixes',()=>{
  const dep=(name)=>({ecosystem:'npm',name,artifactId:name,version:'1.0',scope:'runtime',artifactTargetId:'image',artifactPath:'app/package.json',coordKey:name});
  const match=(name,fix)=>({dep:dep(name),cve:{id:'CVE-2099-12345',severity:'HIGH',description:'UNIQUE_LONG_DESCRIPTION '+('evidence '.repeat(500)),fixVersion:fix},source:'osv'});
@@ -23,7 +23,7 @@ test('compact JSON retains the entire findings schema and evidence',t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-json-size-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
  const payload=require('./fixtures/report-payload/full')('en');
  payload.licenseResults=null; // The report fixture contains presentation-only license entries.
- const {writeFindings,buildFindings}=require('../lib/json-export'),file=path.join(dir,'findings.json');
+ const {writeFindings,buildFindings}=require('../lib/reports/json-export'),file=path.join(dir,'findings.json');
  const expected=buildFindings(payload),written=writeFindings(payload,file),text=fs.readFileSync(file,'utf8');
  // Each build stamps generation time when the caller supplied none.
  expected.generatedAt=written.generatedAt;

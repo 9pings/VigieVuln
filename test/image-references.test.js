@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {dockerfileReferences,yamlReferences,discoverImageReferences,referenceWarnings,resolveVariables}=require('../lib/image-references');
+const {dockerfileReferences,yamlReferences,discoverImageReferences,referenceWarnings,resolveVariables}=require('../lib/images/references');
 test('Dockerfile parses arguments, continuation, stage aliases and unresolved values',()=>{
  const text=['ARG BASE=alpine','ARG ARCH','FROM --platform=linux/$ARCH ${BASE}:3.20 AS build','RUN echo hi','FROM build AS copied','FROM \\', '  ${FINAL:-debian}:stable AS release'].join('\n');
  const refs=dockerfileReferences(text);assert.equal(refs.length,2);assert.equal(refs[0].reference,'alpine:3.20');assert.deepEqual(refs[0].unresolved,['ARCH']);assert.equal(refs[0].line,3);assert.equal(refs[1].reference,'debian:stable');assert.equal(refs[1].line,6);assert.equal(refs[1].finalStage,true);
@@ -27,7 +27,7 @@ test('Dockerfile heredoc bodies never become fake image references',()=>{
  const refs=dockerfileReferences(text);assert.deepEqual(refs.map(r=>r.reference),['alpine:3','debian:12']);assert.throws(()=>dockerfileReferences('FROM alpine\nRUN <<EOF\nFROM hidden'),/unterminated/);
 });
 test('declarations bind only exact image or index digests, preserving stage context',()=>{
- const {bindImageDefinitions}=require('../lib/image-references'),digest='sha256:'+'a'.repeat(64),index='sha256:'+'b'.repeat(64);
+ const {bindImageDefinitions}=require('../lib/images/references'),digest='sha256:'+'a'.repeat(64),index='sha256:'+'b'.repeat(64);
  const refs=[{id:'base',path:'Dockerfile',line:2,declared:`repo/app@${digest}`,reference:`repo/app@${digest}`,role:'base',stage:0,finalStage:false,unresolved:[]},
  {id:'index',path:'compose.yml',location:'0.services.app.image',declared:`repo/app@${index}`,reference:`repo/app@${index}`,role:'deployment',unresolved:[]},
  {id:'tag',path:'Dockerfile',line:4,declared:'repo/app:latest',reference:'repo/app:latest',role:'base',unresolved:[]},
@@ -66,7 +66,7 @@ test('Compose and Dockerfile platforms are resolved and malformed platforms are 
 });
 
 test('unpinned image warnings cover all mutable tags and retain locations without treating a resolved digest as a pin',()=>{
- const {unpinnedImageWarnings}=require('../lib/image-references'),digest='sha256:'+'a'.repeat(64);
+ const {unpinnedImageWarnings}=require('../lib/images/references'),digest='sha256:'+'a'.repeat(64);
  const refs=dockerfileReferences(`FROM nginx:stable-alpine AS base\nFROM nginx:1.30.7 AS numeric\nFROM nginx AS implicit\nFROM nginx@${digest} AS pinned\nFROM nginx:stable-alpine@${digest}\n`)
   .map(r=>({...r,path:'Dockerfile',contentVerified:true,boundArtifactIds:['image'],digest}));
  refs.push(...yamlReferences('services:\n  app:\n    image: local:latest\n    build: .\n  unknown:\n    image: ${IMAGE}\n  registry:\n    image: localhost:5000/team/app:2\n',{filePath:'compose.yml'}).map(r=>({...r,path:'compose.yml'})));

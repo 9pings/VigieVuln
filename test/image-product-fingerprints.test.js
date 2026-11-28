@@ -12,7 +12,7 @@ const { renderImageCves, renderArtifactEvidence } = require('../lib/artifacts/re
 function temp(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-fingerprints-'));
   t.after(() => {
-    require('../lib/cache-db').closeCacheDbs();
+    require('../lib/cache/db').closeCacheDbs();
     fs.rmSync(dir, { recursive: true, force: true });
   });
   return dir;
@@ -301,7 +301,7 @@ test('OS-owned upstream matches remain candidates and yield to an exact downstre
 
 test('product lookups retry HTTP 429 with fresh per-attempt deadlines and retain confirmed empty answers offline',async t=>{
  const cacheDir=temp(t),waits=[],notices=[],signals=[];
- const {guardedFetch,createSourceHealth}=require('../lib/source-health');
+ const {guardedFetch,createSourceHealth}=require('../lib/scan/source-health');
  const target={packages:[],deps:[{name:'php',ecosystem:'binary',version:'8.3.1',binaryEvidence:{product:'php'},artifactPath:'usr/local/bin/php'}]};
  const fetcher=guardedFetch({health:createSourceHealth(),retries:2,sleep:async ms=>waits.push(ms),onRetry:n=>notices.push(n),fetch:async(url,opts)=>{
   signals.push(opts.signal);
@@ -311,7 +311,7 @@ test('product lookups retry HTTP 429 with fresh per-attempt deadlines and retain
  assert.equal(live.coverage[0].execution,'completed');assert.equal(live.coverage[0].result,'no-match');
  assert.deepEqual(waits,[12000,12000]);assert.equal(notices.length,2);
  assert.notEqual(signals[0],signals[1]);assert.notEqual(signals[1],signals[2]);
- const repository=require('../lib/cache-repository').createCacheRepository(cacheDir);
+ const repository=require('../lib/cache/repository').createCacheRepository(cacheDir);
  const key=JSON.stringify(['php:php','8.3.1']);
  const old=repository.get('image-product-nvd/2',key);
  repository.put('image-product-nvd/2',key,old.value,{fetchedAt:Date.now()-86400000});
@@ -341,7 +341,7 @@ test('deployment prerequisites are assumed while the vulnerable product and vers
 });
 
 test('product cache from the previous environment policy cannot hide newly included findings',async t=>{
- const cacheDir=temp(t),repo=require('../lib/cache-repository').createCacheRepository(cacheDir);
+ const cacheDir=temp(t),repo=require('../lib/cache/repository').createCacheRepository(cacheDir);
  repo.put('image-product-nvd/1',JSON.stringify(['php:php','8.3.1']),{records:[],unknown:['CVE-2025-12345']},{fetchedAt:Date.now()});
  const target={packages:[],deps:[{name:'php',ecosystem:'binary',version:'8.3.1',binaryEvidence:{product:'php'},artifactPath:'usr/local/bin/php'}]};
  let requests=0;

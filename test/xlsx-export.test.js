@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { unzipSync, strFromU8 } = require("fflate");
 const { parseStringPromise } = require("xml2js");
-const { buildXlsx, writeXlsx } = require("../lib/xlsx-export");
+const { buildXlsx, writeXlsx } = require("../lib/reports/xlsx-export");
 
 const match = {
 	findingId: "fad-cve-test", applicationIds: ["wordpress:site"], ownerComponentIds: ["wordpress:site:core"],

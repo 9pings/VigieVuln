@@ -7,7 +7,7 @@ const { spawnSync } = require("node:child_process");
 
 test("CLI resolves implicit Spring BOM and graph versions offline without leaking into Maven", t => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-gradle-cli-"));
-	t.after(() => { require("../lib/cache-db").closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
+	t.after(() => { require("../lib/cache/db").closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
 	const src = path.join(root, "src"), home = path.join(root, "home");
 	fs.mkdirSync(src); fs.mkdirSync(home);
 	fs.writeFileSync(path.join(src, "build.gradle.kts"), `plugins {
@@ -20,13 +20,13 @@ dependencies {
 }`);
 	const pom = (group, name, version, body = "") => `<project><modelVersion>4.0.0</modelVersion><groupId>${group}</groupId><artifactId>${name}</artifactId><version>${version}</version>${body}</project>`;
 	const dependency = (name, version) => `<dependency><groupId>example</groupId><artifactId>${name}</artifactId><version>${version}</version></dependency>`;
-	const cache = require("../lib/maven-cache");
+	const cache = require("../lib/providers/maven/cache");
 	for (const [group, name, version, body] of [
 		["org.springframework.boot", "spring-boot-dependencies", "4.1.1", `<dependencyManagement><dependencies>${dependency("starter", "1.0")}</dependencies></dependencyManagement>`],
 		["example", "starter", "1.0", `<dependencies>${dependency("child", "2.0")}</dependencies>`],
 		["example", "child", "2.0", ""],
 	]) cache.write(path.join(home, ".vigie-vuln", "poms-cache", `${group}__${name}__${version}.pom`), pom(group, name, version, body));
-	require("../lib/cache-db").closeCacheDbs();
+	require("../lib/cache/db").closeCacheDbs();
 	const preload = path.join(root, "offline.cjs");
 	fs.writeFileSync(preload, `require('node:os').homedir=()=>process.env.VV_GRADLE_TEST_HOME;
 const blocked=()=>{require('node:fs').appendFileSync(process.env.VV_GRADLE_TEST_CALLS,'network\\n');throw Error('network forbidden')};

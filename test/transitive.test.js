@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { parsePomXml, resolveProps, buildMgmt, SCOPE_MATRIX, resolveTransitiveDeps, effectivePom } = require("../lib/transitive");
+const { parsePomXml, resolveProps, buildMgmt, SCOPE_MATRIX, resolveTransitiveDeps, effectivePom } = require("../lib/codecs/maven/transitive");
 
 // A platform POM that manages log4j-core via a ${log4j2.version} property. This is the
 // Spring Boot shape: spring-boot-dependencies manages the coord through a version property
@@ -416,7 +416,7 @@ test('Gradle Android jar/aar packaging is one module identity, without suppressi
  const found=await resolveTransitiveDeps(roots,{gradleComponents:true,fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
  assert.deepEqual(gradleWarnings,[]);assert.equal(found.get('g:android').version,'1');assert.equal(found.get('g:child').version,'2');
  const collected=new Map([['g:root',{ecosystem:'maven',ecosystemType:'gradle',groupId:'g',artifactId:'root',version:'1',versions:['1'],scope:'compile'}]]);
- await require('../lib/cve-match').expandWithTransitives(collected,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
+ await require('../lib/advisories/cve-match').expandWithTransitives(collected,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>gradleWarnings.push(x)});
  assert.equal(collected.get('g:child').version,'2');assert.deepEqual(gradleWarnings,[]);
  // Same version: the aar and the jar share one POM, in Maven mode too.
  await resolveTransitiveDeps(roots,{fetcher:fakeFetcher(responses),cacheDir:freshCache(),onVariantCollision:x=>mavenWarnings.push(x)});

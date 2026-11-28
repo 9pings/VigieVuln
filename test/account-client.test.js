@@ -5,8 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createAccountClient, ACCOUNT_ORIGIN, DEFAULT_TIMEOUT_MS } = require('../lib/account-client');
-const { createAccountSessionStore } = require('../lib/account-session');
+const { createAccountClient, ACCOUNT_ORIGIN, DEFAULT_TIMEOUT_MS } = require('../lib/service/account-client');
+const { createAccountSessionStore } = require('../lib/service/account-session');
 
 const NOW = 1800000000000;
 const SESSION = { token: 'fad_account-session', expiresAt: NOW + 60000 };

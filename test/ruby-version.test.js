@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
-const { compareRubyVersions: compare } = require('../lib/ruby-version');
+const { compareRubyVersions: compare } = require('../lib/codecs/ruby/version');
 
 test('RubyGems ordering preserves padding, prereleases, case and arbitrary numeric precision', () => {
   for (const [a, b] of [['1', '1.0.0'], ['1.0.a1', '1.a.1'], ['1.0-a1', '1.pre.a.1'],

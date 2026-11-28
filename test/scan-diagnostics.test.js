@@ -2,17 +2,17 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {assessInventories,systemDep,incompleteCapabilities}=require('../lib/artifacts/scan');
-const {prepareNativeSources}=require('../lib/native-source-prepare');
+const {prepareNativeSources}=require('../lib/advisories/native-source-prepare');
 function fixture(t){
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-diagnostics-'));
- const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir});
- t.after(()=>{store.close();require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})});
+ const store=require('../lib/advisories/store').openAdvisoryStore({cacheDir});
+ t.after(()=>{store.close();require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})});
  return {cacheDir,store};
 }
 const deps=()=>new Map([['demo',{ecosystem:'npm',name:'demo',version:'1.0.0',coordKey:'demo'}]]);
 test('consulted native records do not require a globally complete catalogue or an offline refresh',async t=>{
  const {store}=fixture(t),at=Date.now()-86400000;
- store.commit({records:[require('../lib/native-advisories').cveEnvelope({cveMetadata:{cveId:'CVE-2025-12345',state:'PUBLISHED'},containers:{cna:{affected:[]}}},{fetchedAt:at})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:at,complete:false}]});
+ store.commit({records:[require('../lib/advisories/native').cveEnvelope({cveMetadata:{cveId:'CVE-2025-12345',state:'PUBLISHED'},containers:{cna:{affected:[]}}},{fetchedAt:at})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:at,complete:false}]});
  const result=await prepareNativeSources(deps(),{store,offline:true,nativeSources:['cveproject']});
  assert.deepEqual(result.warnings,[]);assert.equal(result.coverage[0].execution,'completed');
  assert.equal(result.coverage[0].complete,false);assert.equal(result.coverage[0].issue,null);assert.equal(result.coverage[0].freshness,'expired');
@@ -28,7 +28,7 @@ test('native absence observations count as consultations; an unprepared source r
 });
 test('undecidable native comparison remains indeterminate without a source retrieval gap',async t=>{
  const {store,cacheDir}=fixture(t),raw={cveMetadata:{cveId:'CVE-2024-33333',state:'PUBLISHED'},containers:{cna:{affected:[{packageURL:'pkg:npm/demo',versions:[{version:'1.0.0',status:'affected'}]}]},adp:[{affected:[{packageURL:'pkg:npm/demo',versions:[{version:'1.0.0',status:'unaffected'}]}]}]}};
- store.commit({records:[require('../lib/native-advisories').cveEnvelope(raw,{fetchedAt:Date.now()})]});
+ store.commit({records:[require('../lib/advisories/native').cveEnvelope(raw,{fetchedAt:Date.now()})]});
  const dep={ecosystem:'npm',name:'demo',version:'1.0.0',coordKey:'demo',artifactTargetId:'image'},target={id:'image',kind:'rootfs',metadata:{},distribution:null,packages:[],deps:[dep],warnings:[],coverage:[]};
  const result=await assessInventories([target],{cacheDir,offline:true,osv:false,disableGcve:true,enrich:[]});
  assert.equal(result.artifacts[0].coverage.find(c=>c.collector==='native-comparisons').result,'indeterminate');

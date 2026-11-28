@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { enrichUnmanaged } = require("../lib/unmanaged");
-const { makeDepRecord } = require("../lib/dep-record");
+const { enrichUnmanaged } = require("../lib/inventory/unmanaged");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 function rec(name, hashes) { return makeDepRecord({ ecosystem: "binary", name, manifestPath: `/p/${name}`, provenance: "binary", hashes, declaredName: name }); }
 

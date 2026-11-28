@@ -19,9 +19,9 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const core = require("../lib/core");
-const { collectResolvedDeps, expandWithTransitives, matchDepsAgainstCves } = require("../lib/cve-match");
-const { resolveReactor } = require("../lib/maven-reactor");
+const core = require("../lib/codecs/maven/pom");
+const { collectResolvedDeps, expandWithTransitives, matchDepsAgainstCves } = require("../lib/advisories/cve-match");
+const { resolveReactor } = require("../lib/codecs/maven/reactor");
 
 const FIXTURE = path.join(__dirname, "fixtures", "maven-inherited-direct");
 const MC = "https://repo1.maven.org/maven2";

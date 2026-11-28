@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { routeArguments } = require('../lib/cli-command-routing');
-const { createAccountSessionStore } = require('../lib/account-session');
+const { createAccountSessionStore } = require('../lib/service/account-session');
 const CLI = path.join(__dirname, '../vigievuln.js');
 const ID = '12345678-1234-1234-1234-123456789abc';
 const OTHER = 'aaaaaaaa-1234-1234-1234-123456789abc';
@@ -20,7 +20,7 @@ test('cache prepare routes a descriptor and output into one invocation', () => {
 
 function fixture(t, settings = {}) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-commands-'));
-  t.after(() => { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); });
+  t.after(() => { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); });
   const src = path.join(home, 'private source'), capture = path.join(home, 'calls.jsonl');
   fs.mkdirSync(src);
   fs.writeFileSync(path.join(src, 'package.json'), JSON.stringify({ name: 'secret-root', dependencies: { demo: '1.2.3', '@private/hidden': '2.0.0' } }));
@@ -37,7 +37,7 @@ function fixture(t, settings = {}) {
       const answers=settings.answers||['person@example.test','private_password'];
       require('node:readline').createInterface=()=>({question:(_q,cb)=>cb(answers.shift()),close(){}});
     }
-    if(settings.forbidSession){require(${JSON.stringify(path.join(__dirname, '../lib/account-session'))}).createAccountSessionStore=()=>{throw Error('session accessed during local export')};}
+    if(settings.forbidSession){require(${JSON.stringify(path.join(__dirname, '../lib/service/account-session'))}).createAccountSessionStore=()=>{throw Error('session accessed during local export')};}
     globalThis.fetch=async(url,init={})=>{
       const request={url,method:init.method,body:init.body?JSON.parse(init.body):null};
       fs.appendFileSync(${JSON.stringify(capture)},JSON.stringify(request)+'\\n');
@@ -254,7 +254,7 @@ test('config and cache aliases execute existing masked config and archive handle
   const f=fixture(t,{noNetwork:true});
   const cache=path.join(f.home,'.vigie-vuln');fs.mkdirSync(cache);
   fs.writeFileSync(path.join(cache,'config.json'),JSON.stringify({proxyCacheToken:'secret-proxy'}));
-  const repo=require('../lib/cache-repository').createCacheRepository(cache);
+  const repo=require('../lib/cache/repository').createCacheRepository(cache);
   repo.put('fixture','sample',{hello:'world'});
   const shown=f.run(['config','show']);success(shown);assert.doesNotMatch(shown.stdout,/secret-proxy/);
   assert.equal(shown.stdout,f.run(['--show-config']).stdout);

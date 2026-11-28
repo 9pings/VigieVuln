@@ -5,7 +5,7 @@ const {spawnSync}=require('node:child_process');
 const {isClibManifest}=require('../lib/codecs/npm/manifest-kind');
 const {parsePackageJson}=require('../lib/codecs/npm/parse');
 const {collectNpmDeps}=require('../lib/codecs/npm/collect');
-const {createDiscoveryCoverage}=require('../lib/scan-reliability');
+const {createDiscoveryCoverage}=require('../lib/scan/reliability');
 const clib={name:'sha256',version:'0.0.2',repo:'jb55/sha256.c',src:['sha256.c','sha256.h'],
  dependencies:{'jb55/rotate-bits.h':'0.1.1'},development:{'thlorenz/tap.c':'*'}};
 function tmp(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-clib-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir;}
@@ -16,7 +16,7 @@ test('legacy clib package.json is not an npm dependency or an npm no-lockfile fa
  const deps=collectNpmDeps(dir);assert.equal(deps.size,0);assert.equal(deps.parsedManifests.length,0);
  assert.equal(deps.warnings.length,1);assert.equal(deps.warnings[0].type,'foreign-manifest');
  assert.equal(deps.warnings[0].severity,'info');assert.equal(deps.warnings[0].items[0].id,'jb55/rotate-bits.h');
- assert.equal(require('../lib/scan-reliability').isBlocking(deps.warnings[0]),false);
+ assert.equal(require('../lib/scan/reliability').isBlocking(deps.warnings[0]),false);
  const handler=require('../lib/artifacts/applications').handlers?.find(h=>h.id==='npm');
  assert.ok(handler);assert.deepEqual(handler.parse(JSON.stringify(clib)),[]);
 });
@@ -26,7 +26,7 @@ test('C source fields alone do not exclude npm native addons, and conflicting lo
    {...clib,dependencies:{'@scope/native':'1.2.3'}},{...clib,repo:undefined}])assert.equal(isClibManifest(npm),false);
  const dir=tmp(t);fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify(clib));
  fs.writeFileSync(path.join(dir,'package-lock.json'),JSON.stringify({lockfileVersion:3,packages:{}}));
- assert.ok(collectNpmDeps(dir).warnings.some(w=>require('../lib/scan-reliability').isBlocking(w)));
+ assert.ok(collectNpmDeps(dir).warnings.some(w=>require('../lib/scan/reliability').isBlocking(w)));
 });
 
 test('private classification is scoped to ecosystem, target and version; public versions retain required sources',()=>{
@@ -65,7 +65,7 @@ for(const status of [404,410,405,429])test(`CLI registry HTTP ${status}: only co
    const replay=run(['--offline']);assert.equal(replay.status,0,replay.stdout+'\n'+replay.stderr);
    doc=JSON.parse(fs.readFileSync(path.join(out,'findings.json')));assert.ok(doc.warnings.some(w=>w.type==='private-libs'));
    if(status===404){
-    const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir:path.join(dir,'.vigie-vuln')});
+    const store=require('../lib/advisories/store').openAdvisoryStore({cacheDir:path.join(dir,'.vigie-vuln')});
     store.commit({records:[{source:'osv',fetchedAt:Date.now(),document:{id:'CVE-2025-12345',summary:'Previously recorded advisory',database_specific:{severity:'HIGH'}}}],
       queries:[{source:'osv',ecosystem:'npm',name,version:'1.0.0',ids:['CVE-2025-12345'],complete:true,fetchedAt:Date.now()}]});store.close();
     const known=run(['--offline']);assert.equal(known.status,0,known.stdout+'\n'+known.stderr);

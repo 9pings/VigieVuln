@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
-const { resolveHostedProxy, checkHostedProxy, loginForProxy } = require('../lib/hosted-proxy');
+const { resolveHostedProxy, checkHostedProxy, loginForProxy } = require('../lib/service/hosted-proxy');
 
 test('hosted proxy selects only the two official origins and requires an account key online', () => {
   assert.equal(resolveHostedProxy({vigievulnProxy:true}, {VIGIEVULN_PROXY_CACHE_TOKEN:'secret'}).proxyCache, 'https://api.vigievuln.fr');
@@ -82,7 +82,7 @@ test('proxy login requires explicit consent before creating a key and revokes it
 });
 
 test('a forbidden key creation points to account and terms review', async () => {
-  const {createProxyKey}=require('../lib/hosted-proxy');
+  const {createProxyKey}=require('../lib/service/hosted-proxy');
   await assert.rejects(createProxyKey({createProxyKey:async()=>{throw Object.assign(new Error('forbidden'),{code:'FORBIDDEN'});}}),
     /current terms.*vigievuln login/);
 });
@@ -94,7 +94,7 @@ test('scan proxy login and stored account sessions enforce terms before key crea
     try {
       const calls=path.join(home,'calls'), hook=path.join(home,'hook.cjs');
       if(stored) {
-        require('../lib/account-session').createAccountSessionStore({homeDir:home}).write({token:'stored_session',expiresAt:Date.now()+60000});
+        require('../lib/service/account-session').createAccountSessionStore({homeDir:home}).write({token:'stored_session',expiresAt:Date.now()+60000});
       }
       fs.writeFileSync(hook,`
         const fs=require('node:fs');require('node:os').homedir=()=>${JSON.stringify(home)};
@@ -127,7 +127,7 @@ test('scan proxy login and stored account sessions enforce terms before key crea
         assert.deepEqual(names,stored?['me']:['login','logout']);
         assert.equal(fs.existsSync(path.join(home,'.vigie-vuln','config.json')),false);
       }
-      if(stored) assert.equal(require('../lib/account-session').createAccountSessionStore({homeDir:home}).read().token,'stored_session');
+      if(stored) assert.equal(require('../lib/service/account-session').createAccountSessionStore({homeDir:home}).read().token,'stored_session');
       else assert.equal(fs.existsSync(path.join(home,'.vigievuln','account-session.json')),false);
     } finally {fs.rmSync(home,{recursive:true,force:true});}
   }
@@ -232,8 +232,8 @@ test('hosted online lookups cannot be bypassed by an explicitly supplied local s
 test('hosted cache reuses only proxy-confirmed data for at most four hours and warns on stale fallback', async () => {
   const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
   const {configureResourceRoute,getResource}=require('../lib/providers');
-  const {createCacheStore}=require('../lib/proxy-cache');
-  const {createSourceHealth}=require('../lib/source-health');
+  const {createCacheStore}=require('../lib/cache/proxy-cache');
+  const {createSourceHealth}=require('../lib/scan/source-health');
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-hosted-cache-'));
   const health=createSourceHealth(), store=createCacheStore(dir);
   let calls=0, stamp=Date.now(), fail=false;
@@ -247,19 +247,19 @@ test('hosted cache reuses only proxy-confirmed data for at most four hours and w
     const key=require('../lib/providers').providerKey('epss','scores',params,{});
     const entry=store.get(key);
     assert.ok(entry.ttlMs<=4*3600000);
-    require('../lib/cache-db').getCacheDb(dir).prepare('UPDATE resources SET fetched_at=? WHERE key=?').run(Date.now()-4*3600000-1,'serve-cache:'+key);
+    require('../lib/cache/db').getCacheDb(dir).prepare('UPDATE resources SET fetched_at=? WHERE key=?').run(Date.now()-4*3600000-1,'serve-cache:'+key);
     fail=true;
     // Avoid delayed production retry behavior in this deterministic test.
     const result=await getResource('epss','scores',params,{noSourceRetry:true,retryProxyDenied:false});
     assert.equal(result.headers.get('x-fad-proxy'),'stale');
     assert.equal(calls,2);
     assert.equal(health.stale()[0].id,'epss');
-  } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,hostedStore:null,health:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}
+  } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,hostedStore:null,health:null});require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('hosted stale responses record the source and oldest cache date', async () => {
   const {configureResourceRoute,getResource}=require('../lib/providers');
-  const {createSourceHealth}=require('../lib/source-health');
+  const {createSourceHealth}=require('../lib/scan/source-health');
   const health=createSourceHealth();
   configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,token:'test',store:null,health,
     fetcher:async()=>Response.json({data:[]},{headers:{'x-fad-proxy':'stale','x-fad-proxy-fetched-at':'2026-10-27T10:00:00.000Z'}})});
@@ -270,7 +270,7 @@ test('hosted stale responses record the source and oldest cache date', async () 
   } finally {configureResourceRoute({proxyUrl:null,hosted:false,token:null,fetcher:null,health:null});}
 });
 test('cache age and revalidation do not imply a refresh failure, while explicit failure does',async()=>{
- const {configureResourceRoute,getResource}=require('../lib/providers'),{createSourceHealth}=require('../lib/source-health'),health=createSourceHealth();let tag='hit',reason=null;
+ const {configureResourceRoute,getResource}=require('../lib/providers'),{createSourceHealth}=require('../lib/scan/source-health'),health=createSourceHealth();let tag='hit',reason=null;
  configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,hostedStore:null,health,fetcher:async()=>Response.json({data:[]},{headers:{'x-fad-proxy':tag,'x-fad-proxy-fetched-at':'2026-10-27T10:00:00.000Z',...(reason?{'x-fad-proxy-reason':reason}:{})}})});
  try{const opts={streaming:true,noStore:true};await getResource('npm','package',{name:'demo'},opts);assert.equal(health.stale().length,0);
   tag='stale';reason='revalidating';await getResource('npm','package',{name:'demo'},opts);assert.equal(health.stale()[0].blocking,undefined);
@@ -281,7 +281,7 @@ test('cache age and revalidation do not imply a refresh failure, while explicit 
 test('hosted Maven scanner requests only dependency keys and matches the returned CVEs', async () => {
   const fs = require('node:fs');
   const path = require('node:path');
-  const { extractMavenRelevantCve } = require('../lib/cve-download');
+  const { extractMavenRelevantCve } = require('../lib/providers/cveproject/download');
   const { configureResourceRoute } = require('../lib/providers');
   const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/cve-samples/cve-with-packagename.json'), 'utf8'));
   const cve = extractMavenRelevantCve(fixture);
@@ -331,7 +331,7 @@ test('a hosted scan writes stale source warnings in HTML and JSON and supports a
 
 test('hosted EUVD uses only matching CVE identifiers and no bulk catalogue', async () => {
   const { configureResourceRoute } = require('../lib/providers');
-  const { enrichEuvd } = require('../lib/euvd');
+  const { enrichEuvd } = require('../lib/providers/euvd/enrich');
   const calls = [];
   const fetcher=async (url,init)=>{
     const body=JSON.parse(init.body); calls.push(body); assert.equal(body.type,'cves');
@@ -348,7 +348,7 @@ test('hosted EUVD uses only matching CVE identifiers and no bulk catalogue', asy
 
 test('hosted CERT-FR uses only relevant CVE identifiers, not the advisory catalogue', async () => {
   const { configureResourceRoute } = require('../lib/providers');
-  const { enrichCertFr } = require('../lib/certfr');
+  const { enrichCertFr } = require('../lib/providers/certfr/enrich');
   const calls = [];
   const fetcher=async (url,init)=>{
     const body=JSON.parse(init.body); calls.push(body); assert.equal(body.type,'cves');
@@ -365,7 +365,7 @@ test('hosted CERT-FR uses only relevant CVE identifiers, not the advisory catalo
 
 test('hosted KEV uses targeted CVE identifiers and preserves exploitation details', async () => {
   const { configureResourceRoute } = require('../lib/providers');
-  const { enrichKev } = require('../lib/kev');
+  const { enrichKev } = require('../lib/providers/kev/enrich');
   const calls=[];
   const fetcher=async (url,init)=>{const body=JSON.parse(init.body);calls.push(body);assert.equal(body.type,'cves');return new Response(JSON.stringify({items:[{cve:'CVE-2021-44228',kev:{dateAdded:'2021-12-10',dueDate:'2021-12-24',ransomware:true}}]}),{status:200});};
   configureResourceRoute({proxyUrl:'https://proxy.invalid',token:'test',store:null,health:null,fetcher});
@@ -399,7 +399,7 @@ test('official proxy key fetches VV partial ranges without OSV and reuses them o
 test('hosted status preflight retries a temporary 429 before validating the service',async()=>{
   let calls=0,time=0;
   const messages=[];
-  const throttle=require('../lib/proxy-throttle').createProxyThrottle({now:()=>time,sleep:async ms=>{time+=ms},warn:m=>messages.push(m)});
+  const throttle=require('../lib/providers/proxy-throttle').createProxyThrottle({now:()=>time,sleep:async ms=>{time+=ms},warn:m=>messages.push(m)});
   await checkHostedProxy('https://proxy.invalid','fixture',async()=>++calls===1
     ? new Response(null,{status:429,headers:{'retry-after':'12'}})
     : Response.json({ok:true,service:'vigievuln-proxy'}),{throttle});

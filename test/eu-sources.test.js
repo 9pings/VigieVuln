@@ -6,12 +6,12 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { gcveId, enrichGcve } = require("../lib/gcve");
-const { enrichEuvd, parseMappingCsv, parseExploitedPage, euvdDate } = require("../lib/euvd");
-const { enrichCertFr, advisoryCves, staleAdvisories, indexByCve } = require("../lib/certfr");
-const { europeanReferences, euvdExploited } = require("../lib/eu-refs");
+const { gcveId, enrichGcve } = require("../lib/providers/gcve/id");
+const { enrichEuvd, parseMappingCsv, parseExploitedPage, euvdDate } = require("../lib/providers/euvd/enrich");
+const { enrichCertFr, advisoryCves, staleAdvisories, indexByCve } = require("../lib/providers/certfr/enrich");
+const { europeanReferences, euvdExploited } = require("../lib/findings/eu-refs");
 const { getProvider } = require("../lib/providers");
-const { makeDepRecord } = require("../lib/dep-record");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "fad-eu-"));
 const json = body => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
@@ -65,17 +65,17 @@ test("EUVD: bulk reads only — the project's CVE ids are never sent; then offli
 
 		const off = await enrichEuvd(matchesFor("CVE-2021-44228"), { offline: true, fetcher: tripwire, cacheDir: dir });
 		assert.equal(off[0].cve.euvd.id, "EUVD-2021-34768");
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("EUVD: a failed refresh keeps serving the stale snapshot", async () => {
 	const dir = tmp();
 	try {
-		require('../lib/cache-repository').createCacheRepository(dir).put('catalogue','euvd',{ _fetchedAt: 0,
+		require('../lib/cache/repository').createCacheRepository(dir).put('catalogue','euvd',{ _fetchedAt: 0,
 			body: { byCve: { "CVE-2021-44228": "EUVD-2021-34768" }, exploited: {}, count: 1 } });
 		const ms = await enrichEuvd(matchesFor("CVE-2021-44228"), { fetcher: async () => new Response("", { status: 503 }), cacheDir: dir });
 		assert.equal(ms[0].cve.euvd.id, "EUVD-2021-34768");
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ---------------------------------------------------------------- CERT-FR
@@ -122,7 +122,7 @@ test("CERT-FR: cold run indexes every advisory, a later run fetches only what wa
 		assert.ok(calls.every(u => !/CVE-/.test(u)), "no CVE id of the project is sent");
 
 		// Expire the listing stamp; one advisory revised, one new one that has no JSON (404).
-		const repo = require('../lib/cache-repository').createCacheRepository(dir);
+		const repo = require('../lib/cache/repository').createCacheRepository(dir);
 		const data = repo.get('catalogue','certfr').value;
 		data.meta.fetchedAt = 0;
 		repo.put('catalogue','certfr',data);
@@ -135,7 +135,7 @@ test("CERT-FR: cold run indexes every advisory, a later run fetches only what wa
 		const after = repo.get('catalogue','certfr').value;
 		assert.deepEqual(after.entries["CERTFR-2026-AVI-0001"].cves, [], "a 404 is an answer: recorded, not retried");
 		assert.ok(after.meta.fetchedAt > 0);
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("CERT-FR: offline reads the index and never touches the network", async () => {
@@ -147,8 +147,8 @@ test("CERT-FR: offline reads the index and never touches the network", async () 
 		// Cold offline: no index, no finding, no error.
 		const cold = tmp();
 		try { assert.equal((await enrichCertFr(matchesFor("CVE-2021-44228"), { offline: true, fetcher: tripwire, cacheDir: cold }))[0].cve.certfr, undefined); }
-		finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cold, { recursive: true, force: true }); }
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
+		finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cold, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ---------------------------------------------------------------- providers
@@ -182,7 +182,7 @@ test("europeanReferences: one list, EUVD then GCVE then CERT-FR, with public lin
 });
 
 test("report: the detail panel links EUVD, GCVE and CERT-FR, in both languages; CERT-FR titles stay as written", () => {
-	const { generateHtmlReport } = require("../lib/cve-report");
+	const { generateHtmlReport } = require("../lib/reports/cve-report");
 	const dep = makeDepRecord({ ecosystem: "maven", namespace: "g", name: "a", version: "1.0.0", manifestPath: "/p/pom.xml" });
 	const render = locale => generateHtmlReport({ cveMatches: [{ dep, cve: { ...EU_CVE }, confidence: "exact" }],
 		eolResults: [], obsoleteResults: [], outdatedResults: [], projectInfo: { name: "demo", src: "/p", generatedAt: "2026-10-07" }, locale });
@@ -203,7 +203,7 @@ test("exports carry the European references: JSON, CycloneDX, CSAF, SARIF", () =
 	const resolved = new Map([[dep.coordKey, dep]]);
 	const matches = [{ dep, cve: { ...EU_CVE }, source: "osv" }];
 
-	const { buildFindings } = require("../lib/json-export");
+	const { buildFindings } = require("../lib/reports/json-export");
 	const doc = buildFindings({ cveMatches: matches, eolResults: [], outdatedResults: [], resolvedDeps: resolved,
 		projectInfo: { name: "demo", src: "/proj", generatedAt: "2026-10-07T00:00:00Z" }, toolVersion: "0" });
 	const f = doc.cve.find(x => x.id === "CVE-2021-44228");
@@ -213,17 +213,17 @@ test("exports carry the European references: JSON, CycloneDX, CSAF, SARIF", () =
 	assert.equal(f.gcve, "GCVE-0-2021-44228");
 	assert.deepEqual(f.certfr, ["CERTFR-2021-ALE-022"]);
 
-	const bom = require("../lib/sbom-export").buildCycloneDx(resolved, matches, { projectInfo: { name: "demo" }, toolVersion: "0" });
+	const bom = require("../lib/reports/sbom-export").buildCycloneDx(resolved, matches, { projectInfo: { name: "demo" }, toolVersion: "0" });
 	const v = bom.vulnerabilities[0];
 	assert.deepEqual(v.references.map(r => r.id), ["EUVD-2021-34768", "GCVE-0-2021-44228", "CERTFR-2021-ALE-022"]);
 	assert.equal(v.references[0].source.name, "ENISA EUVD");
 	assert.ok(v.properties.some(p => p.name === "fad:euvdExploited" && p.value === "2021-12-10"));
 
-	const csaf = require("../lib/csaf-export").buildCsaf(resolved, matches, {});
+	const csaf = require("../lib/reports/csaf-export").buildCsaf(resolved, matches, {});
 	const cv = csaf.vulnerabilities[0];
 	assert.ok(cv.references.some(r => r.url === "https://www.cert.ssi.gouv.fr/alerte/CERTFR-2021-ALE-022/" && r.category === "external"));
 
-	const sarif = require("../lib/sarif-export").buildSarif(matches, { projectInfo: { src: "/proj" }, toolVersion: "0" });
+	const sarif = require("../lib/reports/sarif-export").buildSarif(matches, { projectInfo: { src: "/proj" }, toolVersion: "0" });
 	const result = sarif.runs[0].results[0];
 	assert.equal(result.properties.euvdExploited, true);
 	assert.deepEqual(result.properties.europeanReferences, ["EUVD-2021-34768", "GCVE-0-2021-44228", "CERTFR-2021-ALE-022"]);

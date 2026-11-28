@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { purlFor } = require("../lib/purl");
+const { purlFor } = require("../lib/inventory/purl");
 
 test("maven purl keeps groupId as a dotted namespace segment", () => {
 	const dep = { ecosystem: "maven", namespace: "org.apache.commons", name: "commons-lang3", version: "3.12.0" };

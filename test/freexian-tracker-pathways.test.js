@@ -1,9 +1,9 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {startProxyCacheServer,createCacheStore}=require('../lib/proxy-cache');
-const {configureResourceRoute}=require('../lib/providers'),{closeCacheDbs}=require('../lib/cache-db');
-const {exportCache,importCache}=require('../lib/cache-archive-sqlite');
-const {assessFreexianTracker}=require('../lib/system-inventory/freexian-tracker');
+const {startProxyCacheServer,createCacheStore}=require('../lib/cache/proxy-cache');
+const {configureResourceRoute}=require('../lib/providers'),{closeCacheDbs}=require('../lib/cache/db');
+const {exportCache,importCache}=require('../lib/cache/archive');
+const {assessFreexianTracker}=require('../lib/providers/freexian/tracker');
 // Small structure adapted from the publisher's Debian ELTS tracker.
 const data={apt:{'CVE-2026-109518':{description:'APT acquisition retry issue',releases:{bullseye:{status:'resolved',fixed_version:'2.2.5',repositories:{bullseye:'2.2.5','bullseye-lts':'2.2.5'}}}}},unrelated:{'CVE-2026-1234':{releases:{bullseye:{status:'open'}}}}};
 const inventory={distribution:{id:'debian',versionId:'11',codename:'bullseye'},packages:[{name:'apt',sourceName:'apt',sourceVersion:'2.2.4',version:'2.2.4',manager:'dpkg'}]};
@@ -17,7 +17,7 @@ test('fleet projects source on proxy and client replays its cache offline',async
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-freexian-fleet-')),counter={n:0};let server;try{const x=await startProxyCacheServer({host:'127.0.0.1',port:0,store:createCacheStore(path.join(root,'relay')),fetcher:upstream(counter)});server=x.server;configureResourceRoute({proxyUrl:x.url,hosted:false,store:null,hostedStore:null,fetcher:(url,init)=>{assert.ok(String(url).startsWith(x.url+'/'));return fetch(url,init)}});const dir=path.join(root,'client');const a=await assess(dir);assert.equal(counter.n,1);const target=path.join(root,'offline');await exportCache(path.join(root,'cache.tar.gz'),{sourceDir:dir,proxyOrigin:x.url});await importCache(path.join(root,'cache.tar.gz'),{targetDir:target,proxyOrigin:x.url});reset();const b=await assess(target,{offline:true,fetcher:()=>assert.fail('offline network')});assert.deepEqual(b.assessments,a.assessments);}finally{reset();if(server)await new Promise(ok=>server.close(ok));closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})}});
 test('hosted server projects source through typed resource',async t=>{
  const serviceFile=path.resolve(__dirname,'../../server-main/lib/server.js'),fadFile=path.resolve(__dirname,'../../server-main/lib/fad.js');if(!fs.existsSync(serviceFile)){t.skip('sibling server-main unavailable');return;}
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-freexian-hosted-')),counter={n:0},old=require.cache[fadFile];let server;require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require(path.resolve(__dirname,'../lib',rel)),fadData:file=>require(path.resolve(__dirname,'../data',file))}};
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-freexian-hosted-')),counter={n:0},old=require.cache[fadFile];let server;require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require('vigievuln/lib/'+rel),fadData:file=>require(path.resolve(__dirname,'../data',file))}};
  try{server=require(serviceFile).createServiceServer({store:createCacheStore(path.join(root,'relay')),tokens:{verify:()=>null},allowAnonymousProxy:true,localAnswers:false,ratePerMinute:0,publicRatePerMinute:0,fetcher:upstream(counter)});await new Promise(ok=>server.listen(0,'127.0.0.1',ok));const base=`http://127.0.0.1:${server.address().port}`;configureResourceRoute({proxyUrl:base,hosted:true,store:null,hostedStore:null,fetcher:(url,init)=>{assert.ok(String(url).startsWith(base+'/'));return fetch(url,init)}});await assess(path.join(root,'client'));assert.equal(counter.n,1);}finally{reset();if(server)await new Promise(ok=>server.close(ok));if(old)require.cache[fadFile]=old;else delete require.cache[fadFile];closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})}});
 test('regional profile includes EU Freexian and excludes it from US without consultation',async()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-freexian-region-'));let calls=0;

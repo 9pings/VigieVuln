@@ -13,7 +13,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { compareMavenVersions, isVersionAffected } = require("../lib/maven-version");
+const { compareMavenVersions, isVersionAffected } = require("../lib/codecs/maven/version");
 
 test("every oracle pair orders exactly as Maven's ComparableVersion", () => {
 	const rows = fs.readFileSync(path.join(__dirname, "fixtures", "maven-version-oracle.tsv"), "utf8")

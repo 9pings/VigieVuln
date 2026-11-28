@@ -1,8 +1,8 @@
 const isolatedTestCache = require('./helpers/isolated-cache')('osv-db-multieco');
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords, rangeVerdict, compareSemver} = require('../lib/osv-db');
-const {makeDepRecord} = require('../lib/dep-record');
+const {newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords, rangeVerdict, compareSemver} = require('../lib/providers/osv/db');
+const {makeDepRecord} = require('../lib/inventory/dep-record');
 
 test('offline npm index matches an unqueried version using the advisory range', () => {
  const index = newOsvIndex('npm', 1700000000000);
@@ -26,7 +26,7 @@ test('npm fix candidates still covered by another range are skipped', () => {
 });
 
 test('an undecidable range or version never certifies a proposed npm fix', () => {
- const {vulnToMatch}=require('../lib/osv');
+ const {vulnToMatch}=require('../lib/providers/osv/query');
  const dep=makeDepRecord({ecosystem:'npm',name:'widget',version:'1.2.0'});
  const record={id:'GHSA-undecidable',affected:[{package:{ecosystem:'npm',name:'widget'},ranges:[
   {type:'SEMVER',events:[{introduced:'1.0.0'},{fixed:'1.3.0'}]},
@@ -73,6 +73,6 @@ test('streamed seed matches a never-queried version and rejects tampering', asyn
 });
 
 test('Maven numeric components beyond safe precision remain unknown', () => {
- const {rangeVerdict}=require('../lib/osv-db');
+ const {rangeVerdict}=require('../lib/providers/osv/db');
  assert.equal(rangeVerdict('9007199254740992',{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'9007199254740993'}]},'Maven'),null);
 });

@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { createCacheStore, startProxyCacheServer } = require("../lib/proxy-cache");
+const { createCacheStore, startProxyCacheServer } = require("../lib/cache/proxy-cache");
 const { providerKey } = require("../lib/providers");
 const temp = () => fs.mkdtempSync(path.join(os.tmpdir(), "fad-proxy-limits-"));
 async function harness(opts = {}) {
@@ -11,7 +11,7 @@ async function harness(opts = {}) {
 	const running = await startProxyCacheServer({ port: 0, store, ...opts });
 	return { ...running, dir, store, close: async () => {
 		running.server.closeAllConnections();
-		await new Promise(ok => running.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		await new Promise(ok => running.server.close(ok)); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	} };
 }
 const call = (h, name, signal) => fetch(h.url + "/v1/resource", { method: "POST", signal,
@@ -120,7 +120,7 @@ test("server startup shares the SQLite cache safely across store handles", async
 	try {
 		store.put(key('shared'),Buffer.from('body'),{fetchedAt:Date.now(),ttlMs:1000,contentType:'text/plain'});
 		assert.equal(createCacheStore(dir).readBody(createCacheStore(dir).get(key('shared'))).toString(),'body');
-	} finally { await new Promise(ok => h.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { await new Promise(ok => h.server.close(ok)); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("batch responses obey deadlines and size limits", async () => {

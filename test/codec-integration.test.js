@@ -7,9 +7,9 @@ const assert = require("node:assert");
 const path = require("path");
 const { allCodecs, getCodec, detectCodecs } = require("../lib/codecs");
 const { assertCodecShape } = require("../lib/codecs/codec.interface");
-const { osvEcosystemFor, osvPkgName } = require("../lib/osv");
-const { findEolProduct } = require("../lib/outdated");
-const { generateHtmlReport } = require("../lib/cve-report");
+const { osvEcosystemFor, osvPkgName } = require("../lib/providers/osv/query");
+const { findEolProduct } = require("../lib/maintenance/outdated");
+const { generateHtmlReport } = require("../lib/reports/cve-report");
 
 const POLY = path.join(__dirname, "fixtures", "polyglot");
 
@@ -55,7 +55,7 @@ test("collecting all codecs merges into one Map with NO coordKey collisions", as
 });
 
 test("coordKeys from different ecosystems never collide even for same bare name", () => {
-	const { coordKeyFor } = require("../lib/dep-record");
+	const { coordKeyFor } = require("../lib/inventory/dep-record");
 	const keys = [
 		coordKeyFor("maven", "org.x", "thing"),
 		coordKeyFor("npm", "", "thing"),

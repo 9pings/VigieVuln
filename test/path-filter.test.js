@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { makeDirFilter, compileGlobs, collectExcludedDirs, DEFAULT_EXCLUDE_DIRS } = require("../lib/path-filter");
+const { makeDirFilter, compileGlobs, collectExcludedDirs, DEFAULT_EXCLUDE_DIRS } = require("../lib/inventory/path-filter");
 
 const root = "/proj";
 const abs = rel => path.join(root, rel);

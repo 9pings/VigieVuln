@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const path = require("path");
 const os = require("os");
-const R = require("../lib/retire");
+const R = require("../lib/providers/retire/scan");
 
 test("retire signature cache lives INSIDE ~/.vigie-vuln/ (so --export-cache carries it)", () => {
 	const fadDir = path.join(os.homedir(), ".vigie-vuln");
@@ -25,7 +25,7 @@ test("buildRetireArgs uses --ignorefile (path-anchored) and adds --jsrepo only w
 
 test("ensureSignatures offline never reaches the network — returns existence boolean", async () => {
 	const fs = require("fs");
-	const present = !!require('../lib/cache-repository').createCacheRepository(path.dirname(R.RETIRE_SIG_DIR)).get('auxiliary','retire-signatures');
+	const present = !!require('../lib/cache/repository').createCacheRepository(path.dirname(R.RETIRE_SIG_DIR)).get('auxiliary','retire-signatures');
 	const r = await R.ensureSignatures({ offline: true });
 	assert.strictEqual(typeof r, "boolean");
 	assert.strictEqual(r, present);   // offline only reports what's already on disk
@@ -77,7 +77,7 @@ test("retire findings cache is versioned: legacy entry (no _schema) is a cache M
 	const fs = require("fs");
 	// Unique src path so the md5 cache key never collides with a real run.
 	const srcDir = "/tmp/fad-cache-version-test-" + process.pid;
-	const repository=require('../lib/cache-repository').createCacheRepository(path.dirname(R.RETIRE_CACHE_DIR));
+	const repository=require('../lib/cache/repository').createCacheRepository(path.dirname(R.RETIRE_CACHE_DIR));
 	const cacheKey=R.cacheKey(srcDir);
 	const body = { data: [{ file: "/x/jquery.js", results: [{ component: "jquery", version: "3.7.1", vulnerabilities: [] }] }] };
 	try {
@@ -99,7 +99,7 @@ test("scanWithRetireFull surfaces a scan failure instead of silently returning e
 	const fs = require("fs");
 	// Needs local signatures to actually reach the scan path (offline). Mirrors the
 	// conditional style of the ensureSignatures test above.
-	if (!require('../lib/cache-repository').createCacheRepository(path.dirname(R.RETIRE_SIG_DIR)).get('auxiliary','retire-signatures')) return;
+	if (!require('../lib/cache/repository').createCacheRepository(path.dirname(R.RETIRE_SIG_DIR)).get('auxiliary','retire-signatures')) return;
 	// A non-existent source dir makes retire crash (walkdir ENOENT) → empty output.
 	// That must be reported, not turned into a clean "nothing found" (the bug that
 	// hid a vendored-JS chapter when the scan actually died).

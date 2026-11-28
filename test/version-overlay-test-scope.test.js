@@ -27,10 +27,10 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const core = require("../lib/core");
-const { collectResolvedDeps, expandWithTransitives, matchDepsAgainstCves } = require("../lib/cve-match");
-const { resolveReactor } = require("../lib/maven-reactor");
-const { attributeMatchOrigins } = require("../lib/attribution");
+const core = require("../lib/codecs/maven/pom");
+const { collectResolvedDeps, expandWithTransitives, matchDepsAgainstCves } = require("../lib/advisories/cve-match");
+const { resolveReactor } = require("../lib/codecs/maven/reactor");
+const { attributeMatchOrigins } = require("../lib/findings/attribution");
 
 const FIXTURE = path.join(__dirname, "fixtures", "maven-test-scope-masking");
 const MC = "https://repo1.maven.org/maven2";

@@ -4,11 +4,11 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { configureResourceRoute } = require('../lib/providers');
-const { projectFeed } = require('../lib/application-providers/wordfence-projection');
-const { indexProductionFeed } = require('../lib/application-providers/wordfence-v3');
-const { CACHE_FILE } = require('../lib/application-providers/wordfence-client');
-const { runApplicationPlugins } = require('../lib/application-plugins/runner');
-const wordpress = require('../lib/application-plugins/wordpress');
+const { projectFeed } = require('../lib/providers/wordfence/projection');
+const { indexProductionFeed } = require('../lib/providers/wordfence/v3');
+const { CACHE_FILE } = require('../lib/providers/wordfence/client');
+const { runApplicationPlugins } = require('../lib/applications/plugins/runner');
+const wordpress = require('../lib/applications/plugins/wordpress');
 const NOW = Date.now() - 1000, HOUR = 3600000;
 const ROOT = path.join(__dirname, 'fixtures/wordpress-custom');
 const QUERIES = [{ type: 'core', slug: 'wordpress' }, { type: 'theme', slug: 'example' }];
@@ -27,7 +27,7 @@ function fixture(t, { age = 48 * HOUR, stale = false, positive = false } = {}) {
 	configureResourceRoute({ proxyUrl: 'https://proxy.invalid', hosted: true, token: null, store: null, health: null, fetcher: null });
 	t.after(() => {
 		configureResourceRoute({ proxyUrl: null, hosted: false, token: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	});
 	const opts = { plugins: [wordpress], selection: 'wordpress', advisoryCacheDir: dir, now: NOW,
 		publicComponents: ['site/wp-content/themes/acme-theme=example'],
@@ -59,7 +59,7 @@ test('48h stale=false local projection revalidates targeted identities and disco
 	assert.equal(result.findings.length, 1);
 	assert.deepEqual(covered(result).map(c => c.result), ['no-match', 'affected']);
 	assert.ok(covered(result).every(c => c.sourceSnapshot.collectedAt === new Date(NOW).toISOString()));
-	assert.equal(JSON.parse(require('../lib/application-providers/snapshot-cache').read(f.file,{preferCache:true}).bytes)._fadSnapshot.collectedAt, new Date(NOW).toISOString());
+	assert.equal(JSON.parse(require('../lib/applications/snapshot-cache').read(f.file,{preferCache:true}).bytes)._fadSnapshot.collectedAt, new Date(NOW).toISOString());
 	await f.run();
 	assert.equal(f.calls.length, 1, 'fresh cached projection is reused');
 });
@@ -134,7 +134,7 @@ test('online revalidation precedes strict max-age check; failed required source 
 	await f.run({ maxAdvisoryAgeMs: HOUR });
 	assert.equal(f.calls.length, 1);
 	fs.writeFileSync(f.file, f.original);
-	require('../lib/application-providers/snapshot-cache').write(f.file, f.snapshot);
+	require('../lib/applications/snapshot-cache').write(f.file, f.snapshot);
 	f.respond = () => new Response('', { status: 503 });
 	await assert.rejects(f.run({ requiredProviderIds: ['wordfence-v3'] }), /advisory source failed/);
 	const partial = await f.run({ requiredProviderIds: ['wordfence-v3'], reportProviderFailures: true });
@@ -171,7 +171,7 @@ test('automatic legacy full 48h stale=false cache revalidates targeted and creat
 	assert.deepEqual(covered(result).map(c => c.result), ['no-match', 'affected']);
 	assert.ok(covered(result).every(c => c.sourceSnapshot.completeness === 'targeted' && !c.sourceSnapshot.stale));
 	assert.equal(fs.readFileSync(f.file, 'utf8'), f.original, 'legacy catalogue is not rewritten');
-	assert.ok(require('../lib/application-providers/snapshot-cache').exists(path.join(f.dir, CACHE_FILE)));
+	assert.ok(require('../lib/applications/snapshot-cache').exists(path.join(f.dir, CACHE_FILE)));
 	await f.run();
 	assert.equal(f.calls.length, 1, 'next scan prefers the fresh targeted projection');
 });
@@ -219,7 +219,7 @@ test('legacy false-clean reproduction produces stale warnings in actual CLI JSON
 	const f = legacyFixture(t);
 	const cache = path.join(f.dir, '.vigie-vuln', 'advisory-snapshots');
 	fs.mkdirSync(cache, { recursive: true });
-	require('../lib/application-providers/snapshot-cache').write(path.join(cache, 'wordfence-v3.json'), JSON.parse(f.original));
+	require('../lib/applications/snapshot-cache').write(path.join(cache, 'wordfence-v3.json'), JSON.parse(f.original));
 	const callsFile = path.join(f.dir, 'calls.jsonl');
 	const hook = path.join(f.dir, 'proxy-only.cjs');
 	fs.writeFileSync(hook, `

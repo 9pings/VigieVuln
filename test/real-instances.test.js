@@ -186,9 +186,9 @@ test("a corpus of four real repositories scans as four distinct applications", {
 
 test("the real symfony-demo lock attributes CVE-2024-50345 along the real require chain", { skip: SKIP }, async () => {
 	const composer = require("../lib/codecs/composer.codec");
-	const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-	const symfony = require("../lib/application-plugins/symfony");
-	const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+	const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+	const symfony = require("../lib/applications/plugins/symfony");
+	const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 	const root = path.join(WORK, "symfony-demo-v2.6.0");
 	const { deps } = await composer.collect(root);
 	const result = await runApplicationPlugins(root, { plugins: [symfony], selection: "symfony",
@@ -210,9 +210,9 @@ test("the real symfony-demo lock attributes CVE-2024-50345 along the real requir
 
 test("the real BookStack lock attributes CVE-2024-52301 directly to laravel/framework", { skip: SKIP }, async () => {
 	const composer = require("../lib/codecs/composer.codec");
-	const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-	const laravel = require("../lib/application-plugins/laravel");
-	const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+	const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+	const laravel = require("../lib/applications/plugins/laravel");
+	const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 	const root = path.join(WORK, "bookstack-v24.10");
 	const { deps } = await composer.collect(root);
 	const result = await runApplicationPlugins(root, { plugins: [laravel], selection: "laravel",

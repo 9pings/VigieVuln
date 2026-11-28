@@ -2,7 +2,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {prepareDirectCache,prepareScopedCache}=require('../lib/cache-startup');
+const {prepareDirectCache,prepareScopedCache}=require('../lib/cache/startup');
 
 test('SQLite startup discards legacy cache contents while preserving configuration and account session',t=>{
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'vv-sqlite-start-'));t.after(()=>fs.rmSync(home,{recursive:true,force:true}));

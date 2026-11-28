@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {buildFindings}=require('../lib/json-export');
-const {generateHtmlReport,generateWordReport}=require('../lib/cve-report');
+const {buildFindings}=require('../lib/reports/json-export');
+const {generateHtmlReport,generateWordReport}=require('../lib/reports/cve-report');
 
 test('image OS files without advisories stay out of reports and source unmanaged counts',()=>{
  const image='example-image';

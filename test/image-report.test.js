@@ -1,8 +1,8 @@
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {generateHtmlReport,generateWordReport}=require('../lib/cve-report');
-const {makeDepRecord}=require('../lib/dep-record');
+const {generateHtmlReport,generateWordReport}=require('../lib/reports/cve-report');
+const {makeDepRecord}=require('../lib/inventory/dep-record');
 const {artifactAnchor}=require('../lib/artifacts/report');
 function fixture(){
  const imageId='oci:sha256:'+'a'.repeat(64),otherId='oci:sha256:'+'b'.repeat(64);
@@ -274,7 +274,7 @@ test('source and image executive summaries and charts stay separate for the same
   assert.match(sourceCharts,/CWE-79/);assert.doesNotMatch(sourceCharts,/CWE-89/);
   assert.match(imageCharts,/CWE-89/);assert.doesNotMatch(imageCharts,/CWE-79/);
  }
- const stats=require('../lib/cve-report').computeStats([source,image]);assert.equal(stats.direct,1);assert.equal(stats.total,2);
+ const stats=require('../lib/reports/cve-report').computeStats([source,image]);assert.equal(stats.direct,1);assert.equal(stats.total,2);
  const html=generateHtmlReport(payload),copy=html.slice(html.indexOf('<template class="exec-copy-rich">'),html.indexOf('</template>'));
  assert.match(copy,/production findings/);assert.match(copy,/images to update/);
 });

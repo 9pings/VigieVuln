@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
-const {proxyScope} = require('../lib/proxy-scope');
+const {proxyScope} = require('../lib/cache/proxy-scope');
 
 test('proxy origins use isolated persistent scopes and refuse unmarked existing scopes', t => {
  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vigie-proxy-scope-'));
@@ -28,7 +28,7 @@ test('proxy offline scan reads an imported advisory from its isolated cache with
  const seedDir = path.join(dir,'seed','.vigie-vuln');
  const advisory = {id:'GHSA-test',aliases:['CVE-2024-12345'],affected:[{package:{ecosystem:'npm',name:'lodash'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'4.17.21'}]}]}]};
  const fetchedAt=Date.now();
- const seedStore = require('../lib/advisory-store').openAdvisoryStore({cacheDir:seedDir});
+ const seedStore = require('../lib/advisories/store').openAdvisoryStore({cacheDir:seedDir});
  try {
   seedStore.commit({
    records:[{source:'osv',document:advisory,fetchedAt,provenance:{transport:'seed'}}],
@@ -37,7 +37,7 @@ test('proxy offline scan reads an imported advisory from its isolated cache with
  } finally { seedStore.close(); }
  const archive = path.join(dir,'seed.tar.gz');
  // The bundle the CLI itself writes and reads (cache export / cache import).
- const {exportCache,importCache} = require('../lib/cache-archive-sqlite');
+ const {exportCache,importCache} = require('../lib/cache/archive');
  await exportCache(archive,{sourceDir:path.join(dir,'seed','.vigie-vuln')});
  const scoped = proxyScope('https://proxy.example',{homeDir:dir});
  await importCache(archive,{targetDir:scoped});

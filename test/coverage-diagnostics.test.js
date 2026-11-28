@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'), assert=require('node:assert/strict');
-const {needsMavenReview}=require('../lib/coverage-diagnostics');
+const {needsMavenReview}=require('../lib/advisories/coverage-diagnostics');
 const dep={groupId:'org.example',artifactId:'demo',version:'3.0.0'};
 const candidate=evidence=>({dep,cve:{id:'CVE-2026-12345',coordinateEvidence:evidence}});
 const doc=(fixed='2.0.0')=>({id:'GHSA-test',aliases:['CVE-2026-12345'],affected:[{package:{ecosystem:'Maven',name:'org.example:demo'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed}]}]}]});

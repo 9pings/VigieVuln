@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test');const assert=require('node:assert/strict');
-const {generateHtmlReport,generateWordReport}=require('../lib/cve-report');
+const {generateHtmlReport,generateWordReport}=require('../lib/reports/cve-report');
 const {projectImageCves}=require('../lib/artifacts/cve-view');
 function report(match,render=generateHtmlReport){return render({cveMatches:[match],resolvedDeps:new Map([['d',match.dep]]),projectInfo:{name:'sources'}});}
 const dep={ecosystem:'npm',name:'example',version:'1',coord:'example',coordKey:'d'};

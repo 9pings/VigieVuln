@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { buildProjectDescriptor } = require('../lib/project-descriptor');
+const { buildProjectDescriptor } = require('../lib/inventory/project-descriptor');
 const fixture = eco => path.join(__dirname, 'fixtures', 'descriptor-relations', eco);
 async function descriptor(eco) {
  const { deps } = await require(`../lib/codecs/${eco}.codec`).collect(fixture(eco), { offline: true });

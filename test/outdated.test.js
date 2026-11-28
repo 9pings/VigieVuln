@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { checkObsoleteDeps, checkObsolete, findEolProduct, KNOWN_OBSOLETE } = require("../lib/outdated");
+const { checkObsoleteDeps, checkObsolete, findEolProduct, KNOWN_OBSOLETE } = require("../lib/maintenance/outdated");
 
 test("known-obsolete.json contains the obvious historical hazards", () => {
 	assert.ok(KNOWN_OBSOLETE["log4j:log4j"], "log4j 1.x must be flagged");
@@ -138,7 +138,7 @@ test("findEolProduct reports the matched rule + key (origin traceability)", () =
 	assert.equal(composer.viaKey, "drupal/core");
 
 	// Returned object must be a COPY — never mutate the shared EOL_MAPPING entry.
-	const { EOL_MAPPING } = require("../lib/outdated");
+	const { EOL_MAPPING } = require("../lib/maintenance/outdated");
 	assert.equal(EOL_MAPPING.by_npm_name.jquery.via, undefined, "must not pollute the shared mapping");
 });
 
@@ -146,12 +146,12 @@ test("commons-io:commons-io is NOT obsolete — the old rule pointed at a dead c
 	// It advised migrating to `org.apache.commons:commons-io`, which holds exactly one version,
 	// 1.3.2, published 2007-07-02 and never touched since. The live coordinate is
 	// `commons-io:commons-io`, released at 2.22.0. The advice was a 19-year downgrade.
-	const { checkObsolete } = require("../lib/outdated");
+	const { checkObsolete } = require("../lib/maintenance/outdated");
 	assert.strictEqual(checkObsolete({ groupId: "commons-io", artifactId: "commons-io" }), null);
 });
 
 test("the junit rule does not claim 4.x when it fires on 3.x too", () => {
-	const { checkObsolete } = require("../lib/outdated");
+	const { checkObsolete } = require("../lib/maintenance/outdated");
 	const e = checkObsolete({ groupId: "junit", artifactId: "junit" });
 	assert.ok(e, "junit:junit is still flagged");
 	assert.ok(!/JUnit 4 is in maintenance/.test(e.reason), "reason must not assert the 4.x line");

@@ -369,7 +369,7 @@ dependencies {
 	assert.equal(deps[0].name, "artifact");
 });
 
-const { inheritEcoType } = require("../lib/cve-match");
+const { inheritEcoType } = require("../lib/advisories/cve-match");
 
 test("transitive ecosystemType inherits 'gradle' when all reaching roots are gradle", () => {
 	const roots = new Map([["g:gradleRoot", "gradle"], ["g:mavenRoot", "maven"]]);

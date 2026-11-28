@@ -4,9 +4,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { vulnVerdict, rangeVerdict, newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords } = require('../lib/osv-db');
-const { queryBatch } = require('../lib/osv');
-const { makeDepRecord } = require('../lib/dep-record');
+const { vulnVerdict, rangeVerdict, newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords } = require('../lib/providers/osv/db');
+const { queryBatch } = require('../lib/providers/osv/query');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 
 const affectedVersion = version => ({ affected: [{ versions: [version] }] });
 

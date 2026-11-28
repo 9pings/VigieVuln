@@ -8,7 +8,7 @@ const crypto=require('node:crypto');
 const {createSnapshot,readSnapshot,writeSnapshot,acquireInventories}=require('../lib/artifacts/scan');
 const {applyComponentScope}=require('../lib/artifacts/inventory-scope');
 const {IMAGE_COMPONENT_SCOPE}=require('../lib/artifacts/component-scope');
-const {closeCacheDbs}=require('../lib/cache-db');
+const {closeCacheDbs}=require('../lib/cache/db');
 function fixture() {
  const id='image-a';
  const row=(name,ecosystem,artifactPath,other={})=>({name,ecosystem,coordKey:`artifact:${id}:${name}`,artifactTargetId:id,artifactPath,...other});
@@ -49,7 +49,7 @@ test('snapshot integrity is validated before filtering and legacy partial surviv
 test('offline registry reuse filters old scope without any network call',async t=>{
  const root=tmp(t),input='example.invalid/team/app:latest';
  const key=crypto.createHash('sha256').update(JSON.stringify([input,null,false])).digest('hex');
- require('../lib/cache-repository').createCacheRepository(root).put('image-inventory',key,createSnapshot([fixture()]));
+ require('../lib/cache/repository').createCacheRepository(root).put('image-inventory',key,createSnapshot([fixture()]));
  const [result]=await acquireInventories(input,{registry:true,offline:true,cacheDir:root,fetcher:()=>assert.fail('offline network')});
  assert.equal(result.deps.some(d=>d.name==='fragment'),false);assert.equal(result.deps.some(d=>d.name==='nested-cli'),true);
  assert.equal(result.coverage[0].execution,'partial');assert.equal(result.metadata.componentScope,undefined);
@@ -57,8 +57,8 @@ test('offline registry reuse filters old scope without any network call',async t
 test('legacy image inventory survives airgap cache transfer with partial scope and without npm fragments',async t=>{
  const root=tmp(t),source=path.join(root,'source'),destination=path.join(root,'destination'),input='example.invalid/team/app:latest';
  const key=crypto.createHash('sha256').update(JSON.stringify([input,null,false])).digest('hex');
- require('../lib/cache-repository').createCacheRepository(source).put('image-inventory',key,createSnapshot([fixture()]));
- const archive=path.join(root,'cache.tar.gz'),{exportCache,importCache}=require('../lib/cache-archive-sqlite');
+ require('../lib/cache/repository').createCacheRepository(source).put('image-inventory',key,createSnapshot([fixture()]));
+ const archive=path.join(root,'cache.tar.gz'),{exportCache,importCache}=require('../lib/cache/archive');
  await exportCache(archive,{sourceDir:source});await importCache(archive,{targetDir:destination});
  const [result]=await acquireInventories(input,{registry:true,offline:true,cacheDir:destination,fetcher:()=>assert.fail('offline network')});
  assert.equal(result.deps.some(d=>d.name==='fragment'),false);assert.equal(result.deps.some(d=>d.name==='nested-cli'),true);
@@ -67,9 +67,9 @@ test('legacy image inventory survives airgap cache transfer with partial scope a
 test('online registry reacquires old scoped inventory even when the image digest is unchanged',async t=>{
  const root=tmp(t),cacheDir=path.join(root,'cache'),input='example.invalid/team/app:latest',fsroot=path.join(root,'rootfs');
  fs.mkdirSync(path.join(fsroot,'etc'),{recursive:true});fs.writeFileSync(path.join(fsroot,'etc','os-release'),'ID=alpine\nVERSION_ID=3.20\n');
- const repo=require('../lib/cache-repository').createCacheRepository(cacheDir),key=crypto.createHash('sha256').update(JSON.stringify([input,null,false])).digest('hex');
+ const repo=require('../lib/cache/repository').createCacheRepository(cacheDir),key=crypto.createHash('sha256').update(JSON.stringify([input,null,false])).digest('hex');
  repo.put('image-inventory',key,createSnapshot([fixture()]));
- const registry=require('../lib/image-registry'),oldImage=registry.fetchRegistryImage,oldDigest=registry.fetchRegistryDigest;let images=0,digests=0;
+ const registry=require('../lib/images/registry'),oldImage=registry.fetchRegistryImage,oldDigest=registry.fetchRegistryDigest;let images=0,digests=0;
  registry.fetchRegistryImage=async()=>{images++;return {path:fsroot,metadata:{digest:'sha256:'+'a'.repeat(64)},cleanup:async()=>{}}};
  registry.fetchRegistryDigest=async()=>{digests++;return 'sha256:'+'a'.repeat(64)};
  try {

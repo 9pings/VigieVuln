@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { makeDepRecord, coordKeyFor } = require("../lib/dep-record");
+const { makeDepRecord, coordKeyFor } = require("../lib/inventory/dep-record");
 
 test("maven depRecord builds bare g:a coordKey and keeps groupId/artifactId aliases", () => {
 	const d = makeDepRecord({ ecosystem: "maven", namespace: "org.apache", name: "log4j", version: "2.14.0", manifestPath: "/p/pom.xml", scope: "compile" });

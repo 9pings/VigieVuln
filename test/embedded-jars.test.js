@@ -5,9 +5,9 @@ const os = require("os");
 const path = require("path");
 const { zipSync, strToU8 } = require("fflate");
 const mavenCodec = require("../lib/codecs/maven.codec");
-const { buildCycloneDx } = require("../lib/sbom-export");
-const { generateHtmlReport } = require("../lib/cve-report");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildCycloneDx } = require("../lib/reports/sbom-export");
+const { generateHtmlReport } = require("../lib/reports/cve-report");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 function projectWithEmbeddedJar() {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-emb-"));
@@ -63,7 +63,7 @@ test("SBOM gives an embedded copy a bom-ref distinct from the declared same-coor
 });
 
 test("buildEmbeddedInventory lists embedded coords with NO CVE, cross-refs CVE count", () => {
-	const { buildEmbeddedInventory } = require("../lib/cve-report");
+	const { buildEmbeddedInventory } = require("../lib/reports/cve-report");
 	const clean = makeDepRecord({ ecosystem: "maven", namespace: "com.google.guava", name: "guava", version: "30.1-jre", manifestPath: "dist/app.jar!/BOOT-INF/lib/guava-30.1-jre.jar", provenance: "embedded" });
 	const vuln = makeDepRecord({ ecosystem: "maven", namespace: "org.apache.logging.log4j", name: "log4j-core", version: "2.14.0", manifestPath: "dist/app.jar!/BOOT-INF/lib/log4j-core-2.14.0.jar", provenance: "embedded" });
 	const declared = makeDepRecord({ ecosystem: "maven", namespace: "com.acme", name: "svc", version: "1.0.0", manifestPath: "pom.xml" });

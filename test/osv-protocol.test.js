@@ -8,17 +8,17 @@ const os = require('node:os');
 const fallbackCache = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-osv-protocol-root-'));
 const realHomedir = os.homedir;
 os.homedir = () => fallbackCache;
-require('../lib/cache-directory').setActiveCacheDir(fallbackCache);
-after(() => { os.homedir = realHomedir; require('../lib/cache-db').closeCacheDbs(); fs.rmSync(fallbackCache, { recursive: true, force: true }); });
-const { queryBatch, cacheKey } = require('../lib/osv');
-const { makeDepRecord } = require('../lib/dep-record');
+require('../lib/cache/directory').setActiveCacheDir(fallbackCache);
+after(() => { os.homedir = realHomedir; require('../lib/cache/db').closeCacheDbs(); fs.rmSync(fallbackCache, { recursive: true, force: true }); });
+const { queryBatch, cacheKey } = require('../lib/providers/osv/query');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 const { configureResourceRoute } = require('../lib/providers');
-const { createSourceHealth } = require('../lib/source-health');
-const { createCacheStore } = require('../lib/resource-cache/fs-store');
-const { openAdvisoryStore: openStore } = require('../lib/advisory-store');
+const { createSourceHealth } = require('../lib/scan/source-health');
+const { createCacheStore } = require('../lib/cache/resource/fs-store');
+const { openAdvisoryStore: openStore } = require('../lib/advisories/store');
 const stores = new Set();
 function openAdvisoryStore(options) { const store = openStore(options); stores.add(store); return store; }
-function closeStores() { for (const store of stores) store.close(); stores.clear(); require('../lib/cache-db').closeCacheDbs(); }
+function closeStores() { for (const store of stores) store.close(); stores.clear(); require('../lib/cache/db').closeCacheDbs(); }
 
 
 const dep = makeDepRecord({ ecosystem: 'maven', namespace: 'org.example', name: 'widget', version: '1.0' });

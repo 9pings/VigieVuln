@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { generateHtmlReport, generateWordReport, writeReports } = require("../lib/cve-report");
+const { generateHtmlReport, generateWordReport, writeReports } = require("../lib/reports/cve-report");
 
 const projectInfo = { name: "audit", src: "/audit", generatedAt: "2026-09-23" };
 const apps = [{ id: "wordpress:site", type: "wordpress", root: "site" }];

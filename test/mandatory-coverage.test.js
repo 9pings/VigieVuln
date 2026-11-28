@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const {createDiscoveryCoverage,isBlocking}=require('../lib/scan-reliability');
-const {summarizeCveRecords}=require('../lib/cve-record-coverage');
+const {createDiscoveryCoverage,isBlocking}=require('../lib/scan/reliability');
+const {summarizeCveRecords}=require('../lib/findings/cve-record-coverage');
 const dep={ecosystem:'npm',name:'fixture',artifactId:'fixture',version:'1.0.0',versions:['1.0.0','2.0.0']};
 const deps=new Map([['fixture',dep]]);
 test('each installed version requires two discovery sources, including OSV, even with zero findings',()=>{
@@ -25,8 +25,8 @@ test('a missing exact CVE record blocks by default even with both enrichment pro
 });
 
 test('a required POM on a private Maven mirror retries a temporary 429 and keeps its timeout per attempt',async()=>{
- const {fetchPomFromRepos,createRepoHealth}=require('../lib/maven-repo');
- const {guardedFetch,createSourceHealth}=require('../lib/source-health');
+ const {fetchPomFromRepos,createRepoHealth}=require('../lib/providers/maven/repo');
+ const {guardedFetch,createSourceHealth}=require('../lib/scan/source-health');
  const waits=[],notices=[],signals=[];
  const fetcher=guardedFetch({health:createSourceHealth(),retries:1,sleep:async ms=>waits.push(ms),onRetry:n=>notices.push(n),
   fetch:async(url,options)=>{signals.push(options.signal);return signals.length===1?
@@ -38,7 +38,7 @@ test('a required POM on a private Maven mirror retries a temporary 429 and keeps
 
 test('analyse publishes a host summary with one CVE record; a strict rerun without OSV is cancelled and preserves the previous reports, a default rerun publishes an incomplete report',async t=>{
  const fs=require('node:fs'), os=require('node:os'), path=require('node:path'), {spawnSync}=require('node:child_process');
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-publish-host-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-publish-host-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  const root=path.join(dir,'root'), cacheDir=path.join(dir,'cache'), out=path.join(dir,'out'), input=path.join(dir,'inventory.json');
  fs.mkdirSync(path.join(root,'etc'),{recursive:true});fs.writeFileSync(path.join(root,'etc/os-release'),'ID=debian\nVERSION_ID=12\n');
  fs.mkdirSync(path.join(root,'var/lib/dpkg'),{recursive:true});
@@ -50,7 +50,7 @@ test('analyse publishes a host summary with one CVE record; a strict rerun witho
  const cve='CVE-2024-12345';
  await require('../lib/system-inventory').importSystemAdvisories([{id:cve,summary:'Example advisory',affected:[{package:{ecosystem:'Debian:12',name:'fixture'},versions:['1.0-1']}]}],
   {distribution:targets[0].distribution,cacheDir,complete:true});
- const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir});
+ const store=require('../lib/advisories/store').openAdvisoryStore({cacheDir});
  store.commit({queries:['system:deb:debian:12','system:deb:debian:*'].map(ecosystem=>({source:'cveproject',ecosystem,name:'fixture',version:'*',ids:[],complete:true,fetchedAt:Date.now()}))});store.close();
  const run=(extra=[])=>spawnSync(process.execPath,[path.resolve(__dirname,'../vigievuln.js'),'system','scan',input,'--offline','--lang','fr','--cache-dir',cacheDir,'--report-output',out,'--no-distro-advisories','--no-gcve','--enrich','none',...extra],
   {cwd:dir,encoding:'utf8',env:{PATH:process.env.PATH,HOME:dir,USERPROFILE:dir}});
@@ -79,7 +79,7 @@ test('unsupported package managers still block while raw binary identities do no
  const gap=createDiscoveryCoverage().assess(new Map([[library.coordKey,library],[binary.coordKey,binary]]));
  assert.ok(isBlocking(gap));
  assert.deepEqual(new Set(gap.items.map(i=>i.id)),new Set(['example@1.0']));
- assert.equal(require('../lib/scan-reliability').incompleteCheck({capability:'advisories',execution:'not-applicable',reason:'No installed components in this ecosystem.'}),false);
+ assert.equal(require('../lib/scan/reliability').incompleteCheck({capability:'advisories',execution:'not-applicable',reason:'No installed components in this ecosystem.'}),false);
 });
 
 test('binary product/version identification is nonblocking; extracted Go dependencies still require OSV and another source',()=>{
@@ -98,13 +98,13 @@ test('CLI publishes raw binaries as inventory, with or without a cached product/
  const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
  const {spawnSync}=require('node:child_process');
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-binary-advisory-'));
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  const src=path.join(dir,'source'),cacheDir=path.join(dir,'.vigie-vuln');fs.mkdirSync(src);
  const bytes=Buffer.concat([Buffer.from([0x4d,0x5a]),Buffer.alloc(62)]);
  fs.writeFileSync(path.join(src,'library.dll'),bytes);
  const hash=crypto.createHash('sha256').update(bytes).digest('hex');
  for(const identity of [null,{name:'Example native library',version:'1.2.3',ecosystem:null,source:'circl:hashlookup'}]){
-  require('../lib/json-cache').save(cacheDir,'hash-id',{_fetchedAt:Date.now(),entries:{[hash]:identity}});
+  require('../lib/cache/json').save(cacheDir,'hash-id',{_fetchedAt:Date.now(),entries:{[hash]:identity}});
   const out=path.join(dir,identity?'identified':'unknown');
   const result=spawnSync(process.execPath,[path.resolve(__dirname,'../vigievuln.js'),'scan',src,'--offline',
    '--report-html','--report-json','-o',out],
@@ -119,7 +119,7 @@ test('CLI publishes raw binaries as inventory, with or without a cached product/
 });
 
 test('a Maven CVE detail is redundant only for versions already known to be affected',()=>{
- const {collectPackageNvdBindings}=require('../lib/nvd-package-ranges');
+ const {collectPackageNvdBindings}=require('../lib/providers/nvd/package-ranges');
  const dep={ecosystem:'maven',groupId:'org.example',artifactId:'library',version:'1.0',versions:['1.0','2.0']};
  const id='CVE-2024-10001',known={dep,cve:{id},source:'osv'};
  const store={getPackageRecords:()=>[{source:'osv',document:{id,affected:[{package:{ecosystem:'Maven',name:'org.example:library'}}]}}]};
@@ -129,7 +129,7 @@ test('a Maven CVE detail is redundant only for versions already known to be affe
 });
 
 test('publication(): a non-fatal blocker publishes an incomplete report; no blocker is neither',()=>{
- const {publication,coverageWarning}=require('../lib/scan-reliability');
+ const {publication,coverageWarning}=require('../lib/scan/reliability');
  const gap=coverageWarning('Advisory discovery is incomplete for 1 package/version(s).',{code:'package-advisory-coverage',fatal:false});
  const p=publication([gap,{type:'suppressed',severity:'info',message:'note'}],{inventoryCount:3});
  assert.equal(p.cancel,false);assert.equal(p.incomplete,true);assert.deepEqual(p.blockers,[gap]);assert.deepEqual(p.reasons,[]);
@@ -139,7 +139,7 @@ test('publication(): a non-fatal blocker publishes an incomplete report; no bloc
 });
 
 test('publication(): a fatal blocker, or no inventory with an inventory blocker, cancels',()=>{
- const {publication,coverageWarning}=require('../lib/scan-reliability');
+ const {publication,coverageWarning}=require('../lib/scan/reliability');
  const fatal=coverageWarning('No advisory source assessed any package.',{code:'package-advisory-coverage',fatal:true});
  const other={type:'osv-coverage',message:'OSV gap'};
  const p=publication([other,fatal],{inventoryCount:2});
@@ -154,7 +154,7 @@ test('publication(): a fatal blocker, or no inventory with an inventory blocker,
 });
 
 test('publication(): --fail-on-incomplete cancels only when a blocker capability is required',()=>{
- const {publication,warningCapability}=require('../lib/scan-reliability');
+ const {publication,warningCapability}=require('../lib/scan/reliability');
  const structural={type:'dependency-coverage',message:'1 Maven POM(s) could not be resolved'};
  const advisory={type:'osv-coverage',message:'OSV gap'};
  const declared={type:'scan-reliability',reliabilityFailure:true,capability:'sources',message:'source gap'};

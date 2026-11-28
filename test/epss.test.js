@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const { enrichEpss, parseEpssResponse, CACHE_PATH } = require("../lib/epss");
+const { enrichEpss, parseEpssResponse, CACHE_PATH } = require("../lib/providers/epss/enrich");
 
 // Sentinel CVE ids that never collide with real cached entries. Purge them from
 // the shared cache before exercising the mock fetcher (enrichEpss persists a

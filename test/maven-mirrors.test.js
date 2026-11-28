@@ -12,7 +12,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const {
 	buildRepoList, orderRepos, createRepoHealth, tryRepos, DEFAULT_CENTRAL_MIRRORS,
-} = require("../lib/maven-repo");
+} = require("../lib/providers/maven/repo");
 
 const urls = list => list.map(r => r.url);
 
@@ -137,7 +137,7 @@ test("the release-date HEAD skips mirrors but keeps private repos", async () => 
 	// An individual .pom is a unique deep path, cold in their buckets: measured 9.2s via the
 	// rotation against 1.7s via Central, zero misses either way. Private repos must stay —
 	// a private artifact's POM exists nowhere else.
-	const { pomLastModifiedRepos } = require("../lib/outdated");
+	const { pomLastModifiedRepos } = require("../lib/maintenance/outdated");
 	const repos = [
 		{ name: "nexus", url: "https://nexus.acme/repo/" },
 		{ name: "central", url: "https://repo1.maven.org/maven2/", central: true },
@@ -147,7 +147,7 @@ test("the release-date HEAD skips mirrors but keeps private repos", async () => 
 });
 
 test("if somehow only mirrors are configured, use them rather than give up", () => {
-	const { pomLastModifiedRepos } = require("../lib/outdated");
+	const { pomLastModifiedRepos } = require("../lib/maintenance/outdated");
 	const only = [{ name: "gcs", url: "https://mirror.example/maven2/", central: true, mirror: true }];
 	assert.deepStrictEqual(pomLastModifiedRepos(only).map(r => r.name), ["gcs"]);
 });

@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { parseSnykResults, parseSnykStdout, mergeWithFadResults, snykOutputError } = require("../lib/snyk");
+const { parseSnykResults, parseSnykStdout, mergeWithFadResults, snykOutputError } = require("../lib/providers/snyk/client");
 
 const snykSample = {
 	vulnerabilities: [
@@ -50,9 +50,9 @@ test('Snyk command failure and empty output cannot look like a clean scan',{skip
 	t.after(()=>{process.env.PATH=old;fs.rmSync(dir,{recursive:true,force:true})});
 	process.env.PATH=dir+path.delimiter+old;
 	fs.writeFileSync(binary,'#!/bin/sh\nexit 0\n',{mode:0o755});
-	await assert.rejects(require('../lib/snyk').runSnykTest(dir),/no project results/);
+	await assert.rejects(require('../lib/providers/snyk/client').runSnykTest(dir),/no project results/);
 	fs.writeFileSync(binary,'#!/bin/sh\nprintf \'{"ok":false,"error":"authentication failed"}\'\nexit 0\n');
-	await assert.rejects(require('../lib/snyk').runSnykTest(dir),/authentication failed/);
+	await assert.rejects(require('../lib/providers/snyk/client').runSnykTest(dir),/authentication failed/);
 });
 
 test("parseSnykResults normalises to vigievuln match shape", () => {
@@ -117,7 +117,7 @@ test("mergeWithFadResults retains original sources and adds Snyk on overlap", ()
 });
 
 test('Snyk npm findings keep their ecosystem, version and project attribution',()=>{
-	const {makeDepRecord}=require('../lib/dep-record');
+	const {makeDepRecord}=require('../lib/inventory/dep-record');
 	const existing=makeDepRecord({ecosystem:'npm',name:'@scope/pkg',version:'1.0.0',manifestPath:'/project/package-lock.json'});
 	const newer=makeDepRecord({ecosystem:'npm',name:'@scope/pkg',version:'2.0.0',manifestPath:'/project/other/package-lock.json'});
 	const document={packageManager:'npm',vulnerabilities:[{id:'SNYK-JS-1',packageName:'@scope/pkg',version:'1.0.0',severity:'high',identifiers:{CVE:['CVE-2026-10001']}},{id:'SNYK-JS-2',packageName:'@scope/pkg',version:'2.0.0',severity:'high',identifiers:{CVE:['CVE-2026-10001']}}]};
@@ -132,7 +132,7 @@ test('Snyk npm findings keep their ecosystem, version and project attribution',(
 });
 
 test('Snyk integration preserves separate existing findings and ecosystems',()=>{
-	const {makeDepRecord}=require('../lib/dep-record');
+	const {makeDepRecord}=require('../lib/inventory/dep-record');
 	const maven=makeDepRecord({ecosystem:'maven',namespace:'example',name:'pkg',version:'1.0'});
 	const npm=makeDepRecord({ecosystem:'npm',name:'pkg',version:'1.0'});
 	const base=[{dep:maven,cve:{id:'CVE-2026-10001',severity:'HIGH'},source:'osv'},

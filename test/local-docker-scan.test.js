@@ -26,6 +26,6 @@ test('an absent Docker image permits the normal registry fallback',{skip:process
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-docker-miss-')),socket=path.join(root,'docker.sock');
  const server=http.createServer((req,res)=>res.writeHead(404).end());await new Promise(r=>server.listen(socket,r));
  t.after(async()=>{await new Promise(r=>server.close(r));fs.rmSync(root,{recursive:true,force:true});});
- assert.equal(await require('../lib/local-docker').openImage('absent:tag',socket),null);
- assert.equal(await require('../lib/local-docker').openImage('absent:tag',socket+'.missing'),null);
+ assert.equal(await require('../lib/images/local-docker').openImage('absent:tag',socket),null);
+ assert.equal(await require('../lib/images/local-docker').openImage('absent:tag',socket+'.missing'),null);
 });

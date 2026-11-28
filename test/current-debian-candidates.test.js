@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const hist=require('../lib/system-inventory/historical-debian'),current=require('../lib/system-inventory/current-debian'),{closeCacheDbs}=require('../lib/cache-db');
+const hist=require('../lib/providers/debian/historical'),current=require('../lib/providers/debian/current'),{closeCacheDbs}=require('../lib/cache/db');
 const d={id:'debian',versionId:'11',codename:'bullseye'},at=Date.parse('2026-11-05T12:00:00Z'),commit='b'.repeat(40);
 const old={CVE:'CVE-2024-2511 [known before end of support]\n\t- openssl 3.2.2-1\n\t[bullseye] - openssl 1.1.1w-0+deb11u2\n',DSA:'',DLA:''};
 const newest=`CVE-2026-76642 [New util-linux issue]\n\t- util-linux 2.42.3-1\n\t[bookworm] - util-linux <not-affected> (Vulnerable code introduced later)\nCVE-2026-102473 [Another issue]\n\t- util-linux <unfixed>\nCVE-2026-102474 [Already confirmed]\n\t- util-linux 2.42.3-1\nCVE-2026-102475 [Package version too new]\n\t- util-linux 2.0-1\nCVE-2026-102476 [Explicit release exception]\n\t- util-linux 2.42.3-1\n\t[bullseye] - util-linux <not-affected> (Code not present)\nCVE-2024-2511 [known before end of support]\n\t- openssl 3.2.2-1\n\t[bullseye] - openssl 1.1.1w-0+deb11u2\nCVE-2026-999999 [unrelated]\n\t- unrelated 9.0-1\n`;

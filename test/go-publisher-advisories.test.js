@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {assessGoPublisherAdvisories,affected}=require('../lib/artifacts/go-publisher-advisories');
-function root(t){const d=fs.mkdtempSync(path.join(os.tmpdir(),'vv-go-publisher-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(d,{recursive:true,force:true})});return d;}
+function root(t){const d=fs.mkdtempSync(path.join(os.tmpdir(),'vv-go-publisher-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(d,{recursive:true,force:true})});return d;}
 function dep(){return {ecosystem:'go',name:'github.com/example/app/v2',version:'v2.11.0',coordKey:'x',artifactTargetId:'img',binaryEvidence:{source:'go-vcs-and-module-proxy',verification:'vcs-metadata-consistent',proxyOrigin:{URL:'https://github.com/example/app'}}};}
 function item({id='GHSA-abcd-efgh-ijkl',name='github.com/example/app/v2',range='<= v2.11.54'}={}){return {ghsa_id:id,cve_id:null,severity:'high',html_url:`https://github.com/example/app/security/advisories/${id}`,vulnerabilities:[{package:{ecosystem:'go',name},vulnerable_version_range:range,patched_versions:'v2.11.55'}]};}
 test('bounded Go publisher ranges respect exact identities and unknown grammar',()=>{assert.equal(affected('v2.11.0','>= v2.11.0, < v2.11.55'),true);assert.equal(affected('v2.11.55','>= v2.11.0, < v2.11.55'),false);assert.equal(affected('v2.11.0','~> 2.0'),null);});

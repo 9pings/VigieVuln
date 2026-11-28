@@ -1,11 +1,11 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {createCacheStore,startProxyCacheServer}=require('../lib/proxy-cache');
+const {createCacheStore,startProxyCacheServer}=require('../lib/cache/proxy-cache');
 const {configureResourceRoute,getResource}=require('../lib/providers');
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 test('direct client revalidates an expired representation without downloading it',async t=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-conditional-client-'));t.after(()=>{ require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true}); });
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-conditional-client-'));t.after(()=>{ require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true}); });
  const store=createCacheStore(dir),seen=[];
  const fetcher=async(_url,init)=>{const headers=new Headers(init.headers);seen.push(headers.get('if-none-match'));return seen.length===1?Response.json({name:'fixture'},{headers:{etag:'"version-1"'}}):new Response(null,{status:304,headers:{etag:'"version-1"'}})};
  configureResourceRoute({proxyUrl:null,hosted:false,store,health:null,fetcher});
@@ -18,7 +18,7 @@ test('direct client revalidates an expired representation without downloading it
 });
 
 test('direct client uses Last-Modified and replaces a changed representation',async t=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-conditional-modified-'));t.after(()=>{ require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true}); });
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-conditional-modified-'));t.after(()=>{ require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true}); });
  const store=createCacheStore(dir),seen=[],date='Wed, 21 Oct 2015 07:28:00 GMT';
  const fetcher=async(_url,init)=>{seen.push(new Headers(init.headers).get('if-modified-since'));return Response.json({name:'fixture',revision:seen.length},{headers:{'last-modified':date}})};
  configureResourceRoute({proxyUrl:null,hosted:false,store,health:null,fetcher});
@@ -30,7 +30,7 @@ test('direct client uses Last-Modified and replaces a changed representation',as
 });
 
 test('proxy revalidates upstream using ETag and keeps its existing cached body',async t=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-conditional-proxy-'));t.after(()=>{ require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true}); });
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-conditional-proxy-'));t.after(()=>{ require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true}); });
  const seen=[];const fetcher=async(_url,init)=>{seen.push(init.headers['if-none-match']||null);return seen.length===1?Response.json({totalResults:0,vulnerabilities:[]},{headers:{etag:'"upstream-v1"'}}):new Response(null,{status:304,headers:{etag:'"upstream-v1"'}})};
  const proxy=await startProxyCacheServer({port:0,host:'127.0.0.1',store:createCacheStore(dir),fetcher,overrideTtlMs:30,swr:false});
  try{

@@ -3,10 +3,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { parseMaxAge, declaredCollectedAt, assertFresh } = require("../lib/advisory-freshness");
-const { indexFeed } = require("../lib/application-providers/wordfence-v3");
-const drupal = require("../lib/application-plugins/drupal");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
+const { parseMaxAge, declaredCollectedAt, assertFresh } = require("../lib/advisories/freshness");
+const { indexFeed } = require("../lib/providers/wordfence/v3");
+const drupal = require("../lib/applications/plugins/drupal");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
 
 const NOW = Date.parse("2026-09-23T12:00:00Z");
 

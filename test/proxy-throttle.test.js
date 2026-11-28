@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {createProxyThrottle} = require('../lib/proxy-throttle');
+const {createProxyThrottle} = require('../lib/providers/proxy-throttle');
 
 test('proxy 429 respects Retry-After, retries the request and announces the wait', async () => {
   let time=10000, calls=0; const waits=[], messages=[];
@@ -32,7 +32,7 @@ test('proxy upstream admission denial retries, but an ordinary 503 is returned',
 
 test('transient proxy errors retry the same resource without declaring all cached resources down', async () => {
   const {configureResourceRoute,getResource}=require('../lib/providers');
-  const {createSourceHealth}=require('../lib/source-health');
+  const {createSourceHealth}=require('../lib/scan/source-health');
   const health=createSourceHealth();let calls=0;
   configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health,token:'test',fetcher:async (_url,init)=>{
     const id=JSON.parse(init.body).params.name;
@@ -165,7 +165,7 @@ test('one skip releases all waiting retries and preserves stale responses',async
 });
 
 test('TTY skip listeners restore raw and paused state and leave unrelated keys alone',async()=>{
- const {EventEmitter}=require('node:events'),{ttySkipSubscription}=require('../lib/proxy-throttle');
+ const {EventEmitter}=require('node:events'),{ttySkipSubscription}=require('../lib/providers/proxy-throttle');
  for(const raw of [false,true])for(const paused of [false,true]){
   const input=new EventEmitter();input.isTTY=true;input.isRaw=raw;let isPaused=paused,calls=0;
   input.setRawMode=value=>{input.isRaw=value};input.isPaused=()=>isPaused;input.resume=()=>{isPaused=false};input.pause=()=>{isPaused=true};
@@ -175,7 +175,7 @@ test('TTY skip listeners restore raw and paused state and leave unrelated keys a
 });
 
 test('TTY Ctrl+C restores input before forwarding the interrupt and setup failure rolls back raw mode',()=>{
- const {EventEmitter}=require('node:events'),{ttySkipSubscription}=require('../lib/proxy-throttle'),input=new EventEmitter();input.isTTY=true;input.isRaw=false;let paused=true,signalled=0;
+ const {EventEmitter}=require('node:events'),{ttySkipSubscription}=require('../lib/providers/proxy-throttle'),input=new EventEmitter();input.isTTY=true;input.isRaw=false;let paused=true,signalled=0;
  input.setRawMode=v=>{input.isRaw=v};input.isPaused=()=>paused;input.pause=()=>{paused=true};input.resume=()=>{paused=false};
  ttySkipSubscription(()=>assert.fail('not a skip'),input,()=>{signalled++;assert.equal(input.isRaw,false);assert.equal(paused,true);assert.equal(input.listenerCount('data'),0);});input.emit('data',Buffer.from('\x03'));assert.equal(signalled,1);
  input.resume=()=>{throw Error('resume failed')};assert.equal(ttySkipSubscription(()=>{},input),null);assert.equal(input.isRaw,false);assert.equal(input.listenerCount('data'),0);

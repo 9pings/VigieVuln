@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {createCacheRepository}=require('../lib/cache-repository');const {enrichEuropeanFindings}=require('../lib/finding-enrichment');const {projectImageCves}=require('../lib/artifacts/cve-view');
-function root(t){const d=fs.mkdtempSync(path.join(os.tmpdir(),'european-enrich-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(d,{recursive:true,force:true})});return d;}
+const {createCacheRepository}=require('../lib/cache/repository');const {enrichEuropeanFindings}=require('../lib/findings/enrichment');const {projectImageCves}=require('../lib/artifacts/cve-view');
+function root(t){const d=fs.mkdtempSync(path.join(os.tmpdir(),'european-enrich-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(d,{recursive:true,force:true})});return d;}
 test('offline caches enrich each explicit related CVE independently and project evidence',async t=>{
  const cacheDir=root(t),repo=createCacheRepository(cacheDir),now=Date.now(),one='CVE-2024-12345',two='CVE-2024-56789';
  repo.put('catalogue','euvd',{_fetchedAt:now,body:{byCve:{[one]:'EUVD-2024-12'},exploited:{[one]:'2024-01-01'}}});
@@ -43,7 +43,7 @@ test('regional exclusions do not consult European sources or create derived alia
 });
 test('derived GNA-0 alias never replaces original native nonzero GNA identity',async t=>{
  const cacheDir=root(t),native='GCVE-42-2024-12345',matches=[{dep:{artifactTargetId:'a',ecosystem:'system',name:'p',version:'1'},cve:{id:'CVE-2024-12345',gcve:native,gcveEvidence:{kind:'native-record'}}}];
- await enrichEuropeanFindings(matches,{cacheDir,offline:true,europeanAdapters:require('../lib/finding-enrichment').europeanAdapters.filter(a=>a.id==='gcve')});
+ await enrichEuropeanFindings(matches,{cacheDir,offline:true,europeanAdapters:require('../lib/findings/enrichment').europeanAdapters.filter(a=>a.id==='gcve')});
  assert.equal(matches[0].cve.gcve,native);assert.equal(matches[0].cve.gcveEvidence.kind,'native-record');assert.equal(matches[0].cve.cveEvidence[0].gcveAlias,'GCVE-0-2024-12345');
  const projected=projectImageCves(matches)[0];assert.equal(projected.cve.gcve,native);assert.equal(projected.cve.gcveAlias,'GCVE-0-2024-12345');assert.equal(projected.cve.gcveEvidence.kind,'native-record');
 });
@@ -103,7 +103,7 @@ test('partial NVD score is never paired with EUVD vector or severity',()=>{
  const projected=projectImageCves([match])[0];assert.equal(projected.cve.score,8.1);assert.equal(projected.cve.severity,'UNKNOWN');assert.equal(projected.cve.cvssVector,undefined);assert.equal(projected.cve.euvdDetails.cvssVector,'EU-VECTOR');
 });
 test('EUVD detail operation accepts only validated IDs and fixed official endpoint',()=>{
- const {validateResource}=require('../lib/resource-cache/validate'),provider=require('../lib/providers/euvd');
+ const {validateResource}=require('../lib/cache/resource/validate'),provider=require('../lib/providers/euvd');
  const request=validateResource({provider:'euvd',type:'vulnerability',params:{id:'EUVD-2024-48936'}});assert.equal(provider.build(request.type,request.params).url,'https://euvdservices.enisa.europa.eu/api/enisaid?id=EUVD-2024-48936');
  for(const id of ['https://evil.test/','EUVD-2024-1&url=https://evil.test','../../x']){assert.throws(()=>validateResource({provider:'euvd',type:'vulnerability',params:{id}}));assert.throws(()=>provider.build('vulnerability',{id}));}
 });
@@ -116,7 +116,7 @@ test('legacy EUVD cached timestamps are normalized without inventing a timezone'
  const html=require('../lib/artifacts/risk-report').renderEuvdEvidence(projected.cve,'en');assert.match(html,/<time datetime="2022-04-14T20:05:47">/);assert.match(html,/<time datetime="2026-10-14T12:39:25">/);assert.doesNotMatch(html,/2022-04-14T20:05:47Z/);
 });
 test('ENISA timestamp normalization retains floating time and validates the calendar',()=>{
- const {normalizeEuvdCalendarDate}=require('../lib/euvd');assert.equal(normalizeEuvdCalendarDate('Oct 2, 2026, 12:00:00 AM'),'2026-10-02T00:00:00');assert.equal(normalizeEuvdCalendarDate('Oct 2, 2026, 12:00:00 PM'),'2026-10-02T12:00:00');
+ const {normalizeEuvdCalendarDate}=require('../lib/providers/euvd/enrich');assert.equal(normalizeEuvdCalendarDate('Oct 2, 2026, 12:00:00 AM'),'2026-10-02T00:00:00');assert.equal(normalizeEuvdCalendarDate('Oct 2, 2026, 12:00:00 PM'),'2026-10-02T12:00:00');
  assert.equal(normalizeEuvdCalendarDate('Feb 30, 2026, 8:05:47 PM'),null);assert.equal(normalizeEuvdCalendarDate('Oct 2, 2026, 25:05:47 PM'),null);assert.equal(normalizeEuvdCalendarDate('2026-10-02T08:15:00+02:00'),'2026-10-02T08:15:00+02:00');
 });
 test('ordinary offline cache age alone does not produce false stale warnings',async t=>{
@@ -126,7 +126,7 @@ test('ordinary offline cache age alone does not produce false stale warnings',as
 });
 
 test('resource-specific health deduplication retains other endpoint outages and EUVD mapping coverage',async t=>{
- const cacheDir=root(t),providers=require('../lib/providers'),health=require('../lib/source-health').createSourceHealth(),id='CVE-2024-12345',euvd='EUVD-2024-123';
+ const cacheDir=root(t),providers=require('../lib/providers'),health=require('../lib/scan/source-health').createSourceHealth(),id='CVE-2024-12345',euvd='EUVD-2024-123';
  createCacheRepository(cacheDir).put('catalogue','euvd',{_fetchedAt:Date.now(),body:{byCve:{[id]:euvd},exploited:{}}});
  const fetcher=async()=>new Response('',{status:503,headers:{'x-fad-proxy':'denied'}});
  providers.configureResourceRoute({proxyUrl:'https://fleet.invalid',hosted:false,fetcher,health,store:null,hostedStore:null,proxyRateLimitMaxRetries:0,resetRateLimit:true,sleep:async()=>{}});

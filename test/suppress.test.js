@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { parseIgnoreFile, parseVex, applySuppressions } = require("../lib/suppress");
-const { makeDepRecord } = require("../lib/dep-record");
+const { parseIgnoreFile, parseVex, applySuppressions } = require("../lib/findings/suppress");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 const log4j = makeDepRecord({ ecosystem: "maven", namespace: "org.apache.logging.log4j", name: "log4j-core", version: "2.14.1", manifestPath: "pom.xml" });
 const lodash = makeDepRecord({ ecosystem: "npm", name: "lodash", version: "4.17.20", manifestPath: "package.json" });
@@ -92,8 +92,8 @@ test("affected, investigating, absent or empty VEX statuses never grant global c
 });
 
 test("own CSAF affected export remains blocking when reimported as VEX", () => {
-	const { buildCsaf } = require('../lib/csaf-export');
-	const { evaluateGate } = require('../lib/gate');
+	const { buildCsaf } = require('../lib/reports/csaf-export');
+	const { evaluateGate } = require('../lib/findings/gate');
 	const matches = [{ dep: log4j, cve: { id: 'CVE-2021-44228', severity: 'CRITICAL' } }];
 	const vex = buildCsaf(new Map([[log4j.coordKey, log4j]]), matches);
 	assert.equal(applySuppressions(matches, parseVex(vex)), 0);
@@ -101,7 +101,7 @@ test("own CSAF affected export remains blocking when reimported as VEX", () => {
 });
 
 test("explicit VEX exemptions preserve status and scope; contradictions do not clear", () => {
-	const { purlFor } = require('../lib/purl');
+	const { purlFor } = require('../lib/inventory/purl');
 	for (const status of ['fixed', 'known_not_affected']) {
 		const vex = { product_tree: { full_product_names: [{ product_id: 'P', product_identification_helper: { purl: purlFor(log4j) } }] },
 			vulnerabilities: [{ cve: 'CVE-1', product_status: { [status]: ['P'] } }] };
@@ -115,8 +115,8 @@ test("explicit VEX exemptions preserve status and scope; contradictions do not c
 });
 
 test('VEX clearance never extends to affected, investigating or unknown copies sharing one PURL', () => {
-	const { purlFor } = require('../lib/purl');
-	const { evaluateGate } = require('../lib/gate');
+	const { purlFor } = require('../lib/inventory/purl');
+	const { evaluateGate } = require('../lib/findings/gate');
 	for (const siblingStatus of ['known_affected', 'under_investigation', null]) {
 		for (const order of [['A', 'B'], ['B', 'A']]) {
 			const vex = { product_tree: { full_product_names: order.map(product_id => ({ product_id,
@@ -140,7 +140,7 @@ test('VEX PURLs are exact identities, not ignore-file globs', () => {
 });
 
 test('VEX contradictory assertions in separate vulnerability entries do not clear the same PURL', () => {
-	const { purlFor } = require('../lib/purl');
+	const { purlFor } = require('../lib/inventory/purl');
 	const clear = { cve: 'CVE-1', product_status: { fixed: ['P'] } };
 	const affected = { cve: 'CVE-1', product_status: { known_affected: ['P'] } };
 	for (const vulnerabilities of [[clear, affected], [affected, clear]]) {
@@ -163,7 +163,7 @@ test('ignore rules match merged aliases and GHSA while preserving coordinate sco
 });
 
 test('VEX alias clearance cannot bypass affected primary-id assertions or exact product scope', () => {
- const {purlFor}=require('../lib/purl');
+ const {purlFor}=require('../lib/inventory/purl');
  const vex={product_tree:{full_product_names:[{product_id:'P',product_identification_helper:{purl:purlFor(log4j)}}]},vulnerabilities:[
   {cve:'GHSA-aaaa-bbbb-cccc',product_status:{fixed:['P']}},
   {cve:'CVE-2024-1234',product_status:{known_affected:['P']}},
@@ -173,7 +173,7 @@ test('VEX alias clearance cannot bypass affected primary-id assertions or exact 
 });
 
 test('global ignore detection flags unrestricted stars but preserves scoped policies', () => {
- const {hasGlobalIgnoreRule}=require('../lib/suppress');
+ const {hasGlobalIgnoreRule}=require('../lib/findings/suppress');
  for(const text of ['*','* # accepted deliberately','* *','* **'])assert.equal(hasGlobalIgnoreRule(parseIgnoreFile(text)),true);
  for(const text of ['','CVE-2024-1234','* org.apache.*','* pkg:npm/*'])assert.equal(hasGlobalIgnoreRule(parseIgnoreFile(text)),false);
 });

@@ -20,13 +20,13 @@ const read = file => JSON.parse(fs.readFileSync(file, "utf8"));
 function scenario(t) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-presence-cli-"));
 	const stores = [];
-	t.after(() => { for (const store of stores) store.close(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
+	t.after(() => { for (const store of stores) store.close(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
 	const home = path.join(root, "home"), src = path.join(root, "project");
 	const preload = path.join(root, "preload.cjs"), calls = path.join(root, "calls.jsonl");
 	const report = path.join(root, "report.json");
 	const cache = (...parts) => path.join(home, ".vigie-vuln", ...parts);
-	const presence=()=>require('../lib/json-cache').load(cache(),'maven-exists-cache.json',{meta:{fetchedAt:0},entries:{}});
-	const savePresence=value=>require('../lib/json-cache').save(cache(),'maven-exists-cache.json',value);
+	const presence=()=>require('../lib/cache/json').load(cache(),'maven-exists-cache.json',{meta:{fetchedAt:0},entries:{}});
+	const savePresence=value=>require('../lib/cache/json').save(cache(),'maven-exists-cache.json',value);
 	write(path.join(src, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>example</groupId>" +
 		"<artifactId>demo</artifactId><version>1.0</version><dependencies><dependency>" +
 		"<groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>2.0.18</version>" +
@@ -68,7 +68,7 @@ globalThis.fetch = async (url, init) => {
 		"--report-json", report, ...extra,
 	], mode);
 	const warmOsv = (id, fetchedAt = Date.now()) => {
-		const store = require('../lib/advisory-store').openAdvisoryStore({ cacheDir: cache() });
+		const store = require('../lib/advisories/store').openAdvisoryStore({ cacheDir: cache() });
 		stores.push(store);
 		store.commit({ records: [{ source: 'osv', fetchedAt, document: {
 			id, summary: 'Synthetic test advisory, not a real vulnerability', database_specific: { severity: 'HIGH' },
@@ -198,7 +198,7 @@ test("CLI: --fail-on kev still fails offline with a catalogue older than 24 hour
 	const s = scenario(t), id = "CVE-2099-99999";
 	const stamp = Date.now() - 72 * 3600e3;
 	s.warmOsv(id, stamp);
-	const repo=require('../lib/cache-repository').createCacheRepository(s.cache());
+	const repo=require('../lib/cache/repository').createCacheRepository(s.cache());
 	repo.put('catalogue','kev',{ _fetchedAt: stamp, body: { byId: {
 		[id]: { dateAdded: "2099-01-01", dueDate: "2099-02-01", ransomware: true },
 	} } });
@@ -221,7 +221,7 @@ test('CLI offline signals a missing transitive POM and strict completeness fails
   assert.equal(result.status,2,result.stdout+result.stderr);
   assert.match(require('./helpers/cancelled-scan')(result,[s.report]),/POM/);
  }
- require('../lib/maven-cache').write(s.cache('poms-cache','org.slf4j__slf4j-api__2.0.18.pom'),'<project><modelVersion>4.0.0</modelVersion><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>2.0.18</version></project>');
+ require('../lib/providers/maven/cache').write(s.cache('poms-cache','org.slf4j__slf4j-api__2.0.18.pom'),'<project><modelVersion>4.0.0</modelVersion><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>2.0.18</version></project>');
  const complete=s.scan('offline',[],enabled);
  assert.equal(complete.status,2,complete.stdout+complete.stderr);
  assert.doesNotMatch(complete.stderr,/POM\(s\) could not be resolved/);

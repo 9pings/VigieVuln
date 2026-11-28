@@ -8,11 +8,11 @@ const {
 	fetchPomFromRepos,
 	fetchMavenMetadata,
 	MAVEN_CENTRAL,
-} = require("../lib/maven-repo");
+} = require("../lib/providers/maven/repo");
 
 test('hosted Maven Central uses the proxy for preflight and artifact requests; private repos stay direct', async () => {
 	const {configureResourceRoute}=require('../lib/providers');
-	const {reachableRepos}=require('../lib/maven-repo');
+	const {reachableRepos}=require('../lib/providers/maven/repo');
 	const calls=[];
 	const fetcher=async (url,init)=>{calls.push({url:String(url),body:init?.body ? JSON.parse(init.body) : null});return new Response('ok',{status:200});};
 	configureResourceRoute({proxyUrl:'https://proxy.invalid',hosted:true,store:null,health:null,token:'test',fetcher});
@@ -46,7 +46,7 @@ test("authHeader returns Basic <base64>", () => {
 });
 
 test("Maven Bearer tokens survive configuration and are used by preflight and artifact requests only on their own repo", async () => {
-	const { reachableRepos } = require("../lib/maven-repo");
+	const { reachableRepos } = require("../lib/providers/maven/repo");
 	const repos = buildRepoList([{ name: "private", url: "https://private.invalid/", token: "test-token", auth: "user:password" }], [], { mirrors: false });
 	assert.equal(repos[0].token, "test-token");
 	const calls = [];
@@ -172,7 +172,7 @@ test("tryRepos gives up on a hung request after timeoutMs", async () => {
 });
 
 test("reachableRepos keeps repos that answer ANY HTTP status and drops network errors/timeouts", async () => {
-	const { reachableRepos } = require("../lib/maven-repo");
+	const { reachableRepos } = require("../lib/providers/maven/repo");
 	const fetcher = (url, init) => {
 		if (url.startsWith("https://nexus.acme/")) return Promise.resolve({ ok: false, status: 401 });   // auth wall, but alive
 		if (url.startsWith("https://dead.acme/")) return Promise.reject(new Error("ENETUNREACH"));

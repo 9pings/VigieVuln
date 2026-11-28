@@ -9,7 +9,7 @@
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { mergeBySource } = require("../lib/merge-sources");
+const { mergeBySource } = require("../lib/findings/merge");
 
 const dep = { coordKey: "composer:league/commonmark", namespace: "league", name: "commonmark", version: "2.4.2", ecosystem: "composer" };
 const ghsaOnly = () => ({ dep: { ...dep }, cve: {

@@ -2,13 +2,13 @@
  * OSV range evaluation must follow the schema's "Evaluation" algorithm
  * (https://ossf.github.io/osv-schema/#evaluation): `events` are NOT required to be
  * sorted, so the evaluator sorts them by version ("0" lowest) before walking them, and
- * `limit` events bound the whole range. The first lib/osv-db.js evaluator walked the
+ * `limit` events bound the whole range. The first lib/providers/osv/db.js evaluator walked the
  * events in ARRAY order, so an unsorted (but valid) record was mis-evaluated in both
  * directions — a false positive below `introduced`, a false negative inside a branch.
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { rangeAffects, vulnAffectsVersion } = require("../lib/osv-db");
+const { rangeAffects, vulnAffectsVersion } = require("../lib/providers/osv/db");
 
 const R = (events) => ({ type: "ECOSYSTEM", events });
 

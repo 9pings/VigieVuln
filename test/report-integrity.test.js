@@ -6,7 +6,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { execFileSync } = require("child_process");
 
-const { sha256OfFile, buildChecksumManifest, writeChecksums } = require("../lib/report-integrity");
+const { sha256OfFile, buildChecksumManifest, writeChecksums } = require("../lib/reports/integrity");
 
 function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), "fad-int-")); }
 

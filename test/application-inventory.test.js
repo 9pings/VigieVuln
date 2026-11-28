@@ -1,8 +1,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { makeDepRecord } = require("../lib/dep-record");
-const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
+const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 
 function composerDep(name, version, manifestPath, requires = {}) {
 	const [namespace, pkg] = name.split("/");

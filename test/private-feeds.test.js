@@ -3,7 +3,7 @@ const assert = require("node:assert");
 
 // ---- registries.js: nuget + composer are now first-class ecosystems ----
 test("registries SUPPORTED + PUBLIC_BASES include nuget and composer", () => {
-	const R = require("../lib/registries");
+	const R = require("../lib/providers/registries");
 	assert.ok(R.SUPPORTED.includes("nuget"), "nuget supported");
 	assert.ok(R.SUPPORTED.includes("composer"), "composer supported");
 	assert.ok(R.PUBLIC_BASES.nuget, "nuget public base defined");

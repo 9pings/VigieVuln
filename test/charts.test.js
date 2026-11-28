@@ -8,7 +8,7 @@ const {
 	fixPriority,
 	renderCharts,
 	mostVulnerableComponents,
-} = require("../lib/charts");
+} = require("../lib/reports/charts");
 
 const m = (g, a, scope, sev, cwes, extra = {}) => ({
 	dep: { groupId: g, artifactId: a, version: "1.0", scope, ecosystem: "maven", ecosystemType: "maven", namespace: g, name: a, coordKey: `${g}:${a}`, ...(extra.dep || {}) },
@@ -260,12 +260,12 @@ test("unattributed critical transitive findings do not imply production is clean
 	};
 	const html = renderCharts(payload, { interactive: false });
 	assert.match(html, /No critical or high production findings attributed to a project descriptor\./);
-	const french = renderCharts(payload, { interactive: false, t: require("../lib/i18n").makeT("fr") });
+	const french = renderCharts(payload, { interactive: false, t: require("../lib/reports/i18n").makeT("fr") });
 	assert.match(french, /Aucun résultat critique ou élevé en production attribué à un fichier de description du projet\./);
 });
 
 test("application scans rank exposed instances, counting shared occurrences in each", () => {
-	const { mostVulnerableApplications } = require("../lib/charts");
+	const { mostVulnerableApplications } = require("../lib/reports/charts");
 	const apps = [
 		{ id: "wordpress:site-a", type: "wordpress", root: "site-a" },
 		{ id: "drupal:site-b", type: "drupal", root: "site-b" },
@@ -314,7 +314,7 @@ test("application scans render the instances chart, not the modules or scope cha
 });
 
 test("application scans include direct application and standalone source CWEs", () => {
-	const { cweByCriticality } = require("../lib/charts");
+	const { cweByCriticality } = require("../lib/reports/charts");
 	const apps = [{ id: "wp", type: "wordpress", root: "wp" }];
 	const coreDirect = { ...m("v", "lib", "compile", "CRITICAL", ["CWE-79"]),
 		applicationIds: ["wp"], applicationRelation: "direct" };
@@ -331,7 +331,7 @@ test("application scans include direct application and standalone source CWEs", 
 });
 
 test("application scans group indirect CVEs by their introducing component", () => {
-	const { vulnByApplicationOrigin } = require("../lib/charts");
+	const { vulnByApplicationOrigin } = require("../lib/reports/charts");
 	const apps = [{ id: "wp", type: "wordpress", root: "wp" }];
 	const inventory = [
 		{ id: "wp:core", kind: "core", name: "WordPress", applicationId: "wp" },
@@ -363,7 +363,7 @@ test('mixed image and source charts never count image findings in source scope',
 });
 
 test('component chart preserves images, applications, modules and shared or unknown ownership without double counting',()=>{
- const {findingsByComponent}=require('../lib/charts');
+ const {findingsByComponent}=require('../lib/reports/charts');
  const cv=(id,dep,extra={})=>({findingId:id,dep,cve:{id,severity:'HIGH'},...extra});
  const matches=[cv('i1',{artifactTargetId:'a'}),cv('i2',{artifactTargetId:'b'}),
   cv('wp',{manifestPaths:['/m1']},{applicationIds:['wp']}),cv('module',{manifestPaths:['/m1']}),
@@ -378,13 +378,13 @@ test('component chart preserves images, applications, modules and shared or unkn
 });
 
 test('component chart folds excess groups into an explicitly counted remainder',()=>{
- const {findingsByComponent}=require('../lib/charts');
+ const {findingsByComponent}=require('../lib/reports/charts');
  const matches=Array.from({length:10},(_,i)=>({dep:{manifestPaths:[`/module${i}`]},cve:{id:`CVE-${i}`,severity:'LOW'}}));
  const rows=findingsByComponent(matches,{topN:3});assert.equal(rows.length,4);assert.equal(rows.at(-1).label,'+7 more');assert.equal(rows.at(-1).total,7);assert.equal(rows.reduce((s,r)=>s+r.total,0),10);
 });
 
 test('synthetic mixed scan merges repeated physical finding IDs across proved owners',()=>{
- const {findingsByComponent,mostVulnerableApplications,mostVulnerableComponents}=require('../lib/charts');
+ const {findingsByComponent,mostVulnerableApplications,mostVulnerableComponents}=require('../lib/reports/charts');
  const f=(id,dep,applicationIds=[])=>({findingId:id,dep,applicationIds,cve:{id,severity:'HIGH'}});
  const appA=f('same',{manifestPaths:['/one']},['a']),appB=f('same',{manifestPaths:['/two']},['b']);
  const moduleA=f('module',{manifestPaths:['/one']}),moduleB=f('module',{manifestPaths:['/two']});

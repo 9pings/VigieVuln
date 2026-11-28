@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {buildProjectDescriptor}=require('../lib/project-descriptor');
+const {buildProjectDescriptor}=require('../lib/inventory/project-descriptor');
 
 test('project descriptor keeps directness per version and strips paths',()=>{
  const resolved=new Map([['npm:demo',{ecosystem:'npm',name:'demo',versions:['1.0.0','2.0.0'],

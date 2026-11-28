@@ -5,7 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const { parseStringPromise } = require("xml2js");
 
-const core = require("../lib/core");
+const core = require("../lib/codecs/maven/pom");
 
 const FIXTURES = path.join(__dirname, "fixtures");
 const SIMPLE = path.join(FIXTURES, "simple");

@@ -5,15 +5,15 @@ const path = require("path");
 const os = require('node:os');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'vigievuln-nvd-sqlite-test-'));
 os.homedir=()=>root;
-const N = require("../lib/nvd");
-const db=require('../lib/cache-db').getCacheDb(path.dirname(N.NVD_CACHE_DIR));
-process.on('exit',()=>{ require('../lib/cache-db').closeCacheDbs(); fs.rmSync(root,{recursive:true,force:true}); });
+const N = require("../lib/providers/nvd/enrich");
+const db=require('../lib/cache/db').getCacheDb(path.dirname(N.NVD_CACHE_DIR));
+process.on('exit',()=>{ require('../lib/cache/db').closeCacheDbs(); fs.rmSync(root,{recursive:true,force:true}); });
 
 // Seed an explicit timestamp/schema to exercise online and offline policy.
 function withCacheEntry(cveId, { schema, ageMs, body }, fn) {
 	const bytes=Buffer.from(JSON.stringify(body));
 	db.prepare('INSERT INTO nvd_records(cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)')
-	 .run(cveId,'live',Date.now()-ageMs,null,require('../lib/advisory-compression').compress(bytes),bytes.length,JSON.stringify({schema}));
+	 .run(cveId,'live',Date.now()-ageMs,null,require('../lib/cache/advisory-compression').compress(bytes),bytes.length,JSON.stringify({schema}));
 	const cleanup=()=>db.prepare('DELETE FROM nvd_records WHERE cve=?').run(cveId);
 	try { const value=fn(); return value?.then?value.finally(cleanup):(cleanup(),value); }
 	catch(error){cleanup();throw error}

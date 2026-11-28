@@ -1,9 +1,9 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { makeDepRecord } = require("../lib/dep-record");
-const { buildCycloneDx } = require("../lib/sbom-export");
-const { buildCsaf } = require("../lib/csaf-export");
-const { buildSarif } = require("../lib/sarif-export");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
+const { buildCycloneDx } = require("../lib/reports/sbom-export");
+const { buildCsaf } = require("../lib/reports/csaf-export");
+const { buildSarif } = require("../lib/reports/sarif-export");
 
 function fixture() {
 	const dep = makeDepRecord({ ecosystem: "composer", namespace: "vendor", name: "lib", version: "1.0.0",

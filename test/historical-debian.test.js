@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
-const h=require('../lib/system-inventory/historical-debian');const {closeCacheDbs}=require('../lib/cache-db');
+const h=require('../lib/providers/debian/historical');const {closeCacheDbs}=require('../lib/cache/db');
 const d={id:'debian',versionId:'11',codename:'bullseye'};
 // Shape taken from Debian security-tracker data/CVE/list and data/DLA/list.
 const lists={CVE:`CVE-2024-2511 (Some non-default TLS server configurations)\n\t{DLA-3942-1}\n\t- openssl 3.2.2-1 (bug #1068658)\n\t[bookworm] - openssl 3.0.14-1~deb12u1\nCVE-2026-53612 [Local privilege escalation]\n\t- util-linux 2.42.2-1\n\t[bullseye] - util-linux <not-affected> (Vulnerable code introduced later)\nCVE-2026-53613 [Local privilege escalation]\n\t- util-linux 2.42.2-1\nCVE-2025-10000 [Unbounded status]\n\t[bullseye] - openssl <no-dsa> (Minor issue)\nCVE-2025-10001 [Version specific fix]\n\t[bullseye] - openssl 1:1.1.1w-0+deb11u3\n`,DLA:`[01 Sep 2024] DLA-3942-1 openssl - security update\n\t{CVE-2024-2511}\n\t[bullseye] - openssl 1:1.1.1w-0+deb11u2\n`,DSA:`[01 Sep 2024] DSA-1234-1 nginx - security update\n\t{CVE-2024-4000}\n\t[bookworm] - nginx 1.22.1-9\n`};
@@ -48,7 +48,7 @@ test('source acquisition retains actual proxy evidence time and immutable source
  const time='2026-08-31T10:00:00Z',headers={'x-fad-proxy-fetched-at':time,'x-vigievuln-source-sha256':'d'.repeat(64)};
  const fetchResource=async(kind,p)=>new Response(kind==='history'?JSON.stringify([{id:'e'.repeat(40),committed_date:'2026-08-31T09:00:00Z'}]):lists[p.list],{headers});
  await h.syncHistoricalDebian(d,{cutoff:'2026-08-31',packages:['openssl'],cacheDir:dir,fetchResource});
- const cache=require('../lib/cache-repository').createCacheRepository(dir),s=cache.getSnapshot(h.namespace(d));
+ const cache=require('../lib/cache/repository').createCacheRepository(dir),s=cache.getSnapshot(h.namespace(d));
  assert.equal(s.fetchedAt,Date.parse(time));assert.equal(s.metadata.sourceHashes.CVE,'d'.repeat(64));
  }finally{closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}});
 
@@ -57,7 +57,7 @@ test('large package scope is batched without changing source identity or droppin
  const fetchResource=async(kind,p)=>{calls.push([kind,p]);if(kind==='history')return new Response(JSON.stringify([{id:'f'.repeat(40),committed_date:'2026-08-31T09:00:00Z'}]));return new Response('',{headers:{'x-vigievuln-source-sha256':'d'.repeat(64)}})};
  await h.syncHistoricalDebian(d,{cutoff:'2026-08-31',packages,cacheDir:dir,fetchResource});
  assert.equal(calls.filter(x=>x[0]==='list').length,6);assert.deepEqual(calls.filter(x=>x[0]==='list').map(x=>x[1].packages.length),[1000,1,1000,1,1000,1]);
- const s=require('../lib/cache-repository').createCacheRepository(dir).getSnapshot(h.namespace(d));assert.equal(s.metadata.queriedPackages.length,1001);
+ const s=require('../lib/cache/repository').createCacheRepository(dir).getSnapshot(h.namespace(d));assert.equal(s.metadata.queriedPackages.length,1001);
  }finally{closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}});
 
 test('explicit non-Debian dpkg Origin is treated as a candidate, while Maintainer alone is not used as an origin classifier',async()=>{const dir=tempfile();try{
@@ -86,7 +86,7 @@ test('multiple release fixes use the latest Debian threshold; unfixed release ov
  }finally{closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});}});
 
 test('legacy historical cache remains usable but visibly incomplete until reimported',async()=>{const dir=tempfile();try{
- const cache=require('../lib/cache-repository').createCacheRepository(dir),ns=h.namespace(d),time=Date.now();
+ const cache=require('../lib/cache/repository').createCacheRepository(dir),ns=h.namespace(d),time=Date.now();
  cache.put(ns,'openssl',[{id:'CVE-2024-2511',description:'historical',statuses:[],fixes:[{version:'1:1.1.1w-0+deb11u2',source:'DLA/list'}]}],{fetchedAt:time});
  cache.putSnapshot(ns,{fetchedAt:time,complete:true,metadata:{commit:'a'.repeat(40),cutoff:'2026-08-31',distribution:d}});
  const inventory={distribution:d,packages:[package_('openssl','1:1.1.1w-0+deb11u1')]};

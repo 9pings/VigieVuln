@@ -15,13 +15,13 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { makeDepRecord } = require("../lib/dep-record");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 const {
 	satisfiesComposerConstraint,
 	fixVersionFromConstraint,
 	collectPackagistMatches,
 	queryPackagistAudit,
-} = require("../lib/packagist-audit");
+} = require("../lib/providers/packagist/audit");
 
 // Real published advisory records (Packagist security-advisories API, 2026-09-23).
 const FIXTURE_ADVISORIES = {
@@ -79,7 +79,7 @@ test("satisfiesComposerConstraint evaluates the Packagist constraint grammar", (
 	// Undecidable must stay null — never a verdict built on an unparsed token.
 	// (A version that DOES match another branch is affected regardless — OR semantics.)
 	// GitHub-feed grammar quirks (spaced operators, spaceless hyphen intervals, bare
-	// 4-part exacts) are normalized in lib/application-providers/github-advisories.js —
+	// 4-part exacts) are normalized in lib/providers/github/advisories.js —
 	// this shared evaluator keeps the exact behavior the Packagist/Drupal lanes rely on.
 	assert.equal(satisfiesComposerConstraint("1.0.0", ">=banana"), null);
 	assert.equal(satisfiesComposerConstraint("3.0.0", "<2.0.0|>=banana"), null);
@@ -134,7 +134,7 @@ test("collectPackagistMatches keys a CVE-less advisory by its remote GHSA id", (
 });
 
 test("Packagist source aliases merge with an OSV GHSA when deprecated remoteId is absent", () => {
-	const { mergeBySource } = require("../lib/merge-sources");
+	const { mergeBySource } = require("../lib/findings/merge");
 	const r = dep("foo", "bar", "1.0.0");
 	const advisory = { advisoryId: "PKSA-1111-2222-3333", packageName: "foo/bar", cve: null,
 		affectedVersions: "<2.0.0", sources: [{ name: "GitHub", remoteId: "GHSA-aaaa-bbbb-cccc" }] };
@@ -188,7 +188,7 @@ test("queryPackagistAudit batches package names, caches per package, and serves 
 	assert.equal(first.length, 3, "twig 1.35.0 × 2 advisories + snappy 1.4.2 × 1");
 	assert.equal(fetcher.calls().length, 1, "one batched request for both packages");
 	assert.ok(fetcher.calls()[0].includes("packages[]="), "the packages[] query convention");
-	const repository=require('../lib/cache-repository').createCacheRepository(cacheDir);
+	const repository=require('../lib/cache/repository').createCacheRepository(cacheDir);
 	assert.ok(repository.get('packagist-audit','twig/twig'), "per-package SQLite cache entry");
 	assert.ok(repository.get('packagist-audit','knplabs/knp-snappy'));
 
@@ -213,7 +213,7 @@ test("Packagist audit does not query Adobe's Composer repository packages", asyn
 		assert.equal(fetcher.calls().length, 1);
 		assert.match(fetcher.calls()[0], /twig%2Ftwig|twig\/twig/);
 		assert.doesNotMatch(fetcher.calls()[0], /magento|module-pay/);
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("queryPackagistAudit makes zero network calls offline on a cold cache", async () => {
@@ -247,11 +247,11 @@ test("Packagist keeps omitted packages unknown while retaining valid results", a
 		const matches = await queryPackagistAudit(deps, { cacheDir, fetcher, onUnknown: names => { unknown = names; } });
 		assert.equal(matches.length, 2, "the known package is still audited");
 		assert.deepEqual(unknown, ["disp/log-bundle"]);
-		assert.deepEqual([...require('../lib/cache-repository').createCacheRepository(cacheDir).entries('packagist-audit')].map(([key])=>key), ['twig/twig'], "unknown is never cached as clean");
+		assert.deepEqual([...require('../lib/cache/repository').createCacheRepository(cacheDir).entries('packagist-audit')].map(([key])=>key), ['twig/twig'], "unknown is never cached as clean");
 		await queryPackagistAudit(deps, { cacheDir, fetcher, onUnknown: names => { unknown = names; } });
 		assert.equal(fetcher.calls().length, 2, "the unknown package is retried next run");
 		assert.deepEqual(unknown, ["disp/log-bundle"]);
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("Packagist accepts an empty top-level advisory array as unknown, not clean", async () => {
@@ -264,8 +264,8 @@ test("Packagist accepts an empty top-level advisory array as unknown, not clean"
 		});
 		assert.deepEqual(matches, []);
 		assert.deepEqual(unknown, ["disp/log-bundle"]);
-		assert.deepEqual([...require('../lib/cache-repository').createCacheRepository(cacheDir).entries('packagist-audit')], []);
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+		assert.deepEqual([...require('../lib/cache/repository').createCacheRepository(cacheDir).entries('packagist-audit')], []);
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("Packagist refuses malformed answers without caching them as clean", async () => {
@@ -281,8 +281,8 @@ test("Packagist refuses malformed answers without caching them as clean", async 
 		try {
 			await assert.rejects(queryPackagistAudit(deps, { cacheDir, fetcher: async () => response }),
 				/Packagist audit batch/, label);
-			assert.deepEqual([...require('../lib/cache-repository').createCacheRepository(cacheDir).entries('packagist-audit')], [], `${label} must not write a clean cache entry`);
-		} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+			assert.deepEqual([...require('../lib/cache/repository').createCacheRepository(cacheDir).entries('packagist-audit')], [], `${label} must not write a clean cache entry`);
+		} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 	}
 });
 
@@ -291,7 +291,7 @@ test("a legacy empty Packagist cache entry is revalidated online", async () => {
 	const deps = new Map([[r.coordKey, r]]);
 	const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-pksa-legacy-"));
 	try {
-		const repository=require('../lib/cache-repository').createCacheRepository(cacheDir);
+		const repository=require('../lib/cache/repository').createCacheRepository(cacheDir);
 		repository.put('packagist-audit','twig/twig',{ _fetchedAt: Date.now(), body: [] });
 		let calls = 0;
 		await queryPackagistAudit(deps, { cacheDir, fetcher: async () => {
@@ -300,5 +300,5 @@ test("a legacy empty Packagist cache entry is revalidated online", async () => {
 		} });
 		assert.equal(calls, 1);
 		assert.equal(repository.get('packagist-audit','twig/twig').value._schema, 2);
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });

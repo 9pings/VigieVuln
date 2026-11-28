@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const path = require("path");
 const { parseGoMod, parseGoSum } = require("../lib/codecs/go/parse");
 const { escapeModule } = require("../lib/codecs/go/registry");
-const { purlFor } = require("../lib/purl");
+const { purlFor } = require("../lib/inventory/purl");
 const go = require("../lib/codecs/go.codec");
 
 test("parseGoMod reads require blocks, strips v, flags indirect as transitive", () => {

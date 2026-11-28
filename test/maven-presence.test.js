@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { checkMavenLibExist, discardUnverifiedEntries, MAX_AGE_MS } = require("../lib/maven-presence");
-const { createRepoHealth } = require("../lib/maven-repo");
+const { checkMavenLibExist, discardUnverifiedEntries, MAX_AGE_MS } = require("../lib/providers/maven/presence");
+const { createRepoHealth } = require("../lib/providers/maven/repo");
 
 const repos = [{ url: "https://first.invalid/" }, { url: "https://second.invalid/" }];
 const coord = ["org.slf4j", "slf4j-api"];

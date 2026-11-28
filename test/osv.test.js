@@ -1,7 +1,7 @@
 const isolatedTestCache = require('./helpers/isolated-cache')('osv');
 const test = require("node:test");
 const assert = require("node:assert");
-const { osvEcosystemFor, osvPkgName, severityFromOsv, vulnToMatch, fixVersionFromOsv } = require("../lib/osv");
+const { osvEcosystemFor, osvPkgName, severityFromOsv, vulnToMatch, fixVersionFromOsv } = require("../lib/providers/osv/query");
 
 // Regression: a multi-branch advisory (Tomcat fixed in 9.0.118, 10.1.55 AND 11.0.22) must
 // recommend the fix ABOVE the current version (the dep's own branch), never the lowest one
@@ -43,8 +43,8 @@ test("osvPkgName delegates to codec for maven (g:a) and npm (bare name)", () => 
 	assert.strictEqual(osvPkgName({ ecosystem: "npm", namespace: "", name: "lodash", artifactId: "lodash" }), "lodash");
 });
 
-const { queryOsvForDeps } = require("../lib/osv");
-const { makeDepRecord } = require("../lib/dep-record");
+const { queryOsvForDeps } = require("../lib/providers/osv/query");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 // Regression: queryOsvForDeps must send the codec's package name + ecosystem to
 // OSV for EVERY ecosystem. A prior bug cherry-picked only groupId/artifactId when
@@ -108,7 +108,7 @@ test("severityFromOsv reads a scorable v3 vector listed after an unscored v4 one
 	assert.strictEqual(m.cve.score, 7.7);
 	assert.strictEqual(m.cve.cvssVector, UBUNTU_CVE_2025_6965_SEVERITY[1].score, "the vector travels with its score");
 	assert.strictEqual(m.cve.cvssVersion, "CVSS:3.1");
-	const { evaluateGate } = require("../lib/gate");
+	const { evaluateGate } = require("../lib/findings/gate");
 	assert.strictEqual(evaluateGate([m], "medium").failed, true);
 });
 test("severityFromOsv falls back to the distribution rating when no CVSS entry is scorable", () => {
@@ -142,7 +142,7 @@ test("offline serves the warmed OSV cache even past the 12h TTL (no network)", a
 	const staleAt = Date.now() - 48 * 3600 * 1000; // 2 days old
 	const dep = makeDepRecord({ ecosystem: "pypi", namespace: "", name: "fadtest-stale-pkg", version: "1.0.0-fadtest", manifestPath: "x" });
 	const cacheDir = require('path').join(isolatedTestCache, 'stale');
-	const store = require('../lib/advisory-store').openAdvisoryStore({ cacheDir });
+	const store = require('../lib/advisories/store').openAdvisoryStore({ cacheDir });
 	t.after(() => store.close());
 	store.commit({ records: [{ source: 'osv', fetchedAt: staleAt, document:
 		{ id: 'FADTEST-2026-0001', summary: 'stale-cache sentinel', aliases: ['CVE-2026-99999'], database_specific: { severity: 'HIGH' } } }],

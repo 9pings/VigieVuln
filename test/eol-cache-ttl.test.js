@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { fetchEndoflife, normalizeEolCache, EOL_CACHE_MAX_AGE_MS } = require("../lib/outdated");
+const { fetchEndoflife, normalizeEolCache, EOL_CACHE_MAX_AGE_MS } = require("../lib/maintenance/outdated");
 
 // Pure, in-memory: an injected `fetcher` (never the network) and a fixed clock.
 const DAY = 24 * 3600 * 1000;

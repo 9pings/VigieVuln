@@ -3,10 +3,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { allApplicationPlugins } = require("../lib/application-plugins");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
+const { allApplicationPlugins } = require("../lib/applications/plugins");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
 const composer = require("../lib/codecs/composer.codec");
-const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 
 function fixture(fn) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wave2-"));

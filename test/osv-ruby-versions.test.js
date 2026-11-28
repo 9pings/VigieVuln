@@ -4,9 +4,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { rangeVerdict, vulnVerdict, newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords } = require('../lib/osv-db');
-const { queryBatch } = require('../lib/osv');
-const { makeDepRecord } = require('../lib/dep-record');
+const { rangeVerdict, vulnVerdict, newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords } = require('../lib/providers/osv/db');
+const { queryBatch } = require('../lib/providers/osv/query');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 
 test('Ruby OSV ranges honor inclusive introductions, exclusive fixes, last affected and limits', () => {
   const range = { type: 'ECOSYSTEM', events: [{ fixed: '2.0' }, { introduced: '1.0.rc1' }] };

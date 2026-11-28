@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { computePriority, attachPriority, sortByPriority } = require("../lib/priority");
+const { computePriority, attachPriority, sortByPriority } = require("../lib/findings/priority");
 
 test("KEV membership forces the exploited band and floors the score at 90", () => {
 	const p = computePriority({ score: 4.0, severity: "MEDIUM", kev: true });

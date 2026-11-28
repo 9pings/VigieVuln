@@ -3,14 +3,14 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { startProxyCacheServer, createCacheStore } = require("../lib/proxy-cache");
+const { startProxyCacheServer, createCacheStore } = require("../lib/cache/proxy-cache");
 const { configureResourceRoute, getResource, providerKey } = require("../lib/providers");
-const { indexFeed, indexProductionFeed, assessWordfenceFeed } = require("../lib/application-providers/wordfence-v3");
-const { projectFeed, indexProjection, componentQueries, mergeProjections, SOURCE_URL, MAX_RESPONSE_BYTES } = require("../lib/application-providers/wordfence-projection");
-const { fetchWordfenceFeed } = require("../lib/application-providers/live-snapshot");
-const { cacheProjection, CACHE_FILE } = require("../lib/application-providers/wordfence-client");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-const wordpress = require("../lib/application-plugins/wordpress");
+const { indexFeed, indexProductionFeed, assessWordfenceFeed } = require("../lib/providers/wordfence/v3");
+const { projectFeed, indexProjection, componentQueries, mergeProjections, SOURCE_URL, MAX_RESPONSE_BYTES } = require("../lib/providers/wordfence/projection");
+const { fetchWordfenceFeed } = require("../lib/applications/live-snapshot");
+const { cacheProjection, CACHE_FILE } = require("../lib/providers/wordfence/client");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+const wordpress = require("../lib/applications/plugins/wordpress");
 
 const uuid = "123e4567-e89b-12d3-a456-426614174000";
 const software = (type, slug) => ({ type, slug, affected_versions: {
@@ -27,7 +27,7 @@ const payload = software => ({ provider: "wordfence", type: "software", params: 
 
 function temp(t) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wordfence-projection-"));
-	t.after(() => { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); });
+	t.after(() => { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); });
 	return dir;
 }
 async function proxy(t, opts = {}) {
@@ -219,7 +219,7 @@ for (const type of ["software", "production-feed"]) {
 }
 
 test("Wordfence refresh cooldown expires under sustained reads and strict stale policy is respected", async t => {
-	const { createWordfenceProjection } = require("../lib/resource-cache/wordfence");
+	const { createWordfenceProjection } = require("../lib/providers/wordfence/resource-cache");
 	const store = createCacheStore(temp(t));
 	let now = Date.now(), online = true, calls = 0;
 	const opts = { store, ttlMs: 1, allowStale: true, maxEntries: 10, now: () => now,
@@ -254,7 +254,7 @@ test("Wordfence server transfer limit and admission policy cannot publish a part
 test("Wordfence warming queries only explicit descriptor identities and writes a targeted snapshot", async t => {
 	route(t);
 	const dir = temp(t), asked = [];
-	const { warmCmsAdvisorySnapshots } = require("../lib/cms-snapshot-warm");
+	const { warmCmsAdvisorySnapshots } = require("../lib/applications/snapshot-warm");
 	const result = await warmCmsAdvisorySnapshots([], { advisoryCacheDir: dir, wordfenceLive: true,
 		applications: [{ type: "wordpress", components: ["wordpress:theme:example", "composer:private/internal"] }],
 		fetchImpl: async (url, init) => {
@@ -265,7 +265,7 @@ test("Wordfence warming queries only explicit descriptor identities and writes a
 		} });
 	assert.equal(result.wordfence, true);
 	assert.deepEqual(asked, [q("core", "wordpress"), q("theme")]);
-	const cached = JSON.parse(require('../lib/application-providers/snapshot-cache').read(path.join(dir, CACHE_FILE)).bytes);
+	const cached = JSON.parse(require('../lib/applications/snapshot-cache').read(path.join(dir, CACHE_FILE)).bytes);
 	assert.equal(indexProjection(cached).queriedSoftware.size, 2);
 	assert.equal(fs.existsSync(path.join(dir, "wordfence-v3.json")), false);
 });
@@ -334,7 +334,7 @@ test("Wordfence plugin uses targeted cache offline, preserves stale coverage and
 	const snapshot = projectFeed(indexProductionFeed(feed), [q("core", "wordpress")], Date.now() - 2 * 86400000, true);
 	cacheProjection(dir, snapshot);
 	assert.equal(fs.existsSync(path.join(dir, "wordfence-v3.json")), false);
-	assert.ok(require('../lib/application-providers/snapshot-cache').exists(path.join(dir, CACHE_FILE)));
+	assert.ok(require('../lib/applications/snapshot-cache').exists(path.join(dir, CACHE_FILE)));
 	const opts = { plugins: [wordpress], selection: "wordpress", advisoryCacheDir: dir, offline: true,
 		publicComponents: ["site/wp-content/themes/acme-theme=example"], fetchImpl: async () => { throw new Error("offline network"); } };
 	const root = path.join(__dirname, "fixtures", "wordpress-custom");

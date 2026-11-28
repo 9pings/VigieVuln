@@ -1,22 +1,22 @@
 'use strict';
 const isolated=require('./helpers/isolated-cache')('nvd-package-ranges');
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {matchBoundNvdRanges,collectPackageNvdBindings}=require('../lib/nvd-package-ranges');
-const {makeDepRecord}=require('../lib/dep-record');
+const {matchBoundNvdRanges,collectPackageNvdBindings}=require('../lib/providers/nvd/package-ranges');
+const {makeDepRecord}=require('../lib/inventory/dep-record');
 const record=require('./fixtures/cve-maven-matching/nvd-jackson-11113.json');
 const dep=version=>makeDepRecord({ecosystem:'maven',namespace:'com.fasterxml.jackson.core',name:'jackson-databind',version});
 const existing=()=>[{dep:dep('2.9.5'),source:'osv+nvd',cve:{...structuredClone(record),fixVersion:'2.9.10.4'}}];
 const osv=require('./fixtures/cve-maven-matching/osv-jackson-11113.json');
 test('an isolated older release reuses stored package identity even when OSV excludes its version',async t=>{
- const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir:isolated});t.after(()=>store.close());
+ const store=require('../lib/advisories/store').openAdvisoryStore({cacheDir:isolated});t.after(()=>store.close());
  store.commit({records:[{source:'osv',document:osv,fetchedAt:Date.now()}]});
  const d=dep('2.5.2'),deps=new Map([[d.coordKey,d]]);
- assert.equal(require('../lib/osv-db').vulnVerdict(d.version,osv,'Maven'),false);
+ assert.equal(require('../lib/providers/osv/db').vulnVerdict(d.version,osv,'Maven'),false);
  const bindings=collectPackageNvdBindings(deps,store);
  assert.equal(bindings.length,1);
  assert.deepEqual(matchBoundNvdRanges(deps,bindings),[],'binding alone is not a finding');
- require('../lib/nvd').writeCache(record.id,record);
- await require('../lib/nvd').enrichMatches(bindings,{offline:true});
+ require('../lib/providers/nvd/enrich').writeCache(record.id,record);
+ await require('../lib/providers/nvd/enrich').enrichMatches(bindings,{offline:true});
  const found=matchBoundNvdRanges(deps,bindings);
  assert.equal(found.length,1);assert.equal(found[0].dep.version,'2.5.2');assert.equal(found[0].source,'nvd');
  assert.deepEqual(matchBoundNvdRanges(deps,[...found,...bindings]),[],'actual findings still deduplicate');

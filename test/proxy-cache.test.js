@@ -10,12 +10,12 @@ const os = require("os");
 const path = require("path");
 const http = require("http");
 const { spawn } = require("child_process");
-const { createSourceHealth, guardedFetch } = require("../lib/source-health");
+const { createSourceHealth, guardedFetch } = require("../lib/scan/source-health");
 
 const {
 	ttlForUrl, upstreamHeadersFor, createCacheStore, startProxyCacheServer,
 	parseProxyFlag, DEFAULT_CACHE_DIR, CLIENT_CACHE_DIR,
-} = require("../lib/proxy-cache");
+} = require("../lib/cache/proxy-cache");
 
 const tmpDir = () => fs.mkdtempSync(path.join(os.tmpdir(), "fad-proxy-"));
 

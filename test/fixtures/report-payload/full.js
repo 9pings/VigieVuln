@@ -12,7 +12,7 @@
  *
  * `build(locale)` → the payload; the caller renders it.
  */
-const { makeDepRecord } = require("../../../lib/dep-record");
+const { makeDepRecord } = require("../../../lib/inventory/dep-record");
 const SRC = "/proj";
 const mk = (o) => makeDepRecord(o);
 const direct = mk({ ecosystem: "maven", namespace: "org.apache.logging.log4j", name: "log4j-core", version: "2.14.1", manifestPath: `${SRC}/pom.xml` });

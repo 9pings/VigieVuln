@@ -3,9 +3,9 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { findInText, findDeclarations } = require("../lib/descriptor-refs");
-const { generateHtmlReport, generateWordReport } = require("../lib/cve-report");
-const { makeDepRecord } = require("../lib/dep-record");
+const { findInText, findDeclarations } = require("../lib/inventory/descriptor-refs");
+const { generateHtmlReport, generateWordReport } = require("../lib/reports/cve-report");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 const POM = `<project>
   <groupId>com.acme</groupId>

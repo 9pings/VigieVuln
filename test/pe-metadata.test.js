@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { extractPeMetadata } = require('../lib/codecs/binary/pe-metadata');
-const { buildInventory } = require('../lib/unmanaged');
+const { buildInventory } = require('../lib/inventory/unmanaged');
 
 function block(key, value, children = [], type = 1) {
 	const head = Buffer.alloc(6), name = Buffer.from(key + '\0', 'utf16le');

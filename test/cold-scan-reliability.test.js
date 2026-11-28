@@ -44,7 +44,7 @@ test('cold npm scans retain confirmed findings across a partial OSV outage and r
     const home=path.join(root,homeName), out=path.join(home,'out');
     fs.mkdirSync(home,{recursive:true});
     // The offline native source has an authoritative, independently timestamped package lookup.
-    const store=require('../lib/advisory-store').openAdvisoryStore({cacheDir:path.join(home,'.vigie-vuln')});
+    const store=require('../lib/advisories/store').openAdvisoryStore({cacheDir:path.join(home,'.vigie-vuln')});
     store.commit({queries:[{source:'cveproject',ecosystem:'npm',name:'widget',version:'*',ids:[],complete:true,fetchedAt:Date.now()}]});
     store.close();
     const flags=['--require',hook,path.resolve(__dirname,'../vigievuln.js'),'scan',project,'--ecosystem','npm',

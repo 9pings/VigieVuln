@@ -10,7 +10,7 @@ test('non-blocking record enrichment does not hide true image coverage gaps',()=
 });
 function write(root,p,body){const file=path.join(root,p);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
 test('rootfs uses offline scoped advisory snapshots and package ownership',async t=>{
- const work=fs.mkdtempSync(path.join(os.tmpdir(),'vv-image-scan-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(work,{recursive:true,force:true});});const root=path.join(work,'root'),cacheDir=path.join(work,'cache');
+ const work=fs.mkdtempSync(path.join(os.tmpdir(),'vv-image-scan-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(work,{recursive:true,force:true});});const root=path.join(work,'root'),cacheDir=path.join(work,'cache');
  write(root,'etc/os-release','ID=debian\nVERSION_ID=12.4\n');
  write(root,'var/lib/dpkg/status','Package: libfoo\nStatus: install ok installed\nVersion: 1.0-1\nArchitecture: amd64\nSource: foo (1.0-1)\n');
  write(root,'var/lib/dpkg/info/libfoo.list','/usr/lib/node_modules/foo/package.json\n');
@@ -46,8 +46,8 @@ test('merged usr directory aliases preserve ownership but leaf symlinks do not t
  assert.equal(inventory.deps.find(x=>x.ecosystem==='npm' && x.name==='target').osPackageOwners,undefined);
 });
 test('artifact inventory prepares transferable offline advisories through a fleet proxy',async t=>{
- const {zipSync,strToU8}=require('fflate'),{createSnapshot}=require('../lib/artifacts/scan');const {startProxyCacheServer,createCacheStore}=require('../lib/proxy-cache');
- const work=fs.mkdtempSync(path.join(os.tmpdir(),'vv-prep-image-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(work,{recursive:true,force:true});});
+ const {zipSync,strToU8}=require('fflate'),{createSnapshot}=require('../lib/artifacts/scan');const {startProxyCacheServer,createCacheStore}=require('../lib/cache/proxy-cache');
+ const work=fs.mkdtempSync(path.join(os.tmpdir(),'vv-prep-image-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(work,{recursive:true,force:true});});
  const root=path.join(work,'root');write(root,'etc/os-release','ID=alpine\nVERSION_ID=3.20\n');write(root,'lib/apk/db/installed','P:foo\nV:1-r0\nA:x86_64\no:foo\n\n');
  const targets=await acquireInventories(root,{offline:true}),inventory=path.join(work,'inventory.json');fs.writeFileSync(inventory,JSON.stringify(createSnapshot(targets)));
  const rec={id:'ALPINE-X',affected:[{package:{ecosystem:'Alpine:v3.20',name:'foo'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-r0'}]}]}]};const zip=zipSync({'v.json':strToU8(JSON.stringify(rec))});
@@ -63,14 +63,14 @@ test('artifact inventory prepares transferable offline advisories through a flee
  try {
   const route=require('../lib/cli-command-routing').routeArguments(['cache','prepare',inventory,'--retries','0','--output',bundle,'--cache-dir',source,'--source-profile','proxy','--proxy-cache',url,'--allow-insecure-http','--no-gcve','--no-distro-advisories','--enrich','none']);
   assert.deepEqual(route.args.slice(0,2),['system','scan']);const result=await require('../lib/cli-image').run(route.args.slice(2));assert.equal(result.exitCode,0);assert.equal(advisories,2);assert.equal(catalogues,2);assert.ok(fs.existsSync(bundle));
-  await require('../lib/cache-archive-sqlite').importCache(bundle,{targetDir:dest,proxyOrigin:url});
+  await require('../lib/cache/archive').importCache(bundle,{targetDir:dest,proxyOrigin:url});
   const offline=await assessInventories(targets,{cacheDir:dest,offline:true,enrich:[],fetcher:()=>{throw Error('network')}});assert.equal(offline.cveMatches.length,1);
   assert.equal(offline.artifacts[0].components.find(c=>c.name==='foo').releaseVersions.distribution.version,'3-r0');
  } finally {process.exitCode=originalExit;await new Promise(resolve=>server.close(resolve));store.close?.();}
 });
 test('online system OSV refresh respects complete fresh snapshots, expiry, incompleteness and exclusion',async t=>{
- const {zipSync,strToU8}=require('fflate'),{createCacheRepository}=require('../lib/cache-repository'),{systemDep}=require('../lib/artifacts/scan');
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-osv-freshness-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
+ const {zipSync,strToU8}=require('fflate'),{createCacheRepository}=require('../lib/cache/repository'),{systemDep}=require('../lib/artifacts/scan');
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-osv-freshness-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true})});
  const distribution={id:'alpine',versionId:'3.20'},pkg={manager:'apk',name:'foo',version:'1-r0',sourceName:'foo',sourceVersion:'1-r0',architecture:'x86_64',manifestPath:'/status'},target={id:'image',kind:'rootfs',metadata:{},distribution,packages:[pkg],deps:[systemDep(pkg,'image',distribution)],coverage:[],warnings:[]};
  const rec={id:'ALPINE-X',affected:[{package:{ecosystem:'Alpine:v3.20',name:'foo'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-r0'}]}]}]},zip=zipSync({'x.json':strToU8(JSON.stringify(rec))});
  for(const scenario of ['fresh','expired','incomplete','disabled']){
@@ -81,7 +81,7 @@ test('online system OSV refresh respects complete fresh snapshots, expiry, incom
  }
 });
 test('RPM signing keys are not packages awaiting advisories',async t=>{
- const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-rpmkey-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});});
+ const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-rpmkey-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});});
  const target={id:'host',kind:'rootfs',metadata:{},distribution:{id:'almalinux',versionId:'9.9',name:'AlmaLinux 9.9'},deps:[],coverage:[],warnings:[],
   packages:[{name:'gpg-pubkey',version:'b86b3716',release:'61e69f29',manager:'rpm',ecosystem:'system',provenance:'installed'}]};
  const result=await require('../lib/artifacts/scan').assessInventories([target],{offline:true,eol:false,enrich:[],cacheDir});

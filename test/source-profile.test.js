@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { applySourceProfile, proxyOnlyFetch, officialAccountFetch } = require('../lib/source-profile');
+const { applySourceProfile, proxyOnlyFetch, officialAccountFetch } = require('../lib/scan/source-profile');
 
 test('default profile preserves legacy behaviour', () => {
  const base = {osv:true, nvd:true, euvd:true, certfr:true, appPlugins:'auto', binaries:true};

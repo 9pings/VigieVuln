@@ -8,7 +8,7 @@ const { packumentToFindings } = require("../lib/codecs/npm/registry");
 const { pypiToFindings, pypiLicense } = require("../lib/codecs/pypi/registry");
 const { packagistToFindings } = require("../lib/codecs/composer/registry");
 const { nugetRegistrationToFindings } = require("../lib/codecs/nuget/registry");
-const { licensesFromPomXml, collectMavenLicenses } = require("../lib/maven-license");
+const { licensesFromPomXml, collectMavenLicenses } = require("../lib/codecs/maven/license");
 
 test("npm packumentToFindings extracts the resolved version's license", () => {
 	const pk = { "dist-tags": { latest: "2.0.0" }, license: "ISC", versions: { "1.0.0": { license: "MIT" } } };
@@ -46,7 +46,7 @@ test("licensesFromPomXml scrapes the <licenses> block", () => {
 
 test("collectMavenLicenses reads cached POMs from a given cache dir", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-pom-"));
-	require('../lib/maven-cache').write(path.join(dir, "org.apache.commons__commons-lang3__3.12.0.pom"),
+	require('../lib/providers/maven/cache').write(path.join(dir, "org.apache.commons__commons-lang3__3.12.0.pom"),
 		"<project><licenses><license><name>Apache-2.0</name></license></licenses></project>");
 	const resolved = new Map([
 		["org.apache.commons:commons-lang3", { ecosystem: "maven", namespace: "org.apache.commons", name: "commons-lang3", version: "3.12.0" }],

@@ -10,7 +10,7 @@ const cases = [
 	["pypi", "lib/codecs/pypi/registry", "checkPypiRegistryDeps", "pypi-cache.json", "demo@1.0.0"],
 	["nuget", "lib/codecs/nuget/registry", "checkNugetRegistryDeps", "nuget-cache.json", "demo@1.0.0"],
 	["go", "lib/codecs/go/registry", "checkGoRegistryDeps", "go-proxy-cache.json", "demo@1.0.0"],
-	["maven", "lib/outdated", "checkOutdatedDeps", "version-cache.json", "org.example:demo"],
+	["maven", "lib/maintenance/outdated", "checkOutdatedDeps", "version-cache.json", "org.example:demo"],
 ];
 
 for (const spec of cases) {
@@ -26,7 +26,7 @@ const [eco, mod, method, filename, key] = JSON.parse(process.argv[1]);
 const check = require(path.resolve(mod))[method];
 const dir = path.join(process.argv[2], ".vigie-vuln");
 const cacheKey = {npm:'npm-registry',composer:'packagist',ruby:'rubygems',pypi:'pypi',nuget:'nuget',go:'go-proxy',maven:'version-cache.json'}[eco];
-const cache = require('./lib/json-cache'), repository = require('./lib/cache-repository').createCacheRepository(dir);
+const cache = require('./lib/cache/json'), repository = require('./lib/cache/repository').createCacheRepository(dir);
 const read = () => cache.load(dir,cacheKey,null);
 const dep = { ecosystem: eco, name: "demo", artifactId: "demo", version: "1.0.0", scope: "compile",
 	namespace: eco === "maven" ? "org.example" : eco === "composer" ? "acme" : "",

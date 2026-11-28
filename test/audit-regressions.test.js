@@ -8,8 +8,8 @@ const { spawnSync } = require('node:child_process');
 const { parseRequirementsTxt } = require('../lib/codecs/pypi/parse');
 
 test('malformed Composer names and versions are rejected promptly', () => {
-  const script = `const {validateResource}=require('./lib/resource-cache/validate');
-    const {cmpComposerVersions}=require('./lib/packagist-audit');
+  const script = `const {validateResource}=require('./lib/cache/resource/validate');
+    const {cmpComposerVersions}=require('./lib/providers/packagist/audit');
     for (const name of ['a'.repeat(190)+'!', 'vendor/'+'a'.repeat(180)+'!']) {
       try { validateResource({provider:'packagist',type:'package',params:{name}}); process.exit(2); } catch(e) { if(e.status!==400) throw e; }
     }

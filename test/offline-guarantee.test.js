@@ -15,10 +15,10 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const core = require("../lib/core");
-const { fetchPom, effectivePom, resolveTransitiveDeps } = require("../lib/transitive");
-const { collectResolvedDeps } = require("../lib/cve-match");
-const { resolveReactor } = require("../lib/maven-reactor");
+const core = require("../lib/codecs/maven/pom");
+const { fetchPom, effectivePom, resolveTransitiveDeps } = require("../lib/codecs/maven/transitive");
+const { collectResolvedDeps } = require("../lib/advisories/cve-match");
+const { resolveReactor } = require("../lib/codecs/maven/reactor");
 
 const freshCache = () => fs.mkdtempSync(path.join(os.tmpdir(), "fad-airgap-"));
 function tripwireFetcher() {

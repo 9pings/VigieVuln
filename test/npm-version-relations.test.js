@@ -139,7 +139,7 @@ test('npm devOptional production evidence survives per-version attribution', t =
 	assert.equal(dep.scope,'transitive');
 	assert.deepEqual([...dep.versionRelations['1.0.0']].sort(),['direct','transitive']);
 	const finding={dep,cve:{id:'CVE-2099-1234'}};
-	require('../lib/attribution').attributeMatchOrigins([finding]);
+	require('../lib/findings/attribution').attributeMatchOrigins([finding]);
 	assert.equal(finding.dep.isDev,false);
 });
 

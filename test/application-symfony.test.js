@@ -2,8 +2,8 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
 const composer = require("../lib/codecs/composer.codec");
-const symfony = require("../lib/application-plugins/symfony");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
+const symfony = require("../lib/applications/plugins/symfony");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
 
 test("Symfony application inventory keeps exact framework and independent bundle versions", async () => {
 	const root = path.join(__dirname, "fixtures", "php-symfony54");

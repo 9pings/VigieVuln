@@ -3,9 +3,9 @@ require('./helpers/isolated-cache')('osv-persistence');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
-const { openAdvisoryStore } = require('../lib/advisory-store');
-const { queryBatch } = require('../lib/osv');
-const { makeDepRecord } = require('../lib/dep-record');
+const { openAdvisoryStore } = require('../lib/advisories/store');
+const { queryBatch } = require('../lib/providers/osv/query');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 const dep = makeDepRecord({ ecosystem: 'maven', namespace: 'g', name: 'a', version: '1.0' });
 const document = (modified, extra = {}) => ({ id: 'GHSA-persistence', modified, summary: 'Fetched old advisory', affected: [{ package: { ecosystem: 'Maven', name: 'g:a' }, ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '2.0' }] }] }], ...extra });
 
@@ -13,7 +13,7 @@ for (const scenario of ['withdrawn', 'same-revision-withdrawn', 'newer-exclusion
   test(`failed persistence retains source revision precedence: ${scenario}`, async t => {
     const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vigie-osv-persistence-'));
     const store = openAdvisoryStore({ cacheDir });
-    t.after(() => { store.close(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
+    t.after(() => { store.close(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
     const incoming = document('2026-01-01T00:00:00Z');
     let previous = document('2026-02-01T00:00:00Z'), fetchedAt = Date.now() - 1000;
     if (scenario.includes('withdrawn')) previous = document(scenario === 'same-revision-withdrawn' ? incoming.modified : previous.modified, { withdrawn: '2026-01-01T00:00:00Z' });
@@ -36,7 +36,7 @@ for (const scenario of ['older-negative', 'older-positive', 'negative-proof-with
   test(`live stale query preserves newer tuple evidence: ${scenario}`, async t => {
     const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vigie-osv-stale-proof-'));
     const store = openAdvisoryStore({ cacheDir });
-    t.after(() => { store.close(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
+    t.after(() => { store.close(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
     const at = Date.now();
     const doc = document('2026-02-01T00:00:00Z');
     const query = { source: 'osv', ecosystem: 'Maven', name: 'g:a', version: '1.0', ids: scenario === 'older-negative' ? [doc.id] : [], complete: true, fetchedAt: at - 1000 };
@@ -53,7 +53,7 @@ for (const scenario of ['older-negative', 'older-positive', 'negative-proof-with
 test('an older proxy response does not warn when newer saved evidence is fresh', async t => {
   const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vigie-osv-fresh-proof-'));
   const store = openAdvisoryStore({ cacheDir });
-  t.after(() => { store.close(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
+  t.after(() => { store.close(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
   const at = Date.now(), doc = document('2026-02-01T00:00:00Z');
   const query = { source: 'osv', ecosystem: 'Maven', name: 'g:a', version: '1.0', ids: [doc.id], complete: true, fetchedAt: at - 1000 };
   store.commit({records:[{source:'osv',document:doc,fetchedAt:at-2000}],queries:[query]});

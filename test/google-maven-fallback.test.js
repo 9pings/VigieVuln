@@ -1,10 +1,10 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
-const {buildRepoList,orderRepos,GOOGLE_MAVEN,createRepoHealth,fetchPomFromRepos}=require('../lib/maven-repo');
-const {guardedFetch,createSourceHealth}=require('../lib/source-health');
-const {fetchPom,effectivePom}=require('../lib/transitive');
-function temp(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-google-maven-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});return dir;}
+const {buildRepoList,orderRepos,GOOGLE_MAVEN,createRepoHealth,fetchPomFromRepos}=require('../lib/providers/maven/repo');
+const {guardedFetch,createSourceHealth}=require('../lib/scan/source-health');
+const {fetchPom,effectivePom}=require('../lib/codecs/maven/transitive');
+function temp(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-google-maven-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});return dir;}
 const pom='<project><modelVersion>4.0.0</modelVersion><groupId>androidx.core</groupId><artifactId>core-ktx</artifactId><version>1.17.0</version></project>';
 
 test('Google Android stays after every Central mirror and configured repository, including rotated lookups',()=>{
@@ -44,8 +44,8 @@ test('Google 429 uses spaced retries and Retry-After, with a fresh timeout each 
 
 test('Google uses the shared proxy operation without direct client access or Central cache collision',async t=>{
  const dir=temp(t),{configureResourceRoute,providerKey}=require('../lib/providers');
- const {startProxyCacheServer,createCacheStore}=require('../lib/proxy-cache');
- const {validateResource}=require('../lib/resource-cache/validate');
+ const {startProxyCacheServer,createCacheStore}=require('../lib/cache/proxy-cache');
+ const {validateResource}=require('../lib/cache/resource/validate');
  const params={path:'androidx/core/core-ktx/1.17.0/core-ktx-1.17.0.pom',method:'GET'};
  assert.notEqual(providerKey('maven','artifact',params),providerKey('maven','artifact',{...params,repository:'google'}));
  assert.throws(()=>validateResource({provider:'maven',type:'artifact',params:{...params,repository:'https://untrusted.invalid'}}));

@@ -36,7 +36,7 @@ Versions are read from **bounded prefixes** of the marker files — no file is e
 A CVE on a core, framework, official component, bundle, plugin or theme is **direct**; a
 CVE on one of its *libraries* is **indirect** under the component that introduces it — never
 direct by mere lock presence. Attribution comes from proven component ownership
-(`lib/application-inventory.js`), not path guessing, and a finding shared by several
+(`lib/applications/inventory.js`), not path guessing, and a finding shared by several
 instances keeps its own origins in each.
 
 **Private/custom components** (a plugin with a third-party `Update URI`, a module under

@@ -3,13 +3,13 @@ require('./helpers/isolated-cache')('maven-case-identity');
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto');
-const {openAdvisoryStore}=require('../lib/advisory-store');
-const {newOsvIndex,addOsvRecord,matchOsvDbDeps,matchOsvDbRecords}=require('../lib/osv-db');
-const {makeDepRecord}=require('../lib/dep-record');
+const {openAdvisoryStore}=require('../lib/advisories/store');
+const {newOsvIndex,addOsvRecord,matchOsvDbDeps,matchOsvDbRecords}=require('../lib/providers/osv/db');
+const {makeDepRecord}=require('../lib/inventory/dep-record');
 
 test('Maven advisory and query identities preserve case in warm and streamed offline matching',async t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-maven-case-'));
- const store=openAdvisoryStore({cacheDir:dir}),now=Date.now();t.after(()=>{store.close();require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ const store=openAdvisoryStore({cacheDir:dir}),now=Date.now();t.after(()=>{store.close();require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  const advisory={id:'GHSA-case',affected:[{package:{ecosystem:'Maven',name:'org.example:Widget'},versions:['1.0.0']}]};
  const upper={source:'osv',ecosystem:'Maven',name:'org.example:Widget',version:'1.0.0'};
  const lower={...upper,name:'org.example:widget'};

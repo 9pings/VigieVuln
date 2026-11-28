@@ -83,7 +83,7 @@ test("export → import round-trip: descriptor re-imports to the same coordinate
 	try {
 		const e = run(["scan", FIX("python-pyproject"), "--export-anonymized", out]);
 		assert.strictEqual(e.status, 0, e.stderr);
-		const { deserializeDeps } = require("../lib/deps-descriptor");
+		const { deserializeDeps } = require("../lib/inventory/deps-descriptor");
 		const back = deserializeDeps(JSON.parse(fs.readFileSync(out, "utf8")));
 		assert.ok(back.resolved.has("pypi:requests"));
 		assert.strictEqual(back.runMaven, false);

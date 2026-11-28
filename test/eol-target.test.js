@@ -9,7 +9,7 @@
  */
 const test = require("node:test");
 const assert = require("node:assert");
-const { findEolProduct, latestSupportedCycle } = require("../lib/outdated");
+const { findEolProduct, latestSupportedCycle } = require("../lib/maintenance/outdated");
 
 test("org.springframework matches only itself, never its sub-projects", () => {
 	assert.strictEqual(findEolProduct({ groupId: "org.springframework", artifactId: "spring-core" }).product, "spring-framework");
@@ -62,7 +62,7 @@ test("no cycles, no target — and no throw", () => {
 test("an 'unsupported' cycle keeps its own latest — patching in place is the advice there", async () => {
 	// Active support ended but security fixes continue, so the last patch of the CURRENT branch
 	// is actionable. Only a dead cycle needs a migration target.
-	const { checkEolDeps } = require("../lib/outdated");
+	const { checkEolDeps } = require("../lib/maintenance/outdated");
 	const CYC = [
 		{ cycle: "7.0", eol: "2030-01-01", latest: "7.0.4" },
 		{ cycle: "5.4", eol: "2029-02-28", support: "2024-11-30", latest: "5.4.53" },

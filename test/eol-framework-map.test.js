@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { findEolProduct, COMPOSER_FRAMEWORKS } = require("../lib/outdated");
+const { findEolProduct, COMPOSER_FRAMEWORKS } = require("../lib/maintenance/outdated");
 
 const c = (ns, name) => ({ ecosystem: "composer", namespace: ns, name, groupId: ns, artifactId: name });
 

@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { buildInventory, nameMatches } = require("../lib/unmanaged");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildInventory, nameMatches } = require("../lib/inventory/unmanaged");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 function bin(name, identity, integrity) {
 	const d = makeDepRecord({ ecosystem: "binary", name, manifestPath: `/p/${name}`, provenance: "binary", hashes: { sha1: "a".repeat(40), sha256: "b".repeat(64) }, declaredName: name });

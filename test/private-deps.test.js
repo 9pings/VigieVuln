@@ -6,7 +6,7 @@
  */
 const test = require("node:test");
 const assert = require("node:assert");
-const { isAbsentStatus, classifyLookup, foldAbsent, buildPrivateItems } = require("../lib/private-deps");
+const { isAbsentStatus, classifyLookup, foldAbsent, buildPrivateItems } = require("../lib/inventory/private-deps");
 
 test("404 and Go's 410 are definitive; nothing else is", () => {
 	assert.strictEqual(isAbsentStatus(404), true);

@@ -19,8 +19,8 @@ const {
 	cmpComposerVersions: cmp,
 	fixVersionFromConstraint,
 	collectPackagistMatches,
-} = require("../lib/packagist-audit");
-const { makeDepRecord } = require("../lib/dep-record");
+} = require("../lib/providers/packagist/audit");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test("A1: a range-derived upper bound excludes the pre-releases of that bound", () => {
 	assert.equal(sat("2.0.0-alpha", "^1.0"), false);

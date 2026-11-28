@@ -4,9 +4,9 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { configureResourceRoute } = require("../lib/providers");
-const { fetchWordfenceFeed, WORDFENCE_PRODUCTION_URL } = require("../lib/application-providers/live-snapshot");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-const wordpress = require("../lib/application-plugins/wordpress");
+const { fetchWordfenceFeed, WORDFENCE_PRODUCTION_URL } = require("../lib/applications/live-snapshot");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+const wordpress = require("../lib/applications/plugins/wordpress");
 
 function refusedProxy(t) {
 	configureResourceRoute({ proxyUrl: "https://proxy.invalid", hosted: true, token: "proxy-token",
@@ -41,7 +41,7 @@ for (const apiKey of [undefined, "client-key"]) {
 test("Wordfence: a refused live source fails the scan and leaves no complete-looking snapshot", async t => {
 	const { calls, fetchImpl } = refusedProxy(t);
 	const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "wordfence-refused-"));
-	t.after(() => { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
+	t.after(() => { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
 	// An old local snapshot must not hide failure of an explicitly requested live source.
 	const cachedFile = path.join(cacheDir, "wordfence-v3.json");
 	const previous = JSON.stringify({ _fadSnapshot: { collectedAt: "2020-01-01T00:00:00Z", completeness: "tool-fetched" } });

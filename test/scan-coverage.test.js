@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { createCoverage, summarizeCoverage, requiredCoverageComplete } = require("../lib/scan-coverage");
+const { createCoverage, summarizeCoverage, requiredCoverageComplete } = require("../lib/scan/coverage");
 
 test("coverage keeps execution separate from the advisory verdict", () => {
 	const journal = createCoverage();

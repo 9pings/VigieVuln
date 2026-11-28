@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert");
 const fs = require("fs"); const os = require("os"); const path = require("path");
 const npmCodec = require("../lib/codecs/npm.codec");
-const mavenCore = require("../lib/core");
+const mavenCore = require("../lib/codecs/maven/pom");
 
 function tmpTree(spec) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-exc-"));
@@ -48,7 +48,7 @@ test("default excludes: node_modules is skipped, --no-default-excludes walks it"
 });
 
 test("Maven core.findPomFiles honours a custom skipDir (exclude-path)", () => {
-	const { makeDirFilter } = require("../lib/path-filter");
+	const { makeDirFilter } = require("../lib/inventory/path-filter");
 	const root = tmpTree({ "svc/pom.xml": "<project/>", "legacy/pom.xml": "<project/>" });
 	const skip = makeDirFilter({ srcRoot: root, defaultSkip: mavenCore.SKIP_DIRS, excludePath: ["legacy/**"] });
 	const poms = mavenCore.findPomFiles(root, skip);

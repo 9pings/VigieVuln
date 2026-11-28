@@ -4,10 +4,10 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { validateChecksums, evaluateChecksums, WP_CHECKSUMS_API } = require("../lib/application-providers/wp-checksums");
-const { fetchWordpressChecksums } = require("../lib/application-providers/live-snapshot");
-const wordpress = require("../lib/application-plugins/wordpress");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
+const { validateChecksums, evaluateChecksums, WP_CHECKSUMS_API } = require("../lib/providers/wordpress/checksums");
+const { fetchWordpressChecksums } = require("../lib/applications/live-snapshot");
+const wordpress = require("../lib/applications/plugins/wordpress");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
 
 const md5 = content => crypto.createHash("md5").update(content).digest("hex");
 const NOW = Date.parse("2026-09-23T12:00:00Z");

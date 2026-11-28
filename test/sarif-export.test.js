@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { buildSarif, sarifLevel } = require("../lib/sarif-export");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildSarif, sarifLevel } = require("../lib/reports/sarif-export");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test("sarifLevel maps severity to SARIF levels", () => {
 	assert.equal(sarifLevel("CRITICAL"), "error");

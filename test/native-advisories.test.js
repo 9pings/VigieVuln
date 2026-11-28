@@ -2,7 +2,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {openAdvisoryStore: openFixtureStore}=require('../lib/advisory-store');
+const {openAdvisoryStore: openFixtureStore}=require('../lib/advisories/store');
 const fixtureStores = new Set();
 function openAdvisoryStore(options) {
  const store = openFixtureStore(options), close = store.close.bind(store);
@@ -15,16 +15,16 @@ function removeFixture(root) {
   const relative = path.relative(root, store.db.file);
   if (relative && relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative)) store.close();
  }
- require('../lib/cache-db').closeCacheDbs();
+ require('../lib/cache/db').closeCacheDbs();
  fs.rmSync(root, {recursive:true,force:true});
 }
 
-const {importCveDirectory,importGcveIndex,matchCveStore,matchGcveStore}=require('../lib/native-advisories');
-const {buildGcveIndex}=require('../lib/gcve-index');
-const {newIndex,addToIndex,extractMavenRelevantCve}=require('../lib/cve-download');
-const {makeDepRecord}=require('../lib/dep-record');
+const {importCveDirectory,importGcveIndex,matchCveStore,matchGcveStore}=require('../lib/advisories/native');
+const {buildGcveIndex}=require('../lib/providers/gcve/local-index');
+const {newIndex,addToIndex,extractMavenRelevantCve}=require('../lib/providers/cveproject/download');
+const {makeDepRecord}=require('../lib/inventory/dep-record');
 function seedCveIndex(cache,index){
- const db=require('../lib/cache-db').getCacheDb(cache),crypto=require('node:crypto');
+ const db=require('../lib/cache/db').getCacheDb(cache),crypto=require('node:crypto');
  index.meta.builtAt ||= new Date().toISOString();
  const put=db.prepare('INSERT INTO cve_lookup(kind,lookup_key,source,cve,affected_key,projection_json) VALUES (?,?,?,?,?,?)');
  for(const [kind,buckets] of [['package',index.byPackageName],['product',index.byProduct]])for(const [lookup,entries] of Object.entries(buckets))for(const entry of entries){
@@ -100,7 +100,7 @@ test('CVEProject proxy projection replays offline as partial and native rejectio
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cve-proxy-'));t.after(()=>removeFixture(root));
  const store=openAdvisoryStore({cacheDir:root});const at=Date.now()-2000;
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/cve-samples/cve-with-packagename.json'),'utf8'));raw.cveMetadata.state='PUBLISHED';raw.cveMetadata.dateUpdated='2025-01-01T00:00:00Z';
- const projection=extractMavenRelevantCve(raw), {projectedCveEnvelope,cveEnvelope}=require('../lib/native-advisories');
+ const projection=extractMavenRelevantCve(raw), {projectedCveEnvelope,cveEnvelope}=require('../lib/advisories/native');
  store.commit({records:[projectedCveEnvelope(projection,at)],coverages:[{source:'cveproject-legacy',ecosystem:'*',fetchedAt:at,complete:false}]});
  const dep=makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'}), deps=new Map([[dep.coordKey,dep]]);
  assert.equal(matchCveStore(deps,store).matches.length,1);
@@ -129,8 +129,8 @@ test('CVEProject TTL uses cached index until expiry and zero forces refresh',t=>
  const {spawnSync}=require('node:child_process');
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cve-ttl-'));t.after(()=>removeFixture(root));
  const home=path.join(root,'home'),cache=path.join(home,'.vigie-vuln');fs.mkdirSync(cache,{recursive:true});
- seedCveIndex(cache,{meta:{indexVersion:require('../lib/cve-download').MAVEN_INDEX_VERSION,builtAt:new Date().toISOString()},byPackageName:{},byProduct:{}});
- const modulePath=path.join(__dirname,'../lib/cve-download.js');
+ seedCveIndex(cache,{meta:{indexVersion:require('../lib/providers/cveproject/download').MAVEN_INDEX_VERSION,builtAt:new Date().toISOString()},byPackageName:{},byProduct:{}});
+ const modulePath=path.join(__dirname,'../lib/providers/cveproject/download.js');
  const script=`let calls=0;globalThis.fetch=async()=>{calls++;return new Response('',{status:503})};const m=require(${JSON.stringify(modulePath)});(async()=>{await m.ensureCveIndex({ttlMs:3600000});if(calls!==0)throw Error('fresh index revalidated');try{await m.ensureCveIndex({ttlMs:0});throw Error('zero TTL did not revalidate')}catch(e){if(!/HTTP 503/.test(e.message))throw e;}if(calls<1)throw Error('refresh did not fetch')})().catch(e=>{console.error(e);process.exit(1)});`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});
  assert.equal(run.status,0,run.stdout+run.stderr);
@@ -141,11 +141,11 @@ test('obsolete fresh CVE projection refreshes online and preserves only native p
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cve-old-projection-'));t.after(()=>removeFixture(root));
  const home=path.join(root,'home'),cache=path.join(home,'.vigie-vuln');fs.mkdirSync(cache,{recursive:true});
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/cve-samples/cve-with-packagename.json'),'utf8'));raw.cveMetadata.state='PUBLISHED';
- const store=openAdvisoryStore({cacheDir:cache});store.commit({records:[require('../lib/native-advisories').cveEnvelope(raw,{fetchedAt:Date.now()})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:Date.now(),complete:false}]});
- const index=require('../lib/cve-download').newIndex();require('../lib/cve-download').addToIndex(index,require('../lib/cve-download').extractMavenRelevantCve(raw));delete index.meta.indexVersion;
+ const store=openAdvisoryStore({cacheDir:cache});store.commit({records:[require('../lib/advisories/native').cveEnvelope(raw,{fetchedAt:Date.now()})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:Date.now(),complete:false}]});
+ const index=require('../lib/providers/cveproject/download').newIndex();require('../lib/providers/cveproject/download').addToIndex(index,require('../lib/providers/cveproject/download').extractMavenRelevantCve(raw));delete index.meta.indexVersion;
  for(const entries of Object.values(index.byPackageName))for(const entry of entries)delete entry.coordinateEvidence;
  seedCveIndex(cache,index);
- const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/dep-record.js');
+ const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js');
  const script=`let calls=0;globalThis.fetch=async()=>{calls++;return new Response('',{status:503})};const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'}),deps=new Map([[d.coordKey,d]]);(async()=>{let r=await c.nativeScanners[0].scan(deps,{offline:true});if(calls||!r.matches.some(m=>m.cve.id==='CVE-2021-44228')||!r.meta.identityUncertain)throw Error('offline evidence or warning missing');r=await c.nativeScanners[0].scan(deps,{queryTtlMs:3600000});if(!calls||!r.matches.some(m=>m.cve.id==='CVE-2021-44228')||!/503/.test(r.meta.refreshError))throw Error('old index was not refreshed or native evidence lost')})().catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stdout+run.stderr);
 });
@@ -155,8 +155,8 @@ test('failed CVEProject TTL refresh retains native findings and signals failure'
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cve-stale-'));t.after(()=>removeFixture(root));
  const home=path.join(root,'home'),store=openAdvisoryStore({cacheDir:path.join(home,'.vigie-vuln')});
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/cve-samples/cve-with-packagename.json'),'utf8'));raw.cveMetadata.state='PUBLISHED';raw.cveMetadata.dateUpdated='2025-01-01T00:00:00Z';
- store.commit({records:[require('../lib/native-advisories').cveEnvelope(raw,{fetchedAt:Date.now()})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:Date.now(),complete:false}]});
- const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/dep-record.js');
+ store.commit({records:[require('../lib/advisories/native').cveEnvelope(raw,{fetchedAt:Date.now()})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:Date.now(),complete:false}]});
+ const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js');
  const script=`globalThis.fetch=async()=>new Response('',{status:503});const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'});c.nativeScanners[0].scan(new Map([[d.coordKey,d]]),{queryTtlMs:0}).then(r=>{if(!r.matches.some(m=>m.cve.id==='CVE-2021-44228')||!/503/.test(r.meta.refreshError))throw Error('cached CVE lost or failure missing')}).catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});
  assert.equal(run.status,0,run.stdout+run.stderr);
@@ -167,9 +167,9 @@ test('complete native CVE corpus is not marked partial solely because a legacy i
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cve-complete-'));t.after(()=>removeFixture(root));
  const home=path.join(root,'home'),cache=path.join(home,'.vigie-vuln'),store=openAdvisoryStore({cacheDir:cache});
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/cve-samples/cve-with-packagename.json'),'utf8'));raw.cveMetadata.state='PUBLISHED';raw.cveMetadata.dateUpdated='2025-01-01T00:00:00Z';
- const fetchedAt=Date.now();store.commit({records:[require('../lib/native-advisories').cveEnvelope(raw,{fetchedAt})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt,complete:true}]});
+ const fetchedAt=Date.now();store.commit({records:[require('../lib/advisories/native').cveEnvelope(raw,{fetchedAt})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt,complete:true}]});
  const legacy=newIndex();addToIndex(legacy,extractMavenRelevantCve(raw));fs.mkdirSync(path.join(cache,'cve-data'),{recursive:true});fs.writeFileSync(path.join(cache,'cve-data','maven-cve-index.json'),JSON.stringify(legacy));
- const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/dep-record.js');
+ const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js');
  const script=`const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'});c.nativeScanners[0].scan(new Map([[d.coordKey,d]]),{offline:true}).then(r=>{if(r.meta.incomplete||r.matches.length!==1)throw Error('incorrect completeness')}).catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stdout+run.stderr);
 });
@@ -180,7 +180,7 @@ test('a complete current Maven index covers the scan even when native journal co
  const home=path.join(root,'home'),cache=path.join(home,'.vigie-vuln');
  const store=openAdvisoryStore({cacheDir:cache}),at=Date.now();
  store.commit({coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:at,complete:false}]});store.close();
- const download=path.join(__dirname,'../lib/cve-download.js'),codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/dep-record.js'),cacheDb=path.join(__dirname,'../lib/cache-db.js');
+ const download=path.join(__dirname,'../lib/providers/cveproject/download.js'),codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js'),cacheDb=path.join(__dirname,'../lib/cache/db.js');
  const script=`const c=require(${JSON.stringify(download)}),i=c.newIndex();i.meta.builtAt=new Date().toISOString();i.meta.cveCount=0;require(${JSON.stringify(cacheDb)}).getCacheDb().prepare("INSERT INTO cache_snapshots(namespace,fetched_at,complete,stale,record_count,metadata_json) VALUES('cve_lookup',?,1,0,0,?)").run(Date.now(),JSON.stringify(i.meta));const codec=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.example',name:'demo',version:'1.0'}),deps=new Map([[d.coordKey,d]]);(async()=>{let r=await codec.nativeScanners[0].scan(deps,{offline:true});if(r.meta.incomplete)throw Error('complete index marked partial');require(${JSON.stringify(cacheDb)}).getCacheDb().prepare("UPDATE cache_snapshots SET complete=0 WHERE namespace='cve_lookup'").run();r=await codec.nativeScanners[0].scan(deps,{offline:true});if(!r.meta.incomplete)throw Error('partial index marked complete')})().catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});
  assert.equal(run.status,0,run.stdout+run.stderr);
@@ -190,9 +190,9 @@ test('hosted CVE batch wins over older cached native findings and preserves upst
  const {spawnSync}=require('node:child_process');const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-hosted-cve-'));t.after(()=>removeFixture(root));
  const home=path.join(root,'home'),store=openAdvisoryStore({cacheDir:path.join(home,'.vigie-vuln')});
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/cve-samples/cve-with-packagename.json'),'utf8'));raw.cveMetadata.state='PUBLISHED';raw.cveMetadata.dateUpdated='2025-01-01T00:00:00Z';
- const now=Date.now(),fetchedAt=now-7200000;store.commit({records:[require('../lib/native-advisories').cveEnvelope(raw,{fetchedAt:now-1000})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:now-1000,complete:false}]});
- const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/dep-record.js');
- const script=`const p=require(${JSON.stringify(provider)});p.getResource=async(i,t,v,o)=>{if(!o.forceRefresh)throw Error('cache bypass missing');return Response.json({cves:[],builtAt:${JSON.stringify(new Date(now).toISOString())}},{headers:{'x-fad-proxy':'stale','x-fad-proxy-fetched-at':${JSON.stringify(new Date(fetchedAt).toISOString())}}})};const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'});c.nativeScanners[0].scan(new Map([[d.coordKey,d]]),{hostedProxy:true,queryTtlMs:3600000}).then(r=>{if(r.matches.length||!r.meta.stale)throw Error('proxy batch not authoritative or stale signal missing');const s=require(${JSON.stringify(path.join(__dirname,'../lib/advisory-store.js'))}).openAdvisoryStore().getSourceCoverage('cveproject-legacy','*');if(s.fetchedAt!==${fetchedAt})throw Error('upstream timestamp lost')}).catch(e=>{console.error(e);process.exit(1)})`;
+ const now=Date.now(),fetchedAt=now-7200000;store.commit({records:[require('../lib/advisories/native').cveEnvelope(raw,{fetchedAt:now-1000})],coverages:[{source:'cveproject',ecosystem:'*',fetchedAt:now-1000,complete:false}]});
+ const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js');
+ const script=`const p=require(${JSON.stringify(provider)});p.getResource=async(i,t,v,o)=>{if(!o.forceRefresh)throw Error('cache bypass missing');return Response.json({cves:[],builtAt:${JSON.stringify(new Date(now).toISOString())}},{headers:{'x-fad-proxy':'stale','x-fad-proxy-fetched-at':${JSON.stringify(new Date(fetchedAt).toISOString())}}})};const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'});c.nativeScanners[0].scan(new Map([[d.coordKey,d]]),{hostedProxy:true,queryTtlMs:3600000}).then(r=>{if(r.matches.length||!r.meta.stale)throw Error('proxy batch not authoritative or stale signal missing');const s=require(${JSON.stringify(path.join(__dirname,'../lib/advisories/store.js'))}).openAdvisoryStore().getSourceCoverage('cveproject-legacy','*');if(s.fetchedAt!==${fetchedAt})throw Error('upstream timestamp lost')}).catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stdout+run.stderr);
 });
 
@@ -200,8 +200,8 @@ test('hosted CVE batch reports a demonstrably newer native revision as a conflic
  const {spawnSync}=require('node:child_process');const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-hosted-conflict-'));t.after(()=>removeFixture(root));
  const home=path.join(root,'home'),store=openAdvisoryStore({cacheDir:path.join(home,'.vigie-vuln')});
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/cve-samples/cve-with-packagename.json'),'utf8'));raw.cveMetadata.state='PUBLISHED';raw.cveMetadata.dateUpdated='2025-01-01T00:00:00Z';
- store.commit({records:[require('../lib/native-advisories').cveEnvelope(raw,{fetchedAt:Date.now()})]});
- const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/dep-record.js');
+ store.commit({records:[require('../lib/advisories/native').cveEnvelope(raw,{fetchedAt:Date.now()})]});
+ const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js');
  const script=`const p=require(${JSON.stringify(provider)});p.getResource=async()=>Response.json({cves:[],builtAt:'2024-01-01T00:00:00Z'},{headers:{'x-fad-proxy-fetched-at':new Date().toISOString()}});const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'});c.nativeScanners[0].scan(new Map([[d.coordKey,d]]),{hostedProxy:true,queryTtlMs:3600000}).then(r=>{if(r.matches.length!==1||!r.meta.conflict)throw Error('newer native conflict missed')}).catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stdout+run.stderr);
 });
@@ -209,7 +209,7 @@ test('hosted CVE batch reports a demonstrably newer native revision as a conflic
 test('hosted CVE response without timestamp does not create fresh cached evidence',t=>{
  const {spawnSync}=require('node:child_process');const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-cve-no-stamp-'));t.after(()=>removeFixture(root));
  const home=path.join(root,'home');fs.mkdirSync(home);
- const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/dep-record.js'),store=path.join(__dirname,'../lib/advisory-store.js');
+ const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js'),store=path.join(__dirname,'../lib/advisories/store.js');
  const script=`require(${JSON.stringify(provider)}).getResource=async()=>Response.json({cves:[],builtAt:new Date().toISOString()});const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.example',name:'lib',version:'1'});c.nativeScanners[0].scan(new Map([[d.coordKey,d]]),{hostedProxy:true,queryTtlMs:3600000}).then(r=>{if(!r.meta.timestampUnknown)throw Error('unknown freshness not signaled');if(require(${JSON.stringify(store)}).openAdvisoryStore().getSourceCoverage('cveproject-legacy','*'))throw Error('unknown timestamp cached')}).catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stdout+run.stderr);
 });
@@ -234,9 +234,9 @@ for (const builtAt of [null,'2026-10-01T00:00:00Z']) test(`hosted positive canno
  const home=path.join(root,'home'),store=openAdvisoryStore({cacheDir:path.join(home,'.vigie-vuln')});
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/cve-samples/cve-with-packagename.json'),'utf8'));raw.cveMetadata.state='PUBLISHED';raw.cveMetadata.dateUpdated='2025-01-01T00:00:00Z';
  const rejected={cveMetadata:{cveId:raw.cveMetadata.cveId,state:'REJECTED',dateUpdated:'2025-11-01T00:00:00Z'},containers:{cna:{}}};
- store.commit({records:[require('../lib/native-advisories').cveEnvelope(rejected,{fetchedAt:Date.now()-1000})]});
+ store.commit({records:[require('../lib/advisories/native').cveEnvelope(rejected,{fetchedAt:Date.now()-1000})]});
  const projection=extractMavenRelevantCve(raw);projection.modified='2026-09-01T00:00:00Z';
- const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/dep-record.js'),advisory=path.join(__dirname,'../lib/advisory-store.js'),native=path.join(__dirname,'../lib/native-advisories.js');
+ const codec=path.join(__dirname,'../lib/codecs/maven.codec.js'),provider=path.join(__dirname,'../lib/providers'),depRecord=path.join(__dirname,'../lib/inventory/dep-record.js'),advisory=path.join(__dirname,'../lib/advisories/store.js'),native=path.join(__dirname,'../lib/advisories/native.js');
  const script=`const p=require(${JSON.stringify(provider)});p.getResource=async()=>Response.json({cves:[${JSON.stringify(projection)}],builtAt:${JSON.stringify(builtAt)}},{headers:{'x-fad-proxy-fetched-at':new Date().toISOString()}});const c=require(${JSON.stringify(codec)}),d=require(${JSON.stringify(depRecord)}).makeDepRecord({ecosystem:'maven',namespace:'org.apache.logging.log4j',name:'log4j-core',version:'2.14.1'}),deps=new Map([[d.coordKey,d]]);(async()=>{let r=await c.nativeScanners[0].scan(deps,{hostedProxy:true,queryTtlMs:3600000});if(r.matches.length||!r.meta.conflict)throw Error('rejected CVE resurrected');r=await c.nativeScanners[0].scan(deps,{offline:true});if(r.matches.length)throw Error('offline CVE resurrected');const native=require(${JSON.stringify(native)}),store=require(${JSON.stringify(advisory)}).openAdvisoryStore(),restored=${JSON.stringify(raw)};restored.cveMetadata.dateUpdated='2026-01-01T00:00:00Z';store.commit({records:[native.cveEnvelope(restored,{fetchedAt:Date.now()})]});r=await c.nativeScanners[0].scan(deps,{hostedProxy:true,queryTtlMs:3600000});if(r.matches.length!==1)throw Error('native reinstatement lost')})().catch(e=>{console.error(e);process.exit(1)})`;
  const run=spawnSync(process.execPath,['-e',script],{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home},encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stdout+run.stderr);
 });
@@ -246,7 +246,7 @@ test('--gcve-offline uses stale local GCVE data during an online scan without re
  const home=path.join(root,'home'),src=path.join(root,'src'),out=path.join(root,'out'),cache=path.join(home,'.vigie-vuln');fs.mkdirSync(home);fs.mkdirSync(src);
  fs.writeFileSync(path.join(src,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0',dependencies:{'gcve-test':'1.0.0'}}));
  const at=new Date(Date.now()-86400000).toISOString(),raw={cveMetadata:{vulnId:'GCVE-1-stale-fixture',state:'PUBLISHED'},containers:{cna:{affected:[{packageURL:'pkg:npm/gcve-test',versions:[{version:'1.0.0',status:'affected'}]}],x_gcve:[{vulnId:'GCVE-1-stale-fixture',recordType:'advisory'}]}}};
- const index=buildGcveIndex([{gna:1,sourceUrl:'https://example.org/feed',collectedAt:at,complete:true,records:[raw]}]);index.directory={verified:true,notCollected:0};const store=openAdvisoryStore({cacheDir:cache});await importGcveIndex(store,index);store.close();require('../lib/cache-repository').createCacheRepository(cache).put('catalogue','gcve',index,{fetchedAt:Date.parse(at)});
+ const index=buildGcveIndex([{gna:1,sourceUrl:'https://example.org/feed',collectedAt:at,complete:true,records:[raw]}]);index.directory={verified:true,notCollected:0};const store=openAdvisoryStore({cacheDir:cache});await importGcveIndex(store,index);store.close();require('../lib/cache/repository').createCacheRepository(cache).put('catalogue','gcve',index,{fetchedAt:Date.parse(at)});
  const hook=path.join(root,'network.cjs'),marker=path.join(root,'network');fs.writeFileSync(hook,`globalThis.fetch=async u=>{require('node:fs').appendFileSync(${JSON.stringify(marker)},String(u)+'\\n');return new Response('',{status:503})}`);
  const args=['--require',hook,path.join(__dirname,'../vigievuln.js'),'scan',src,'--ecosystem','npm','--retries','0','--source-profile','eu','--gcve-offline','--advisory-query-ttl','0','-d','osv,nvd,eol,epss,kev,euvd,certfr,retire,transitive,all-libs','--no-binaries','--no-certs','--report-json','-o',out];
  const r=spawnSync(process.execPath,args,{cwd:root,env:{PATH:process.env.PATH,HOME:home,USERPROFILE:home,FORCE_COLOR:'0'},encoding:'utf8',timeout:30000});assert.equal(r.status,2,r.stdout+r.stderr);

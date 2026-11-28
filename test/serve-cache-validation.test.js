@@ -1,5 +1,5 @@
 // serve-cache exposed on a network: the /v1/resource document is typed strictly BEFORE any
-// lookup (lib/resource-cache/validate.js — the same whitelist vigievuln applies), and the
+// lookup (lib/cache/resource/validate.js — the same whitelist vigievuln applies), and the
 // providers that put a client value in an upstream PATH encode every segment, so no query,
 // fragment or dot-segment can be smuggled to the upstream host. Zero network.
 const { test } = require("node:test");
@@ -7,8 +7,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { startProxyCacheServer, createCacheStore } = require("../lib/proxy-cache");
-const { validateResource } = require("../lib/resource-cache/validate");
+const { startProxyCacheServer, createCacheStore } = require("../lib/cache/proxy-cache");
+const { validateResource } = require("../lib/cache/resource/validate");
 
 test("providers: Maven / NuGet / Go paths are encoded segment by segment, dot-segments refused", () => {
 	const maven = require("../lib/providers/maven"), nuget = require("../lib/providers/nuget"), go = require("../lib/providers/go");
@@ -63,7 +63,7 @@ test("serve-cache: an invalid /v1/resource document is a 400 before any lookup o
 		assert.equal(upstream, 0, "no refused request reached an upstream");
 		assert.equal((await post({ provider: "npm", type: "package", params: { name: "express" } })).status, 200);
 		assert.equal(upstream, 1);
-	} finally { await new Promise(ok => h.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { await new Promise(ok => h.server.close(ok)); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 test('OSV distribution ecosystems require an explicit scoped release',()=>{
  for(const ecosystem of ['Debian:12','Alpine:v3.20','Red Hat:rhel_eus:9.6::appstream','Custom Distro:release-1']) {

@@ -1,8 +1,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { normaliseLocale, makeT, CATALOG } = require("../lib/i18n");
-const { generateHtmlReport, generateWordReport } = require("../lib/cve-report");
-const { makeDepRecord } = require("../lib/dep-record");
+const { normaliseLocale, makeT, CATALOG } = require("../lib/reports/i18n");
+const { generateHtmlReport, generateWordReport } = require("../lib/reports/cve-report");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test("normaliseLocale accepts what a human would type, and refuses to guess", () => {
 	for (const x of ["fr", "FR", "fr-FR", "fr_FR", " fr "]) assert.equal(normaliseLocale(x), "fr", x);
@@ -67,7 +67,7 @@ test("Word column widths survive translation", () => {
 });
 
 // Every file using the shared report/CLI translator.
-const CHROME_SOURCES = ["lib/cve-report.js", "lib/charts.js", "lib/codecs/recipes.js", "lib/image-references.js", "vigievuln.js"];
+const CHROME_SOURCES = ["lib/reports/cve-report.js", "lib/reports/charts.js", "lib/codecs/recipes.js", "lib/images/references.js", "vigievuln.js"];
 function chromeSource() {
 	const fs = require("fs"), path = require("path");
 	return CHROME_SOURCES.map(f => fs.readFileSync(path.join(__dirname, "..", f), "utf8")).join("\n");
@@ -125,7 +125,7 @@ test("writeReports forwards the locale — it was accepted and silently dropped"
 	// the flag appeared to work. A signature that quietly ignores an option is worse than
 	// one that rejects it.
 	const fs = require("fs"), path = require("path");
-	const src = fs.readFileSync(path.join(__dirname, "..", "lib", "cve-report.js"), "utf8");
+	const src = fs.readFileSync(path.join(__dirname, "..", "lib", "reports/cve-report.js"), "utf8");
 	const sig = /async function writeReports\(\{([^}]*)\}\)/.exec(src);
 	assert.ok(sig, "writeReports signature not found");
 	assert.match(sig[1], /\blocale\b/, "writeReports must accept a locale");

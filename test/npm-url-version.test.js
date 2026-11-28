@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
 const { normaliseNpmVersion } = require("../lib/codecs/npm/parse");
-const { cacheKey } = require("../lib/osv");
+const { cacheKey } = require("../lib/providers/osv/query");
 
 /* ---------------- the crash ---------------- */
 
@@ -78,7 +78,7 @@ test("collectNpmDeps turns a URL-versioned lockfile entry into a scannable recor
 /* ---------------- the same class of bug, elsewhere ---------------- */
 
 test("the Maven pom cache filename is also one segment, and warm caches stay valid", () => {
-	const { pomCachePath } = require("../lib/transitive");
+	const { pomCachePath } = require("../lib/codecs/maven/transitive");
 	const dir = "/c";
 	// Normal coordinates must be byte-identical to before, or 3400 cached poms are orphaned.
 	assert.equal(path.basename(pomCachePath("org.apache.commons", "commons-lang3", "3.14.0", dir)),

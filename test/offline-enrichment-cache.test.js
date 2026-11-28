@@ -10,14 +10,14 @@ for (const kind of ["kev", "hash-id"]) {
 		execFileSync(process.execPath, ["-e", `
 const assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path");
 require("node:os").homedir = () => process.argv[2];
-const kind = process.argv[1], mod = require(path.resolve("lib", kind));
+const kind = process.argv[1], mod = require(path.resolve("lib", { kev: "providers/kev/enrich", "hash-id": "providers/hashid/identify" }[kind]));
 const id = "CVE-2099-99999", hash = "a".repeat(64);
 const identity = { name: "synthetic-test-binary", source: "circl:test", knownMalicious: true };
 const stamp = Date.now() - 72 * 3600e3;
 const body = kind === "kev"
 	? { _fetchedAt: stamp, body: { byId: { [id]: { dateAdded: "2099-01-01", dueDate: "2099-02-01", ransomware: true } } } }
 	: { _fetchedAt: stamp, entries: { [hash]: identity } };
-const repo=require(path.resolve('lib/cache-repository')).createCacheRepository(path.join(process.argv[2],'.vigie-vuln'));
+const repo=require(path.resolve('lib/cache/repository')).createCacheRepository(path.join(process.argv[2],'.vigie-vuln'));
 const namespace=kind==='kev'?'catalogue':'auxiliary',key=kind==='kev'?'kev':'hash-id';
 repo.put(namespace,key,body,{fetchedAt:stamp});
 const before=repo.get(namespace,key);
@@ -41,7 +41,7 @@ const fetcher = async () => {
 		assert.deepEqual(await mod.lookupHash({ sha256: hash }, { offline: true, fetcher }), identity);
 		assert.equal(await mod.lookupHash({ sha256: "b".repeat(64) }, { offline: true, fetcher }), null);
 		const deps = new Map([["binary", { hashes: { sha256: hash } }]]);
-		const summary = await require(path.resolve("lib/unmanaged")).enrichUnmanaged(deps, { offline: true, fetcher });
+		const summary = await require(path.resolve("lib/inventory/unmanaged")).enrichUnmanaged(deps, { offline: true, fetcher });
 		assert.equal(summary.identified, 1);
 		assert.equal(summary.malicious, 1);
 		assert.deepEqual(deps.get("binary").identity, identity);

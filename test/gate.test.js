@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { evaluateGate } = require("../lib/gate");
+const { evaluateGate } = require("../lib/findings/gate");
 
 const M = (sev, extra = {}) => ({ cve: { severity: sev, ...extra } });
 

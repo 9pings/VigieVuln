@@ -4,9 +4,9 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {stableRecord,METADATA_VERSION}=require('../lib/record-freshness');
-const {closeCacheDbs}=require('../lib/cache-db');
-const nvd=require('../lib/nvd');
+const {stableRecord,METADATA_VERSION}=require('../lib/cache/record-freshness');
+const {closeCacheDbs}=require('../lib/cache/db');
+const nvd=require('../lib/providers/nvd/enrich');
 
 test('stable individual records are reused by default and require trustworthy old source dates',()=>{
  const now=Date.parse('2026-11-05T00:00:00Z');
@@ -56,9 +56,9 @@ test('NVD proxy records are bound to their proxy origin',()=>{
 });
 
 test('proxy OSV repeats package consultations but reuses bound stable details until forced or origin changes',async t=>{
- const {queryBatch}=require('../lib/osv'); const providers=require('../lib/providers');
+ const {queryBatch}=require('../lib/providers/osv/query'); const providers=require('../lib/providers');
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-stable-osv-'));let batch=0,details=0;
- t.after(()=>{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ t.after(()=>{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  const fetcher=async(_url,opts)=>{const req=JSON.parse(opts.body),headers={'x-fad-proxy-fetched-at':new Date().toISOString()};if(req.type==='packages'){batch++;return Response.json({results:[{vulns:[{id:'GHSA-test-1234'}]}]},{headers});}details++;return Response.json({id:'GHSA-test-1234',published:'2020-01-01',modified:'2021-01-01',affected:[]},{headers});};
  const dep={ecosystem:'Maven',groupId:'org.example',name:'demo',version:'1.0'};
  const opts={cacheDir:dir,fetcher,queryTtlMs:0};
@@ -70,9 +70,9 @@ test('proxy OSV repeats package consultations but reuses bound stable details un
 });
 
 test('proxy EUVD stable details preserve their observation date and refresh on origin change or force',async t=>{
- const providers=require('../lib/providers'),{enrichEuropeanFindings}=require('../lib/finding-enrichment'),{createCacheRepository}=require('../lib/cache-repository');
+ const providers=require('../lib/providers'),{enrichEuropeanFindings}=require('../lib/findings/enrichment'),{createCacheRepository}=require('../lib/cache/repository');
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-stable-euvd-')),repo=createCacheRepository(dir),id='CVE-2020-12345';let details=0,mappings=0;
- t.after(()=>{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ t.after(()=>{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  const fetcher=async(_url,opts)=>{const req=JSON.parse(opts.body),headers={'x-fad-proxy-fetched-at':new Date().toISOString()};if(req.type==='vulnerability'){details++;return Response.json({id:'EUVD-2020-1',aliases:id,datePublished:'2020-01-01',dateUpdated:'2021-01-01',description:'metadata'},{headers});}mappings++;return Response.json({items:[{cve:id,id:'EUVD-2020-1'}]},{headers});};
  const opts={cacheDir:dir,fetcher,certfr:false},make=()=>[{cve:{id}}];
  providers.configureResourceRoute({proxyUrl:'https://one.example',hosted:true,fetcher,store:null,hostedStore:null});
@@ -84,9 +84,9 @@ test('proxy EUVD stable details preserve their observation date and refresh on o
 });
 
 test('EUVD mirror provenance preserves scope, observation and separate check dates offline',async t=>{
- const providers=require('../lib/providers'),{enrichEuropeanFindings}=require('../lib/finding-enrichment');
+ const providers=require('../lib/providers'),{enrichEuropeanFindings}=require('../lib/findings/enrichment');
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-euvd-provenance-')),id='CVE-2020-12345';
- t.after(()=>{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ t.after(()=>{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  const fetcher=async(_url,opts)=>{const req=JSON.parse(opts.body),headers={'x-fad-proxy-fetched-at':'2025-01-01T00:00:00Z','x-fad-proxy-checked-at':'2026-10-01T00:00:00Z','x-fad-proxy-scope':'euvd-search-record; relationships-incomplete'};return req.type==='vulnerability'?Response.json({id:'EUVD-2020-1',aliases:id,description:'record'},{headers}):Response.json({items:[{cve:id,id:'EUVD-2020-1'}]},{headers});};
  providers.configureResourceRoute({proxyUrl:'https://fleet.example',hosted:true,fetcher,hostedStore:null,store:null});
  const matches=[{cve:{id}}];await enrichEuropeanFindings(matches,{cacheDir:dir,fetcher,certfr:false});

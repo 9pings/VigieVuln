@@ -6,7 +6,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),path=requ
 const serverAvailable=fs.existsSync(path.resolve(__dirname,'../../server-main/lib/server.js'));
 const integration={skip:serverAvailable?false:'sibling server-main checkout not available (hosted integration)'};
 test('hosted force update bypasses local EUVD mirror and preserves authenticated upstream result',integration,async()=>{
- const fadFile=require.resolve('../../server-main/lib/fad'),old=require.cache[fadFile];require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require(path.join(__dirname,'../lib',rel)),fadData:file=>require(path.join(__dirname,'../data',file))}};
+ const fadFile=require.resolve('../../server-main/lib/fad'),old=require.cache[fadFile];require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require('vigievuln/lib/'+rel),fadData:file=>require(path.join(__dirname,'../data',file))}};
  const {open}=require('../../server-main/test/helpers/db'),{createServiceServer}=require('../../server-main/lib/server');const s=await open(),key=await s.tokens.add({role:'client',label:'force test'});let calls=0;
  const id='EUVD-2024-48936';await s.assets.upsert(require('../../server-main/lib/jobs/euvd-details').asset({id,description:'mirror'},Date.now()-1000));
  const server=createServiceServer({...s,swr:false,fetcher:async()=>{calls++;return Response.json({id,description:'upstream'});}});await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
@@ -16,7 +16,7 @@ test('hosted force update bypasses local EUVD mirror and preserves authenticated
 });
 
 test('forced EUVD refresh retains mirror-only record on upstream 503 or 429',integration,async()=>{
- const fadFile=require.resolve('../../server-main/lib/fad'),old=require.cache[fadFile];require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require(path.join(__dirname,'../lib',rel)),fadData:file=>require(path.join(__dirname,'../data',file))}};
+ const fadFile=require.resolve('../../server-main/lib/fad'),old=require.cache[fadFile];require.cache[fadFile]={id:fadFile,filename:fadFile,loaded:true,exports:{fad:rel=>require('vigievuln/lib/'+rel),fadData:file=>require(path.join(__dirname,'../data',file))}};
  const {open}=require('../../server-main/test/helpers/db'),{createServiceServer}=require('../../server-main/lib/server');
  try{for(const status of [503,429]){
   const s=await open(),key=await s.tokens.add({role:'client',label:'fallback test'}),id='EUVD-2024-48936',observedAt=Date.now()-60000;let calls=0;

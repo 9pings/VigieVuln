@@ -8,7 +8,7 @@
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { mergeBySource } = require("../lib/merge-sources");
+const { mergeBySource } = require("../lib/findings/merge");
 
 const dep = { coordKey: "composer:league/commonmark", namespace: "league", name: "commonmark", version: "2.4.2", ecosystem: "composer" };
 const osvFinding = { dep: { ...dep }, cve: {
@@ -139,7 +139,7 @@ const rating = m => ({ severity: m.cve.severity, score: m.cve.score, cvssVector:
 test("severity, score and vector come together from the highest-scored source", () => {
 	const [m] = mergeBySource([B2_OSV], [B2_CVEPROJECT]);
 	assert.deepEqual(rating(m), { severity: "CRITICAL", score: 9.8, cvssVector: B2_CVEPROJECT.cve.cvssVector, cvssVersion: undefined });
-	assert.equal(require("../lib/gate").evaluateGate([m], "critical").failed, true);
+	assert.equal(require("../lib/findings/gate").evaluateGate([m], "critical").failed, true);
 });
 
 test("the merged rating is independent of source arrival order", () => {
@@ -193,7 +193,7 @@ test("a distribution's per-CVE record and the CVE itself are one finding", () =>
 });
 
 test("a distribution announcement whose CVEs are all listed folds into them; a partly covered one is kept", () => {
-	const { foldAnnouncements } = require("../lib/merge-sources");
+	const { foldAnnouncements } = require("../lib/findings/merge");
 	const dep = { coordKey: "system:deb:nginx", version: "1.22.1-9" }, other = { coordKey: "system:deb:curl", version: "7.88.1-10" };
 	const cve = (id, d = dep) => ({ dep: d, source: "osv", cve: { id } });
 	const dsa = { dep, source: "osv", cve: { id: "DSA-6278-1", upstream: ["CVE-2026-0001", "CVE-2026-0002"], severity: "UNKNOWN" } };

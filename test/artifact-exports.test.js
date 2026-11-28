@@ -1,4 +1,4 @@
-const {test}=require('node:test');const assert=require('node:assert/strict');const {makeDepRecord}=require('../lib/dep-record');const {purlFor}=require('../lib/purl');const {buildCycloneDx}=require('../lib/sbom-export');const {buildSarif}=require('../lib/sarif-export');
+const {test}=require('node:test');const assert=require('node:assert/strict');const {makeDepRecord}=require('../lib/inventory/dep-record');const {purlFor}=require('../lib/inventory/purl');const {buildCycloneDx}=require('../lib/reports/sbom-export');const {buildSarif}=require('../lib/reports/sarif-export');
 test('system package occurrences have qualified purls and distinct component references',()=>{const make=id=>{const d=makeDepRecord({ecosystem:'system',namespace:'debian',name:'openssl',version:'1:3.0-1',manifestPath:'/var/lib/dpkg/status'});Object.assign(d,{packageType:'deb',architecture:'amd64',distribution:{id:'debian',versionId:'12'},artifactTargetId:id,artifactPath:'image.tar',coordKey:`system:${id}:openssl`});return d};const a=make('image-a'),b=make('image-b');assert.equal(purlFor(a),'pkg:deb/debian/openssl@1%3A3.0-1?arch=amd64&distro=debian-12');const matches=[a,b].map(dep=>({dep,cve:{id:'CVE-2026-0001',severity:'HIGH'},source:'osv'}));const c=buildCycloneDx(new Map([[a.coordKey,a],[b.coordKey,b]]),matches);assert.equal(new Set(c.components.map(x=>x['bom-ref'])).size,2);assert.deepEqual(c.vulnerabilities[0].affects.map(x=>x.ref).sort(),[a.coordKey,b.coordKey].sort());const sarif=buildSarif(matches);assert.deepEqual(sarif.runs[0].results.map(r=>r.properties.artifactTargetId).sort(),['image-a','image-b']);assert.notEqual(sarif.runs[0].results[0].partialFingerprints.fadKey,sarif.runs[0].results[1].partialFingerprints.fadKey)});
 test('embedded image component keeps artifact provenance alongside CMS component',()=>{
  const embedded={ecosystem:'maven',namespace:'org.example',name:'lib',version:'1',coordKey:'image:lib',provenance:'embedded',artifactTargetId:'image',artifactPath:'/app/lib.jar',manifestPaths:['/app/lib.jar']};
@@ -9,20 +9,20 @@ test('embedded image component keeps artifact provenance alongside CMS component
  assert.ok(bom.components.some(c=>c.name==='plugin'));assert.equal(bom.vulnerabilities.length,2);
 });
 test('historical advisory evidence stays attached to its physical image occurrence across exports',()=>{
- const {buildCsaf}=require('../lib/csaf-export'),dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'libc',version:'2.31',manifestPath:'/var/lib/dpkg/status'});Object.assign(dep,{coordKey:'image:libc',artifactTargetId:'image',packageType:'deb'});
+ const {buildCsaf}=require('../lib/reports/csaf-export'),dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'libc',version:'2.31',manifestPath:'/var/lib/dpkg/status'});Object.assign(dep,{coordKey:'image:libc',artifactTargetId:'image',packageType:'deb'});
  const evidence={origin:'debian-lts',originStatus:'fixed',branch:'bullseye',fixedVersion:'2.31-1'},matches=[{dep,cve:{id:'CVE-2024-12345',severity:'UNKNOWN',historicalEvidence:evidence},source:'debian-tracker'}],deps=new Map([[dep.coordKey,dep]]);
  const bom=buildCycloneDx(deps,matches),property=bom.vulnerabilities[0].properties.find(p=>p.name==='vigievuln:historical-evidence');assert.deepEqual(JSON.parse(property.value),{refs:[dep.coordKey],evidence});
  const csaf=buildCsaf(deps,matches),note=csaf.vulnerabilities[0].notes.find(n=>n.title==='Historical advisory evidence'),saved=JSON.parse(note.text);assert.deepEqual(saved.evidence,evidence);assert.equal(saved.products.length,1);
  assert.deepEqual(buildSarif(matches).runs[0].results[0].properties.historicalEvidence,evidence);
 });
 test('NGINX vendor evidence survives CycloneDX, CSAF and SARIF per occurrence',()=>{
- const {buildCsaf}=require('../lib/csaf-export'),dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'nginx',version:'1.24.0-1',manifestPath:'/status'});Object.assign(dep,{coordKey:'image:nginx',artifactTargetId:'image',packageType:'deb'});
+ const {buildCsaf}=require('../lib/reports/csaf-export'),dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'nginx',version:'1.24.0-1',manifestPath:'/status'});Object.assign(dep,{coordKey:'image:nginx',artifactTargetId:'image',packageType:'deb'});
  const evidence={versionRange:'1.20.0-1.24.0',signatureVerified:false,configurationApplicability:'unknown'},matches=[{dep,cve:{id:'CVE-2024-12345',severity:'UNKNOWN',vendorEvidence:evidence},source:'nginx-vendor-advisories'}],deps=new Map([[dep.coordKey,dep]]);
  const property=buildCycloneDx(deps,matches).vulnerabilities[0].properties.find(p=>p.name==='vigievuln:vendor-evidence');assert.deepEqual(JSON.parse(property.value),{refs:[dep.coordKey],evidence});
  const note=buildCsaf(deps,matches).vulnerabilities[0].notes.find(n=>n.title==='Vendor advisory evidence');assert.deepEqual(JSON.parse(note.text).evidence,evidence);assert.deepEqual(buildSarif(matches).runs[0].results[0].properties.vendorEvidence,evidence);
 });
 test('upstream CVE risk remains source-qualified in JSON, CycloneDX, SARIF and CSAF',()=>{
- const {buildFindings}=require('../lib/json-export'),{buildCsaf}=require('../lib/csaf-export');
+ const {buildFindings}=require('../lib/reports/json-export'),{buildCsaf}=require('../lib/reports/csaf-export');
  const dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'curl',version:'1',manifestPath:'/var/lib/dpkg/status'});Object.assign(dep,{coordKey:'curl',packageType:'deb',artifactTargetId:'image'});
  const cve={id:'DLA-3951-1',aliases:[],upstream:['CVE-2024-8096'],severity:'HIGH',severitySource:'nvd',score:7.5,scoreSource:'nvd',cvssVersion:'CVSS:3.1',cvssVector:'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N',riskEvidence:{source:'nvd',id:'CVE-2024-8096',relationship:'upstream'},kev:true,kevEvidence:{source:'kev',id:'CVE-2024-8096',relationship:'upstream'},epssScore:.5,epssPercentile:.9,epssEvidence:{source:'epss',id:'CVE-2024-8096',relationship:'upstream'},nvdEvidence:{records:[{id:'CVE-2024-8096',relationship:'upstream',severity:'HIGH',score:7.5}]}};
  cve.cveEvidence=[{id:'CVE-2024-8096',kev:true,epssScore:.5}];
@@ -32,7 +32,7 @@ test('upstream CVE risk remains source-qualified in JSON, CycloneDX, SARIF and C
  const csaf=buildCsaf(deps,matches).vulnerabilities[0];assert.equal(csaf.scores,undefined);assert.equal(csaf.flags,undefined);const note=csaf.notes.find(n=>n.title==='Related risk evidence');assert.equal(JSON.parse(note.text).risk.relationship,'upstream');
 });
 test('own advisory severity is retained when only score comes from upstream',()=>{
- const {buildCsaf}=require('../lib/csaf-export');const dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'pkg',version:'1',manifestPath:'/var/lib/dpkg/status'});dep.coordKey='pkg';
+ const {buildCsaf}=require('../lib/reports/csaf-export');const dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'pkg',version:'1',manifestPath:'/var/lib/dpkg/status'});dep.coordKey='pkg';
  const cve={id:'DLA-1',severity:'MEDIUM',score:7.5,scoreSource:'nvd',riskEvidence:{source:'nvd',id:'CVE-2024-12345',relationship:'upstream'}};const matches=[{dep,cve,source:'osv'}],deps=new Map([[dep.coordKey,dep]]);
  const rating=buildCycloneDx(deps,matches).vulnerabilities[0].ratings[0];assert.equal(rating.severity,'medium');assert.equal(rating.score,undefined);assert.equal(buildSarif(matches).runs[0].results[0].level,'warning');assert.equal(buildCsaf(deps,matches).vulnerabilities[0].scores,undefined);
 });
@@ -43,7 +43,7 @@ test('distribution advisory without linked CVE stays in evidence with source and
  const cves=renderImageCves({artifacts},[],'en',{renderCveTable:()=>{throw Error('should not render')}});assert.match(cves,/advisories without linked CVEs/);assert.doesNotMatch(cves,/DLA-3972-1/);
 });
 test('ENISA upstream metadata is preserved without assigning its score to the distribution advisory',()=>{
- const {buildFindings}=require('../lib/json-export'),{buildCsaf}=require('../lib/csaf-export');const dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'pkg',version:'1',manifestPath:'/var/lib/dpkg/status'});dep.coordKey='pkg';
+ const {buildFindings}=require('../lib/reports/json-export'),{buildCsaf}=require('../lib/reports/csaf-export');const dep=makeDepRecord({ecosystem:'system',namespace:'debian',name:'pkg',version:'1',manifestPath:'/var/lib/dpkg/status'});dep.coordKey='pkg';
  const details={id:'EUVD-2024-1234',source:'euvd',severity:'HIGH',score:8.1,references:['https://example.test']};const cve={id:'DLA-1',severity:'HIGH',severitySource:'euvd',score:8.1,scoreSource:'euvd',riskEvidence:{source:'euvd',id:'CVE-2024-12345',relationship:'upstream'},upstream:['CVE-2024-12345'],euvdDetails:details,cveEvidence:[{id:'CVE-2024-12345',euvdDetails:details}]};
  const matches=[{dep,cve,source:'osv'}],deps=new Map([[dep.coordKey,dep]]);assert.deepEqual(buildFindings({cveMatches:matches}).cve[0].euvdDetails,details);
  const bom=buildCycloneDx(deps,matches).vulnerabilities[0];assert.deepEqual(bom.ratings,[]);assert.deepEqual(JSON.parse(bom.properties.find(x=>x.name==='vigievuln:related-risk-evidence').value).euvd,details);

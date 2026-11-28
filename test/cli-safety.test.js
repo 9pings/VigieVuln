@@ -118,11 +118,11 @@ test("--no-report still runs the gate (and fails on a high finding)", () => {
 		fixVersion: "2.15.0", vendor: "apache", product: "apache log4j2",
 		ranges: [{ version: "2.0", status: "affected", lessThan: "2.15.0" }],
 	};
-	const db=require('../lib/cache-db').openCacheDb({cacheDir});
+	const db=require('../lib/cache/db').openCacheDb({cacheDir});
 	db.prepare('INSERT INTO cve_lookup(kind,lookup_key,source,cve,affected_key,projection_json) VALUES (?,?,?,?,?,?)')
 	 .run('package','org.apache.logging.log4j:log4j-core','CVEProject',entry.id,require('node:crypto').createHash('sha256').update(JSON.stringify(entry)).digest('hex'),JSON.stringify(entry));
 	db.prepare('INSERT INTO cache_snapshots(namespace,fetched_at,complete,stale,record_count,metadata_json) VALUES (?,?,?,?,?,?)')
-	 .run('cve_lookup',Date.now(),1,0,1,JSON.stringify({builtAt:new Date().toISOString(),cveCount:1,indexVersion:require('../lib/cve-download').MAVEN_INDEX_VERSION}));
+	 .run('cve_lookup',Date.now(),1,0,1,JSON.stringify({builtAt:new Date().toISOString(),cveCount:1,indexVersion:require('../lib/providers/cveproject/download').MAVEN_INDEX_VERSION}));
 	db.close();
 	const src = path.join(__dirname, "fixtures", "polyglot");
 	const res = run(["scan", src, "--offline", "--no-report", "--fail-on", "high"],

@@ -8,7 +8,7 @@
  */
 const test = require("node:test");
 const assert = require("node:assert");
-const { groupEolByProduct } = require("../lib/outdated");
+const { groupEolByProduct } = require("../lib/maintenance/outdated");
 
 const hit = (groupId, artifactId, version, product, cycle, extra = {}) => ({
 	product, cycle, productSlug: product.toLowerCase().replace(/ /g, "-"),

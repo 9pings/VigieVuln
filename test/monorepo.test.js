@@ -9,8 +9,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
-const core = require("../lib/core");
-const { collectResolvedDeps } = require("../lib/cve-match");
+const core = require("../lib/codecs/maven/pom");
+const { collectResolvedDeps } = require("../lib/advisories/cve-match");
 const { collectNpmDeps, hasJsManifests } = require("../lib/codecs/npm/collect");
 
 const FIX = path.join(__dirname, "fixtures", "monorepo-mixed");
@@ -103,7 +103,7 @@ test("Combined: shared exclusion regex applies per-ecosystem appropriately", asy
 });
 
 test("Combined: a sample CVE match flow runs without throwing on a mixed Map", async () => {
-	const { matchDepsAgainstCves } = require("../lib/cve-match");
+	const { matchDepsAgainstCves } = require("../lib/advisories/cve-match");
 	const { meta, propsByPom } = await loadMavenTree(FIX);
 	const combined = collectResolvedDeps(meta, propsByPom, {});
 	const npm = collectNpmDeps(FIX, {});

@@ -1,6 +1,6 @@
 const isolatedTestCache = require('./helpers/isolated-cache')('osv-db');
 /**
- * lib/osv-db.js — offline OSV-database matching (Maven).
+ * lib/providers/osv/db.js — offline OSV-database matching (Maven).
  * Tests the new logic: OSV range evaluation over Maven ordering, version-set
  * membership, the dep matcher (scans versions[], including embedded Maven
  * coordinates, and skips other ecosystems / native binaries), and ZIP indexing.
@@ -8,8 +8,8 @@ const isolatedTestCache = require('./helpers/isolated-cache')('osv-db');
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { zipSync, strToU8 } = require("fflate");
-const { buildIndexFromZip, matchOsvDbDeps, rangeAffects, vulnAffectsVersion } = require("../lib/osv-db");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildIndexFromZip, matchOsvDbDeps, rangeAffects, vulnAffectsVersion } = require("../lib/providers/osv/db");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 const ECO = (events) => ({ type: "ECOSYSTEM", events });
 

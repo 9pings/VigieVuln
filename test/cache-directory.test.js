@@ -4,8 +4,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {getCacheDir,getProxyCacheDir}=require('../lib/cache-directory');
-const {prepareDirectCache,prepareServeCache}=require('../lib/cache-startup');
+const {getCacheDir,getProxyCacheDir}=require('../lib/cache/directory');
+const {prepareDirectCache,prepareServeCache}=require('../lib/cache/startup');
 
 function home(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-cache-location-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir}
 

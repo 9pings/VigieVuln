@@ -4,13 +4,13 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {spawnSync}=require('node:child_process');
-const {proxyScope}=require('../lib/proxy-scope');
+const {proxyScope}=require('../lib/cache/proxy-scope');
 
 test('archive CLI uses the configured proxy scope and rejects unmarked or other-origin bundles', t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-scope-archive-')); t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
  const hook=path.join(dir,'hook.cjs'); fs.writeFileSync(hook,`require('node:os').homedir=()=>${JSON.stringify(dir)};`);
  const origin='https://proxy.example'; const scope=proxyScope(origin,{homeDir:dir});
- const openStore=require('../lib/advisory-store').openAdvisoryStore;
+ const openStore=require('../lib/advisories/store').openAdvisoryStore;
  const record={source:'osv',document:{id:'GHSA-fixture',affected:[]},fetchedAt:Date.now()};
  const seeded=openStore({cacheDir:scope});seeded.commit({records:[record]});seeded.close();
  const global=path.join(dir,'.vigie-vuln'); fs.mkdirSync(global,{recursive:true});
@@ -70,7 +70,7 @@ test('explicit --no-osv-db overrides a configured group even with the EU source 
 test('cache transfer uses explicitly selected proxy-scoped cache root',t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-custom-scope-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
  const origin='https://proxy.example',first=path.join(dir,'first'),second=path.join(dir,'second');fs.mkdirSync(first);fs.mkdirSync(second);
- const from=proxyScope(origin,{homeDir:first}),to=proxyScope(origin,{homeDir:second});const {openAdvisoryStore}=require('../lib/advisory-store');
+ const from=proxyScope(origin,{homeDir:first}),to=proxyScope(origin,{homeDir:second});const {openAdvisoryStore}=require('../lib/advisories/store');
  const seeded=openAdvisoryStore({cacheDir:from});seeded.commit({records:[{source:'osv',document:{id:'GHSA-custom-scope',affected:[]},fetchedAt:Date.now()}]});seeded.close();
  const bundle=path.join(dir,'export.tar.gz'),cli=path.join(__dirname,'../vigievuln.js'),run=(...args)=>spawnSync(process.execPath,[cli,...args],{encoding:'utf8',env:{...process.env,HOME:dir,USERPROFILE:dir,NO_COLOR:'1',VIGIEVULN_ENV:'',FAD_CHECKER_ENV:''}});
  let result=run('cache','export',bundle,'--cache-dir',first,'--source-profile','proxy','--proxy-cache',origin);assert.equal(result.status,0,result.stderr);

@@ -4,14 +4,14 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const gradle = require("../lib/codecs/gradle.codec");
-const { expandWithTransitives } = require("../lib/cve-match");
-const { makeDepRecord } = require("../lib/dep-record");
-const { detectScanCompletenessWarnings } = require("../lib/scan-completeness");
+const { expandWithTransitives } = require("../lib/advisories/cve-match");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
+const { detectScanCompletenessWarnings } = require("../lib/scan/completeness");
 
 // A local fake Maven repository: exercise real POM parsing and graph traversal.
 async function fixture(t, script, graph, otherFiles = {}) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "vigievuln-gradle-versionless-"));
-	t.after(() => { require("../lib/cache-db").closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
+	t.after(() => { require("../lib/cache/db").closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
 	for (const [name, text] of Object.entries({ "build.gradle.kts": script, ...otherFiles })) {
 		fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
 		fs.writeFileSync(path.join(root, name), text);
@@ -305,10 +305,10 @@ test("graph version provenance is retained in JSON and shown safely in HTML and 
 		resolvedDeps: f.deps, cveMatches: [{ dep, cve: { id: "CVE-2099-0001", severity: "HIGH", score: 7.5, description: "fixture" }, confidence: "exact" }],
 		projectInfo: { name: "fixture", src: f.root },
 	};
-	const doc = require("../lib/json-export").buildFindings(payload);
+	const doc = require("../lib/reports/json-export").buildFindings(payload);
 	assert.deepEqual(doc.cve[0].dep.versionSource, dep.versionSource);
 	assert.equal(doc.cve[0].dep.scope, "compile");
-	const { generateHtmlReport, generateWordReport } = require("../lib/cve-report");
+	const { generateHtmlReport, generateWordReport } = require("../lib/reports/cve-report");
 	for (const render of [generateHtmlReport, generateWordReport]) {
 		const report = render(payload);
 		assert.match(report, /version resolved through:/);

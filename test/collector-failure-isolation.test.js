@@ -7,8 +7,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const maven = require('../lib/codecs/maven.codec');
 const binary = require('../lib/codecs/binary.codec');
-const { buildFindings } = require('../lib/json-export');
-const { diffFindings } = require('../lib/diff');
+const { buildFindings } = require('../lib/reports/json-export');
+const { diffFindings } = require('../lib/findings/diff');
 function tree(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-isolation-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));

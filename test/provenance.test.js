@@ -1,13 +1,13 @@
 const fixtureStores = new Set();
 function openFixtureStore(options) {
- const store = require('../lib/advisory-store').openAdvisoryStore(options);
+ const store = require('../lib/advisories/store').openAdvisoryStore(options);
  fixtureStores.add(store);
  return store;
 }
 function closeFixtureStores() {
  for (const store of fixtureStores) store.close();
  fixtureStores.clear();
- require('../lib/cache-db').closeCacheDbs();
+ require('../lib/cache/db').closeCacheDbs();
 }
 const { test } = require("node:test");
 const assert = require("node:assert");
@@ -15,7 +15,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const { buildScanProvenance, collectDataSources } = require("../lib/provenance");
+const { buildScanProvenance, collectDataSources } = require("../lib/scan/provenance");
 
 function tmpCacheDir() {
 	return fs.mkdtempSync(path.join(os.tmpdir(), "fad-prov-"));
@@ -45,7 +45,7 @@ test("buildScanProvenance records tool, mode and the run configuration", () => {
 test("collectDataSources reads each source's freshness marker", () => {
 	const dir = tmpCacheDir();
 	try {
-		const repository=require('../lib/cache-repository').createCacheRepository(dir);
+		const repository=require('../lib/cache/repository').createCacheRepository(dir);
 		repository.putSnapshot('cve_lookup',{fetchedAt:Date.parse('2026-06-01T10:00:00.000Z'),complete:true,recordCount:1234});
 		repository.put('catalogue','epss',{ meta: { fetchedAt: Date.parse("2026-06-10T00:00:00.000Z") }, entries: { a: 1, b: 2 } });
 		repository.put('catalogue','kev',{ _fetchedAt: Date.parse("2026-06-12T00:00:00.000Z"), body: { catalogVersion: "2026.06.12", dateReleased: "2026-06-12", vulnerabilities: [] } });
@@ -104,7 +104,7 @@ test("collectDataSources reports OSV coverage from SQLite", () => {
 test("provenance distinguishes source profiles, GCVE index and derived identifiers", () => {
 	const dir = tmpCacheDir();
 	try {
-		require('../lib/cache-repository').createCacheRepository(dir).put('catalogue','gcve',{ builtAt: "2026-01-01T00:00:00Z", coverage: [{ complete: true }, { complete: false }] });
+		require('../lib/cache/repository').createCacheRepository(dir).put('catalogue','gcve',{ builtAt: "2026-01-01T00:00:00Z", coverage: [{ complete: true }, { complete: false }] });
 		openFixtureStore({cacheDir:dir}).commit({coverages:[{source:'osv',ecosystem:'npm',fetchedAt:Date.now()-1000,complete:true}]});
 		const p = buildScanProvenance({ cacheDir: dir, options: { sourceProfile: "us", disableGcve: true, disableCveProject: true } });
 		const by = Object.fromEntries(p.dataSources.map(s => [s.id, s]));
@@ -138,7 +138,7 @@ test('provenance reads shared source coverage and records query TTL', () => {
 test('NVD provenance uses SQLite record collection dates', () => {
  const dir=tmpCacheDir();
  try {
-  const db=require('../lib/cache-db').getCacheDb(dir),compress=require('../lib/advisory-compression').compress;
+  const db=require('../lib/cache/db').getCacheDb(dir),compress=require('../lib/cache/advisory-compression').compress;
   const earlier=Date.now()-86400000, later=earlier+3600000;
   for (const [at,id] of [[earlier,'CVE-2020-1234'],[later,'CVE-2020-5678']]) {
    const body=Buffer.from(JSON.stringify({id,score:5}));
@@ -156,7 +156,7 @@ test('NVD provenance uses SQLite record collection dates', () => {
 test('NVD provenance rejects an invalid compact manifest without trusting directory mtime', () => {
  const dir=tmpCacheDir(), target=path.join(dir,'nvd-cache');
  try {
-  const writer=require('../lib/nvd-bulk').createWriter(target,Date.now()-86400000);
+  const writer=require('../lib/providers/nvd/bulk').createWriter(target,Date.now()-86400000);
   writer.add('CVE-2020-1234',{id:'CVE-2020-1234'});const result=writer.finish();
   fs.writeFileSync(path.join(target,'_bulk',result.generation,'manifest.json'),'{}');
   const source=collectDataSources({cacheDir:dir}).find(s=>s.id==='nvd');

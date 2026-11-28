@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { detectScanCompletenessWarnings } = require("../lib/scan-completeness");
+const { detectScanCompletenessWarnings } = require("../lib/scan/completeness");
 
 function mapOf(...deps) {
 	const m = new Map();

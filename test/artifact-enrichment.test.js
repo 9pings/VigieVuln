@@ -1,6 +1,6 @@
-const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const os=require('node:os');const path=require('node:path');const {createCacheRepository}=require('../lib/cache-repository');const {enrichArtifactFindings}=require('../lib/artifacts/enrichment');const {evaluateGate}=require('../lib/gate');const {buildInventory}=require('../lib/unmanaged');
-test('cached KEV and EPSS enrich artifact findings offline, including CVE aliases',async()=>{const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-enrich-'));try{const repo=createCacheRepository(cacheDir),now=Date.now();repo.put('catalogue','kev',{_fetchedAt:now,body:{byId:{'CVE-2024-12345':{dateAdded:'2024-01-01',dueDate:'2024-01-20',ransomware:true}}}});repo.put('catalogue','epss',{meta:{fetchedAt:now},entries:{'CVE-2024-10000':{score:.1,percentile:.5},'CVE-2024-12345':{score:.5,percentile:.9}}});const matches=[{dep:{name:'demo'},cve:{id:'GHSA-abcd-efgh-ijkl',aliases:['CVE-2024-10000','CVE-2024-12345'],severity:'HIGH'}}];const res=await enrichArtifactFindings(matches,{offline:true,cacheDir,enrich:['kev','epss'],fetcher:()=>{throw Error('network')}});assert(matches[0].cve.kev);assert.equal(matches[0].cve.epssScore,.5);assert(evaluateGate(matches,'kev').failed);assert(res.coverage.every(c=>c.execution==='completed'));assert.equal(matches[0].cve.id,'GHSA-abcd-efgh-ijkl');}finally{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}});
-test('missing KEV cache remains indeterminate and OS-owned binary is not unmanaged',async()=>{const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-enrich-'));try{const m=[{cve:{id:'CVE-2024-99999'}}];const r=await enrichArtifactFindings(m,{offline:true,cacheDir,enrich:['kev'],fetcher:()=>{throw Error('network')}});assert.equal(r.coverage[0].execution,'partial');assert.equal(m[0].cve.kev,undefined);assert.equal(buildInventory(new Map([['x',{provenance:'binary',artifactTargetId:'image',osPackageOwners:[{name:'pkg'}],hashes:{sha256:'abc'}}]])).length,0)}finally{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}});
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const os=require('node:os');const path=require('node:path');const {createCacheRepository}=require('../lib/cache/repository');const {enrichArtifactFindings}=require('../lib/artifacts/enrichment');const {evaluateGate}=require('../lib/findings/gate');const {buildInventory}=require('../lib/inventory/unmanaged');
+test('cached KEV and EPSS enrich artifact findings offline, including CVE aliases',async()=>{const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-enrich-'));try{const repo=createCacheRepository(cacheDir),now=Date.now();repo.put('catalogue','kev',{_fetchedAt:now,body:{byId:{'CVE-2024-12345':{dateAdded:'2024-01-01',dueDate:'2024-01-20',ransomware:true}}}});repo.put('catalogue','epss',{meta:{fetchedAt:now},entries:{'CVE-2024-10000':{score:.1,percentile:.5},'CVE-2024-12345':{score:.5,percentile:.9}}});const matches=[{dep:{name:'demo'},cve:{id:'GHSA-abcd-efgh-ijkl',aliases:['CVE-2024-10000','CVE-2024-12345'],severity:'HIGH'}}];const res=await enrichArtifactFindings(matches,{offline:true,cacheDir,enrich:['kev','epss'],fetcher:()=>{throw Error('network')}});assert(matches[0].cve.kev);assert.equal(matches[0].cve.epssScore,.5);assert(evaluateGate(matches,'kev').failed);assert(res.coverage.every(c=>c.execution==='completed'));assert.equal(matches[0].cve.id,'GHSA-abcd-efgh-ijkl');}finally{require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}});
+test('missing KEV cache remains indeterminate and OS-owned binary is not unmanaged',async()=>{const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-enrich-'));try{const m=[{cve:{id:'CVE-2024-99999'}}];const r=await enrichArtifactFindings(m,{offline:true,cacheDir,enrich:['kev'],fetcher:()=>{throw Error('network')}});assert.equal(r.coverage[0].execution,'partial');assert.equal(m[0].cve.kev,undefined);assert.equal(buildInventory(new Map([['x',{provenance:'binary',artifactTargetId:'image',osPackageOwners:[{name:'pkg'}],hashes:{sha256:'abc'}}]])).length,0)}finally{require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}});
 test('explicit upstream CVEs enrich without promoting relationships or guessing identifiers',async()=>{
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-upstream-'));
  try {
@@ -11,17 +11,17 @@ test('explicit upstream CVEs enrich without promoting relationships or guessing 
   const result=await enrichArtifactFindings(matches,{cacheDir,offline:true,enrich:['kev','epss'],fetcher:()=>{throw Error('network')}});
   assert.equal(matches[0].cve.id,'DEBIAN-CVE-2024-12345');assert.deepEqual(matches[0].cve.aliases,[]);assert.equal(matches[0].cve.kev,true);assert.equal(matches[0].cve.epssScore,.7);assert.deepEqual(matches[0].cve.kevEvidence,{source:'kev',id:'CVE-2024-56789',relationship:'upstream'});assert.deepEqual(matches[0].cve.epssEvidence,{source:'epss',id:'CVE-2024-56789',relationship:'upstream'});assert.equal(result.coverage[1].execution,'completed');
   const guessed=[{cve:{id:'DEBIAN-CVE-2024-56789',aliases:[],upstream:[]}}];const unknown=await enrichArtifactFindings(guessed,{cacheDir,offline:true,enrich:['kev']});assert.equal(guessed[0].cve.kev,undefined);assert.equal(unknown.coverage[0].execution,'not-applicable');assert.deepEqual(unknown.warnings,[]);
- } finally {require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}
+ } finally {require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}
 });
 test('NVD evidence tracks every explicit upstream CVE separately',async()=>{
- const nvd=require('../lib/nvd'),original=nvd.enrichMatches;
+ const nvd=require('../lib/providers/nvd/enrich'),original=nvd.enrichMatches;
  try {nvd.enrichMatches=async copies=>{for(const x of copies){x.source='osv+nvd';x.cve.cwes=[x.cve.id];}};
  const match={source:'osv',cve:{id:'DIST-1',upstream:['CVE-2024-12345','CVE-2024-56789']}};
  const result=await enrichArtifactFindings([match],{offline:true,enrich:['nvd']});assert.equal(result.coverage[0].execution,'completed');assert.deepEqual(match.cve.nvdEvidence.records.map(x=>x.id),['CVE-2024-12345','CVE-2024-56789']);
  }finally{nvd.enrichMatches=original;}
 });
 test('NVD record status is preserved per explicit CVE identity',async()=>{
- const nvd=require('../lib/nvd'),original=nvd.enrichMatches;
+ const nvd=require('../lib/providers/nvd/enrich'),original=nvd.enrichMatches;
  try {nvd.enrichMatches=async copies=>{for(const x of copies){x.cve.nvdRecordEvidence={status:x.cve.id.endsWith('12345')?'available':'unavailable'};if(x.cve.id.endsWith('12345'))x.source='nvd';}};
  const match={cve:{id:'DIST-1',upstream:['CVE-2024-12345','CVE-2024-56789']}};
  await enrichArtifactFindings([match],{offline:true,enrich:['nvd']});
@@ -45,11 +45,11 @@ test('default NVD enrichment preserves distro verdict and replays identically of
    const make=()=>[{source:'osv',dep:{name:'curl'},cve:{id:'DLA-3951-1',upstream:[id],severity:'UNKNOWN',score:null,fixVersion:'7.74.0-1.3+deb11u14'}}];
    const online=make(),onlineResult=await enrichArtifactFindings(online,{cacheDir,fetcher});assert.equal(online[0].cve.id,'DLA-3951-1');assert.equal(online[0].source,'nvd+osv');assert.equal(online[0].cve.severity,'CRITICAL');assert.equal(online[0].cve.score,9.1);assert.equal(online[0].cve.fixVersion,'7.74.0-1.3+deb11u14');assert.deepEqual(online[0].cve.riskEvidence,{source:'nvd',id,relationship:'upstream'});assert.equal(online[0].cve.nvdEvidence.records[0].relationship,'upstream');assert.ok(onlineResult.coverage.every(c=>['completed','not-applicable'].includes(c.execution)));assert.ok(calls.length>0);if(proxy)assert.ok(calls.every(x=>x.startsWith('https://fleet.test/')));
    providers.configureResourceRoute({proxyUrl:null,fetcher:null});const offline=make();await enrichArtifactFindings(offline,{cacheDir,offline:true,fetcher:()=>{throw Error('network tripwire')}});assert.deepEqual(offline,online);
-  }finally{providers.configureResourceRoute({proxyUrl:null,fetcher:null,store:null,hostedStore:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});}
+  }finally{providers.configureResourceRoute({proxyUrl:null,fetcher:null,store:null,hostedStore:null});require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});}
  }
 });
 test('multiple upstream CVEs retain independent NVD metadata without an aggregate severity',async()=>{
- const nvd=require('../lib/nvd'),original=nvd.enrichMatches;
+ const nvd=require('../lib/providers/nvd/enrich'),original=nvd.enrichMatches;
  try {nvd.enrichMatches=async copies=>{for(const [i,x] of copies.entries()){x.source='osv+nvd';Object.assign(x.cve,{severity:i?'LOW':'CRITICAL',score:i?2.1:9.1,cvssVector:`vector-${i}`});}};
   const match={source:'osv',cve:{id:'DLA-1',severity:'UNKNOWN',upstream:['CVE-2024-12345','CVE-2024-56789']}};
   await enrichArtifactFindings([match],{enrich:['nvd'],offline:true});assert.equal(match.cve.severity,'UNKNOWN');assert.equal(match.cve.score,undefined);assert.equal(match.cve.riskEvidence,undefined);assert.deepEqual(match.cve.nvdEvidence.records.map(x=>[x.id,x.score,x.relationship]),[['CVE-2024-12345',9.1,'upstream'],['CVE-2024-56789',2.1,'upstream']]);
@@ -61,15 +61,15 @@ test('per-CVE KEV and EPSS observations never bleed across projected advisory CV
   const matches=[{dep:{artifactTargetId:'a',ecosystem:'system',manager:'dpkg',name:'p',version:'1'},cve:{id:'DLA-1',upstream:[one,two],severity:'UNKNOWN'}}];
   await enrichArtifactFindings(matches,{offline:true,cacheDir,enrich:['kev','epss'],fetcher:()=>{throw Error('network')}});const rows=projectImageCves(matches);
   assert.equal(rows[0].cve.kev,true);assert.equal(rows[0].cve.epssScore,.1);assert.equal(rows[1].cve.kev,undefined);assert.equal(rows[1].cve.epssScore,.8);
- } finally {require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}
+ } finally {require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}
 });
 test('non-CVE notices are inapplicable, not source failures, alongside eligible CVEs',async()=>{
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-eligible-'));try{
-  const now=Date.now(),repo=createCacheRepository(cacheDir),id='CVE-2024-12345';repo.put('catalogue','kev',{_fetchedAt:now,body:{byId:{}}});repo.put('catalogue','epss',{meta:{fetchedAt:now},entries:{[id]:{score:null,percentile:null}}});require('../lib/nvd').writeCache(id,{severity:'MEDIUM',score:5},now,cacheDir);
+  const now=Date.now(),repo=createCacheRepository(cacheDir),id='CVE-2024-12345';repo.put('catalogue','kev',{_fetchedAt:now,body:{byId:{}}});repo.put('catalogue','epss',{meta:{fetchedAt:now},entries:{[id]:{score:null,percentile:null}}});require('../lib/providers/nvd/enrich').writeCache(id,{severity:'MEDIUM',score:5},now,cacheDir);
   const matches=[{cve:{id:'DLA-1'}},{cve:{id, severity:'UNKNOWN'}}];const r=await enrichArtifactFindings(matches,{cacheDir,offline:true,enrich:['nvd','kev','epss'],fetcher:()=>{throw Error('network')}});assert.deepEqual(r.warnings,[]);assert.ok(r.coverage.every(c=>c.execution==='completed'));assert.equal(matches[1].cve.score,5);
   const only=await enrichArtifactFindings([{cve:{id:'DLA-2'}}],{cacheDir,offline:true,enrich:['nvd','kev','epss'],fetcher:()=>{throw Error('network')}});assert.ok(only.coverage.every(c=>c.execution==='not-applicable'));assert.deepEqual(only.warnings,[]);
   const missing=await enrichArtifactFindings([{cve:{id:'CVE-2024-99999'}}],{cacheDir,offline:true,enrich:['nvd','epss']});assert.ok(missing.coverage.every(c=>c.execution==='partial'));assert.equal(missing.warnings.length,2);
- }finally{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}
+ }finally{require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true})}
 });
 test('hosted targeted KEV stores positive and negative observations for offline replay',async()=>{
  const providers=require('../lib/providers'),cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-kev-target-')),one='CVE-2024-12345',two='CVE-2024-56789';let calls=0;
@@ -78,17 +78,17 @@ test('hosted targeted KEV stores positive and negative observations for offline 
   providers.configureResourceRoute({proxyUrl:'https://fleet.invalid',hosted:true,fetcher,store:null,hostedStore:null});const make=()=>[{cve:{id:one}},{cve:{id:two}}],online=make();
   const result=await enrichArtifactFindings(online,{cacheDir,fetcher,enrich:['kev']});assert.equal(result.coverage[0].execution,'completed');assert.deepEqual(result.warnings,[]);assert.equal(online[0].cve.kev,true);assert.equal(online[1].cve.kev,undefined);assert.equal(calls,1);
   providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});const offline=make();const replay=await enrichArtifactFindings(offline,{cacheDir,offline:true,enrich:['kev'],fetcher:()=>{throw Error('network tripwire')}});assert.deepEqual(offline,online);assert.equal(replay.coverage[0].execution,'completed');assert.deepEqual(replay.warnings,[]);
- }finally{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null,store:null,hostedStore:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});}
+ }finally{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null,store:null,hostedStore:null});require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});}
 });
 test('hosted KEV request failure and truly absent cache remain incomplete',async()=>{
  const providers=require('../lib/providers'),cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-kev-fail-'));
  try{const fetcher=async()=>new Response('unavailable',{status:503});providers.configureResourceRoute({proxyUrl:'https://fleet.invalid',hosted:true,fetcher,store:null,hostedStore:null});
   const result=await enrichArtifactFindings([{cve:{id:'CVE-2024-12345'}}],{cacheDir,fetcher,enrich:['kev']});assert.equal(result.coverage[0].execution,'partial');assert.match(result.warnings[0].message,/KEV/);
   providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null});const offline=await enrichArtifactFindings([{cve:{id:'CVE-2024-12345'}}],{cacheDir,offline:true,enrich:['kev'],fetcher:()=>{throw Error('network')}});assert.equal(offline.coverage[0].execution,'partial');assert.equal(offline.warnings.length,1);
- }finally{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null,store:null,hostedStore:null});require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});}
+ }finally{providers.configureResourceRoute({proxyUrl:null,hosted:false,fetcher:null,store:null,hostedStore:null});require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});}
 });
 test('NVD confirmed absence is scoped and replayed offline; failed and missing lookups remain incomplete',async()=>{
- const nvd=require('../lib/nvd'),providers=require('../lib/providers'),original=providers.getResource;
+ const nvd=require('../lib/providers/nvd/enrich'),providers=require('../lib/providers'),original=providers.getResource;
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-nvd-absence-')),other=fs.mkdtempSync(path.join(os.tmpdir(),'artifact-nvd-other-')),id='CVE-2024-12345';
  try{
   providers.getResource=async()=>new Response('',{status:404});
@@ -99,12 +99,12 @@ test('NVD confirmed absence is scoped and replayed offline; failed and missing l
   providers.getResource=async()=>new Response('',{status:403});
   const failed=await run({});assert.equal(failed.coverage[0].execution,'partial');assert.equal(failed.warnings.length,1);
   const missing=await run({cacheDir:other,offline:true});assert.equal(missing.coverage[0].execution,'partial');assert.equal(missing.warnings.length,1);
- }finally{providers.getResource=original;require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});fs.rmSync(other,{recursive:true,force:true});}
+ }finally{providers.getResource=original;require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});fs.rmSync(other,{recursive:true,force:true});}
 });
 
 test('KEV counts distinct missing consultations and a complete negative catalogue is silent',async t=>{
  const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'kev-count-'));
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});});
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(cacheDir,{recursive:true,force:true});});
  const matches=Array.from({length:3},()=>({cve:{id:'CVE-2024-12345'}}));
  const options={cacheDir,offline:true,enrich:['kev']};
  const missing=await enrichArtifactFindings(matches,options);

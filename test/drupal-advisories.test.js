@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { assessDrupalAdvisories, affectedComposerVersion, validateSnapshot } = require("../lib/application-providers/drupal-advisories");
+const { assessDrupalAdvisories, affectedComposerVersion, validateSnapshot } = require("../lib/providers/drupal/advisories");
 
 const core = { id: "drupal:site:core", applicationId: "drupal:site", kind: "core", coord: "drupal/core",
 	version: "8.4.4", visibility: "public", evidence: [{ path: "site/composer.lock" }] };
@@ -52,7 +52,7 @@ test("Drupal constraints follow Composer pre-release rules (B3)", () => {
 	assert.equal(affectedComposerVersion("10.3.0-beta1", "10.2.*"), "no-match");
 	assert.equal(affectedComposerVersion("10.3.0-rc1", "<10.3.0"), "no-match");
 	assert.equal(affectedComposerVersion("10.3.0-rc1", ">=8.0.0 <10.2.11 || >=10.3.0 <10.3.9"), "affected");
-	const { satisfiesComposerConstraint } = require("../lib/packagist-audit");
+	const { satisfiesComposerConstraint } = require("../lib/providers/packagist/audit");
 	for (const [v, c] of [["10.3.0-rc1", ">=10.2.0 <10.3.0"], ["10.3.0-beta1", "10.2.*"], ["10.3.0-rc1", "<10.3.0"], ["10.3.0-rc1", ">=8.0.0 <10.2.11 || >=10.3.0 <10.3.9"]])
 		assert.equal(affectedComposerVersion(v, c), satisfiesComposerConstraint(v, c) ? "affected" : "no-match", `${v} ${c}`);
 });

@@ -4,9 +4,9 @@ const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const composer = require("../lib/codecs/composer.codec");
-const wordpress = require("../lib/application-plugins/wordpress");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+const wordpress = require("../lib/applications/plugins/wordpress");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 const WORD_FENCE_FEED = { "123e4567-e89b-12d3-a456-426614174000": {
 	id: "123e4567-e89b-12d3-a456-426614174000", title: "Acme public issue", cve: "CVE-2099-12345",
 	software: [{ type: "plugin", slug: "acme", affected_versions: { "1-3": {

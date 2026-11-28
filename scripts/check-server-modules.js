@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 // The server repository loads CLI modules by path (`require('vigievuln/lib/<name>')`, through
-// its lib/fad.js). Those paths are a contract: this check fails when one of them no longer
-// resolves, so a module is not moved, renamed or removed as "unused" by mistake.
+// its lib/fad.js). Those paths are a contract, kept by the "exports" map of package.json:
+// this check fails when one of them no longer resolves, so a module is not moved, renamed
+// or removed as "unused" without its entry being updated.
 // Usage: node scripts/check-server-modules.js [server checkout, default ../server]
 const fs = require('node:fs'), path = require('node:path');
 const cli = path.resolve(__dirname, '..');
@@ -18,7 +19,11 @@ for (const file of ['lib', 'bin', 'test'].flatMap(d => fs.existsSync(path.join(s
 		if (!used.has(name)) used.set(name, path.relative(server, file));
 	}
 }
-const missing = [...used].filter(([name]) => !fs.existsSync(path.join(cli, 'lib', name + '.js')) && !fs.existsSync(path.join(cli, 'lib', name, 'index.js')));
+// Resolved the way the server resolves them: through this package's "exports" map, which
+// maps the paths the server knows to wherever the module lives now.
+const resolveAsServer = require('node:module').createRequire(path.join(cli, 'package.json'));
+const resolves = name => { try { resolveAsServer.resolve('vigievuln/lib/' + name); return true; } catch { return false; } };
+const missing = [...used].filter(([name]) => !resolves(name));
 console.log(`${used.size} CLI module(s) loaded by ${server}`);
-for (const [name, file] of missing) console.error(`missing: lib/${name}.js (loaded by ${file})`);
+for (const [name, file] of missing) console.error(`unresolved: vigievuln/lib/${name} (loaded by ${file}); add it to "exports" in package.json`);
 process.exit(missing.length ? 1 : 0);

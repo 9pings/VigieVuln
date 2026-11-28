@@ -8,7 +8,7 @@ const isolatedTestCache = require('./helpers/isolated-cache')('osv-db-auto');
  */
 const test = require("node:test");
 const assert = require("node:assert");
-const { autoEnableOsvDb } = require("../lib/osv-db");
+const { autoEnableOsvDb } = require("../lib/providers/osv/db");
 
 test("a Java scan never pulls the 9 MB import on its own", () => {
 	// It buys offline completeness, not speed — the per-dep OSV queries still run, and they

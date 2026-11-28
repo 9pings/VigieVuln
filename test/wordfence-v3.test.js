@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { assessWordfenceFeed, compareWordPressVersions, indexFeed } = require("../lib/application-providers/wordfence-v3");
+const { assessWordfenceFeed, compareWordPressVersions, indexFeed } = require("../lib/providers/wordfence/v3");
 
 const advisory = {
 	"123e4567-e89b-12d3-a456-426614174000": {

@@ -6,11 +6,11 @@ const path = require('node:path');
 const fallbackCache = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-osv-precedence-root-'));
 const realHomedir = os.homedir;
 os.homedir = () => fallbackCache;
-require('../lib/cache-directory').setActiveCacheDir(fallbackCache);
-after(() => { os.homedir = realHomedir; require('../lib/cache-db').closeCacheDbs(); fs.rmSync(fallbackCache, { recursive: true, force: true }); });
-const { openAdvisoryStore } = require('../lib/advisory-store');
-const { queryBatch } = require('../lib/osv');
-const { makeDepRecord } = require('../lib/dep-record');
+require('../lib/cache/directory').setActiveCacheDir(fallbackCache);
+after(() => { os.homedir = realHomedir; require('../lib/cache/db').closeCacheDbs(); fs.rmSync(fallbackCache, { recursive: true, force: true }); });
+const { openAdvisoryStore } = require('../lib/advisories/store');
+const { queryBatch } = require('../lib/providers/osv/query');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 const { configureResourceRoute } = require('../lib/providers');
 
 const dep = makeDepRecord({ ecosystem: 'maven', namespace: 'org.example', name: 'widget', version: '1.5' });
@@ -22,7 +22,7 @@ function fixture(t) {
   resetRoute();
   const now = Date.now(), earlier = now - 2 * 3600000, consulted = now - 3600000, later = now - 1800000;
   const store = openAdvisoryStore({ cacheDir });
-  t.after(() => { resetRoute(); store.close(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
+  t.after(() => { resetRoute(); store.close(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
   const document = (extra = {}) => ({ id: 'GHSA-precedence',
     published: new Date(earlier - 2 * 86400000).toISOString(), modified: new Date(earlier - 86400000).toISOString(),
     affected: [{ package: { ecosystem: 'Maven', name: tuple.name },

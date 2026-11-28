@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { planDetail, beyondDetailLimit } = require('../lib/report-detail');
+const { planDetail, beyondDetailLimit } = require('../lib/reports/detail');
 
 const system = (name, sourceName = name) => ({ ecosystem: 'system', manager: 'dpkg', artifactTargetId: 'host', name, coordKey: `host:dpkg:${name}`, version: '1.0-1', sourceName, sourceVersion: '1.0-1' });
 const match = (dep, n, score = 5) => ({ dep, cve: { id: `CVE-2024-${String(1000 + n)}`, severity: 'MEDIUM', score } });

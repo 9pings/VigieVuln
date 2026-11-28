@@ -12,18 +12,18 @@ const http = require('node:http');
 const fallbackCache = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-osv-parity-root-'));
 const realHomedir = os.homedir;
 os.homedir = () => fallbackCache;
-require('../lib/cache-directory').setActiveCacheDir(fallbackCache);
-after(() => { os.homedir = realHomedir; require('../lib/cache-db').closeCacheDbs(); fs.rmSync(fallbackCache, { recursive: true, force: true }); });
-const { makeDepRecord } = require('../lib/dep-record');
-const { queryOsvForDeps, queryBatch } = require('../lib/osv');
-const { newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords } = require('../lib/osv-db');
+require('../lib/cache/directory').setActiveCacheDir(fallbackCache);
+after(() => { os.homedir = realHomedir; require('../lib/cache/db').closeCacheDbs(); fs.rmSync(fallbackCache, { recursive: true, force: true }); });
+const { makeDepRecord } = require('../lib/inventory/dep-record');
+const { queryOsvForDeps, queryBatch } = require('../lib/providers/osv/query');
+const { newOsvIndex, addOsvRecord, matchOsvDbDeps, matchOsvDbRecords } = require('../lib/providers/osv/db');
 const { configureResourceRoute } = require('../lib/providers');
-const { createResourceEngine } = require('../lib/resource-cache/engine');
-const { createCacheStore } = require('../lib/resource-cache/fs-store');
+const { createResourceEngine } = require('../lib/cache/resource/engine');
+const { createCacheStore } = require('../lib/cache/resource/fs-store');
 
 const temporary = t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-osv-parity-'));
-  t.after(() => { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); });
+  t.after(() => { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); });
   return dir;
 };
 const resetRoute = () => configureResourceRoute({ proxyUrl: null, hosted: false, token: null,

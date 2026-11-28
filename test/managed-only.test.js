@@ -1,5 +1,5 @@
 /**
- * A <dependencyManagement> entry is a VERSION PIN, not a dependency (lib/cve-match.js).
+ * A <dependencyManagement> entry is a VERSION PIN, not a dependency (lib/advisories/cve-match.js).
  *
  * Measured on a real reactor: a module pinning org.codehaus.jackson:jackson-mapper-asl:1.9.13
  * in its depMgmt — and depending on it nowhere — was reported as a DIRECT production dep
@@ -12,9 +12,9 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const core = require("../lib/core");
-const { collectResolvedDeps, expandWithTransitives, settleManagedOnly, matchDepsAgainstCves } = require("../lib/cve-match");
-const { makeDepRecord } = require("../lib/dep-record");
+const core = require("../lib/codecs/maven/pom");
+const { collectResolvedDeps, expandWithTransitives, settleManagedOnly, matchDepsAgainstCves } = require("../lib/advisories/cve-match");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 const FIXTURE = path.join(__dirname, "fixtures", "maven-managed-only");
 const MC = "https://repo1.maven.org/maven2";

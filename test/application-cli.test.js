@@ -19,7 +19,7 @@ test("Wordfence live scanning requires a key and explains how to provide it", ()
 		const out = path.join(temp, "findings.json");
 		const config = path.join(temp, "direct.json");
 		fs.writeFileSync(config, JSON.stringify({ proxyCache: null, proxyCacheToken: null }));
-		const { WORDFENCE_PRODUCTION_URL } = require("../lib/application-providers/live-snapshot");
+		const { WORDFENCE_PRODUCTION_URL } = require("../lib/applications/live-snapshot");
 		const env = { ...process.env, FORCE_COLOR: "0" };
 		delete env.WORDFENCE_API_KEY;
 		const run = spawnSync(process.execPath, [CLI, "scan", path.join(__dirname, "fixtures", "wordpress-custom"), "--config", config,

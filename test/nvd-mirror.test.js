@@ -1,5 +1,5 @@
 /**
- * NVD → fkie-cad/nvd-json-data-feeds fallback (lib/nvd.js#fetchOne). Fake fetcher, fake
+ * NVD → fkie-cad/nvd-json-data-feeds fallback (lib/providers/nvd/enrich.js#fetchOne). Fake fetcher, fake
  * CVE ids in the year 2099 so the real ~/.vigie-vuln/nvd-cache is never shadowed; every
  * test removes what it wrote.
  */
@@ -8,8 +8,8 @@ const { test, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const N = require("../lib/nvd");
-const { createSourceHealth, setActiveLedger } = require("../lib/source-health");
+const N = require("../lib/providers/nvd/enrich");
+const { createSourceHealth, setActiveLedger } = require("../lib/scan/source-health");
 const { getProvider } = require("../lib/providers");
 
 const written = [];
@@ -141,9 +141,9 @@ test("NVD down, mirror down, but a cached record past its TTL exists → served 
 	const health = createSourceHealth(); setActiveLedger(health);
 	const c = id("0000104");
 	const body=Buffer.from(JSON.stringify({score:5.0,cwes:['CWE-79']}));
-	require('../lib/cache-db').getCacheDb(path.dirname(N.NVD_CACHE_DIR)).prepare(`INSERT INTO nvd_records
+	require('../lib/cache/db').getCacheDb(path.dirname(N.NVD_CACHE_DIR)).prepare(`INSERT INTO nvd_records
 	 (cve,kind,fetched_at,revision_ms,body_deflate,body_bytes,metadata_json) VALUES (?,?,?,?,?,?,?)`).run(
-	 c,'live',1,null,require('../lib/advisory-compression').compress(body),body.length,JSON.stringify({schema:N.NVD_CACHE_SCHEMA}));
+	 c,'live',1,null,require('../lib/cache/advisory-compression').compress(body),body.length,JSON.stringify({schema:N.NVD_CACHE_SCHEMA}));
 	const r = await N.fetchOne(c, { fetcher: fakeFetcher(res(503, {}), res(503, {})) });
 	assert.deepEqual(r.cwes, ["CWE-79"]);
 	assert.deepEqual(health.degraded(), []);
@@ -205,7 +205,7 @@ test('a hosted NVD budget refusal proceeds to the targeted mirror once the scan 
 });
 
 test('hosted NVD primary retries stale admission with mirror enabled and returns fresh without mirror',async()=>{
- const http=require('node:http'),{configureResourceRoute}=require('../lib/providers'),{createProxyThrottle}=require('../lib/proxy-throttle');const c=id('0000999'),health=createSourceHealth(),calls=[];let clock=0;
+ const http=require('node:http'),{configureResourceRoute}=require('../lib/providers'),{createProxyThrottle}=require('../lib/providers/proxy-throttle');const c=id('0000999'),health=createSourceHealth(),calls=[];let clock=0;
  const server=http.createServer((req,res)=>{let body='';req.on('data',x=>body+=x);req.on('end',()=>{const q=JSON.parse(body);calls.push(q.type);const stale=calls.length===1;res.writeHead(200,{'content-type':'application/json','x-fad-proxy':stale?'stale':'miss','x-fad-proxy-fetched-at':new Date().toISOString(),...(stale?{'x-fad-proxy-reason':'refresh-failed','x-fad-proxy-refresh-status':'503','x-fad-proxy-refresh-cause':'admission','retry-after':'1'}:{})});res.end(JSON.stringify({totalResults:1,vulnerabilities:[{cve:record(c)}]}));});});
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));const url=`http://127.0.0.1:${server.address().port}`;
  configureResourceRoute({proxyUrl:url,hosted:true,store:null,hostedStore:null,health,token:'test',fetcher:globalThis.fetch,proxyThrottle:createProxyThrottle({now:()=>clock,sleep:async ms=>{clock+=ms},warn:()=>{}})});

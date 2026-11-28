@@ -3,9 +3,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { assertPluginShape } = require("../lib/application-plugins/plugin.interface");
-const { selectPlugins } = require("../lib/application-plugins/select");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
+const { assertPluginShape } = require("../lib/applications/plugins/plugin.interface");
+const { selectPlugins } = require("../lib/applications/plugins/select");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
 
 function fakePlugin(overrides = {}) {
 	return {
@@ -105,7 +105,7 @@ test("private component paths cannot escape the scan root", async () => {
 
 test("unmatched private and public component declarations are diagnosed", async () => {
 	const root = path.join(__dirname, "fixtures", "wordpress-custom");
-	const wordpress = require("../lib/application-plugins/wordpress");
+	const wordpress = require("../lib/applications/plugins/wordpress");
 	const result = await runApplicationPlugins(root, { plugins: [wordpress], selection: "wordpress",
 		privateComponentPaths: ["site/wp-content/plugins/missing"],
 		publicComponents: ["site/wp-content/themes/missing=missing"] });

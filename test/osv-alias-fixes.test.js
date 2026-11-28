@@ -4,13 +4,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { openAdvisoryStore } = require('../lib/advisory-store');
-const { queryBatch } = require('../lib/osv');
-const { makeDepRecord } = require('../lib/dep-record');
-const { mergeBySource } = require('../lib/merge-sources');
+const { openAdvisoryStore } = require('../lib/advisories/store');
+const { queryBatch } = require('../lib/providers/osv/query');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
+const { mergeBySource } = require('../lib/findings/merge');
 const { configureResourceRoute } = require('../lib/providers');
-const { generateHtmlReport } = require('../lib/cve-report');
-const { buildFindings } = require('../lib/json-export');
+const { generateHtmlReport } = require('../lib/reports/cve-report');
+const { buildFindings } = require('../lib/reports/json-export');
 
 // Native fields from the live Express 4.17.1 comparison. Both source documents
 // share CVE aliases, but the older document's 0.1.10 target remains vulnerable
@@ -39,7 +39,7 @@ test('Express path-to-regexp aliases cannot merge into a fix still affected by a
         store: null, hostedStore: null, health: null, fetcher: null });
       resetRoute();
       const store = openAdvisoryStore({ cacheDir });
-      t.after(() => { resetRoute(); store.close(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
+      t.after(() => { resetRoute(); store.close(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
       if (offline) await store.importRecords(order, { source: 'osv', fetchedAt: Date.now() - 1000,
         provenance: { transport: 'seed' } });
       const dep = makeDepRecord({ ecosystem: 'npm', name: 'path-to-regexp', version: '0.1.7' });

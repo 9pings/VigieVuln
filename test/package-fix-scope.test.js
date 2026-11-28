@@ -1,11 +1,11 @@
 'use strict';
 require('./helpers/isolated-cache')('package-fix-scope');
 const test = require('node:test'), assert = require('node:assert/strict');
-const { generateHtmlReport } = require('../lib/cve-report');
-const { buildFindings } = require('../lib/json-export');
-const { vulnToMatch } = require('../lib/osv');
-const { vulnVerdict } = require('../lib/osv-db');
-const { makeDepRecord } = require('../lib/dep-record');
+const { generateHtmlReport } = require('../lib/reports/cve-report');
+const { buildFindings } = require('../lib/reports/json-export');
+const { vulnToMatch } = require('../lib/providers/osv/query');
+const { vulnVerdict } = require('../lib/providers/osv/db');
+const { makeDepRecord } = require('../lib/inventory/dep-record');
 function advisory(id, name, events) {
   return { id, aliases: [`CVE-2099-${id === 'GHSA-a' ? '1001' : '1002'}`], affected: [{ package: { ecosystem: 'npm', name }, ranges: [{ type: 'SEMVER', events }] }] };
 }

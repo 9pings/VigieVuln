@@ -1,5 +1,5 @@
 /**
- * attributeMatchOrigins (lib/attribution.js).
+ * attributeMatchOrigins (lib/findings/attribution.js).
  *
  * A depRecord is coord-wide: versions[] and manifestPaths[] are both whole-scan sets
  * with no link between them, and scope is a single merged value. A match carries ONE
@@ -12,7 +12,7 @@
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { attributeMatchOrigins } = require("../lib/attribution");
+const { attributeMatchOrigins } = require("../lib/findings/attribution");
 const composer = require("../lib/codecs/composer.codec");
 const path = require("node:path");
 

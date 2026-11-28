@@ -4,9 +4,9 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const composer = require("../lib/codecs/composer.codec");
-const drupal = require("../lib/application-plugins/drupal");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+const drupal = require("../lib/applications/plugins/drupal");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 
 test("component context inventories a standalone private Drupal module and owns its dependency", async () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-drupal-component-"));

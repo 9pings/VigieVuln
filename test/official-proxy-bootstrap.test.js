@@ -9,7 +9,7 @@ test('proxy-only scan creates an official proxy key from an existing account ses
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-bootstrap-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  // Use the real storage boundary: POSIX private mode, Windows DPAPI + ACLs.
  // A manually written plaintext fixture is intentionally rejected on Windows.
- require('../lib/account-session').createAccountSessionStore({homeDir:root}).write({token:'session_token',expiresAt:Date.now()+3600000});
+ require('../lib/service/account-session').createAccountSessionStore({homeDir:root}).write({token:'session_token',expiresAt:Date.now()+3600000});
  const configDir=path.join(root,'.vigie-vuln');fs.mkdirSync(configDir);
  fs.writeFileSync(path.join(configDir,'config.json'),JSON.stringify({sourceProfile:'proxy',proxyCache:'vigievuln'}));
  const project=path.join(root,'project');fs.mkdirSync(project);fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({name:'fixture',version:'1.0.0',dependencies:{lodash:'4.17.20'}}));

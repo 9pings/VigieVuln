@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { matchDepsAgainstCves } = require("../lib/cve-match");
-const { makeDepRecord } = require("../lib/dep-record");
+const { matchDepsAgainstCves } = require("../lib/advisories/cve-match");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test("binary-provenance deps are skipped by the Maven CVE-index matcher", () => {
 	const deps = new Map();

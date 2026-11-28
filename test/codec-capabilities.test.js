@@ -12,8 +12,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const { makeDepRecord } = require("../lib/dep-record");
-const outdated = require("../lib/outdated");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
+const outdated = require("../lib/maintenance/outdated");
 const { findEolProduct, findCycleForVersion, isEol, checkEolDeps, EOL_MAPPING, EOL_CACHE_PATH } = outdated;
 
 const CACHE_DIR = path.join(os.homedir(), ".vigie-vuln");
@@ -21,7 +21,7 @@ const CACHE_DIR = path.join(os.homedir(), ".vigie-vuln");
 // user's file. `fn` is async (checkEolDeps saves the cache at its END), so it MUST be awaited
 // here — restoring before it finishes lets its final save overwrite the user's real cache.
 async function withSeededCache(file, data, fn) {
-	const repository=require('../lib/cache-repository').createCacheRepository(CACHE_DIR);
+	const repository=require('../lib/cache/repository').createCacheRepository(CACHE_DIR);
 	const key={"npm-registry-cache.json":"npm-registry","packagist-cache.json":"packagist","rubygems-cache.json":"rubygems","go-proxy-cache.json":"go-proxy","pypi-cache.json":"pypi","nuget-cache.json":"nuget"}[path.basename(file)]||path.basename(file);
 	const backup=repository.get('auxiliary',key);
 	try {
@@ -178,7 +178,7 @@ test("recipes: each ecosystem emits the right install/pin command", () => {
 /* ===================== Report rendering of EOL / Obsolete / Outdated per ecosystem ===================== */
 
 test("report: renders EOL + Obsolete + Outdated findings for all ecosystems", () => {
-	const { generateHtmlReport } = require("../lib/cve-report");
+	const { generateHtmlReport } = require("../lib/reports/cve-report");
 	const d = (eco, ns, name, ver) => ({ ...dep(eco, ns, name, ver) });
 	const html = generateHtmlReport({
 		cveMatches: [],

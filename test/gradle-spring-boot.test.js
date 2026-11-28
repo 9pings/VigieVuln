@@ -6,7 +6,7 @@ const path = require("node:path");
 const { parseBuildScript } = require("../lib/codecs/gradle/parse");
 const { parseVersionCatalog } = require("../lib/codecs/gradle/catalog");
 const gradle = require("../lib/codecs/gradle.codec");
-const { resolveBomManagedVersions, backfillVersions } = require("../lib/maven-bom");
+const { resolveBomManagedVersions, backfillVersions } = require("../lib/codecs/maven/bom");
 
 const boot = 'id("org.springframework.boot") version "4.1.1"';
 const management = 'id("io.spring.dependency-management") version "1.1.7"';
@@ -36,7 +36,7 @@ test("implicit plugin BOMs never leak between Gradle scripts or collapse two Boo
 });
 
 test("a scoped plugin BOM cannot backfill Maven or another Gradle module", async () => {
-	const { makeDepRecord } = require("../lib/dep-record");
+	const { makeDepRecord } = require("../lib/inventory/dep-record");
 	const records = new Map();
 	for (const [id, type, manifest] of [["a", "gradle", "/a/build.gradle.kts"], ["b", "gradle", "/b/build.gradle.kts"], ["maven", "maven", "/pom.xml"]]) {
 		records.set(id, makeDepRecord({ ecosystem: "maven", ecosystemType: type, namespace: "org.postgresql", name: "postgresql", manifestPath: manifest }));

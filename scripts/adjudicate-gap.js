@@ -8,7 +8,7 @@
  * Input is a list of (Maven coordinate, version, vulnerability id) another scanner
  * reported and vigievuln did not. Each id is resolved against the live OSV API — its
  * aliases too, since a `SNYK-*` or `GHSA-*` id may be the only handle you have — and the
- * pair is adjudicated by `lib/gap-adjudicate` using the scanner's own range evaluation.
+ * pair is adjudicated by `lib/advisories/gap-adjudicate` using the scanner's own range evaluation.
  *
  * Why this exists. A benchmark's "misses" list is not a recall backlog. Treating it as
  * one, and widening the matcher until it empties, is precisely how a scanner acquires
@@ -28,7 +28,7 @@
  */
 const fs = require("fs");
 const pLimit = require("p-limit");
-const { classifyPair, summarize, mergeRecords, reconcileFound, foundKey, VERDICT } = require("../lib/gap-adjudicate");
+const { classifyPair, summarize, mergeRecords, reconcileFound, foundKey, VERDICT } = require("../lib/advisories/gap-adjudicate");
 
 const OSV_API = "https://api.osv.dev/v1/vulns/";
 

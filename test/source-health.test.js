@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const {
 	SOURCES, sourceForUrl, classifyResponse, retryDelaysMs, RETRY_ATTEMPTS,
 	createSourceHealth, formatAbort, guardedFetch,
-} = require("../lib/source-health");
+} = require("../lib/scan/source-health");
 
 /* ---------------- attribution ---------------- */
 
@@ -242,8 +242,8 @@ test("a source that recovers lets the waiting callers through", async () => {
 });
 
 test("a caller that owns a deadline is never retried behind its back", async () => {
-	// lib/maven-repo.js wraps each mirror attempt in withDeadline(5s) and fails over to the
-	// next mirror; lib/registries.js and the npm registry do the same with
+	// lib/providers/maven/repo.js wraps each mirror attempt in withDeadline(5s) and fails over to the
+	// next mirror; lib/providers/registries.js and the npm registry do the same with
 	// AbortSignal.timeout. Retrying inside that budget is both futile — the signal is
 	// already aborted, so every retry fails instantly — and ruinous: 40s of sleeping per
 	// dead mirror instead of an immediate failover. Measured at 40.0s before this rule.
@@ -286,7 +286,7 @@ test("single-endpoint sources, which have no failover of their own, still get th
 
 /* ---------------- fan-out exhaustion (Maven mirrors, registry bases) ---------------- */
 
-const { classifyMissReason, noteFanoutExhausted, setActiveLedger } = require("../lib/source-health");
+const { classifyMissReason, noteFanoutExhausted, setActiveLedger } = require("../lib/scan/source-health");
 
 test("classifyMissReason: a 404/410 from a mirror is an answer; throttling and transport are not", () => {
 	assert.equal(classifyMissReason("HTTP 404"), "answered");
@@ -333,7 +333,7 @@ test("with no ledger registered (offline, or a unit test) the hook is inert", ()
 });
 
 /* ---------------- --retries ---------------- */
-const { setRetryAttempts, getRetryAttempts, describeSchedule } = require("../lib/source-health");
+const { setRetryAttempts, getRetryAttempts, describeSchedule } = require("../lib/scan/source-health");
 
 test("--retries: guardedFetch honours a configured retry count (schedule stays 5+n)", async () => {
 	const h = createSourceHealth();
@@ -376,7 +376,7 @@ test("--retries: a value that is not a non-negative integer is refused, never cl
 	assert.equal(getRetryAttempts(), 5, "a refused value leaves the setting untouched");
 });
 test('refresh failure summary is omitted only when every failed cache request is already described',()=>{
- const health=require('../lib/source-health').createSourceHealth();
+ const health=require('../lib/scan/source-health').createSourceHealth();
  health.markStale('euvd',new Date().toISOString(),{reason:'refresh-failed',requestKey:'detail-a'});
  assert.equal(health.unreportedStale(['detail-a']).length,0);
  health.markStale('euvd',new Date().toISOString(),{reason:'refresh-failed',requestKey:'detail-b'});
@@ -397,7 +397,7 @@ test('stale filtering retains unrelated nonblocking and unkeyed observations wit
 });
 
 test('request keys are stripped before fetch and concurrent failures remain independently attributable',async()=>{
- const {REQUEST_KEY}=require('../lib/source-health'),h=createSourceHealth(),seen=[];
+ const {REQUEST_KEY}=require('../lib/scan/source-health'),h=createSourceHealth(),seen=[];
  const f=guardedFetch({health:h,retries:0,fetch:async(url,init)=>{seen.push(Object.getOwnPropertySymbols(init));await Promise.resolve();return {status:503}},sleep:async()=>{}});
  await Promise.all(['a','b'].map(k=>f('https://services.nvd.nist.gov/rest/json/cves/2.0',{[REQUEST_KEY]:k})));
  assert.deepEqual(seen,[[],[]]);

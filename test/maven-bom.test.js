@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { collectImportBoms, backfillVersions, resolveBomManagedVersions, resolveAndBackfill, collectExternalParents, collectPropertyOverrides } = require("../lib/maven-bom");
+const { collectImportBoms, backfillVersions, resolveBomManagedVersions, resolveAndBackfill, collectExternalParents, collectPropertyOverrides } = require("../lib/codecs/maven/bom");
 
 test("collectPropertyOverrides reads each pom's OWN declared properties, dropping builtins and unresolved values", () => {
 	const store = {

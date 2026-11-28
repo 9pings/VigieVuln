@@ -2,6 +2,7 @@
 
 ## [1.3.5] — 2026-11-25
 
+- Reorganise `lib/`: only command entry points and configuration remain at its root; each data source has its folder under `lib/providers/<name>/` holding its requests and its own code, and the other modules are grouped by theme (`cache`, `advisories`, `findings`, `scan`, `inventory`, `reports`, `images`, `applications`, `maintenance`, `service`). `lib/README.md` describes the layout. The `exports` map of `package.json` keeps the module paths used by the server working.
 - Group system-scan advisories by project or CMS instance, with direct and transitive findings and their source paths.
 - Keep CMS modules and themes under their instance. Group extension advisories by owner, give private extensions their own dependency breakdown, and collapse component inventories by default.
 - Give the host its own inventory and findings for interpreters, services and system dependencies. Show the container images chapter when local image inspection was requested.

@@ -1,5 +1,5 @@
 /**
- * Maven mediation, module by module (lib/maven-reactor.js + lib/transitive.js), against the
+ * Maven mediation, module by module (lib/codecs/maven/reactor.js + lib/codecs/maven/transitive.js), against the
  * truth `mvn dependency:tree` gives for each shape. Every case reproduces a false positive or
  * a false negative an audit found in the previous global-pass design. Zero network.
  */

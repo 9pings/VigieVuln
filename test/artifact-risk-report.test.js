@@ -44,7 +44,7 @@ test('ENISA details show attributed risk and safe source links',()=>{
  const html=renderEuvdEvidence(cve,'en');assert.match(html,/ENISA EUVD/);assert.match(html,/6\.5/);assert.doesNotMatch(html,/ENISA context/);assert.match(html,/https:\/\/euvd\.enisa\.europa\.eu\/vulnerability\/EUVD-2024-48936/);assert.doesNotMatch(html,/javascript:/);assert.match(renderRiskAttribution(cve,'en'),/ENISA EUVD/);
 });
 test('full image HTML and Word report show European context alongside native discovery source',()=>{
- const {generateHtmlReport,generateWordReport}=require('../lib/cve-report'),id='CVE-2024-12345';
+ const {generateHtmlReport,generateWordReport}=require('../lib/reports/cve-report'),id='CVE-2024-12345';
  const details={id:'EUVD-2024-1',source:'euvd',score:6.5,severity:'MEDIUM',description:'Distinct ENISA explanation',references:['https://example.org/enisa-ref']};
  const dep={artifactTargetId:'img',ecosystem:'system',manager:'dpkg',name:'demo',version:'1',coordKey:'img:demo',artifactPath:'/var/lib/dpkg/status',scope:'runtime'};
  const cve={id,severity:'UNKNOWN',cveEvidence:[{id,euvd:{id:'EUVD-2024-1',exploitedSince:null},euvdDetails:details,certfr:[{ref:'CERTFR-2024-AVI-001',kind:'avis',title:'CERT'}]}]};

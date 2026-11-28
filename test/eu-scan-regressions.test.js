@@ -1,10 +1,10 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {createCacheRepository}=require('../lib/cache-repository');
+const {createCacheRepository}=require('../lib/cache/repository');
 const {enrichArtifactFindings}=require('../lib/artifacts/enrichment');
 const {projectImageCves}=require('../lib/artifacts/cve-view');
-function tmp(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'eu-review-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true})});return dir;}
+function tmp(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'eu-review-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true})});return dir;}
 test('EU context survives offline with OSV and NVD disabled and remains tied to each upstream CVE',async t=>{
  const cacheDir=tmp(t),repo=createCacheRepository(cacheDir),now=Date.now(),a='CVE-2024-12345',b='CVE-2024-56789';
  repo.put('catalogue','euvd',{_fetchedAt:now,body:{byCve:{[a]:'EUVD-2024-55'},exploited:{[a]:'2024-03-01'}}});

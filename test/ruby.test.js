@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const path = require("path");
 const { parseGemfileLock } = require("../lib/codecs/ruby/parse");
 const { gemToFindings } = require("../lib/codecs/ruby/registry");
-const { purlFor } = require("../lib/purl");
+const { purlFor } = require("../lib/inventory/purl");
 const ruby = require("../lib/codecs/ruby.codec");
 
 test("parseGemfileLock reads 4-space specs, skips nested deps, strips platform", () => {

@@ -102,13 +102,13 @@ test('collect preserves paths and replays CVEs on a separate auditor without ini
   // Destroy the test root. The auditor can now use only the collected evidence.
   fs.rmSync(root,{recursive:true});
   const auditor = path.join(dir,'auditor');
-  const store = require('../lib/advisory-store').openAdvisoryStore({cacheDir:path.join(auditor,'.vigie-vuln')});
+  const store = require('../lib/advisories/store').openAdvisoryStore({cacheDir:path.join(auditor,'.vigie-vuln')});
   const id = 'CVE-2025-10001', record = {cveMetadata:{cveId:id,state:'PUBLISHED'},containers:{cna:{affected:[
     {packageURL:'pkg:npm/specimen',versions:[{version:'1.0.0',status:'affected'}]},
   ]}}};
-  store.commit({records:[require('../lib/native-advisories').cveEnvelope(record,{fetchedAt:Date.now()})]});
+  store.commit({records:[require('../lib/advisories/native').cveEnvelope(record,{fetchedAt:Date.now()})]});
   store.close();
-  require('../lib/json-cache').save(path.join(auditor,'.vigie-vuln'),'eol-cache.json',{
+  require('../lib/cache/json').save(path.join(auditor,'.vigie-vuln'),'eol-cache.json',{
     entries:{wordpress:[{cycle:'6.6',eol:'2025-01-01',latest:'6.6.3'}]},
     meta:{fetchedAt:Date.now()},
   });
@@ -214,7 +214,7 @@ test('Ghost themes, Redmine core and installed Ruby libraries retain their ident
   assert.ok(!replay.deps.some(d=>d.name==='phantom'));
   assert.ok(replay.deps.some(d=>d.name==='sample'));
   const cacheDir=path.join(scratch,'cache');
-  require('../lib/cache-repository').createCacheRepository(cacheDir).put('image-product-nvd/2',
+  require('../lib/cache/repository').createCacheRepository(cacheDir).put('image-product-nvd/2',
     JSON.stringify(['redmine:redmine','6.1.6']),{records:[{id:'CVE-2099-1234'}],unknown:[]});
   const assessment=await require('../lib/artifacts/product-advisories').assessProductAdvisories(replay,{cacheDir,offline:true});
   assert.equal(assessment.matches.length,1);

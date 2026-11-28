@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { sha1ToBase64, parseDepsDev, parseCircl, lookupHash } = require("../lib/hash-id");
+const { sha1ToBase64, parseDepsDev, parseCircl, lookupHash } = require("../lib/providers/hashid/identify");
 
 test("sha1ToBase64 converts a hex digest to deps.dev's base64", () => {
 	assert.equal(sha1ToBase64("ba55c13d7ac2fd44df9cc8074455719a33f375b9"), "ulXBPXrC/UTfnMgHRFVxmjPzdbk=");

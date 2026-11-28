@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { buildFindings } = require("../lib/json-export");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildFindings } = require("../lib/reports/json-export");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test("JSON export includes an unmanaged inventory + summary count", () => {
 	const resolved = new Map();

@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {groupReportWarnings}=require('../lib/report-notices');
-const {generateHtmlReport,generateWordReport}=require('../lib/cve-report');
+const {groupReportWarnings}=require('../lib/reports/notices');
+const {generateHtmlReport,generateWordReport}=require('../lib/reports/cve-report');
 
 test('warning groups retain locations and distinguish sources and HTTP causes',()=>{
  const base={type:'image-scan-failed',reason:'image-acquisition-failed',cause:'HTTP 503',message:'Registry HTTP 503'};
@@ -81,15 +81,15 @@ test('warning grouping uses explicit image identifiers even without an individua
   {type:'dependency-coverage',reason:'same',message:'same',artifactTargetIds:['a']},
   {type:'dependency-coverage',reason:'same',message:'same'},
  ]);
- assert.equal(grouped.length,2);assert.equal(require('../lib/report-notices').warningScope(grouped[0]),'image');assert.equal(require('../lib/report-notices').warningScope(grouped[1]),'project');
+ assert.equal(grouped.length,2);assert.equal(require('../lib/reports/notices').warningScope(grouped[0]),'image');assert.equal(require('../lib/reports/notices').warningScope(grouped[1]),'project');
  const unavailable=groupReportWarnings([{type:'source-unavailable',source:'osv',message:'HTTP 503',artifactTargetIds:['a','b']}]);
  assert.equal(unavailable.length,1);assert.equal(unavailable[0].type,'image-source-unavailable');assert.deepEqual(unavailable[0].artifactTargetIds,['a','b']);
  assert.deepEqual(groupReportWarnings(unavailable),unavailable);
 });
 
 test('unpinned images are translated image warnings, not failures or CVEs, in HTML and Word',()=>{
- const warnings=require('../lib/image-references').unpinnedImageWarnings([{reference:'nginx:stable-alpine',path:'Dockerfile',line:3}]);
- assert.equal(require('../lib/report-notices').warningScope(warnings[0]),'image');assert.deepEqual(groupReportWarnings(warnings),warnings);
+ const warnings=require('../lib/images/references').unpinnedImageWarnings([{reference:'nginx:stable-alpine',path:'Dockerfile',line:3}]);
+ assert.equal(require('../lib/reports/notices').warningScope(warnings[0]),'image');assert.deepEqual(groupReportWarnings(warnings),warnings);
  const input={cveMatches:[],eolResults:[],obsoleteResults:[],outdatedResults:[],resolvedDeps:new Map(),projectInfo:{name:'fixture',imageReferences:[{reference:'nginx:stable-alpine'}]},warnings};
  for(const render of [generateHtmlReport,generateWordReport])for(const locale of ['en','fr']){
   const html=render({...input,locale});assert.match(html,/warn-image-unpinned/);assert.match(html,/nginx:stable-alpine/);assert.match(html,/Dockerfile:3/);assert.match(html,/@sha256:&lt;digest&gt;/);

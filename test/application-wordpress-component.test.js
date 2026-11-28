@@ -4,9 +4,9 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const composer = require("../lib/codecs/composer.codec");
-const wordpress = require("../lib/application-plugins/wordpress");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+const wordpress = require("../lib/applications/plugins/wordpress");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 
 test("component context inventories a standalone private WordPress plugin and owns its Composer dependency CVE", async () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-wp-component-"));

@@ -5,9 +5,9 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { configureResourceRoute } = require('../lib/providers');
-const { createSourceHealth } = require('../lib/source-health');
-const { runApplicationPlugins } = require('../lib/application-plugins/runner');
-const drupal = require('../lib/application-plugins/drupal');
+const { createSourceHealth } = require('../lib/scan/source-health');
+const { runApplicationPlugins } = require('../lib/applications/plugins/runner');
+const drupal = require('../lib/applications/plugins/drupal');
 const composer = require('../lib/codecs/composer.codec');
 const CLI = path.resolve(__dirname, '..');
 const NOW = Date.now() - 1000;
@@ -32,7 +32,7 @@ async function drupalFixture(work) {
 		const opts = { plugins: [drupal], selection: 'drupal', activeCodecIds: ['composer'],
 			resolvedDeps: deps, advisoryCacheDir: directory, now: NOW };
 		await work({ file, root, opts });
-	} finally { resetRoute(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(directory, { recursive: true, force: true }); }
+	} finally { resetRoute(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(directory, { recursive: true, force: true }); }
 }
 
 test('hosted Drupal revalidates a 48h implicit snapshot on every scan with only public package identities', async () => {
@@ -53,7 +53,7 @@ test('hosted Drupal revalidates a 48h implicit snapshot on every scan with only 
 			assert.equal(calls.length, i, 'even the newly saved snapshot cannot bypass proxy freshness');
 			assert.equal(result.coverage.find(c => c.sourceSnapshot)?.sourceSnapshot.collectedAt, new Date(NOW).toISOString());
 		}
-		assert.equal(JSON.parse(require('../lib/application-providers/snapshot-cache').read(file,{preferCache:true}).bytes)._fadSnapshot.collectedAt, new Date(NOW).toISOString());
+		assert.equal(JSON.parse(require('../lib/applications/snapshot-cache').read(file,{preferCache:true}).bytes)._fadSnapshot.collectedAt, new Date(NOW).toISOString());
 		fs.writeFileSync(file, 'invalid old snapshot');
 		assert.equal((await runApplicationPlugins(root, opts)).findings.length, 0, 'corrupt implicit cache also goes through the proxy');
 		assert.equal(calls.length, 3);
@@ -107,10 +107,10 @@ function retireFixture(code) {
 		fs.writeFileSync(hook, `const deny=()=>{throw Error('unexpected direct network')};globalThis.fetch=deny;for(const id of ['http','https']){const m=require(id);m.request=deny;m.get=deny}`);
 		const script = `
 		const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-		const R=require(${JSON.stringify(path.join(CLI, 'lib/retire'))});
-		const dbCache=require(${JSON.stringify(path.join(CLI, 'lib/cache-repository'))}).createCacheRepository(path.join(process.env.HOME,'.vigie-vuln'));
+		const R=require(${JSON.stringify(path.join(CLI, 'lib/providers/retire/scan'))});
+		const dbCache=require(${JSON.stringify(path.join(CLI, 'lib/cache/repository'))}).createCacheRepository(path.join(process.env.HOME,'.vigie-vuln'));
 		const {configureResourceRoute}=require(${JSON.stringify(path.join(CLI, 'lib/providers'))});
-		const {createSourceHealth}=require(${JSON.stringify(path.join(CLI, 'lib/source-health'))});
+		const {createSourceHealth}=require(${JSON.stringify(path.join(CLI, 'lib/scan/source-health'))});
 		const repo=${JSON.stringify(REPO)},old=${JSON.stringify(OLD)};
 		const src=path.join(process.env.HOME,'source');fs.mkdirSync(src);
 		fs.writeFileSync(path.join(src,'widget-1.0.0.js'),'// fixture');
@@ -120,7 +120,7 @@ function retireFixture(code) {
 		const run = spawnSync(process.execPath, ['-e', script], { cwd: CLI, encoding: 'utf8', timeout: 20000,
 			env: { ...process.env, HOME: home, USERPROFILE: home, NODE_OPTIONS: `--require=${hook}` } });
 		assert.equal(run.status, 0, `${run.error || ''}\n${run.stderr}\n${run.stdout}`);
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); }
 }
 
 test('hosted Retire bypasses 2h findings/signatures and rescans with proxy signatures on every invocation', () => {
@@ -237,5 +237,5 @@ test('hosted Drupal/Retire distinguish confirmed refresh failures from normal re
 		const calls = fs.readFileSync(callsFile, 'utf8').trim().split('\n').map(JSON.parse);
 		assert.deepEqual(calls.map(q => q.provider + '.' + q.type), ['drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures', 'drupal.advisories', 'retire.signatures']);
 		assert.ok(calls.filter(q => q.provider === 'drupal').every(q => JSON.stringify(q.params.packages) === '["drupal/webform"]'));
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(home, { recursive: true, force: true }); }
 });

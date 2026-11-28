@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { configureResourceRoute, getResource, providerKey } = require("../lib/providers");
-const { createCacheStore, startProxyCacheServer } = require("../lib/proxy-cache");
+const { createCacheStore, startProxyCacheServer } = require("../lib/cache/proxy-cache");
 
 const nvdId = "CVE-2024-31210";
 const nvdResponse = { totalResults: 1, vulnerabilities: [{ cve: { id: nvdId,
@@ -25,7 +25,7 @@ test("the router builds a provider request for direct access", async () => {
 });
 
 test('direct source health identifies each lookup without hiding same-host SPIP discovery', async () => {
-	const {guardedFetch,createSourceHealth,REQUEST_KEY}=require('../lib/source-health');
+	const {guardedFetch,createSourceHealth,REQUEST_KEY}=require('../lib/scan/source-health');
 	const {failureKey}=require('../lib/providers/common');
 	const health=createSourceHealth();
 	const fetcher=guardedFetch({health,retries:0,fetch:async (_url,init)=>{
@@ -53,7 +53,7 @@ test('custom proxies receive the CLI version without adding it to direct request
 });
 
 test("forceRefresh revalidates even when a local HTTP cache entry is fresh", async t => {
-	const dir=tmp(), store=createCacheStore(dir); t.after(()=>{require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true});});
+	const dir=tmp(), store=createCacheStore(dir); t.after(()=>{require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir,{recursive:true,force:true});});
 	let calls=0; const fetcher=async()=>{calls++;return Response.json({id:nvdId});};
 	configureResourceRoute({proxyUrl:null,hosted:false,store,health:null,fetcher});
 	try {
@@ -98,7 +98,7 @@ test("the server receives provider parameters, deduplicates concurrent requests 
 	} finally {
 		await new Promise(ok => second.server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
 
@@ -137,7 +137,7 @@ test("overlapping OSV batches share package-version work and survive a source ou
 	} finally {
 		await new Promise(ok => server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
 
@@ -176,7 +176,7 @@ test("Packagist and EPSS batches deduplicate by package and CVE identity", async
 	} finally {
 		await new Promise(ok => server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
 
@@ -188,7 +188,7 @@ test("the client keeps its semantic entry if the proxy is unreachable and fails 
 		configureResourceRoute({ proxyUrl: running.url, store: local, health: null, fetcher: globalThis.fetch });
 		assert.equal((await (await getResource("nvd", "cve", { id: nvdId })).json()).vulnerabilities[0].cve.id, nvdId);
 		const key = providerKey("nvd", "cve", { id: nvdId });
-		require('../lib/cache-db').getCacheDb(clientDir).prepare('UPDATE resources SET fetched_at=1 WHERE key=?').run('serve-cache:'+key);
+		require('../lib/cache/db').getCacheDb(clientDir).prepare('UPDATE resources SET fetched_at=1 WHERE key=?').run('serve-cache:'+key);
 		await new Promise(ok => running.server.close(ok));
 		const stale = await getResource("nvd", "cve", { id: nvdId });
 		assert.equal(stale.headers.get("x-fad-proxy"), "stale");
@@ -198,13 +198,13 @@ test("the client keeps its semantic entry if the proxy is unreachable and fails 
 	} finally {
 		if (running.server.listening) await new Promise(ok => running.server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(serverDir, { recursive: true, force: true });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(clientDir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(serverDir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(clientDir, { recursive: true, force: true });
 	}
 });
 
 test("publisher pagination survives both proxy and local cache hits", async () => {
-	const { fetchGithubAdvisories } = require("../lib/application-providers/live-snapshot");
+	const { fetchGithubAdvisories } = require("../lib/applications/live-snapshot");
 	const dir = tmp(), localDir = tmp();
 	let calls = 0;
 	const running = await startProxyCacheServer({ port: 0, store: createCacheStore(dir), fetcher: async url => {
@@ -226,8 +226,8 @@ test("publisher pagination survives both proxy and local cache hits", async () =
 	} finally {
 		await new Promise(ok => running.server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(localDir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(localDir, { recursive: true, force: true });
 	}
 });
 
@@ -249,12 +249,12 @@ test("a batch in failure backoff does not strand preceding reservations", async 
 	} finally {
 		running.server.closeAllConnections();
 		await new Promise(ok => running.server.close(ok));
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
 
 test("SPIP NVD snapshots use the shared provider route and server credentials", async () => {
-	const { fetchSpipAdvisories } = require("../lib/application-providers/spip-advisories");
+	const { fetchSpipAdvisories } = require("../lib/providers/spip/advisories");
 	const dir = tmp();
 	let calls = 0;
 	const running = await startProxyCacheServer({ port: 0, store: createCacheStore(dir), keys: { nvd: "server-key" },
@@ -276,12 +276,12 @@ test("SPIP NVD snapshots use the shared provider route and server credentials", 
 	} finally {
 		await new Promise(ok => running.server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
 
 test("a stale proxy snapshot keeps its original collection date through local caching", async () => {
-	const { fetchDrupalAdvisories } = require("../lib/application-providers/live-snapshot");
+	const { fetchDrupalAdvisories } = require("../lib/applications/live-snapshot");
 	const dir = tmp(), localDir = tmp(), store = createCacheStore(dir);
 	const stamp = Date.parse("2020-01-01T00:00:00Z");
 	const params = { packages: ["drupal/core"] };
@@ -298,8 +298,8 @@ test("a stale proxy snapshot keeps its original collection date through local ca
 	} finally {
 		await new Promise(ok => running.server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(localDir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(localDir, { recursive: true, force: true });
 	}
 });
 
@@ -311,8 +311,8 @@ const wordfenceFixture = () => {
 };
 
 test("Wordfence live scan and anonymized warming accept only the server key", async () => {
-	const { fetchWordfenceFeed, WORDFENCE_PRODUCTION_URL } = require("../lib/application-providers/live-snapshot");
-	const { warmCmsAdvisorySnapshots } = require("../lib/cms-snapshot-warm");
+	const { fetchWordfenceFeed, WORDFENCE_PRODUCTION_URL } = require("../lib/applications/live-snapshot");
+	const { warmCmsAdvisorySnapshots } = require("../lib/applications/snapshot-warm");
 	const dir = tmp(), snapshots = tmp();
 	let calls = 0;
 	const running = await startProxyCacheServer({ port: 0, store: createCacheStore(dir), keys: { wordfence: "server-secret" },
@@ -327,14 +327,14 @@ test("Wordfence live scan and anonymized warming accept only the server key", as
 			applications: [{ type: "wordpress" }], wordfenceLive: true });
 		assert.equal(warmed.wordfence, true);
 		assert.equal(calls, 1);
-		const snapshot = JSON.parse(require('../lib/application-providers/snapshot-cache').read(path.join(snapshots, "wordfence-v3-targeted.json")).bytes);
+		const snapshot = JSON.parse(require('../lib/applications/snapshot-cache').read(path.join(snapshots, "wordfence-v3-targeted.json")).bytes);
 		assert.deepEqual(snapshot.queriedSoftware, [{ type: "core", slug: "wordpress" }]);
 		assert.equal(JSON.stringify(snapshot).includes("server-secret"), false);
 		await assert.rejects(fetchWordfenceFeed("https://custom.invalid/feed"), /require the official source/);
 	} finally {
 		await new Promise(ok => running.server.close(ok));
 		configureResourceRoute({ proxyUrl: null, store: null, health: null, fetcher: null });
-		require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(snapshots, { recursive: true, force: true });
+		require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(snapshots, { recursive: true, force: true });
 	}
 });
 
@@ -347,7 +347,7 @@ test("Wordfence with no server or client key is refused before reaching upstream
 		assert.equal(response.status, 503);
 		assert.match((await response.json()).error, /--wordfence-key/);
 		assert.equal(running.server.fadStats.upstream, 0);
-	} finally { await new Promise(ok => running.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
+	} finally { await new Promise(ok => running.server.close(ok)); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("CLI --wordfence-live works without a client key through the shared server", async () => {
@@ -372,16 +372,16 @@ test("CLI --wordfence-live works without a client key through the shared server"
 			"--proxy-cache", running.url, "--allow-insecure-http", "-d", "osv,packagist-audit,nvd,eol,epss,kev,retire,transitive",
 			"--report-json", output, "--no-checksums"], { env, timeout: 15000 });
 		assert.equal(JSON.parse(fs.readFileSync(output,'utf8')).summary.scanReliable,true);
-	} finally { await new Promise(ok => running.server.close(ok)); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(source, { recursive: true, force: true }); }
+	} finally { await new Promise(ok => running.server.close(ok)); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, { recursive: true, force: true }); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(source, { recursive: true, force: true }); }
 });
 
 test('force update revalidates individual proxy records while retaining stale evidence on denied refresh',async t=>{
  const dir=tmp();let calls=0,deny=false;const server=await startProxyCacheServer({port:0,host:'127.0.0.1',store:createCacheStore(dir),fetcher:async()=>{calls++;return deny?new Response('',{status:503}):Response.json({id:'EUVD-2024-123',description:`revision-${calls}`});}});
- t.after(async()=>{configureResourceRoute({proxyUrl:null,hosted:false,store:null,fetcher:null,resetRateLimit:true});require('../lib/cache-policy').setForceUpdate(false);await new Promise(ok=>server.server.close(ok));require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ t.after(async()=>{configureResourceRoute({proxyUrl:null,hosted:false,store:null,fetcher:null,resetRateLimit:true});require('../lib/cache/policy').setForceUpdate(false);await new Promise(ok=>server.server.close(ok));require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
  configureResourceRoute({proxyUrl:server.url,hosted:false,store:null,health:null,fetcher:globalThis.fetch,resetRateLimit:true});
  const get=()=>getResource('euvd','vulnerability',{id:'EUVD-2024-123'});
  assert.equal((await (await get()).json()).description,'revision-1');assert.equal((await (await get()).json()).description,'revision-1');assert.equal(calls,1);
- require('../lib/cache-policy').setForceUpdate(true);
+ require('../lib/cache/policy').setForceUpdate(true);
  const refreshed=await get();assert.equal((await refreshed.json()).description,'revision-2');assert.equal(calls,2);
  deny=true;const fallback=await get();assert.equal((await fallback.json()).description,'revision-2');assert.equal(fallback.headers.get('x-fad-proxy'),'stale');assert.equal(fallback.headers.get('x-fad-proxy-reason'),'refresh-failed');assert.equal(calls,3);
  const invalid=await fetch(server.url+'/v1/resource',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({provider:'euvd',type:'vulnerability',params:{id:'EUVD-2024-123'},revalidate:'true'})});assert.equal(invalid.status,400);

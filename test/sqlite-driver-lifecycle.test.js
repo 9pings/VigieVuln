@@ -9,7 +9,7 @@ test('SQLite loading filters only its known notice and restores warning delivery
   const script = `
     const assert = require('node:assert/strict');
     const original = process.emitWarning;
-    const {openSqlite} = require(${JSON.stringify(path.resolve(__dirname, '../lib/sqlite-driver'))});
+    const {openSqlite} = require(${JSON.stringify(path.resolve(__dirname, '../lib/cache/sqlite-driver'))});
     const db = openSqlite(':memory:');
     assert.equal(db.prepare('SELECT 42 AS value').get().value, 42);
     db.close();
@@ -31,7 +31,7 @@ test('SQLite loading filters only its known notice and restores warning delivery
 test('Bun closes every prepared SQLite statement, including evicted statements', t => {
   const script = `
     const assert = require('node:assert/strict');
-    const {openSqlite} = require(${JSON.stringify(path.resolve(__dirname, '../lib/sqlite-driver'))});
+    const {openSqlite} = require(${JSON.stringify(path.resolve(__dirname, '../lib/cache/sqlite-driver'))});
     const db = openSqlite(':memory:');
     const held = db.prepare('SELECT 1 AS value');
     for (let i = 0; i < 140; i++) db.prepare('SELECT ' + (i + 2) + ' AS value').get();

@@ -3,8 +3,8 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
-const { serializeDeps, deserializeDeps } = require("../lib/deps-descriptor");
-const { warmCmsAdvisorySnapshots } = require("../lib/cms-snapshot-warm");
+const { serializeDeps, deserializeDeps } = require("../lib/inventory/deps-descriptor");
+const { warmCmsAdvisorySnapshots } = require("../lib/applications/snapshot-warm");
 
 const NOW = Date.parse("2026-09-24T12:00:00Z");
 const jsonResponse = body => ({ ok: true, status: 200, text: async () => JSON.stringify(body), json: async () => body });
@@ -29,7 +29,7 @@ const WORDFENCE_FEED = { "123e4567-e89b-12d3-a456-426614174000": {
 		patched_versions: ["3.1"] }] } };
 
 function tempCache() { return fs.mkdtempSync(path.join(os.tmpdir(), "fad-cms-warm-")); }
-const read = (dir, file) => JSON.parse(require('../lib/application-providers/snapshot-cache').read(path.join(dir, file),{preferCache:true}).bytes);
+const read = (dir, file) => JSON.parse(require('../lib/applications/snapshot-cache').read(path.join(dir, file),{preferCache:true}).bytes);
 
 test("descriptor: application identities round-trip (public product coordinates, no paths)", () => {
 	const resolved = depsOf("guzzlehttp/guzzle");
@@ -58,7 +58,7 @@ test("warming: drupal/* coordinates fetch and cache the per-package Drupal feed"
 		assert.equal(snapshot._fadSnapshot.completeness, "tool-fetched");
 		assert.ok(snapshot._fadSnapshot.collectedAt);
 		assert.equal(calls.length, 1, "one query for the union of the descriptor's drupal/* identities");
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("warming: an inventoried drupal module absent from the lock is queried too (the live query set, not the lock set)", async () => {
@@ -71,7 +71,7 @@ test("warming: an inventoried drupal module absent from the lock is queried too 
 		assert.equal(warmed.drupal, 2, "core (lock) + webform (.info.yml inventory) — one union query");
 		const snapshot = read(cacheDir, "drupal-security-advisories.json");
 		assert.deepEqual(snapshot.queriedPackages.sort(), ["drupal/core", "drupal/webform"]);
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("warming: a declared prestashop application fetches the publisher feed even with no prestashop/* coordinate", async () => {
@@ -84,7 +84,7 @@ test("warming: a declared prestashop application fetches the publisher feed even
 		const snapshot = read(cacheDir, "github-prestashop-advisories.json");
 		assert.ok(Array.isArray(snapshot.advisories) && snapshot.advisories.length === 1);
 		assert.equal(snapshot._fadSnapshot.completeness, "tool-fetched");
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("warming: a declared wordpress application warms public advisories and checksums once per version", async () => {
@@ -102,7 +102,7 @@ test("warming: a declared wordpress application warms public advisories and chec
 		assert.equal(snapshot.version, "6.4.2");
 		assert.equal(snapshot.locale, "en_US");
 		assert.equal(snapshot._fadSnapshot.completeness, "tool-fetched");
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("warming: the Wordfence catalogue is fetched only when an API key is present", async () => {
@@ -121,7 +121,7 @@ test("warming: the Wordfence catalogue is fetched only when an API key is presen
 		assert.equal(withKey.wordfence, true);
 		const snapshot = read(cacheDir, "wordfence-v3.json");
 		assert.equal(snapshot._fadSnapshot.completeness, "tool-fetched");
-	} finally { require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
+	} finally { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); }
 });
 
 test("warming: nothing relevant in the descriptor → no fetch, no files", async () => {

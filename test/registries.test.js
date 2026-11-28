@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const os = require("os"); const fs = require("fs"); const path = require("path");
-const R = require("../lib/registries");
+const R = require("../lib/providers/registries");
 
 test("SUPPORTED lists the registry-backed ecosystems", () => {
 	assert.deepStrictEqual([...R.SUPPORTED].sort(), ["composer", "go", "maven", "npm", "nuget", "pypi", "ruby"]);
@@ -46,7 +46,7 @@ test("config registries CRUD round-trips via a temp HOME", () => {
 	} finally { os.homedir = prev; delete require.cache[require.resolve("../lib/config")]; fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 
-const { buildRepoList } = require("../lib/maven-repo");
+const { buildRepoList } = require("../lib/providers/maven/repo");
 test("maven buildRepoList still appends Central after the user repos, and dedups", () => {
 	const repos = buildRepoList([{ name: "nexus", url: "https://nexus/m2" }], [{ url: "https://nexus/m2" }]);
 	const centralAt = repos.findIndex(r => r.name === "central");

@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const crypto=require('node:crypto');
-const {fetchRegistryImage,fetchRegistrySboms,parseReference}=require('../lib/image-registry');
+const {fetchRegistryImage,fetchRegistrySboms,parseReference}=require('../lib/images/registry');
 const {openArtifact}=require('../lib/artifacts');
 const tar=require('tar-stream');
 function encode(value) {return Buffer.from(JSON.stringify(value));}
@@ -22,7 +22,7 @@ async function registryFixture() {
  const fetcher=async (url,options)=>{requests.push({url,options}); const id=decodeURIComponent(new URL(url).pathname.split('/').pop()); const body=objects.get(id);return body ? new Response(body,{status:200,headers:{'content-type':'application/vnd.oci.image.manifest.v1+json'}}) : new Response('missing',{status:404});};
  return {objects,platforms,requests,fetcher};
 }
-async function temp(t) {const d=fs.mkdtempSync(path.join(os.tmpdir(),'registry-test-'));t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(d,{recursive:true,force:true});});return d;}
+async function temp(t) {const d=fs.mkdtempSync(path.join(os.tmpdir(),'registry-test-'));t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(d,{recursive:true,force:true});});return d;}
 test('nested multi-platform indexes acquire OCI layouts and select a platform',async t=>{
  const f=await registryFixture(),dir=await temp(t), acquired=await fetchRegistryImage('example.org/team/image:latest',{fetcher:f.fetcher,tmpDir:dir,platform:'linux/arm64'});t.after(acquired.cleanup);
  assert.equal(acquired.metadata.platforms.length,1);assert.equal(acquired.metadata.platforms[0].architecture,'arm64');
@@ -131,7 +131,7 @@ test('online inventory cache verifies mutable tags and reuses content without do
 });
 
 test('manifest digest resolution rejects substituted content before trusting cached inventories',async()=>{
- const {fetchRegistryDigest}=require('../lib/image-registry'),f=await registryFixture();
+ const {fetchRegistryDigest}=require('../lib/images/registry'),f=await registryFixture();
  await assert.rejects(fetchRegistryDigest('example.org/team/image:latest',{fetcher:async()=>new Response(f.objects.get('latest'),{headers:{'docker-content-digest':'sha256:'+'a'.repeat(64)}})}),/digest mismatch/);
 });
 

@@ -4,10 +4,10 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {vulnVerdict}=require('../lib/osv-db');
-const {makeDepRecord}=require('../lib/dep-record');
-const {queryBatch,queryReviewedForDeps,vulnToMatch}=require('../lib/osv');
-const {openAdvisoryStore}=require('../lib/advisory-store');
+const {vulnVerdict}=require('../lib/providers/osv/db');
+const {makeDepRecord}=require('../lib/inventory/dep-record');
+const {queryBatch,queryReviewedForDeps,vulnToMatch}=require('../lib/providers/osv/query');
+const {openAdvisoryStore}=require('../lib/advisories/store');
 
 const affected={package:{ecosystem:'Maven',name:'org.example:widget'},versions:['1.0','1.1'],ranges:[],database_specific:{vigievuln_partial_versions:true,unaffected_versions:['2.0']}};
 const record={id:'vv:CVE-2026-1234:test',aliases:['CVE-2026-1234'],affected:[affected],curation:{method:'AI-assisted reconciliation'}};
@@ -33,7 +33,7 @@ test('external OSV records do not use VigieVuln-only partial metadata',()=>{
 
 test('offline reviewed evidence reports a match or a partial-coverage warning',async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-partial-'));
- const store=openAdvisoryStore({cacheDir:root}),at=Date.now();t.after(()=>{store.close();require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true});});
+ const store=openAdvisoryStore({cacheDir:root}),at=Date.now();t.after(()=>{store.close();require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true});});
  store.commit({records:[{source:'vigievuln',document:record,packages:[affected.package],fetchedAt:at,provenance:{transport:'test'}}],coverages:[{source:'osv',ecosystem:'Maven',complete:true,fetchedAt:at}]});
  const dep=version=>makeDepRecord({ecosystem:'maven',namespace:'org.example',name:'widget',version});
  const warnings=[];const result=await queryBatch([dep('1.0'),dep('1.5'),dep('2.0')],{offline:true,store,cacheDir:root,onWarning:w=>warnings.push(w)});
@@ -58,9 +58,9 @@ test('only VV explicit safe releases can become advisory candidates, with every 
 });
 
 test('VV candidate survives enrichment, but conflicting or unverified advisory fixes suppress it',()=>{
- const {mergeBySource}=require('../lib/merge-sources');
- const {buildFindings}=require('../lib/json-export');
- const {generateHtmlReport}=require('../lib/cve-report');
+ const {mergeBySource}=require('../lib/findings/merge');
+ const {buildFindings}=require('../lib/reports/json-export');
+ const {generateHtmlReport}=require('../lib/reports/cve-report');
  const dep=makeDepRecord({ecosystem:'maven',namespace:'org.example',name:'widget',version:'1.0'});
  const vv=vulnToMatch(dep,record,{source:'vigievuln'});vv.source='vigievuln';
  const nvd={dep,source:'nvd',cve:{id:'CVE-2026-1234',description:'NVD enrichment'}};
@@ -80,7 +80,7 @@ test('VV candidate survives enrichment, but conflicting or unverified advisory f
 
 test('reviewed npm evidence matches only its package and ecosystem, offline',async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-npm-reviewed-'));
- const store=openAdvisoryStore({cacheDir:root}),at=Date.now();t.after(()=>{store.close();require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true});});
+ const store=openAdvisoryStore({cacheDir:root}),at=Date.now();t.after(()=>{store.close();require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true});});
  const npm={package:{ecosystem:'npm',name:'uri-js'},versions:['4.4.0','4.4.1'],ranges:[],database_specific:{vigievuln_partial_versions:true}};
  const advisory={id:'vv:CVE-2026-103387:test',aliases:['CVE-2026-103387'],affected:[npm],curation:{method:'AI-assisted reconciliation'}};
  store.commit({records:[{source:'vigievuln',document:advisory,packages:[npm.package],fetchedAt:at,provenance:{transport:'test'}}],coverages:[{source:'osv',ecosystem:'npm',complete:true,fetchedAt:at},{source:'osv',ecosystem:'PyPI',complete:true,fetchedAt:at}]});

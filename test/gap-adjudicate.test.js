@@ -8,7 +8,7 @@
  */
 const test = require("node:test");
 const assert = require("node:assert");
-const { classifyPair, VERDICT, summarize, mergeRecords, reconcileFound } = require("../lib/gap-adjudicate");
+const { classifyPair, VERDICT, summarize, mergeRecords, reconcileFound } = require("../lib/advisories/gap-adjudicate");
 
 // GHSA-gm62-rw4g-vrc4 (CVE-2023-6481), reduced to the fields that decide the verdict.
 const LOGBACK = {

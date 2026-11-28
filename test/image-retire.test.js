@@ -4,8 +4,8 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {acquireInventories,assessInventories,writeSnapshot}=require('../lib/artifacts/scan');
 function setup(t){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-image-retire-')),root=path.join(dir,'root'),cacheDir=path.join(dir,'cache');
- fs.mkdirSync(root);t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
- const cache=require('../lib/cache-repository').createCacheRepository(cacheDir);
+ fs.mkdirSync(root);t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
+ const cache=require('../lib/cache/repository').createCacheRepository(cacheDir);
  const put=(name,text)=>{const f=path.join(root,name);fs.mkdirSync(path.dirname(f),{recursive:true});fs.writeFileSync(f,text);};
  const signatures=(fixed='2.0.0')=>cache.put('auxiliary','retire-signatures',JSON.stringify({jquery:{extractors:{filename:['jquery-(§§version§§)\\.js'],filecontent:['jQuery v(§§version§§)']},vulnerabilities:[{below:fixed,severity:'high',identifiers:{CVE:['CVE-2025-12345'],summary:'Fixture'},info:['https://example.test/advisory']}]}}));
  const options={offline:true,imageRetire:true,cacheDir,osv:false,distroAdvisories:false,publisherAdvisories:false,disableCveProject:true,disableGcve:true,enrich:[],fetcher:()=>assert.fail('network')};

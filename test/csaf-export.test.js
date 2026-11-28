@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { buildCsaf } = require("../lib/csaf-export");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildCsaf } = require("../lib/reports/csaf-export");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 function resolvedFixture() {
 	const m = new Map();
@@ -81,7 +81,7 @@ test("Wordfence advisory without CVE uses CSAF ids and retains affected product"
 });
 
 test("a CSAF vulnerability keeps every physical occurrence as its own affected product", () => {
-	const { makeDepRecord } = require("../lib/dep-record");
+	const { makeDepRecord } = require("../lib/inventory/dep-record");
 	const resolved = new Map();
 	const mk = (version, findingId) => {
 		const dep = makeDepRecord({ ecosystem: "composer", namespace: "v", name: "lib", version, manifestPath: "/p/composer.lock" });

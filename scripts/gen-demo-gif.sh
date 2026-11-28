@@ -26,7 +26,7 @@ OUT=docs/assets/demo.gif
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 CACHE_ARGS=()
 if [[ -n "${DEMO_CACHE_DIR:-}" ]]; then
-  export VIGIEVULN_DEMO_CACHE_MODULE="$PWD/lib/cache-directory.js"
+  export VIGIEVULN_DEMO_CACHE_MODULE="$PWD/lib/cache/directory.js"
   printf '%s\n' 'require(process.env.VIGIEVULN_DEMO_CACHE_MODULE).setActiveCacheDir(process.env.DEMO_CACHE_DIR);' > "$TMP/cache.cjs"
   CACHE_ARGS=(--require "$TMP/cache.cjs")
 fi

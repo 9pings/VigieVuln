@@ -1,8 +1,8 @@
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {parsePublisherRange,normalizePublisherMavenAdvisory}=require('../lib/github-publisher-maven');
-const {vulnVerdict}=require('../lib/osv-db');
+const {parsePublisherRange,normalizePublisherMavenAdvisory}=require('../lib/providers/github/publisher-maven');
+const {vulnVerdict}=require('../lib/providers/osv/db');
 const advisory={ghsa_id:'GHSA-h722-h6c2-6j3c',cve_id:'CVE-2026-102467',state:'published',published_at:'2026-10-07T21:55:53Z',updated_at:'2026-10-15T13:09:33Z',html_url:'https://github.com/eclipse-vertx/vert.x/security/advisories/GHSA-h722-h6c2-6j3c',summary:'WebSocket decompression',vulnerabilities:[{package:{ecosystem:'maven',name:'io.vertx:vertx-core'},vulnerable_version_range:'>= 4.0.0, <= 4.5.34',patched_versions:'4.5.35'},{package:{ecosystem:'maven',name:'io.vertx:vertx-core'},vulnerable_version_range:'5.2.0',patched_versions:'5.2.1'}]};
 const verdict=(version,value)=>vulnVerdict(version,{affected:[{...parsePublisherRange(value),package:{ecosystem:'Maven',name:'x:y'}}]},'Maven');
 test('publisher intervals preserve inclusive/exclusive boundaries and independent branches',()=>{

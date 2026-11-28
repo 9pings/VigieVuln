@@ -2,9 +2,9 @@ const isolatedTestCache = require('./helpers/isolated-cache')('osv-cache-integri
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
-const { queryBatch, cacheKey } = require("../lib/osv");
+const { queryBatch, cacheKey } = require("../lib/providers/osv/query");
 const { providerKey } = require("../lib/providers");
-const { openAdvisoryStore } = require('../lib/advisory-store');
+const { openAdvisoryStore } = require('../lib/advisories/store');
 const dep = name => ({ ecosystem: "maven", namespace: "org.example", groupId: "org.example",
 	name, artifactId: name, version: "1.0", versions: ["1.0"] });
 const response = body => ({ ok: true, json: async () => body });
@@ -12,7 +12,7 @@ const advisory = id => ({ id, summary: "Synthetic test advisory", database_speci
 function fixture(t) {
 	const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "fad-osv-integrity-"));
 	const store = openAdvisoryStore({ cacheDir });
-	t.after(() => { store.close(); require('../lib/cache-db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
+	t.after(() => { store.close(); require('../lib/cache/db').closeCacheDbs(); fs.rmSync(cacheDir, { recursive: true, force: true }); });
 	const tuple = d => ({ source: 'osv', ecosystem: 'Maven', name: `${d.groupId}:${d.name}`, version: d.version });
 	const seed = (d, id, fetchedAt = Date.now() - 48 * 3600e3) => store.commit({
 		records: [{ source: 'osv', document: advisory(id), fetchedAt }],

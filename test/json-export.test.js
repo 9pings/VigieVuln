@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { buildFindings } = require("../lib/json-export");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildFindings } = require("../lib/reports/json-export");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test("buildFindings produces a flat findings document with summary counts", () => {
 	const log4j = makeDepRecord({ ecosystem: "maven", namespace: "org.apache.logging.log4j", name: "log4j-core", version: "2.14.1", manifestPath: "/proj/pom.xml" });
@@ -276,7 +276,7 @@ test('warning redaction never changes URL query values that contain the project 
 	assert.equal(doc.warnings[0].message, `Failed pom.xml; see ${url}`);
 });
 test('system advisory export preserves risk provenance and relationship semantics',()=>{
- const {buildFindings}=require('../lib/json-export');
+ const {buildFindings}=require('../lib/reports/json-export');
  const advisory={id:'DLA-3951-1',aliases:[],upstream:['CVE-2024-8096','CVE-2024-9999'],related:['DEBIAN-CVE-2024-8096'],summary:'curl security update',description:'advisory text',published:'2024-11-14T00:00:00Z',modified:'2026-03-09T00:00:00Z',advisorySource:'https://storage.googleapis.com/debian-osv/dla-osv/DLA-3951-1.json',severity:'UNKNOWN',riskEvidence:{source:'nvd',id:'CVE-2024-8096',relationship:'upstream'},severitySource:'nvd',scoreSource:'nvd',nvdEvidence:{records:[{id:'CVE-2024-8096',relationship:'upstream',severity:'HIGH',score:7.5},{id:'CVE-2024-9999',relationship:'upstream',severity:'LOW',score:2.1}]}};
  const row=buildFindings({cveMatches:[{dep:{ecosystem:'system',name:'curl',version:'1'},source:'osv',cve:advisory}]}).cve[0];
  for(const key of ['id','aliases','upstream','related','summary','published','modified','advisorySource','riskEvidence','severitySource','scoreSource','nvdEvidence'])assert.deepEqual(row[key],advisory[key]);
@@ -284,7 +284,7 @@ test('system advisory export preserves risk provenance and relationship semantic
 });
 
 test("each finding exports its texts once: a repeated NVD record and repeated descriptions are dropped", () => {
-	const { buildFindings } = require("../lib/json-export");
+	const { buildFindings } = require("../lib/reports/json-export");
 	const description = "In the Linux kernel, the following vulnerability has been resolved: fixture.";
 	const references = [{ url: "https://git.kernel.org/stable/c/abc" }];
 	const euvdDetails = { id: "EUVD-2026-1", description, references: ["https://git.kernel.org/stable/c/abc"] };
@@ -308,7 +308,7 @@ test("each finding exports its texts once: a repeated NVD record and repeated de
 });
 
 test("a summary or description that only reflows the finding's text is dropped; CERT-FR notices are listed once", () => {
-	const { buildFindings } = require("../lib/json-export");
+	const { buildFindings } = require("../lib/reports/json-export");
 	const dep = { ecosystem: "system", name: "linux-image", version: "6.1.69-1", coordKey: "system:deb:linux-image" };
 	const notice = { ref: "CERTFR-2026-AVI-0225", kind: "avis", title: "Multiples vulnérabilités dans le noyau Linux" };
 	const description = "In the Linux kernel, the following vulnerability has been resolved:\n\ncifs: fix potential race.";
@@ -328,9 +328,9 @@ test("a summary or description that only reflows the finding's text is dropped; 
 });
 
 test("beyond a component's detail limit, findings stay listed with identity and rating but without texts", () => {
-	const { buildFindings } = require("../lib/json-export");
-	const { buildCycloneDx } = require("../lib/sbom-export");
-	const { makeDepRecord } = require("../lib/dep-record");
+	const { buildFindings } = require("../lib/reports/json-export");
+	const { buildCycloneDx } = require("../lib/reports/sbom-export");
+	const { makeDepRecord } = require("../lib/inventory/dep-record");
 	const kernel = makeDepRecord({ ecosystem: "system", namespace: "debian", name: "linux-image", version: "6.1.69-1", manifestPath: "/var/lib/dpkg/status" });
 	const brotli = makeDepRecord({ ecosystem: "system", namespace: "debian", name: "libbrotli1", version: "1.0.9-2", manifestPath: "/var/lib/dpkg/status" });
 	const finding = (dep, n, severity, score) => ({ dep, source: "osv", cve: { id: `CVE-2026-${10000 + n}`, severity, score, description: `text ${n}`,

@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const {responseFailure,responseError}=require('../lib/request-failure');
+const {responseFailure,responseError}=require('../lib/providers/request-failure');
 test('proxy admission refusal is distinguished from upstream failure without reflecting untrusted text',()=>{
  const denied=responseFailure(new Response(null,{status:503,headers:{'x-fad-proxy':'denied','retry-after':'30'}}));
  assert.equal(denied.layer,'proxy');assert.equal(denied.code,'proxy-budget-exhausted');assert.equal(denied.retryAfterSeconds,30);

@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const { enrichKev, indexKevCatalog, CACHE_PATH } = require("../lib/kev");
+const { enrichKev, indexKevCatalog, CACHE_PATH } = require("../lib/providers/kev/enrich");
 
 const SAMPLE = {
 	title: "CISA KEV",
@@ -22,7 +22,7 @@ test("indexKevCatalog builds a cveID → metadata map", () => {
 // enrichKev reads a TTL'd cache file. Back it up so a real cache doesn't shadow
 // the mock fetcher, and restore it afterwards (non-destructive to the user).
 function withFreshCache(fn) {
-	const repository=require('../lib/cache-repository').createCacheRepository(require('node:path').dirname(CACHE_PATH));
+	const repository=require('../lib/cache/repository').createCacheRepository(require('node:path').dirname(CACHE_PATH));
 	const backup=repository.get('catalogue','kev');
 	repository.delete('catalogue','kev');
 	return Promise.resolve()

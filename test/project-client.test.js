@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {sanitizeDescriptor,checkDescriptorSize,createProject,updateProject,projectRequest,MAX_RESPONSE_BYTES,MAX_DESCRIPTOR_BYTES}=require('../lib/project-client');
+const {sanitizeDescriptor,checkDescriptorSize,createProject,updateProject,projectRequest,MAX_RESPONSE_BYTES,MAX_DESCRIPTOR_BYTES}=require('../lib/service/project-client');
 const sample={schema:'fad-deps/2',privatePath:'/secret',deps:[{ecosystem:'npm',ecosystemType:'npm',name:'demo',namespace:'',version:'1.0.0',scope:'prod',relation:'direct',manifestPath:'/secret'}]};
 test('descriptor limit counts UTF-8 bytes and applies before either upload',async()=>{
  const base={...sample,padding:''};
@@ -112,7 +112,7 @@ test('CLI project push uses the saved account session and never forwards descrip
  const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'vigie-project-cli-'));
  try {
-  require('../lib/account-session').createAccountSessionStore({homeDir:home}).write({token:'test_session_123',expiresAt:Date.now()+3600000});
+  require('../lib/service/account-session').createAccountSessionStore({homeDir:home}).write({token:'test_session_123',expiresAt:Date.now()+3600000});
   const descriptor=path.join(home,'deps.json'),preload=path.join(home,'fake.cjs'),capture=path.join(home,'request.json');
   fs.writeFileSync(descriptor,JSON.stringify(sample));
   fs.writeFileSync(preload,`globalThis.fetch=async (url,opts)=>{ if(url.endsWith('/v1/accounts/me'))return Response.json({account:{id:'account',email:'test@example.test',terms:{version:'v1',documentUrl:'/terms/v1',accepted:true}}}); require('node:fs').writeFileSync(process.env.VV_CAPTURE,JSON.stringify({url,method:opts.method,body:opts.body})); return Response.json({project:{id:'12345678-1234-1234-1234-123456789abc',revision:1}}) }`);

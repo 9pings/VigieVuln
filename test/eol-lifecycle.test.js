@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lifecycleStatus, isEol } = require("../lib/outdated");
+const { lifecycleStatus, isEol } = require("../lib/maintenance/outdated");
 
 // Fixed clock so the date comparisons never drift. 2026-09-02 = the day this was designed.
 const NOW = Date.parse("2026-09-02T00:00:00Z");
@@ -40,8 +40,8 @@ test("isEol is lifecycleStatus === 'eol' (back-compat)", () => {
 	assert.equal(isEol(null), false);
 });
 
-const { checkEolDeps } = require("../lib/outdated");
-const { makeDepRecord } = require("../lib/dep-record");
+const { checkEolDeps } = require("../lib/maintenance/outdated");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 // Real endoflife.date shapes (values as of 2026-09), trimmed.
 const SYMFONY = [
@@ -172,8 +172,8 @@ test("non-framework EOL findings are untouched by grouping (no anchor / componen
 // endoflife.date `extendedSupport`: PAID support past the open-source end of life. It must
 // NOT clear the finding (subscribers only, builds from the vendor's private repository) —
 // it is stated beside it.
-const { makeDepRecord: mkRec } = require("../lib/dep-record");
-const { generateHtmlReport } = require("../lib/cve-report");
+const { makeDepRecord: mkRec } = require("../lib/inventory/dep-record");
+const { generateHtmlReport } = require("../lib/reports/cve-report");
 const springDep = mkRec({ ecosystem: "maven", namespace: "org.springframework", name: "spring-core", version: "5.3.39", manifestPath: "/p/pom.xml" });
 const SPRING = [
 	{ cycle: "6.2", eol: "2026-06-30", extendedSupport: "2032-06-30", latest: "6.2.19" },

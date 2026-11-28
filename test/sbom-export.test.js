@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { buildCycloneDx, cvssMethod, cdxSeverity } = require("../lib/sbom-export");
-const { makeDepRecord } = require("../lib/dep-record");
+const { buildCycloneDx, cvssMethod, cdxSeverity } = require("../lib/reports/sbom-export");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 function resolvedFixture() {
 	const m = new Map();
@@ -157,7 +157,7 @@ test("Wordfence-only advisory registers its application component in CycloneDX",
 });
 
 test("the SBOM carries each occurrence's finding identity and application relation", () => {
-	const { buildCycloneDx } = require("../lib/sbom-export");
+	const { buildCycloneDx } = require("../lib/reports/sbom-export");
 	const mk = (version, relation, findingId) => ({
 		dep: { ecosystem: "composer", namespace: "v", name: "lib", groupId: "v", artifactId: "lib",
 			version, scope: "prod", coordKey: "composer:v/lib", manifestPaths: ["/p/composer.lock"] },

@@ -4,9 +4,9 @@ const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const composer = require("../lib/codecs/composer.codec");
-const drupal = require("../lib/application-plugins/drupal");
-const { runApplicationPlugins } = require("../lib/application-plugins/runner");
-const { buildApplicationRelations, expandComposerFindings } = require("../lib/application-inventory");
+const drupal = require("../lib/applications/plugins/drupal");
+const { runApplicationPlugins } = require("../lib/applications/plugins/runner");
+const { buildApplicationRelations, expandComposerFindings } = require("../lib/applications/inventory");
 
 test("Drupal local advisory snapshot assesses core while keeping a custom module separate", async () => {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "fad-drupal-feed-"));

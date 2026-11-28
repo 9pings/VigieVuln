@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { serializeDeps, deserializeDeps, SCHEMA } = require("../lib/deps-descriptor");
-const { makeDepRecord } = require("../lib/dep-record");
+const { serializeDeps, deserializeDeps, SCHEMA } = require("../lib/inventory/deps-descriptor");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test('legacy descriptors classify Maven provided dependencies as potentially production', () => {
 	const dep=makeDepRecord({ecosystem:'maven',namespace:'example',name:'provided',version:'1.0',scope:'provided',isDev:true});
@@ -75,7 +75,7 @@ test("serializeDeps omits the maven hints block when there are none", () => {
 });
 
 test("descriptor properties keep version overrides but not paths, URLs, secrets or unrelated values", () => {
-	const { collectPropertyOverrides, collectVersionPropertyNames } = require("../lib/maven-bom");
+	const { collectPropertyOverrides, collectVersionPropertyNames } = require("../lib/codecs/maven/bom");
 	const store = { byPath: { "pom.xml": {
 		properties: {
 			"log4j2.version": ["2.17.1"], "java.version": ["17"], customPin: ["1.2.3"],
@@ -99,7 +99,7 @@ test("descriptor properties keep version overrides but not paths, URLs, secrets 
 });
 
 test("descriptor preserves standard version ranges and Maven revision hints", () => {
-	const { filterVersionProperties } = require("../lib/deps-descriptor");
+	const { filterVersionProperties } = require("../lib/inventory/deps-descriptor");
 	const properties = { "library.version": "[1.0,2.0)", revision: "1.2.3-SNAPSHOT", changelist: "",
 		mavenVersion: "3.9.9", "version.jackson": "2.17.1" };
 	assert.deepStrictEqual(filterVersionProperties(properties), properties);
@@ -117,7 +117,7 @@ test("URL/file versions are omitted while coordinates and other concrete version
 });
 
 test("filtered overrides still backfill versions inherited from an external Maven parent", async () => {
-	const { resolveBomManagedVersions, backfillVersions } = require("../lib/maven-bom");
+	const { resolveBomManagedVersions, backfillVersions } = require("../lib/codecs/maven/bom");
 	const descriptor = serializeDeps(new Map(), {
 		externalParents: [{ groupId: "org.example", artifactId: "parent", version: "1.0" }],
 		propertyOverrides: { "snakeyaml.version": "2.2", "server.password": "SECRET" },

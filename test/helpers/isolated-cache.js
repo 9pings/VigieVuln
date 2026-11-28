@@ -9,7 +9,7 @@ module.exports = function isolatedCache(prefix) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), `vv-${prefix}-root-`));
   const previous = os.homedir;
   os.homedir = () => root;
-  require('../../lib/cache-directory').setActiveCacheDir(root);
-  after(() => { os.homedir = previous; require('../../lib/cache-db').closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
+  require('../../lib/cache/directory').setActiveCacheDir(root);
+  after(() => { os.homedir = previous; require('../../lib/cache/db').closeCacheDbs(); fs.rmSync(root, { recursive: true, force: true }); });
   return root;
 };

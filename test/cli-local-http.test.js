@@ -18,7 +18,7 @@ test('anonymous HTTP setup, seed and online scan require consent and never send 
  fs.writeFileSync(path.join(root,'hook.cjs'),`require('node:os').homedir=()=>${JSON.stringify(root)};`);
  const seed=path.join(root,'seed','.vigie-vuln'),fetchedAt=Date.now();
  const document={id:'GHSA-http-flow',aliases:['CVE-2024-12345'],affected:[{package:{ecosystem:'npm',name:'lodash'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'4.17.21'}]}]}]};
- const seeded=require('../lib/advisory-store').openAdvisoryStore({cacheDir:seed});
+ const seeded=require('../lib/advisories/store').openAdvisoryStore({cacheDir:seed});
  seeded.commit({records:[{source:'osv',document,fetchedAt}],coverages:[{source:'osv',ecosystem:'npm',fetchedAt,complete:true}]});seeded.close();
  const tar=path.join(root,'seed.tar.gz');
  const hits=[];
@@ -41,7 +41,7 @@ test('anonymous HTTP setup, seed and online scan require consent and never send 
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
  const origin=`http://127.0.0.1:${server.address().port}`;
- await require('../lib/cache-archive-sqlite').exportCache(tar,{sourceDir:seed,proxyOrigin:origin});
+ await require('../lib/cache/archive').exportCache(tar,{sourceDir:seed,proxyOrigin:origin});
  fs.mkdirSync(path.join(root,'.vigie-vuln'));fs.writeFileSync(path.join(root,'.vigie-vuln','config.json'),JSON.stringify({proxyCacheToken:'old-secret',proxyCacheTokenOrigin:'https://old.example'}));
  const setup=['setup','--mode','server','--server-url',origin,'--seed'];
  const denied=await run(setup,root);assert.notEqual(denied.status,0);assert.match(denied.stderr,/--allow-insecure-http/);assert.equal(hits.length,0);

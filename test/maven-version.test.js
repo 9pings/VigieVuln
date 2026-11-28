@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { parseMavenVersion, compareMavenVersions, isVersionAffected, parseRange } = require("../lib/maven-version");
+const { parseMavenVersion, compareMavenVersions, isVersionAffected, parseRange } = require("../lib/codecs/maven/version");
 
 test("parseMavenVersion returns segments", () => {
 	const v = parseMavenVersion("2.14.0");

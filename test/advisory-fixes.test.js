@@ -1,8 +1,8 @@
 'use strict';
 require('./helpers/isolated-cache')('advisory-fixes');
 const test = require('node:test'), assert = require('node:assert/strict');
-const { mergeBySource } = require('../lib/merge-sources');
-const { mergeMatches } = require('../lib/cve-report');
+const { mergeBySource } = require('../lib/findings/merge');
+const { mergeMatches } = require('../lib/reports/cve-report');
 const dep = { ecosystem: 'npm', coordKey: 'npm:demo', groupId: '', artifactId: 'demo', name: 'demo', version: '1.0.0' };
 const match = (id, fixVersion, aliases = [], source = 'osv', extra = {}) => ({ dep, source, cve: { id, aliases, fixVersion, fixEvaluation: fixVersion ? 'verified' : 'unknown', ...(fixVersion ? { branchFix: { fixed: fixVersion } } : {}), ...extra } });
 

@@ -20,7 +20,7 @@ const os = require("os");
 const path = require("path");
 const { parseBuildScript } = require("../lib/codecs/gradle/parse");
 const gradle = require("../lib/codecs/gradle.codec");
-const { expandWithTransitives, settleManagedOnly } = require("../lib/cve-match");
+const { expandWithTransitives, settleManagedOnly } = require("../lib/advisories/cve-match");
 
 function tree(files) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "fad-gradle-"));

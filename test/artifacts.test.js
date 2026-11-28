@@ -163,7 +163,7 @@ test('an interrupted extraction removes its temporary root', async t => {
  const os=require('node:os'),{spawn}=require('node:child_process');
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-sigint-')),tmp=path.join(dir,'tmp');fs.mkdirSync(tmp);
  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
- const script=`const {track}=require(${JSON.stringify(path.resolve(__dirname,'../lib/temp-roots'))});const fs=require('node:fs'),path=require('node:path');
+ const script=`const {track}=require(${JSON.stringify(path.resolve(__dirname,'../lib/images/temp-roots'))});const fs=require('node:fs'),path=require('node:path');
   const root=track(fs.mkdtempSync(path.join(${JSON.stringify(tmp)},'vigievuln-artifact-')));fs.writeFileSync(path.join(root,'layer'),'x');console.log('ready');setInterval(()=>{},1000);`;
  const child=spawn(process.execPath,['-e',script],{stdio:['ignore','pipe','inherit']});
  await new Promise(resolve=>child.stdout.once('data',resolve));

@@ -2,7 +2,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {Readable}=require('node:stream');
-const {readTextLines}=require('../lib/line-stream');
+const {readTextLines}=require('../lib/inventory/line-stream');
 test('JSONL separates only LF, retaining Unicode separators and chunk-split UTF-8',async()=>{
  const values=[{text:'left\u2028middle\u2029right😀'},{text:'other'}],raw=Buffer.from(values.map(x=>JSON.stringify(x)).join('\n'));
  const chunks=[];for(let i=0;i<raw.length;i+=2)chunks.push(raw.subarray(i,i+2));

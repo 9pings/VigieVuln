@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {openAdvisoryStore}=require('../lib/advisory-store');const {gcveEnvelope,cveEnvelope,matchNativePackages}=require('../lib/native-advisories');
-function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-native-packages-'));const store=openAdvisoryStore({cacheDir:dir});t.after(()=>{store.close();require('../lib/cache-db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true})});return store;}
+const {openAdvisoryStore}=require('../lib/advisories/store');const {gcveEnvelope,cveEnvelope,matchNativePackages}=require('../lib/advisories/native');
+function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vv-native-packages-'));const store=openAdvisoryStore({cacheDir:dir});t.after(()=>{store.close();require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true})});return store;}
 function gcve(affected){const raw={cveMetadata:{vulnId:'GCVE-1-native-test',state:'PUBLISHED',dateUpdated:'2025-01-01T00:00:00Z'},containers:{cna:{descriptions:[{lang:'en',value:'Independent European advisory'}],affected,x_gcve:[{vulnId:'GCVE-1-native-test',recordType:'advisory'}]}}};return gcveEnvelope({raw,gna:1,collectedAt:new Date().toISOString(),sourceUrl:'https://example.test/advisories'});}
 test('GCVE native SQL matches distro package and independent application without OSV or NVD',t=>{
  const store=fixture(t),record=gcve([{packageURL:'pkg:deb/debian/curl?distro=debian-12&arch=source',versions:[{version:'0',lessThan:'2:7.90-2',versionType:'deb',status:'affected'}]},{packageURL:'pkg:npm/demo',versions:[{version:'1.2.3',status:'affected'}]}]);store.commit({records:[record]});
@@ -27,12 +27,12 @@ test('Debian-wide native source identity requires official collection or typed P
  const store=fixture(t),base={packageName:'apt',collectionURL:'https://packages.debian.org/',versions:[{version:'2.2.0',lessThan:'2.2.5',versionType:'dpkg',status:'affected'}]},raw=a=>({cveMetadata:{cveId:'CVE-2026-109518',state:'PUBLISHED'},containers:{cna:{affected:[a]}}});
  store.commit({records:[cveEnvelope(raw(base),{fetchedAt:Date.now()})]});const dep={ecosystem:'system',manager:'dpkg',name:'apt',sourceName:'apt',sourceVersion:'2.2.4',version:'2.2.4',architecture:'amd64',distribution:{id:'debian',versionId:'11'},coordKey:'apt'};
  assert.equal(matchNativePackages([dep],store).matches.length,1);assert.equal(matchNativePackages([{...dep,distribution:{id:'ubuntu',versionId:'22.04'}}],store).matches.length,0);assert.equal(matchNativePackages([{...dep,packageOrigin:{status:'third-party'}}],store).matches.length,0);
- const {systemPackage}=require('../lib/native-package-match');assert.ok(systemPackage({...base,packageName:undefined,collectionURL:undefined,packageURL:'pkg:deb/debian/apt'}));assert.equal(systemPackage({...base,collectionURL:'https://evil.invalid/'}),null);assert.equal(systemPackage({...base,versions:[{...base.versions[0],versionType:'semver'}]}),null);
+ const {systemPackage}=require('../lib/advisories/native-package-match');assert.ok(systemPackage({...base,packageName:undefined,collectionURL:undefined,packageURL:'pkg:deb/debian/apt'}));assert.equal(systemPackage({...base,collectionURL:'https://evil.invalid/'}),null);assert.equal(systemPackage({...base,versions:[{...base.versions[0],versionType:'semver'}]}),null);
 });
 test('CNA Debian source assertion requires authoritative provider, vendor and dpkg bounds',t=>{
  const store=fixture(t),org='79363d38-fa19-49d1-9214-5f28da3f3ac5',affected={vendor:'Debian',packageName:'apt',versions:[{version:'2.2.0',lessThan:'2.2.5',versionType:'dpkg',status:'affected'}]},raw={cveMetadata:{cveId:'CVE-2026-109518',state:'PUBLISHED',assignerOrgId:org},containers:{cna:{providerMetadata:{orgId:org},affected:[affected]}}},dep={ecosystem:'system',manager:'dpkg',name:'apt',sourceName:'apt',sourceVersion:'2.2.4',version:'2.2.4',architecture:'amd64',distribution:{id:'debian',versionId:'11'},coordKey:'apt'};
  const envelope=cveEnvelope(raw,{fetchedAt:Date.now()});assert.ok(envelope.packages.some(p=>p.ecosystem==='system:deb:debian:*'&&p.name==='apt'));store.commit({records:[envelope]});assert.equal(matchNativePackages([dep],store).matches.length,1);
- const {explicitNativePackage}=require('../lib/native-package-match'),context={source:'cveproject',record:raw,container:raw.containers.cna};assert.equal(explicitNativePackage({...affected,vendor:'Ubuntu'},context),null);assert.equal(explicitNativePackage(affected,{...context,source:'gcve'}),null);assert.equal(explicitNativePackage(affected,{...context,record:{...raw,cveMetadata:{...raw.cveMetadata,assignerOrgId:'other'}}}),null);assert.equal(explicitNativePackage(affected,{...context,container:{...raw.containers.cna}}),null);
+ const {explicitNativePackage}=require('../lib/advisories/native-package-match'),context={source:'cveproject',record:raw,container:raw.containers.cna};assert.equal(explicitNativePackage({...affected,vendor:'Ubuntu'},context),null);assert.equal(explicitNativePackage(affected,{...context,source:'gcve'}),null);assert.equal(explicitNativePackage(affected,{...context,record:{...raw,cveMetadata:{...raw.cveMetadata,assignerOrgId:'other'}}}),null);assert.equal(explicitNativePackage(affected,{...context,container:{...raw.containers.cna}}),null);
 });
 test('native matcher respects newer per-GNA absence proof and CVEProject rejections',t=>{
  const store=fixture(t),now=Date.now(),record=gcve([{packageURL:'pkg:npm/demo',versions:[{version:'1.0.0',status:'affected'}]}]);record.fetchedAt=now-2000;
@@ -62,24 +62,24 @@ test('image scan detects independent EU advisory when OSV and NVD are disabled o
 });
 test('native source preparation honors offline, disable flags and retains cache on refresh failure',async t=>{
  const store=fixture(t),record=gcve([{packageURL:'pkg:npm/demo',versions:[{version:'1.0.0',status:'affected'}]}]);store.commit({records:[record]});let calls=0;
- const {prepareNativeSources}=require('../lib/native-source-prepare');const deps=new Map([['demo',{ecosystem:'npm',name:'demo',version:'1.0.0',coordKey:'demo'}]]);
+ const {prepareNativeSources}=require('../lib/advisories/native-source-prepare');const deps=new Map([['demo',{ecosystem:'npm',name:'demo',version:'1.0.0',coordKey:'demo'}]]);
  let prep=await prepareNativeSources(deps,{store,offline:true,disableCveProject:true,nativeSourceAdapters:{gcve:async()=>{calls++;throw Error('must not fetch')}}});assert.equal(calls,0);assert.deepEqual(prep.sources,['gcve']);assert.equal(matchNativePackages(deps,store,{sources:prep.sources}).matches.length,1);
  prep=await prepareNativeSources(deps,{store,disableCveProject:true,nativeSourceAdapters:{gcve:async()=>{calls++;throw Error('unavailable')}}});assert.equal(calls,1);assert.match(prep.warnings[0].message,/unavailable/);assert.equal(prep.warnings[0].code,'source-request-failed');assert.equal(matchNativePackages(deps,store,{sources:prep.sources}).matches.length,1);
 });
 test('real signed GCVE preparation and native CVE import stay in the requested cache',async t=>{
  const crypto=require('node:crypto'),root=fs.mkdtempSync(path.join(os.tmpdir(),'vv-source-isolation-')),target=path.join(root,'target'),other=path.join(root,'other'),rawDir=path.join(root,'cves');
- t.after(()=>{require('../lib/cache-db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true});});fs.mkdirSync(rawDir);
+ t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(root,{recursive:true,force:true});});fs.mkdirSync(rawDir);
  const {publicKey,privateKey}=crypto.generateKeyPairSync('rsa',{modulusLength:2048});const directory=Buffer.from(JSON.stringify([{id:1,gcve_pull_api:'https://trusted.example/'}]));const signature=crypto.sign('RSA-SHA512',directory,privateKey).toString('base64');
  const doc=gcve([{packageURL:'pkg:npm/demo',versions:[{version:'1.0.0',status:'affected'}]}]).document;
  const fetcher=async url=>{if(url.endsWith('/gcve.json'))return new Response(directory);if(url.endsWith('/gcve.json.sigsha512'))return new Response(signature);if(url==='https://trusted.example/dumps/gna-1.ndjson')return new Response(JSON.stringify(doc)+'\n');throw Error('unexpected network');};
- const deps=new Map([['demo',{ecosystem:'npm',name:'demo',version:'1.0.0',coordKey:'demo'}]]),{prepareNativeSources}=require('../lib/native-source-prepare');
+ const deps=new Map([['demo',{ecosystem:'npm',name:'demo',version:'1.0.0',coordKey:'demo'}]]),{prepareNativeSources}=require('../lib/advisories/native-source-prepare');
  const prep=await prepareNativeSources(deps,{cacheDir:target,nativeSources:['gcve'],fetcher,gcveOptions:{allowedOrigins:['https://trusted.example'],trustedKey:publicKey}});assert.deepEqual(prep.sources,['gcve']);assert.equal(prep.warnings.length,0);
  const local=openAdvisoryStore({cacheDir:target}),elsewhere=openAdvisoryStore({cacheDir:other});try{assert.ok(local.getRecord('gcve','GCVE-1-native-test'));assert.equal(elsewhere.getRecord('gcve','GCVE-1-native-test'),null);}finally{local.close();elsewhere.close();}
  const raw={cveMetadata:{cveId:'CVE-2024-55555',state:'PUBLISHED'},containers:{cna:{affected:[{packageURL:'pkg:golang/example.com/demo',versions:[{version:'1.0.0',status:'affected'}]}]}}};fs.writeFileSync(path.join(rawDir,'CVE-2024-55555.json'),JSON.stringify(raw));
- await require('../lib/cve-download').buildCveIndex(rawDir,{cacheDir:target});const local2=openAdvisoryStore({cacheDir:target}),elsewhere2=openAdvisoryStore({cacheDir:other});try{assert.ok(local2.getRecord('cveproject','CVE-2024-55555'));assert.equal(elsewhere2.getRecord('cveproject','CVE-2024-55555'),null);}finally{local2.close();elsewhere2.close();}
+ await require('../lib/providers/cveproject/download').buildCveIndex(rawDir,{cacheDir:target});const local2=openAdvisoryStore({cacheDir:target}),elsewhere2=openAdvisoryStore({cacheDir:other});try{assert.ok(local2.getRecord('cveproject','CVE-2024-55555'));assert.equal(elsewhere2.getRecord('cveproject','CVE-2024-55555'),null);}finally{local2.close();elsewhere2.close();}
 });
 test('CVE semver open lower bound zero supports bounded ranges without guessing other types',()=>{
- const {versionVerdict}=require('../lib/native-package-match');
+ const {versionVerdict}=require('../lib/advisories/native-package-match');
  const a={defaultStatus:'unaffected',versions:[{version:'0',status:'affected',versionType:'semver',lessThan:'2.11.55'},{version:'2.11.55',status:'unaffected',versionType:'semver'}]};
  assert.equal(versionVerdict('v2.11.0',a,'Go'),true);assert.equal(versionVerdict('v2.11.55',a,'Go'),false);assert.equal(versionVerdict('v2.12.0',a,'Go'),false);
  assert.equal(versionVerdict('v2.11.0',{...a,versions:[{...a.versions[0],versionType:'custom'}]},'Go'),null);

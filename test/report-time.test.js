@@ -2,8 +2,8 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
-const {renderTime,localizeReportTimes}=require('../lib/report-time');
-const {generateHtmlReport,generateWordReport}=require('../lib/cve-report');
+const {renderTime,localizeReportTimes}=require('../lib/reports/time');
+const {generateHtmlReport,generateWordReport}=require('../lib/reports/cve-report');
 
 test('report times preserve instants, calendar dates and unzoned timestamps',()=>{
  assert.match(renderTime('2026-11-05T00:30:00+02:00','fr'), /<time datetime="2026-11-05T00:30:00\+02:00">[^<]*04\/11\/2026[^<]*UTC<\/time>/);

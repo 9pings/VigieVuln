@@ -9,9 +9,9 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { resolveTransitiveDeps } = require("../lib/transitive");
-const { expandWithTransitives, commonExclusions } = require("../lib/cve-match");
-const { makeDepRecord } = require("../lib/dep-record");
+const { resolveTransitiveDeps } = require("../lib/codecs/maven/transitive");
+const { expandWithTransitives, commonExclusions } = require("../lib/advisories/cve-match");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 const MC = "https://repo1.maven.org/maven2";
 const url = (g, a, v) => `${MC}/${g.replace(/\./g, "/")}/${a}/${v}/${a}-${v}.pom`;

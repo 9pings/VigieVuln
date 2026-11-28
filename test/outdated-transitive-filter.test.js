@@ -5,7 +5,7 @@
  * real reactor transitives outnumber directs 5-10× and this was where most
  * of the pass's wall-clock went.
  *
- * HOME is redirected to a temp dir BEFORE requiring lib/outdated so the
+ * HOME is redirected to a temp dir BEFORE requiring lib/maintenance/outdated so the
  * version-cache reads/writes land in an isolated ~/.vigie-vuln, never the
  * developer's real one.
  */
@@ -19,7 +19,7 @@ process.env.USERPROFILE = fakeHome; // windows
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { checkOutdatedDeps, CACHE_DIR } = require("../lib/outdated");
+const { checkOutdatedDeps, CACHE_DIR } = require("../lib/maintenance/outdated");
 
 test("cache dir is the isolated temp HOME (test-harness sanity)", () => {
 	assert.ok(CACHE_DIR.startsWith(fakeHome), `CACHE_DIR ${CACHE_DIR} must live under ${fakeHome}`);

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { openAdvisoryStore, DEFAULT_QUERY_TTL_MS } = require('../lib/advisory-store');
+const { openAdvisoryStore, DEFAULT_QUERY_TTL_MS } = require('../lib/advisories/store');
 const now = Date.now() - 1000;
 const document = (id, modified = '2026-01-01T00:00:00Z', extra = {}) => ({
   id, modified, published: '2025-01-01T00:00:00Z', details: 'Full native document ' + 'x'.repeat(3000),
@@ -170,7 +170,7 @@ test('a newer partial snapshot retains the date of the complete baseline', t => 
 });
 test('concurrent writers preserve disjoint updates under the store lock', async t => {
   const { store, cacheDir } = fixture(t), { spawn } = require('node:child_process');
-  const modulePath = require.resolve('../lib/advisory-store');
+  const modulePath = require.resolve('../lib/advisories/store');
   const code = `const {openAdvisoryStore}=require(process.argv[1]); const store=openAdvisoryStore({cacheDir:process.argv[2]}); for(let i=0;i<12;i++)store.commit({records:[{source:'osv',document:{id:process.argv[3]+'-'+i,affected:[{package:{ecosystem:'npm',name:'demo'},versions:['1.0.0']}]},fetchedAt:Date.now()}]});`;
   await Promise.all(['LEFT', 'RIGHT'].map(prefix => new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['-e', code, modulePath, cacheDir, prefix], { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -180,7 +180,7 @@ test('concurrent writers preserve disjoint updates under the store lock', async 
   assert.equal(store.getPackageRecords('npm', 'demo').length, 24);
 });
 test('native CVEProject and GCVE revisions keep REJECTED tombstones isolated', async t => {
-  const { store } = fixture(t), { isWithdrawn } = require('../lib/advisory-store');
+  const { store } = fixture(t), { isWithdrawn } = require('../lib/advisories/store');
   const native = (source, state, updated) => ({ source, id: 'CVE-2026-1234', fetchedAt: now,
     packages: [{ ecosystem: 'npm', name: 'demo' }], document: { cveMetadata: { cveId: 'CVE-2026-1234', state, dateUpdated: updated } } });
   await store.importEnvelopes([

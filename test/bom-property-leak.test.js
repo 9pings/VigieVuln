@@ -24,8 +24,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
-const core = require("../lib/core");
-const { collectResolvedDeps } = require("../lib/cve-match");
+const core = require("../lib/codecs/maven/pom");
+const { collectResolvedDeps } = require("../lib/advisories/cve-match");
 
 const FIXTURE = path.join(__dirname, "fixtures", "maven-bom-property-leak");
 
@@ -71,7 +71,7 @@ test("a versionless managed coord is never left as a literal ${...}", async () =
 	}
 });
 
-// Symmetric to the masked-version rule in lib/attribution.js: a DECLARED version is dev
+// Symmetric to the masked-version rule in lib/findings/attribution.js: a DECLARED version is dev
 // only when every manifest declaring it does so at test/provided scope. The record is
 // coord-wide, so without per-version scope a test-only version inherits the coordinate's
 // production flag. Real case, Dubbo 2.7.8: hibernate-validator:5.2.4.Final is declared once,
@@ -80,8 +80,8 @@ test("a versionless managed coord is never left as a literal ${...}", async () =
 // were counted as production and would trip `--fail-on`.
 test("a version declared ONLY at test scope is reported as dev", async () => {
 	const { resolved } = await collect();
-	const { matchDepsAgainstCves } = require("../lib/cve-match");
-	const { attributeMatchOrigins } = require("../lib/attribution");
+	const { matchDepsAgainstCves } = require("../lib/advisories/cve-match");
+	const { attributeMatchOrigins } = require("../lib/findings/attribution");
 	const idx = {
 		byPackageName: { "com.acme:lib": [{ id: "CVE-BOM-0001", coordinateEvidence: "explicit-coordinate", exactPackageName: "com.acme:lib", severity: "HIGH", ranges: [{ version: "0", status: "affected", versionType: "maven", lessThan: "9.9.9" }] }] },
 		byProduct: {},

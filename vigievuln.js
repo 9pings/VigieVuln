@@ -3,12 +3,12 @@
  * VigieVuln — autonomous dependency auditor — CLI entry point.
  *
  * Thin wrapper around lib/* modules. The heavy lifting lives in:
- *   lib/core.js          POM parsing & rewriting
- *   lib/cve-download.js  CVE bulk download + index build
- *   lib/cve-match.js     dependency collection + CVE matching
- *   lib/cve-report.js    HTML / Word report generation
- *   lib/outdated.js      EOL + obsolete + outdated checks
- *   lib/snyk.js          optional Snyk integration
+ *   lib/codecs/maven/pom.js          POM parsing & rewriting
+ *   lib/providers/cveproject/download.js  CVE bulk download + index build
+ *   lib/advisories/cve-match.js     dependency collection + CVE matching
+ *   lib/reports/cve-report.js    HTML / Word report generation
+ *   lib/maintenance/outdated.js      EOL + obsolete + outdated checks
+ *   lib/providers/snyk/client.js          optional Snyk integration
  */
 const fs = require("fs");
 const path = require("path");
@@ -27,15 +27,15 @@ if (process.argv[2] === "system" && process.argv[3] === "collect" && !process.en
 	});
 	return;
 }
-if (!process.env.__FAD_RETIRE__) require('./lib/cache-startup').prepareDirectCache();
+if (!process.env.__FAD_RETIRE__) require('./lib/cache/startup').prepareDirectCache();
 const { rimraf } = require("rimraf");
 const chalk = require("chalk");
 const pLimit = require("p-limit");
 const { program } = require("commander");
 const ui = require("./lib/ui");
-const { createSourceHealth, guardedFetch, setActiveLedger, setRetryAttempts } = require("./lib/source-health");
+const { createSourceHealth, guardedFetch, setActiveLedger, setRetryAttempts } = require("./lib/scan/source-health");
 
-const core = require("./lib/core");
+const core = require("./lib/codecs/maven/pom");
 
 // require() (not fs.readFileSync) so bun --compile statically bundles package.json
 // into the binary — otherwise the compiled exe tries to read it off disk at runtime
@@ -44,7 +44,7 @@ const pkg = require("./package.json");
 
 // -------- compiled-binary retire mode --------
 // The bun-compiled single binary has no node_modules to spawn the retire CLI from,
-// and an air-gapped box has no `retire` on PATH. So lib/retire.js re-execs THIS
+// and an air-gapped box has no `retire` on PATH. So lib/providers/retire/scan.js re-execs THIS
 // binary with __FAD_RETIRE__ set; here we hand off to the statically-bundled retire
 // CLI (it self-runs, reading process.argv — bun's argv mirrors node's). The entire
 // normal CLI body is gated behind `else` so fad's own commander setup never runs in
@@ -64,7 +64,7 @@ try {
 const artifactCommand = "system scan";
 if (process.argv[2] === "system" && process.argv[3] === "scan") {
  if (!process.env.__FAD_PROXY_REEXEC__) {
-  const { parseProxyFlag, runtimeSupportsEnvProxy, reexecWithProxy } = require('./lib/proxy-cache');
+  const { parseProxyFlag, runtimeSupportsEnvProxy, reexecWithProxy } = require('./lib/cache/proxy-cache');
   const corpProxy = parseProxyFlag();
   if (corpProxy) {
    if (!/^https?:\/\//i.test(corpProxy)) { console.error('❌  --proxy expects an http(s) URL'); process.exit(2); }
@@ -81,7 +81,7 @@ if (process.argv[2] === "system" && process.argv[3] === "scan") {
  }
 	require("./lib/cli-image").run(process.argv.slice(4), {}, artifactCommand).catch(err => {
 		console.error(`❌  ${err.message}`); process.exitCode = 2;
-	}).finally(() => { require('./lib/cache-db').closeCacheDbs(); });
+	}).finally(() => { require('./lib/cache/db').closeCacheDbs(); });
 } else if (process.argv[2] === "setup") {
 	require("./lib/cli-setup").run(process.argv.slice(3)).catch(err => {
 		console.error(`❌  ${err.message}`); process.exitCode = 2;
@@ -171,7 +171,7 @@ if (process.argv.includes("--show-config")) {
 }
 
 if (process.argv.includes("--list-app-plugins")) {
-	const { allApplicationPlugins } = require("./lib/application-plugins");
+	const { allApplicationPlugins } = require("./lib/applications/plugins");
 	for (const plugin of allApplicationPlugins()) {
 		console.log(`${plugin.id}\t${plugin.version}\tinventory: ${plugin.capabilities.inventory}\tadvisories: ${plugin.capabilities.advisories || "unavailable"}`);
 	}
@@ -186,7 +186,7 @@ if (process.argv.includes("--list-app-plugins")) {
 // prevents recursion. A --proxy-cache URL given in the same command is added to
 // NO_PROXY: traffic to the shared cache is local and must not enter the tunnel.
 if (!process.env.__FAD_PROXY_REEXEC__) {
-	const { parseProxyFlag, runtimeSupportsEnvProxy, reexecWithProxy } = require("./lib/proxy-cache");
+	const { parseProxyFlag, runtimeSupportsEnvProxy, reexecWithProxy } = require("./lib/cache/proxy-cache");
 	const corpProxy = parseProxyFlag();
 	if (corpProxy) {
 		if (!/^https?:\/\//i.test(corpProxy)) {
@@ -208,7 +208,7 @@ if (!process.env.__FAD_PROXY_REEXEC__) {
 // -------- --add-repo / --remove-repo / --list-repos (run before program.parse) --------
 if (process.argv.includes("--add-repo") || process.argv.includes("--remove-repo") || process.argv.includes("--list-repos")) {
 	const config = require("./lib/config");
-	const { SUPPORTED } = require("./lib/registries");
+	const { SUPPORTED } = require("./lib/providers/registries");
 	const ecoErr = eco => {
 		if (!SUPPORTED.includes(eco)) {
 			console.error(chalk.red(`❌  unknown ecosystem "${eco}". Supported: ${SUPPORTED.join(", ")}`));
@@ -281,13 +281,13 @@ if (process.argv.includes("--export-cache") || process.argv.includes("--import-c
 		const layersApi = require("./lib/options-env");
 		const layers = layersApi.loadLayers({ configPath: archiveProgram.opts().config, program: archiveProgram });
 		let archiveOptions = layersApi.applyLayers(archiveProgram, layers, require("./lib/config").load());
-		archiveOptions = { ...archiveOptions, ...require("./lib/hosted-proxy").resolveHostedProxy({ ...archiveOptions, offline: true }) };
-		archiveOptions = require("./lib/source-profile").applySourceProfile(archiveOptions).options;
-		const proxyOrigin = archiveOptions.sourceProfile === "proxy" || (archiveOptions.cacheDir && archiveOptions.proxyCache) ? require("./lib/proxy-scope").proxyOrigin(archiveOptions.proxyCache) : null;
+		archiveOptions = { ...archiveOptions, ...require("./lib/service/hosted-proxy").resolveHostedProxy({ ...archiveOptions, offline: true }) };
+		archiveOptions = require("./lib/scan/source-profile").applySourceProfile(archiveOptions).options;
+		const proxyOrigin = archiveOptions.sourceProfile === "proxy" || (archiveOptions.cacheDir && archiveOptions.proxyCache) ? require("./lib/cache/proxy-scope").proxyOrigin(archiveOptions.proxyCache) : null;
         const customRoot = archiveOptions.cacheDir ? path.resolve(archiveOptions.cacheDir) : null;
         if (proxyOrigin && customRoot) fs.mkdirSync(customRoot, {recursive:true,mode:0o700});
-        const cacheDir = proxyOrigin ? require("./lib/proxy-scope").proxyScope(proxyOrigin, customRoot ? {homeDir:customRoot} : {}) : customRoot || require("./lib/cache-directory").getCacheDir();
-		const { exportCache, importCache } = require("./lib/cache-archive-sqlite");
+        const cacheDir = proxyOrigin ? require("./lib/cache/proxy-scope").proxyScope(proxyOrigin, customRoot ? {homeDir:customRoot} : {}) : customRoot || require("./lib/cache/directory").getCacheDir();
+		const { exportCache, importCache } = require("./lib/cache/archive");
 		const verbose = process.argv.includes("--verbose");
 		const exportIdx = process.argv.indexOf("--export-cache");
 		const importIdx = process.argv.indexOf("--import-cache");
@@ -338,7 +338,7 @@ if (process.argv.includes("--export-cache") || process.argv.includes("--import-c
 // Standalone differential audit between two findings JSON exports. Mirrors the other
 // pre-parse intercepts so it never collides with the main option set (which requires -s).
 if (process.argv[2] === "diff") {
-	const { diffFindings, summarizeDiff, newProductionCveCount, isProductionCve, validateFindingsDocument, baselineProjectWarning } = require("./lib/diff");
+	const { diffFindings, summarizeDiff, newProductionCveCount, isProductionCve, validateFindingsDocument, baselineProjectWarning } = require("./lib/findings/diff");
 	const rest = process.argv.slice(3);
 	const positionals = rest.filter(a => !a.startsWith("-"));
 	const [basePath, curPath] = positionals;
@@ -411,14 +411,14 @@ if (process.argv[2] === "serve-cache") {
 	const upstreamProxy = arg("--upstream-proxy", null);
 	// API keys the SERVER injects upstream, so the instances behind it need none:
 	// flags > env > persisted config. Same wire formats as the scan-side lanes
-	// (lib/nvd.js `apiKey` header, Wordfence/GitHub `Authorization: Bearer`).
+	// (lib/providers/nvd/enrich.js `apiKey` header, Wordfence/GitHub `Authorization: Bearer`).
 	const { getNvdApiKey } = require("./lib/config");
 	const keys = {
 		nvd: arg("--nvd-key", null) || process.env.NVD_API_KEY || getNvdApiKey() || null,
 		wordfence: arg("--wordfence-key", null) || process.env.WORDFENCE_API_KEY || null,
 		github: arg("--github-token", null) || process.env.GITHUB_TOKEN || null,
 	};
-	const { startProxyCacheServer, DEFAULT_CACHE_DIR, CLIENT_CACHE_DIR, createCacheStore } = require("./lib/proxy-cache");
+	const { startProxyCacheServer, DEFAULT_CACHE_DIR, CLIENT_CACHE_DIR, createCacheStore } = require("./lib/cache/proxy-cache");
 	const storeDir = path.resolve(cacheDir || DEFAULT_CACHE_DIR());
 	// The scan's per-pass caches and the shared server base are two different roles:
 	// a store inside ~/.vigie-vuln/ would be bundled/swapped by --export-cache /
@@ -433,7 +433,7 @@ if (process.argv[2] === "serve-cache") {
 	const seedManifest = arg("--seed", null);
 	const trustKey = arg("--trust-key", null);
 	const seeding = !seedManifest ? Promise.resolve() : (async () => {
-		const { openDump, seedResourceStore, keyFingerprint } = require("./lib/dump-format");
+		const { openDump, seedResourceStore, keyFingerprint } = require("./lib/cache/dump-format");
 		const publicKeyPem = trustKey ? fs.readFileSync(trustKey, "utf8") : null;
 		const { manifest, payloadPath } = await openDump(seedManifest, { publicKeyPem });
 		if (!publicKeyPem) console.warn(chalk.yellow("⚠️  --seed without --trust-key: integrity checked (sha256), origin NOT verified"));
@@ -719,7 +719,7 @@ if (options.prepareOffline) {
 if (options.exportAnonymized || options.prepareProject) options.offline = true;
 if (!options.offline && /^http:\/\//i.test(String(options.proxyCache || ''))) {
 	try {
-		const {proxyOrigin,requireHttpConsent,HTTP_WARNING}=require('./lib/proxy-scope');
+		const {proxyOrigin,requireHttpConsent,HTTP_WARNING}=require('./lib/cache/proxy-scope');
 		const config=require('./lib/config'), origin=proxyOrigin(options.proxyCache);
 		const allowed=program.getOptionValueSource('allowInsecureHttp') === 'cli' && !!options.allowInsecureHttp;
 		ui.warn(HTTP_WARNING);
@@ -735,10 +735,10 @@ if (!options.offline && /^http:\/\//i.test(String(options.proxyCache || ''))) {
 let hostedAccountSession = null;
 if (!options.offline && !options.proxyCacheToken && !process.env.VIGIEVULN_PROXY_CACHE_TOKEN && !process.env.FAD_PROXY_CACHE_TOKEN &&
 	(options.vigievulnProxy || /^(default|vigievuln|https:\/\/api\.vigievuln\.(fr|com)\/?$)$/i.test(String(options.proxyCache || "")))) {
-	try { hostedAccountSession = require("./lib/account-session").createAccountSessionStore().read(); }
+	try { hostedAccountSession = require("./lib/service/account-session").createAccountSessionStore().read(); }
 	catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 }
-try { Object.assign(options, require("./lib/hosted-proxy").resolveHostedProxy({ ...options, allowProxyLogin: !!hostedAccountSession || !!(process.stdin.isTTY && process.stderr.isTTY) })); }
+try { Object.assign(options, require("./lib/service/hosted-proxy").resolveHostedProxy({ ...options, allowProxyLogin: !!hostedAccountSession || !!(process.stdin.isTTY && process.stderr.isTTY) })); }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 // An explicitly anonymous server must not receive an inherited key from a
 // different setup. An explicit CLI/environment/file token still takes priority.
@@ -793,13 +793,13 @@ if (options.imagePlatform && (typeof options.imagePlatform !== 'string' || !/^[a
 	process.exit(2);
 }
 options.advisoryQueryTtlMs = options.advisoryQueryTtl === undefined ? 4 * 3600 * 1000 : Number(options.advisoryQueryTtl) * 3600 * 1000;
-try { options.maxAdvisoryAgeMs = options.maxAdvisoryAge ? require('./lib/advisory-freshness').parseMaxAge(options.maxAdvisoryAge) : 0; }
+try { options.maxAdvisoryAgeMs = options.maxAdvisoryAge ? require('./lib/advisories/freshness').parseMaxAge(options.maxAdvisoryAge) : 0; }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 if (options.forceUpdate && (options.offline || options.exportAnonymized || options.prepareProject)) {
 	console.error(chalk.red('❌  --force-update requires an online scan or cache preparation.'));
 	process.exit(2);
 }
-require('./lib/cache-policy').setForceUpdate(!!options.forceUpdate);
+require('./lib/cache/policy').setForceUpdate(!!options.forceUpdate);
 if (options.stableAdvisoryAgeDays !== undefined && (!Number.isSafeInteger(options.stableAdvisoryAgeDays) || options.stableAdvisoryAgeDays < 1 || options.stableAdvisoryAgeDays > 36500)) {
 	console.error(chalk.red('❌  --stable-advisory-age-days must be an integer from 1 to 36500.'));
 	process.exit(2);
@@ -807,14 +807,14 @@ if (options.stableAdvisoryAgeDays !== undefined && (!Number.isSafeInteger(option
 let profileWarnings = [], profileNotices = [];
 try {
 	const explicit = name => program.getOptionValueSource(name) === 'cli' || (name === 'osvDb' && String(options.activate || '').split(',').includes('osv-db'));
-	const result = require('./lib/source-profile').applySourceProfile(options, {explicit});
+	const result = require('./lib/scan/source-profile').applySourceProfile(options, {explicit});
 	Object.assign(options, result.options); profileWarnings = result.warnings; profileNotices = result.notices || [];
 	for (const warning of profileWarnings) ui.warn(warning);
 } catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 if (options.sourceProfile === 'proxy') {
 	try {
-		const scoped = require('./lib/proxy-scope').proxyScope(options.proxyCache);
-		require('./lib/cache-directory').setActiveCacheDir(scoped);
+		const scoped = require('./lib/cache/proxy-scope').proxyScope(options.proxyCache);
+		require('./lib/cache/directory').setActiveCacheDir(scoped);
 	} catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 }
 const deps2Exclude = options.exclude ? new RegExp(options.exclude) : null;
@@ -830,28 +830,28 @@ const sourceHealth = createSourceHealth();
 // their configured proxy route. Never send a VigieVuln proxy token to a registry.
 const registryFetch = globalThis.fetch;
 const officialAccountFetch = options.sourceProfile === 'proxy' && options.vigievulnProxy && !options.offline
-	? require('./lib/source-profile').officialAccountFetch(globalThis.fetch) : null;
+	? require('./lib/scan/source-profile').officialAccountFetch(globalThis.fetch) : null;
 try { setRetryAttempts(options.retries == null ? 5 : options.retries); }
 catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exit(2); }
 if (!options.offline) {
 	// The mirror/registry rotations report their own exhaustion (their requests bypass the
 	// guard: they carry their own AbortSignal and failover).
 	setActiveLedger(sourceHealth);
-	const onRetry = require('./lib/source-health').displaySourceRetry;
+	const onRetry = require('./lib/scan/source-health').displaySourceRetry;
 	const baseFetch = options.sourceProfile === 'proxy'
-		? require('./lib/source-profile').proxyOnlyFetch(globalThis.fetch, options.proxyCache)
+		? require('./lib/scan/source-profile').proxyOnlyFetch(globalThis.fetch, options.proxyCache)
 		: globalThis.fetch;
 	// Public data clients call getResource(provider, type, params); configure its
 	// transport once, before any lookup. Custom registry URLs stay direct.
 	if (options.proxyCache) {
 		const { configureResourceRoute } = require("./lib/providers");
-		const { createCacheStore } = require("./lib/proxy-cache");
+		const { createCacheStore } = require("./lib/cache/proxy-cache");
 		try {
 			configureResourceRoute({ proxyUrl: options.proxyCache, hosted: !!options.vigievulnProxy, resetRateLimit:true, proxyRateLimitMaxWaitMs:options.proxyRateLimitWaitMs,
 				token: options.proxyCacheToken || (process.env.VIGIEVULN_PROXY_CACHE_TOKEN ?? process.env.FAD_PROXY_CACHE_TOKEN) || null,
 				health: sourceHealth, fetcher: baseFetch, onRetry,
-				store: options.vigievulnProxy ? null : createCacheStore(require("node:path").join(require("./lib/cache-directory").getCacheDir(), "resource-cache")),
-				hostedStore: options.vigievulnProxy ? createCacheStore(require("node:path").join(require("./lib/cache-directory").getCacheDir(), "hosted-resources", require("node:crypto").createHash("sha256").update(options.proxyCache).digest("hex"))) : null });
+				store: options.vigievulnProxy ? null : createCacheStore(require("node:path").join(require("./lib/cache/directory").getCacheDir(), "resource-cache")),
+				hostedStore: options.vigievulnProxy ? createCacheStore(require("node:path").join(require("./lib/cache/directory").getCacheDir(), "hosted-resources", require("node:crypto").createHash("sha256").update(options.proxyCache).digest("hex"))) : null });
 		} catch (err) {
 			console.error(chalk.red(`❌  ${err.message}`));
 			process.exit(2);
@@ -893,7 +893,7 @@ if (options.failOnNew && !options.baseline) {
 }
 if (options.baseline) {
 	try {
-		baselineDoc = require("./lib/diff").validateFindingsDocument(JSON.parse(fs.readFileSync(options.baseline, "utf8")));
+		baselineDoc = require("./lib/findings/diff").validateFindingsDocument(JSON.parse(fs.readFileSync(options.baseline, "utf8")));
 	} catch (err) {
 		console.error(chalk.red(`❌  cannot read baseline ${options.baseline}: ${err.message}`));
 		process.exit(2);
@@ -961,19 +961,19 @@ assertSafeExtractionTarget();
 
 // Shared by source scans and descriptor imports, so the air-gapped warm-up also
 // refreshes presence. Only per-entry, repository-scoped 404/410 evidence is trusted.
-const MAVEN_EXISTS_CACHE_PATH = require("path").join(require("./lib/outdated").CACHE_DIR, "maven-exists-cache.json");
+const MAVEN_EXISTS_CACHE_PATH = require("path").join(require("./lib/maintenance/outdated").CACHE_DIR, "maven-exists-cache.json");
 async function classifyMavenLibs(ids, repos) {
-	const { loadJsonCache, saveJsonCache } = require("./lib/outdated");
-	const { MAX_AGE_MS, discardUnverifiedEntries, checkMavenLibExist } = require("./lib/maven-presence");
+	const { loadJsonCache, saveJsonCache } = require("./lib/maintenance/outdated");
+	const { MAX_AGE_MS, discardUnverifiedEntries, checkMavenLibExist } = require("./lib/providers/maven/presence");
 	const cache = loadJsonCache(MAVEN_EXISTS_CACHE_PATH);
 	const migrated = discardUnverifiedEntries(cache);
 	let probeRepos = repos;
 	if (!options.offline) {
-		probeRepos = await require("./lib/maven-repo").reachableRepos(repos, { timeoutMs: 5000 });
+		probeRepos = await require("./lib/providers/maven/repo").reachableRepos(repos, { timeoutMs: 5000 });
 		if (!probeRepos.length) ui.warn("no Maven repository reachable — existence check skipped, cache reused; pass --offline on an air-gapped box");
 	}
 	const noNetwork = options.offline || !probeRepos.length;
-	const fresh = cache.meta?.fetchedAt && require('./lib/cache-policy').fresh(cache.meta.fetchedAt, MAX_AGE_MS);
+	const fresh = cache.meta?.fetchedAt && require('./lib/cache/policy').fresh(cache.meta.fetchedAt, MAX_AGE_MS);
 	const previous = !fresh && !noNetwork ? {entries:cache.entries,fetchedAt:cache.meta?.fetchedAt} : null;
 	if (!fresh && !noNetwork) cache.entries = {};
 	const limit = pLimit(10);
@@ -982,7 +982,7 @@ async function classifyMavenLibs(ids, repos) {
 		return { id, found: await checkMavenLibExist(g, a, probeRepos, cache, { offline: noNetwork, configuredRepos: repos }) };
 	})));
 	if (!noNetwork) cache.meta = { fetchedAt: Date.now() };
-	if (!noNetwork) require('./lib/cache-policy').preserveEntries(cache,previous);
+	if (!noNetwork) require('./lib/cache/policy').preserveEntries(cache,previous);
 	if (!noNetwork || migrated) saveJsonCache(MAVEN_EXISTS_CACHE_PATH, cache);
 	const absent = results.filter(r => r.found === false).map(r => r.id);
 	const unknown = results.filter(r => r.found === null).length;
@@ -1064,10 +1064,10 @@ let preparedSource;
 					rl.question("", answer => { rl.close(); if (secret) process.stderr.write("\n"); resolve(answer); });
 				});
 				if (hostedAccountSession) {
-					const account = require("./lib/account-client").createAccountClient(officialAccountFetch ? {fetcher:officialAccountFetch} : {});
+					const account = require("./lib/service/account-client").createAccountClient(officialAccountFetch ? {fetcher:officialAccountFetch} : {});
 					const current = await account.me();
-					await require("./lib/account-terms").requireTerms({account, terms:current.terms, ask});
-					options.proxyCacheToken = await require("./lib/hosted-proxy").createProxyKey(account);
+					await require("./lib/service/account-terms").requireTerms({account, terms:current.terms, ask});
+					options.proxyCacheToken = await require("./lib/service/hosted-proxy").createProxyKey(account);
 					require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
 					require("./lib/config").set("proxyCacheTokenOrigin", null);
 					require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
@@ -1077,7 +1077,7 @@ let preparedSource;
 				console.error("No account? Register at https://www.vigievuln.fr/account");
 				const email = await ask("Email: ");
 				const password = await ask("Password: ", true);
-				options.proxyCacheToken = await require("./lib/hosted-proxy").loginForProxy({email,password,ask,...(officialAccountFetch ? {fetcher:officialAccountFetch} : {})});
+				options.proxyCacheToken = await require("./lib/service/hosted-proxy").loginForProxy({email,password,ask,...(officialAccountFetch ? {fetcher:officialAccountFetch} : {})});
 				require("./lib/config").set("proxyCacheToken", options.proxyCacheToken);
 				require("./lib/config").set("proxyCacheTokenOrigin", null);
 				require("./lib/providers").configureResourceRoute({proxyUrl:options.proxyCache,token:options.proxyCacheToken});
@@ -1085,7 +1085,7 @@ let preparedSource;
 				}
 			} catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exitCode = 2; return; }
 		}
-		try { await require("./lib/hosted-proxy").checkHostedProxy(options.proxyCache, options.proxyCacheToken, globalThis.fetch, {waitBudgetMs:options.proxyRateLimitWaitMs}); }
+		try { await require("./lib/service/hosted-proxy").checkHostedProxy(options.proxyCache, options.proxyCacheToken, globalThis.fetch, {waitBudgetMs:options.proxyRateLimitWaitMs}); }
 		catch (err) { console.error(chalk.red(`❌  ${err.message}`)); process.exitCode = 2; return; }
 	}
 	ui.banner(pkg.version);
@@ -1094,8 +1094,8 @@ let preparedSource;
 	// + ad-hoc --repo URLs + Maven Central as final fallback. Used by transitive
 	// resolution, outdated-version check, and existence check.
 	const { getRegistryMap } = require("./lib/config");
-	const { buildRepoList } = require("./lib/maven-repo");
-	const { buildRegistryList } = require("./lib/registries");
+	const { buildRepoList } = require("./lib/providers/maven/repo");
+	const { buildRegistryList } = require("./lib/providers/registries");
 	// One-off --repo eco=url (from the CLI and the env layer), grouped by ecosystem.
 	const cliRepoMap = {};
 	for (const spec of [...(options.repo || []), ...(_layers.envRepos || [])]) {
@@ -1149,7 +1149,7 @@ let preparedSource;
 	// Scans the descriptor's public coordinates online to WARM the coordinate-keyed
 	// caches (OSV/NVD/CVE/registry/EOL) + retire signatures. Pair with --export-cache.
 	if (options.importAnonymized) {
-		const { deserializeDeps } = require("./lib/deps-descriptor");
+		const { deserializeDeps } = require("./lib/inventory/deps-descriptor");
 		let descriptor;
 		try { descriptor = JSON.parse(fs.readFileSync(options.importAnonymized, "utf8")); }
 		catch (e) { console.error(chalk.red(`❌  could not read --import-anonymized file: ${e.message}`)); process.exit(1); }
@@ -1170,7 +1170,7 @@ let preparedSource;
 		// without this, versionless deps (spring-boot-starter-*) stay unresolved and their CVE
 		// caches never warm, forcing a SECOND air-gapped exchange. Online only (needs the POMs).
 		if (runMaven && !options.offline && (externalParents.length || importBoms.length)) {
-			const { resolveBomManagedVersions, backfillVersions } = require("./lib/maven-bom");
+			const { resolveBomManagedVersions, backfillVersions } = require("./lib/codecs/maven/bom");
 			const base = { repos: mavenRepos, offline: options.offline, verbose, effCache: new Map() };
 			const mgmt = await resolveBomManagedVersions(importBoms, base);
 			const parentMgmt = await resolveBomManagedVersions(externalParents, { ...base, via: "parent", propertyOverrides });
@@ -1180,7 +1180,7 @@ let preparedSource;
 		}
 		// Warm retire signatures (online) so --export-cache carries them for offline JS scanning.
 		if (runNpm && !options.offline && options.retire !== false) {
-			const { warmRetireSignatures } = require("./lib/retire");
+			const { warmRetireSignatures } = require("./lib/providers/retire/scan");
 			await warmRetireSignatures({ verbose });
 		}
 		// Warm the per-publisher CMS advisory snapshots the air-gapped phase 3 consumes
@@ -1189,11 +1189,11 @@ let preparedSource;
 		// feeds, so no source tree is needed. Application identities also justify SPIP
 		// and WordPress snapshots; --wordfence-live can use a key held by the proxy.
 		if (!options.offline && options.appPlugins !== "none") {
-			const { warmCmsAdvisorySnapshots } = require("./lib/cms-snapshot-warm");
+			const { warmCmsAdvisorySnapshots } = require("./lib/applications/snapshot-warm");
 			try {
 				const warmed = await warmCmsAdvisorySnapshots(resolved, {
 					fetchImpl: (...args) => fetch(...args),
-					advisoryCacheDir: path.join(require("./lib/cache-directory").getCacheDir(), "advisory-snapshots"),
+					advisoryCacheDir: path.join(require("./lib/cache/directory").getCacheDir(), "advisory-snapshots"),
 					drupalUrl: typeof options.drupalAdvisoriesLive === "string" ? options.drupalAdvisoriesLive : undefined,
 					prestashopUrl: typeof options.prestashopAdvisoriesLive === "string" ? options.prestashopAdvisoriesLive : undefined,
 					typo3Url: typeof options.typo3AdvisoriesLive === "string" ? options.typo3AdvisoriesLive : undefined,
@@ -1230,12 +1230,12 @@ let preparedSource;
 			: [];
 		const warmedReport = await runReportFlow(resolved, { activeIds, runMaven, runNpm, privateLibIds, mavenRepos, regMap, collectWarnings: [], walkOpts, mavenStore: reactor?.store, mavenPropsByPom: reactor?.propsByPom, imageReferences });
 		if (options.prepareOffline && !process.exitCode) {
-			const scope=require('./lib/airgap-project').buildProjectScope(resolved,{applications,cves:warmedReport?.cveIds || [],imageReferences:warmedReport?.imageReferences || [],images:options.images});
-			const cacheDir=require('./lib/cache-directory').getCacheDir();
-			const proxyOrigin=options.sourceProfile==='proxy' ? require('./lib/proxy-scope').proxyOrigin(options.proxyCache) : null;
+			const scope=require('./lib/cache/airgap-project').buildProjectScope(resolved,{applications,cves:warmedReport?.cveIds || [],imageReferences:warmedReport?.imageReferences || [],images:options.images});
+			const cacheDir=require('./lib/cache/directory').getCacheDir();
+			const proxyOrigin=options.sourceProfile==='proxy' ? require('./lib/cache/proxy-scope').proxyOrigin(options.proxyCache) : null;
 			if(!scope.packages.length && !scope.imageReferences?.length) ui.warn('no package scope available; exporting the complete local cache');
 			try {
-				const result=await require('./lib/cache-archive-sqlite').exportCache(options.output,{sourceDir:cacheDir,proxyOrigin,project:(scope.packages.length || scope.imageReferences?.length)?scope:null});
+				const result=await require('./lib/cache/archive').exportCache(options.output,{sourceDir:cacheDir,proxyOrigin,project:(scope.packages.length || scope.imageReferences?.length)?scope:null});
 				ui.ok(`offline archive prepared: ${result.path} (${(result.size/1048576).toFixed(2)} MiB; ${scope.packages.length} packages)`);
 			} catch(error) {console.error(chalk.red(`❌  could not prepare offline archive: ${error.message}`));process.exitCode=2;}
 		}
@@ -1276,7 +1276,7 @@ let preparedSource;
 	// no lockfile), which would otherwise be invisible.
 	const parsedManifests = [];
 	const imageDiscovery = options.images === false ? { references: [], warnings: [] }
-		: require('./lib/image-references').discoverImageReferences(options.src, walkOpts);
+		: require('./lib/images/references').discoverImageReferences(options.src, walkOpts);
 	for (const ref of imageDiscovery.references) ref.platform ||= options.imagePlatform;
 	// Declarations and unresolved CI variables belong to image coverage details.
 	// Only actual discovery failures enter the scan diagnostics.
@@ -1342,7 +1342,7 @@ let preparedSource;
 
 	// --- Anonymized phase 1: export a descriptor and exit (no network, no report) ---
 	if (options.prepareProject) {
-		const descriptor = require("./lib/project-descriptor").buildProjectDescriptor(resolved, {generator:`vigievuln ${pkg.version}`,imageReferences:imageDiscovery.references,images:options.images});
+		const descriptor = require("./lib/inventory/project-descriptor").buildProjectDescriptor(resolved, {generator:`vigievuln ${pkg.version}`,imageReferences:imageDiscovery.references,images:options.images});
 		try { fs.writeFileSync(options.prepareProject, JSON.stringify(descriptor, null, 2) + "\n", {mode:0o600}); fs.chmodSync(options.prepareProject,0o600); }
 		catch (e) { console.error(chalk.red(`❌  could not write project descriptor: ${e.message}`)); process.exitCode=1; return; }
 		const counts = Object.fromEntries(["direct","transitive","unknown"].map(k=>[k,descriptor.deps.filter(d=>d.relation===k).length]));
@@ -1351,8 +1351,8 @@ let preparedSource;
 		return;
 	}
 	if (options.exportAnonymized) {
-		const { serializeDeps } = require("./lib/deps-descriptor");
-		const { collectExternalParents, collectImportBoms, collectPropertyOverrides, collectVersionPropertyNames } = require("./lib/maven-bom");
+		const { serializeDeps } = require("./lib/inventory/deps-descriptor");
+		const { collectExternalParents, collectImportBoms, collectPropertyOverrides, collectVersionPropertyNames } = require("./lib/codecs/maven/bom");
 		const pkgVersion = require("./package.json").version;
 		// Carry the Maven resolution hints so a no-source-tree online warm run (Phase 2) can
 		// resolve the versionless deps' versions and warm their CVE caches in ONE exchange.
@@ -1367,8 +1367,8 @@ let preparedSource;
 		let applications = [];
 		if (options.appPlugins !== "none") {
 			try {
-				const { allApplicationPlugins } = require("./lib/application-plugins");
-				const { runApplicationPlugins } = require("./lib/application-plugins/runner");
+				const { allApplicationPlugins } = require("./lib/applications/plugins");
+				const { runApplicationPlugins } = require("./lib/applications/plugins/runner");
 				const appState = await runApplicationPlugins(options.src, { plugins: allApplicationPlugins(),
 					selection: options.appPlugins, resolvedDeps: resolved, activeCodecIds: activeIds, offline: true,
 					publicComponents: options.publicComponent, privateComponentPaths: options.privateComponent });
@@ -1377,7 +1377,7 @@ let preparedSource;
 					// Public catalogue identities only — private/custom components never
 					// leave the enclave, exactly like the live query that filters them out.
 					const components = app.type === "wordpress"
-						? require("./lib/application-providers/wpvulnerability").publicComponentQueries(
+						? require("./lib/providers/wpvulnerability/assess").publicComponentQueries(
 							appState.inventory.filter(c => c.applicationId === app.id)).map(q => `wordpress:${q.type}:${q.slug}`)
 						: [...new Set(appState.inventory
 						.filter(c => c.applicationId === app.id && c.visibility !== "private"
@@ -1388,7 +1388,7 @@ let preparedSource;
 			} catch { /* the descriptor stays valid without application identities */ }
 		}
 		let omittedProperties = 0;
-		const reactor = mavenCtx?.store && mavenCtx?.propsByPom ? require('./lib/maven-airgap').buildReactorHints(mavenCtx, { exclude: deps2Exclude, versionPropertyNames: collectVersionPropertyNames(mavenCtx.store) }) : null;
+		const reactor = mavenCtx?.store && mavenCtx?.propsByPom ? require('./lib/codecs/maven/airgap').buildReactorHints(mavenCtx, { exclude: deps2Exclude, versionPropertyNames: collectVersionPropertyNames(mavenCtx.store) }) : null;
 		const descriptor = serializeDeps(resolved, { generator: `vigievuln ${pkgVersion}`, externalParents, importBoms, reactor,
 			imageReferences: imageDiscovery.references, images: options.images,
 			propertyOverrides, versionPropertyNames: collectVersionPropertyNames(mavenCtx?.store), applications,
@@ -1439,7 +1439,7 @@ let preparedSource;
 	let copiedManifests = 0;
 	if (!readOnly) {
 		try {
-			const { copyEcosystemManifests } = require("./lib/manifest-copy");
+			const { copyEcosystemManifests } = require("./lib/inventory/manifest-copy");
 			const r = await copyEcosystemManifests(options.src, options.target, { excludePath, defaultExcludes });
 			copiedManifests = r.copied;
 		} catch (err) { console.error(chalk.red("  ✗ manifest copy failed:"), err.message); }
@@ -1463,7 +1463,7 @@ let preparedSource;
 			// cache and backfills its managed versions — so only classify as "likely private"
 			// the ones it genuinely can't resolve. effectivePom is cache-first + offline-aware,
 			// and warms the cache the BOM/parent backfill reuses later in the report flow.
-			const { effectivePom } = require("./lib/transitive");
+			const { effectivePom } = require("./lib/codecs/maven/transitive");
 			const resolvable = [], unresolved = [];
 			await Promise.all(missingParents.map(async id => {
 				const [g, a, v] = id.split(":");
@@ -1555,16 +1555,16 @@ let preparedSource;
 
 async function runReportFlow(resolved, ecoFlags = {}) {
 	if (!options.proxyCache && !options.importAnonymized) {
-		const t = require("./lib/i18n").makeT(options.lang);
+		const t = require("./lib/reports/i18n").makeT(options.lang);
 		console.error("\n  " + chalk.yellow("⚠") + " " + chalk.yellow(t("For faster scans with the VigieVuln DB or a seed → vigievuln setup")));
 	}
 	const { activeIds = [], runMaven = true, runGradle = false, runNpm = false, privateLibIds = [], mavenRepos = [], regMap = {}, collectWarnings = [], mavenPropsByPom = null, mavenStore = null, gradlePlatformBoms = [], parsedManifests = [], composerPlatforms = [], walkOpts = {} } = ecoFlags;
 	const { excludePath = [], defaultExcludes = true } = walkOpts;
 	const registriesFor = eco => regMap[eco] || [];
-	const { expandWithTransitives } = require("./lib/cve-match");
-	const { writeReports, computeStats } = require("./lib/cve-report");
+	const { expandWithTransitives } = require("./lib/advisories/cve-match");
+	const { writeReports, computeStats } = require("./lib/reports/cve-report");
 	const { getCodec } = require("./lib/codecs");
-	const outdated = require("./lib/outdated");
+	const outdated = require("./lib/maintenance/outdated");
 	const { getNvdApiKey } = require("./lib/config");
 	const offline = !!options.offline;
 
@@ -1574,7 +1574,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const npmWarnings = collectWarnings || [];
 	const scanNotices = [...profileNotices];
 	let scanWarnings = profileWarnings.map(message => ({type:'source-unavailable', message}));
-	const reliability = require('./lib/scan-reliability');
+	const reliability = require('./lib/scan/reliability');
 	const discoveryCoverage = reliability.createDiscoveryCoverage();
 	const matchedNativeSources = [];
 	const completeDiscoverySources = [];
@@ -1589,10 +1589,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	let applicationRelations = [];
 	if (options.src) {
 		const wordfenceApiKey = ['us', 'eu'].includes(options.sourceProfile) ? null : (options.wordfenceApiKey || process.env.WORDFENCE_API_KEY || null);
-		const { DRUPAL_ADVISORIES_URL, WORDFENCE_PRODUCTION_URL, PRESTASHOP_GITHUB_ADVISORIES_URL, TYPO3_GITHUB_ADVISORIES_URL } = require("./lib/application-providers/live-snapshot");
+		const { DRUPAL_ADVISORIES_URL, WORDFENCE_PRODUCTION_URL, PRESTASHOP_GITHUB_ADVISORIES_URL, TYPO3_GITHUB_ADVISORIES_URL } = require("./lib/applications/live-snapshot");
 		const wordfenceLiveUrl = options.wordfenceFeedUrl || ((options.wordfenceLive || wordfenceApiKey) && !options.wordfenceFeed ? WORDFENCE_PRODUCTION_URL : null);
 		const spipLiveUrl = options.spipAdvisoriesLive
-			? (options.spipAdvisoriesLive === true ? require("./lib/application-providers/spip-advisories").SPIP_ADVISORIES_URL : options.spipAdvisoriesLive) : null;
+			? (options.spipAdvisoriesLive === true ? require("./lib/providers/spip/advisories").SPIP_ADVISORIES_URL : options.spipAdvisoriesLive) : null;
 		if (offline && (wordfenceLiveUrl || options.drupalAdvisoriesLive || options.prestashopAdvisoriesLive || options.typo3AdvisoriesLive || options.wpChecksumsLive || spipLiveUrl)) {
 			console.error(chalk.red("❌  --offline cannot fetch live advisory sources; supply a local --wordfence-feed / --drupal-advisories / --prestashop-advisories / --typo3-advisories / --spip-advisories / --wp-checksums snapshot instead"));
 			process.exit(2);
@@ -1609,11 +1609,11 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		const typo3LiveUrl = options.typo3AdvisoriesLive
 			? (options.typo3AdvisoriesLive === true ? TYPO3_GITHUB_ADVISORIES_URL : options.typo3AdvisoriesLive) : null;
 		const wpChecksumsLiveUrl = options.wpChecksumsLive
-			? (options.wpChecksumsLive === true ? require("./lib/application-providers/wp-checksums").WP_CHECKSUMS_API : options.wpChecksumsLive) : null;
+			? (options.wpChecksumsLive === true ? require("./lib/providers/wordpress/checksums").WP_CHECKSUMS_API : options.wpChecksumsLive) : null;
 		try {
-			const { allApplicationPlugins } = require("./lib/application-plugins");
-			const { runApplicationPlugins } = require("./lib/application-plugins/runner");
-			const { buildApplicationRelations } = require("./lib/application-inventory");
+			const { allApplicationPlugins } = require("./lib/applications/plugins");
+			const { runApplicationPlugins } = require("./lib/applications/plugins/runner");
+			const { buildApplicationRelations } = require("./lib/applications/inventory");
 			appState = await runApplicationPlugins(options.src, { plugins: allApplicationPlugins(), selection: options.appPlugins,
 				reportProviderFailures: true,
 				// Publisher advisories of a detected CMS are consulted without a flag.
@@ -1628,7 +1628,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				liveSpipAdvisoriesUrl: spipLiveUrl, spipAdvisoriesApiKey: getNvdApiKey(),
 				wpChecksumsPath: options.wpChecksums || null, liveWpChecksumsUrl: wpChecksumsLiveUrl,
 				wpChecksumsLocale: options.wpChecksumsLocale || "en_US",
-				advisoryCacheDir: path.join(require("./lib/cache-directory").getCacheDir(), "advisory-snapshots"),
+				advisoryCacheDir: path.join(require("./lib/cache/directory").getCacheDir(), "advisory-snapshots"),
 				offline,
 				fetchImpl: (...args) => fetch(...args),
 				maxAdvisoryAgeMs,
@@ -1682,13 +1682,13 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// and the Maven-Central transitive/BOM/outdated/EOL passes cover them — they're EXCLUDED
 	// from the per-codec registry loop below to avoid double-processing.
 	const cveScanner = (runMaven || runGradle) ? (getCodec("maven").nativeScanners || []).find(s => s.kind === "cve") : null;
-	const cveStore = require("./lib/advisory-store").openAdvisoryStore();
-	const cveIndexExists = !!require("./lib/cve-download").loadCveIndex() || !!cveStore.getSourceCoverage("cveproject", "*") || !!cveStore.getSourceCoverage("cveproject-legacy", "*");
+	const cveStore = require("./lib/advisories/store").openAdvisoryStore();
+	const cveIndexExists = !!require("./lib/providers/cveproject/download").loadCveIndex() || !!cveStore.getSourceCoverage("cveproject", "*") || !!cveStore.getSourceCoverage("cveproject-legacy", "*");
 	const otherRegistryIds = activeIds.filter(id => id !== "maven" && id !== "gradle" && id !== "npm" && id !== "yarn" && getCodec(id)?.checkRegistry);
 	const willCve = !options.disableCveProject && !!cveScanner && (!(options.cveOffline || offline) || cveIndexExists);
 	const willPrepareNativeCve = !willCve && !options.disableCveProject;
 	// Maven with a source tree: every module is resolved on ITS OWN effective model
-	// (lib/maven-reactor.js) and the scan set is rebuilt from the union — this replaces the
+	// (lib/codecs/maven/reactor.js) and the scan set is rebuilt from the union — this replaces the
 	// old global merged pass + additive per-module overlay, which let one project's pins
 	// re-version another's. Runs even with --no-transitive (directs and their managed
 	// versions are still per module). The global pass remains for Gradle records and for a
@@ -1700,7 +1700,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// Spring Boot setup). Cached via poms-cache; offline-aware (uses warmed POMs,
 	// never the network — same as transitive resolution).
 	const importBoms = (runMaven && mavenPropsByPom)
-		? require("./lib/maven-bom").collectImportBoms(mavenPropsByPom) : [];
+		? require("./lib/codecs/maven/bom").collectImportBoms(mavenPropsByPom) : [];
 	// Gradle `platform(...)` BOMs are the same as Maven `<scope>import</scope>` BOMs — feed
 	// them through the same managed-version backfill (e.g. spring-boot-dependencies → all the
 	// versionless spring-boot-starter-* declared in build.gradle get their version).
@@ -1717,7 +1717,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// runs in the MAINLINE flow (not just the --transitive overlay) so the warmed cache always
 	// captures the parent POMs for offline reuse.
 	const externalParents = (runMaven && mavenStore)
-		? require("./lib/maven-bom").collectExternalParents(mavenStore) : [];
+		? require("./lib/codecs/maven/bom").collectExternalParents(mavenStore) : [];
 	const willBom = allBoms.length > 0 || inferredGradleBoms.length > 0 || externalParents.length > 0;
 	const willOsv = !!options.osv || options.osvDb === true;
 	// Packagist security-advisories lane (Composer): the advisory DB `composer audit`
@@ -1731,7 +1731,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const willEpss = !!options.epss;
 	const willKev = !!options.kev;
 	const willGcve = options.gcve !== false && !options.disableGcve;
-	const willGcvePackages = willGcve && [...resolved.values()].some(d => d.provenance !== 'binary' && require('./lib/native-package-match').depIdentity(d));
+	const willGcvePackages = willGcve && [...resolved.values()].some(d => d.provenance !== 'binary' && require('./lib/advisories/native-package-match').depIdentity(d));
 	const willEuvd = options.euvd !== false;
 	const willCertFr = options.certfr !== false;
 	const willEol = options.eol !== false;
@@ -1771,7 +1771,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (willBom) {
 		const st = progress.start("BOM / parent version resolution (Maven Central)");
 		try {
-			const { resolveBomManagedVersions, backfillVersions } = require("./lib/maven-bom");
+			const { resolveBomManagedVersions, backfillVersions } = require("./lib/codecs/maven/bom");
 			const effCache = new Map();
 			const base = { repos: mavenRepos, offline, verbose, effCache, ...mavenCoverage };
 			// Import BOMs first: a local <scope>import</scope> declaration wins over the
@@ -1782,7 +1782,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			// External parents second: fill only coords the BOMs didn't already manage, and
 			// honor the project's own <properties> overrides (e.g. a patched <log4j2.version>)
 			// so the version reflects the classpath, not the framework default.
-			const propertyOverrides = require("./lib/maven-bom").collectPropertyOverrides(mavenStore);
+			const propertyOverrides = require("./lib/codecs/maven/bom").collectPropertyOverrides(mavenStore);
 			const parentMgmt = await resolveBomManagedVersions(externalParents, { ...base, via: "parent", propertyOverrides });
 			for (const [k, v] of parentMgmt) if (!mgmt.has(k)) mgmt.set(k, v);
 			bomDepMgmt = mgmt;
@@ -1796,7 +1796,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (willReactor) {
 		const st = progress.start(options.transitive ? "Maven resolution, module by module (Maven Central)" : "Maven direct versions, module by module");
 		try {
-			const { resolveReactor } = require("./lib/maven-reactor");
+			const { resolveReactor } = require("./lib/codecs/maven/reactor");
 			const rr = await resolveReactor(resolved, mavenStore, mavenPropsByPom, {
 				verbose,
 				offline,
@@ -1841,7 +1841,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// <dependencyManagement>-only pins: keep the ones a resolution pass reached (now
 	// transitives), drop the rest — a pin nothing pulls in is on no classpath.
 	{
-		const { settleManagedOnly } = require("./lib/cve-match");
+		const { settleManagedOnly } = require("./lib/advisories/cve-match");
 		const settled = settleManagedOnly(resolved);
 		if (verbose && settled.dropped.length) {
 			console.log(chalk.gray(`   ${settled.dropped.length} <dependencyManagement>-only pin(s) not on any classpath, not scanned: ${settled.dropped.slice(0, 10).join(", ")}${settled.dropped.length > 10 ? ", …" : ""}`));
@@ -1852,7 +1852,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// still without a concrete version (external BOM truly unreachable, or offline)
 	// are flagged, not the ones we just resolved from spring-boot-dependencies & co.
 	if (runMaven || runGradle) {
-		const { detectScanCompletenessWarnings } = require("./lib/scan-completeness");
+		const { detectScanCompletenessWarnings } = require("./lib/scan/completeness");
 		scanWarnings.push(...detectScanCompletenessWarnings(resolved, { ranSnyk: !!options.snyk, ranTransitive: !!options.transitive }));
 	}
 
@@ -1897,7 +1897,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (willBinaryId) {
 		const st = progress.start("Binary identification (deps.dev + CIRCL)");
 		try {
-			const { enrichUnmanaged } = require("./lib/unmanaged");
+			const { enrichUnmanaged } = require("./lib/inventory/unmanaged");
 			const s = await enrichUnmanaged(resolved, { offline, onProgress: (p, t) => st.tick(p, t) });
 			const bits = [`${s.identified}/${s.total} identified`, s.pristine ? `${s.pristine} pristine` : null, s.unknown ? `${s.unknown} unknown` : null, s.malicious ? `${s.malicious} ⚠ malicious` : null].filter(Boolean).join(", ");
 			st.done(bits);
@@ -2016,14 +2016,14 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		try {
 			if (!offline && !options.cveOffline && require('./lib/providers').hasHostedProxy()) {
 				try {
-					const status=await require('./lib/cve-npm-proxy').refreshNpmCves(publicAdvisoryDeps,cveStore,{ttlMs:options.advisoryQueryTtlMs});
+					const status=await require('./lib/providers/cveproject/npm-proxy').refreshNpmCves(publicAdvisoryDeps,cveStore,{ttlMs:options.advisoryQueryTtlMs});
 					if(status.incomplete)noteSourceLimitation('CVEProject','Available npm proxy records were assessed; the response does not certify an exhaustive, current catalogue.');
 				} catch (err) {scanWarnings.push({type:'source-unavailable',message:`CVEProject npm proxy: ${err.message}; cached records are still matched.`});}
 			}
-			const npmCves = require('./lib/native-advisories').matchNativeNpmCves(resolved, cveStore);
-			cveMatches = require('./lib/merge-sources').mergeBySource(cveMatches, npmCves.matches);
+			const npmCves = require('./lib/advisories/native').matchNativeNpmCves(resolved, cveStore);
+			cveMatches = require('./lib/findings/merge').mergeBySource(cveMatches, npmCves.matches);
 			undecidableAdvisories.push(...npmCves.unknown);
-			const npmNames=require('./lib/cve-npm-proxy').packageNames(publicAdvisoryDeps);
+			const npmNames=require('./lib/providers/cveproject/npm-proxy').packageNames(publicAdvisoryDeps);
 			if (!cveStore.getSourceCoverage('cveproject','*')?.complete && npmNames.some(name=>{const q=cveStore.getQuery({source:'cveproject',ecosystem:'npm',name,version:'*'},{ttlMs:options.advisoryQueryTtlMs});return !q || q.provenance?.stale || (!(offline || options.cveOffline) && !q.fresh);})) noteSourceLimitation('CVEProject','Available native npm records were assessed; this dataset does not certify an exhaustive catalogue.');
 		} catch (err) { scanWarnings.push({type:'source-unavailable',message:`CVEProject npm: ${err.message}; advisory coverage is incomplete.`}); }
 	}
@@ -2032,14 +2032,14 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// has a complete OSV seed. The saved consultation makes removals effective
 	// offline too, without downloading the global cache again.
 	if (!offline && require('./lib/providers').hasProxyRoute() && (options.sourceProfile === 'proxy' || require('./lib/providers').hasHostedProxy())) {
-		try { await require('./lib/vigievuln-advisories').refreshReviewed(publicAdvisoryDeps,cveStore,{ttlMs:options.advisoryQueryTtlMs}); }
+		try { await require('./lib/providers/vigievuln/advisories').refreshReviewed(publicAdvisoryDeps,cveStore,{ttlMs:options.advisoryQueryTtlMs}); }
 		catch (err) { scanWarnings.push({type:'source-unavailable',message:`VigieVuln: reviewed advisory refresh failed (${err.message}); cached records are used with incomplete coverage.`}); }
 	}
 	// 4b. OSV.dev — Maven-native CVE+GHSA feed (huge recall win over raw CVEProject)
 	if (willOsv) {
 		const st = progress.start("OSV.dev");
 		try {
-			const { queryOsvForDeps } = require("./lib/osv");
+			const { queryOsvForDeps } = require("./lib/providers/osv/query");
 			const osvMatches = await queryOsvForDeps(publicAdvisoryDeps, { ...options, verbose, offline, allowStaleFallback:true, onConsulted:discoveryCoverage.consulted, queryTtlMs:options.osvDbRefresh ? 0 : options.advisoryQueryTtlMs, useStoredRanges:options.osvDb !== false,
 				onProgress: (p, t) => st.tick(p, t), onWarning: w => scanWarnings.push(w) });
 			// Confirmed private coordinates can still match existing advisory evidence;
@@ -2056,7 +2056,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		}
 	}
 	else {
-		try { cveMatches=mergeBySource(cveMatches,require('./lib/osv').queryReviewedForDeps(resolved,{store:cveStore,offline,maxAdvisoryAgeMs:options.maxAdvisoryAgeMs,queryTtlMs:options.advisoryQueryTtlMs,onWarning:w=>scanWarnings.push(w)})); }
+		try { cveMatches=mergeBySource(cveMatches,require('./lib/providers/osv/query').queryReviewedForDeps(resolved,{store:cveStore,offline,maxAdvisoryAgeMs:options.maxAdvisoryAgeMs,queryTtlMs:options.advisoryQueryTtlMs,onWarning:w=>scanWarnings.push(w)})); }
 		catch(err) { scanWarnings.push({type:'source-unavailable',message:`VigieVuln: reviewed advisory matching failed (${err.message}); coverage is incomplete.`}); }
 	}
 
@@ -2066,7 +2066,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (willPackagistAudit) {
 		const st = progress.start("Packagist security advisories");
 		try {
-			const { queryPackagistAudit } = require("./lib/packagist-audit");
+			const { queryPackagistAudit } = require("./lib/providers/packagist/audit");
 			let skippedOtherRegistry = [];
 			let unknownPackages = [];
 			const pkMatches = await queryPackagistAudit(publicAdvisoryDeps, { verbose, offline, onConsulted:discoveryCoverage.consulted,
@@ -2089,13 +2089,13 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 
 	// GCVE records are matched locally, including when imported in a cache seed.
 	// Online scans refresh the index through the configured proxy when one is active.
-	if (willGcvePackages && [...publicAdvisoryDeps.values()].some(d=>d.provenance!=='binary' && require('./lib/native-package-match').depIdentity(d))) {
+	if (willGcvePackages && [...publicAdvisoryDeps.values()].some(d=>d.provenance!=='binary' && require('./lib/advisories/native-package-match').depIdentity(d))) {
 		const st = progress.start("GCVE (local index)");
 		try {
 			const path = require('node:path');
-			const { readGcveIndex } = require('./lib/gcve-index');
-			const store = require('./lib/advisory-store').openAdvisoryStore();
-			const file = path.join(require('./lib/cache-directory').getCacheDir(), 'gcve-data', 'index.json');
+			const { readGcveIndex } = require('./lib/providers/gcve/local-index');
+			const store = require('./lib/advisories/store').openAdvisoryStore();
+			const file = path.join(require('./lib/cache/directory').getCacheDir(), 'gcve-data', 'index.json');
 			let index = null;
 			try { index = readGcveIndex(file); } catch {}
 			const nativeCoverage = store.getSourceCoverage('gcve','*');
@@ -2103,7 +2103,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			let stale = !oldest.length || Date.now() - Math.min(...oldest) >= options.advisoryQueryTtlMs;
 			if ((!index && !nativeCoverage || stale || options.forceUpdate) && !offline && !options.gcveOffline) {
 				try {
-					const feed=require('./lib/gcve-feed');
+					const feed=require('./lib/providers/gcve/feed');
 					index = (await feed.updateGcveIndex({cacheFile:file,
 						...(options.proxyCache?{fetcher:feed.proxyGcveFetcher}:{})})).index;
 					stale = false;
@@ -2117,8 +2117,8 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				? 'GCVE has no local data for an offline scan; run an online scan first or import a GCVE cache seed'
 				: 'GCVE source returned no advisory data');
 			const asOf = oldest.length ? Math.min(...oldest) : 0;
-			if (index && (!nativeCoverage || nativeCoverage.fetchedAt < asOf)) await require('./lib/native-advisories').importGcveIndex(store,index,{provenance:{transport:'cache'}});
-			const result = require('./lib/native-advisories').matchGcveStore(resolved,store,index);
+			if (index && (!nativeCoverage || nativeCoverage.fetchedAt < asOf)) await require('./lib/advisories/native').importGcveIndex(store,index,{provenance:{transport:'cache'}});
+			const result = require('./lib/advisories/native').matchGcveStore(resolved,store,index);
 			const before = cveMatches.length;
 			cveMatches = mergeBySource(cveMatches,result.matches);
 			if (stale) scanWarnings.push({type:'source-stale',...(offline || options.gcveOffline ? {severity:'info'} : {}),message:'GCVE index is older than the advisory query TTL or lacks a source timestamp; advisory coverage may be outdated.'});
@@ -2146,9 +2146,9 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			let preparationIssue;
 			// The Maven scanner already prepares CVEProject. Other ecosystems
 			// need the same preparation even when OSV has returned no findings.
-			if (st && [...publicAdvisoryDeps.values()].some(d => d.provenance !== 'binary' && require('./lib/native-package-match').depIdentity(d))) {
+			if (st && [...publicAdvisoryDeps.values()].some(d => d.provenance !== 'binary' && require('./lib/advisories/native-package-match').depIdentity(d))) {
 				st.phase("Checking source data");
-				const prepared = await require('./lib/native-source-prepare').prepareNativeSources(publicAdvisoryDeps,{
+				const prepared = await require('./lib/advisories/native-source-prepare').prepareNativeSources(publicAdvisoryDeps,{
 					...options, offline, store:cveStore, nativeSources:['cveproject'],
 					onCveProgress: (phase, detail) => st.phase(phase, detail),
 				});
@@ -2160,7 +2160,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				for (const warning of prepared.warnings) scanWarnings.push(typeof warning==='string'?{type:'source-unavailable',message:warning}:warning);
 			} else if (st) st.skip("no eligible packages");
 			st?.phase("Matching packages");
-			const native = require('./lib/native-advisories').matchNativePackages(resolved,cveStore,{
+			const native = require('./lib/advisories/native').matchNativePackages(resolved,cveStore,{
 				sources, onProgress: count => st?.phase("Matching packages", `${count} records checked`),
 			});
 			cveMatches = mergeBySource(cveMatches,native.matches);
@@ -2182,14 +2182,14 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// merges into ONE finding with the union of sources, and the application attribution
 	// is rebuilt from the physical occurrence (expandComposerFindings). Findings the
 	// standard lanes cannot see (Drupal core, WordPress catalogue) pass through intact.
-	if (appState.findings.length) cveMatches = require("./lib/merge-sources").mergeBySource(cveMatches, appState.findings);
+	if (appState.findings.length) cveMatches = require("./lib/findings/merge").mergeBySource(cveMatches, appState.findings);
 
 	// 4c. NVD enrichment — canonical description + full CVSS for matched CVEs.
 	if (willNvd) {
 		const st = progress.start("NVD enrichment");
 		let nvdBindings = [];
 		if (willOsv && options.osvDb !== false) try {
-			nvdBindings = require('./lib/nvd-package-ranges').collectPackageNvdBindings(publicAdvisoryDeps, cveStore, cveMatches);
+			nvdBindings = require('./lib/providers/nvd/package-ranges').collectPackageNvdBindings(publicAdvisoryDeps, cveStore, cveMatches);
 		} catch (err) {
 			scanWarnings.push({type:'source-unavailable',message:`NVD package candidates: ${err.message}; additional range coverage is incomplete.`});
 		}
@@ -2197,7 +2197,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			st.skip("no CVE to enrich");
 		} else {
 			try {
-				const { enrichMatches, hasCachedAbsence } = require("./lib/nvd");
+				const { enrichMatches, hasCachedAbsence } = require("./lib/providers/nvd/enrich");
 				const nvdCandidates = [...cveMatches, ...nvdBindings];
 				const answeredAbsent = new Set();
 				await enrichMatches(nvdCandidates, { ...options, verbose, offline, mirror: options.nvdMirror !== false, onProgress: (p, t) => st.tick(p, t), onAbsent:id=>answeredAbsent.add(id) });
@@ -2213,9 +2213,9 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				// candidates become findings only after an artifact-level CPE/range
 				// match; neither generic framework CPEs nor guessed names qualify.
 				let nvdAdded = 0;
-				const {matchBoundNvdRanges,matchNvdAffected} = require('./lib/nvd-package-ranges');
+				const {matchBoundNvdRanges,matchNvdAffected} = require('./lib/providers/nvd/package-ranges');
 				let nativeNvdUncertain = false, nativeNvdCandidates = false;
-				const needsReview=require('./lib/coverage-diagnostics').needsMavenReview;
+				const needsReview=require('./lib/advisories/coverage-diagnostics').needsMavenReview;
 				const boundNvd = [...matchNvdAffected(resolved, nvdCandidates, {onUncertain:candidate=>{nativeNvdCandidates=true;if(needsReview(candidate,cveStore,{ttlMs:options.advisoryQueryTtlMs}))nativeNvdUncertain=true;}}), ...matchBoundNvdRanges(resolved, nvdCandidates)];
 				if (nativeNvdUncertain) scanWarnings.push({type:'source-unavailable',severity:'info',message:'NVD: some native affected entries have unverified package identities or version applicability; those candidates were not reported and coverage is incomplete.'});
 				else if (nativeNvdCandidates) noteSourceLimitation('NVD','Some product-only candidates lack a reliable Maven package identity; independent OSV evidence is used when available.');
@@ -2225,7 +2225,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 					nvdAdded += cveMatches.length - before;
 				}
 				if (options.nvdCpeMatch) try {
-					const { matchDepsAgainstNvdCpe } = require("./lib/cpe");
+					const { matchDepsAgainstNvdCpe } = require("./lib/providers/nvd/cpe");
 					const records = {};
 					for (const m of cveMatches) {
 						const id = m.cve?.id;
@@ -2242,7 +2242,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 				// confidence and flag likely false positives (version outside CPE range).
 				let filtered = 0;
 				try {
-					const { refineMatchesWithCpe } = require("./lib/cpe");
+					const { refineMatchesWithCpe } = require("./lib/providers/nvd/cpe");
 					refineMatchesWithCpe(cveMatches);
 					filtered = cveMatches.filter(m => m.cpeFiltered).length;
 				} catch (err) { ui.warn(`CPE refinement skipped: ${err.message}`); }
@@ -2271,7 +2271,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		if (!cveMatches.length) { st.skip("no CVE"); }
 		else {
 			try {
-				const { enrichEpss } = require("./lib/epss");
+				const { enrichEpss } = require("./lib/providers/epss/enrich");
 				await enrichEpss(cveMatches, { verbose, offline, onProgress: (p, t) => st.tick(p, t) });
 				const scored = cveMatches.filter(m => m.cve?.epssPercentile != null).length;
 				st.done(`${scored} scored`);
@@ -2285,7 +2285,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		if (!cveMatches.length) { st.skip("no CVE"); }
 		else {
 			try {
-				const { enrichKev } = require("./lib/kev");
+				const { enrichKev } = require("./lib/providers/kev/enrich");
 				await enrichKev(cveMatches, { verbose, offline, hostedProxy: !!options.vigievulnProxy });
 				const kevd = cveMatches.filter(m => m.cve?.kev).length;
 				st.done(`${kevd} known-exploited`);
@@ -2295,7 +2295,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 
 	// 4g. Composite priority (KEV > EPSS-weighted CVSS). Always — cheap, pure.
 	try {
-		const { attachPriority } = require("./lib/priority");
+		const { attachPriority } = require("./lib/findings/priority");
 		attachPriority(cveMatches);
 	} catch (err) { ui.warn(`priority scoring skipped: ${err.message}`); }
 
@@ -2332,7 +2332,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 					// description. Folded into this step so the progress count stays exact.
 					if (retireMatches.length && willNvd) {
 						try {
-							const { enrichMatches } = require("./lib/nvd");
+							const { enrichMatches } = require("./lib/providers/nvd/enrich");
 							await enrichMatches(retireMatches, { ...options, verbose, offline, mirror: options.nvdMirror !== false, onProgress: (p, t) => st.tick(p, t) });
 						} catch (err) { if (verbose) ui.warn(`vendored-JS NVD enrichment skipped: ${err.message}`); }
 					}
@@ -2364,7 +2364,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			const message="--snyk requires --target (snyk runs on cleaned POMs)";
 			ui.warn(message);scanWarnings.push({type:'source-unavailable',message});
 		} else {
-			const snyk = require("./lib/snyk");
+			const snyk = require("./lib/providers/snyk/client");
 			try {
 				const raw = await snyk.runSnykTest(options.target, { verbose });
 				const errors = raw.filter(project => project?.ok === false && project.error).map(project => String(project.error));
@@ -2385,7 +2385,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// Context applies to every finding origin, including vendored JS and optional
 	// late providers. Each source runs independently and keeps per-CVE evidence.
 	{
-		const { enrichEuropeanFindings, europeanAdapters } = require('./lib/finding-enrichment');
+		const { enrichEuropeanFindings, europeanAdapters } = require('./lib/findings/enrichment');
 		const contextMatches = [...cveMatches, ...retireMatches];
 		const enabled = {gcve:willGcve,euvd:willEuvd,certfr:willCertFr};
 		for (const adapter of europeanAdapters.filter(a => enabled[a.id])) {
@@ -2409,8 +2409,8 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// assessment pipeline. Only the isolated report binds local source locations.
 	const imageProgress = new ui.Progress(2);
 	let imageProgressStep = null, imageProgressPhase = null;
-	const imageState = await require('./lib/source-image-scan').scanSourceImages(ecoFlags.imageReferences, {
-		...options, offline, cacheDir:require('./lib/cache-directory').getCacheDir(),
+	const imageState = await require('./lib/images/source-scan').scanSourceImages(ecoFlags.imageReferences, {
+		...options, offline, cacheDir:require('./lib/cache/directory').getCacheDir(),
 		platform:options.imagePlatform, fetcher:globalThis.fetch,
 		registryFetcher:offline ? async () => { throw Error('Registry access is disabled offline'); } : registryFetch,
 		queryTtlMs:options.advisoryQueryTtlMs,
@@ -2447,7 +2447,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// chapters, exports, gate) — otherwise, on a root spanning several independent
 	// projects, every version is reported against every manifest holding the coord.
 	{
-		const { attributeMatchOrigins } = require("./lib/attribution");
+		const { attributeMatchOrigins } = require("./lib/findings/attribution");
 		const reattributed = attributeMatchOrigins(cveMatches);
 		if (reattributed && verbose) console.log(`   re-attributed ${reattributed} match(es) to their resolving manifest/module`);
 	}
@@ -2457,7 +2457,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// runs a vendor build — the finding leaves the EOL list for a chapter-0 note.
 	if (eolResults.length) {
 		try {
-			const { annotateCommercialSupport } = require("./lib/commercial-support");
+			const { annotateCommercialSupport } = require("./lib/maintenance/commercial-support");
 			const { commercialBuilds } = await annotateCommercialSupport(eolResults, cveMatches, { offline, repos: mavenRepos });
 			if (commercialBuilds.length) {
 				eolResults = eolResults.filter(e => e.status !== "commercial");
@@ -2466,21 +2466,21 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		} catch (err) { if (verbose) console.warn(chalk.yellow(`   commercial-support annotation skipped: ${err.message}`)); }
 	}
 	if (options.src) {
-		const { expandComposerFindings } = require("./lib/application-inventory");
+		const { expandComposerFindings } = require("./lib/applications/inventory");
 		cveMatches = expandComposerFindings(cveMatches, options.src, applicationRelations);
-		require("./lib/application-layout").attributeLayoutFindings(cveMatches,appState.applications,appState.inventory,options.src);
+		require("./lib/applications/layout").attributeLayoutFindings(cveMatches,appState.applications,appState.inventory,options.src);
 	}
 	{
-		const { coalescePhysicalFindings } = require("./lib/finding-summary");
+		const { coalescePhysicalFindings } = require("./lib/findings/summary");
 		cveMatches = coalescePhysicalFindings(cveMatches, options.src || null);
-		const { attachPriority } = require("./lib/priority");
+		const { attachPriority } = require("./lib/findings/priority");
 		attachPriority(cveMatches);
 	}
 
 	// 6b. Supply-chain risk lane (pure + offline): flag KNOWN-MALICIOUS advisories
 	// (OSV MAL-… already in the match set) always, and detect suspected TYPOSQUATS
 	// (opt-in --typosquat, heuristic — names one edit from a popular package).
-	const { flagMalicious, detectTyposquats, withoutForeignMalicious } = require("./lib/malware");
+	const { flagMalicious, detectTyposquats, withoutForeignMalicious } = require("./lib/findings/malware");
 	const foreignMalicious = withoutForeignMalicious(cveMatches);
 	cveMatches = foreignMalicious.matches;
 	for (const m of foreignMalicious.dropped) noteSourceLimitation('OSV', `${m.cve.id} designates the registry package ${m.dep.name}; this project resolves ${m.dep.name} from ${m.dep.resolved}, another artifact of the same name. The malicious-package advisory was not applied.`);
@@ -2508,7 +2508,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	const triageWarnings = [];
 	if (options.ignore || options.vex) {
 		try {
-			const { parseIgnoreFile, parseVex, applySuppressions, hasGlobalIgnoreRule } = require("./lib/suppress");
+			const { parseIgnoreFile, parseVex, applySuppressions, hasGlobalIgnoreRule } = require("./lib/findings/suppress");
 			const rules = [];
 			if (options.ignore) rules.push(...parseIgnoreFile(fs.readFileSync(options.ignore, "utf8")));
 			if (options.vex) rules.push(...parseVex(JSON.parse(fs.readFileSync(options.vex, "utf8"))));
@@ -2523,7 +2523,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		} catch (err) { ui.warn(`suppression skipped: ${err.message}`); }
 	}
 
-	const { sortByPriority } = require("./lib/priority");
+	const { sortByPriority } = require("./lib/findings/priority");
 	const isEmbedded  = m => !m.dep?.artifactTargetId && m.dep?.provenance === "embedded";
 	// Embedded-binary findings get their own chapter, so keep them out of the
 	// declared prod/dev sets (a coord that's both declared AND embedded yields two
@@ -2561,12 +2561,12 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	].filter(Boolean).join("  ") || chalk.gray("none");
 	const heading = (label, n, extra = "") => console.log("\n  " + chalk.bold(label) + chalk.dim(`  (${n})`) + (extra ? "  " + extra : ""));
 
-	if (undecidableAdvisories.length) scanWarnings.push(require('./lib/diagnostics').advisoryEvidenceDiagnostic(undecidableAdvisories));
-	const durableIssues = require('./lib/package-versions').drainIssues();
+	if (undecidableAdvisories.length) scanWarnings.push(require('./lib/scan/diagnostics').advisoryEvidenceDiagnostic(undecidableAdvisories));
+	const durableIssues = require('./lib/inventory/package-versions').drainIssues();
 	if (durableIssues.length) scanWarnings.push({type:'source-unavailable', message:`${durableIssues.length} package version observation(s) are conflicting or invalid; dependency coverage may be incomplete.`,items:durableIssues});
 	// Reconcile source and image enrichment by CVE identity, once for the whole scan.
-	await require('./lib/cve-descriptions').completeCveDescriptions([...cveMatches,...retireMatches],{...options,nvd:willNvd,euvd:willEuvd,offline});
-	const recordSummary = require('./lib/cve-record-coverage').summarizeCveRecords([...cveMatches, ...retireMatches], {
+	await require('./lib/findings/cve-descriptions').completeCveDescriptions([...cveMatches,...retireMatches],{...options,nvd:willNvd,euvd:willEuvd,offline});
+	const recordSummary = require('./lib/findings/cve-record-coverage').summarizeCveRecords([...cveMatches, ...retireMatches], {
 		...options, nvd:willNvd, euvd:willEuvd, offline,
 		coverage:[...sourceConsultations,...imageState.artifacts.flatMap(a=>a.coverage||[])],
 	});
@@ -2574,10 +2574,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	scanWarnings = scanWarnings.filter(w=>w.type!=='cve-enrichment-summary' && w.type!=='cve-record-source');
 	if (recordSummary.warning) scanWarnings.push(recordSummary.warning);
 	sourceConsultations.push(recordSummary.coverage);
-	{ const split=require('./lib/diagnostics').partitionDiagnostics(scanWarnings); scanWarnings=split.warnings; scanNotices.push(...split.notices); }
+	{ const split=require('./lib/scan/diagnostics').partitionDiagnostics(scanWarnings); scanWarnings=split.warnings; scanNotices.push(...split.notices); }
 	if (scanWarnings.length) {
 		console.log();
-		const groupedWarnings = require('./lib/report-notices').groupReportWarnings(scanWarnings);
+		const groupedWarnings = require('./lib/reports/notices').groupReportWarnings(scanWarnings);
 		ui.warn(`${groupedWarnings.length} scan issue(s):`);
 		for (const w of groupedWarnings) {
 			ui.info(chalk.dim(`[${w.type}] ${w.message}`));
@@ -2597,10 +2597,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (willLicenses) {
 		try {
 			if (runMaven || runGradle) {
-				const { collectMavenLicenses } = require("./lib/maven-license");
+				const { collectMavenLicenses } = require("./lib/codecs/maven/license");
 				licenseFindings = licenseFindings.concat(collectMavenLicenses(resolved));
 			}
-			const { assessLicenses } = require("./lib/license-policy");
+			const { assessLicenses } = require("./lib/inventory/license-policy");
 			licenseResults = assessLicenses(licenseFindings);
 			const flaggedN = licenseResults.flagged.length;
 			heading("Licenses", licenseResults.assessed.length, flaggedN ? chalk.yellow(`${flaggedN} to review`) : "");
@@ -2629,7 +2629,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// reproducible/defensible audit. Surfaced in the report's Methodology chapter and
 	// the JSON export's `provenance` block.
 	try {
-		const { buildScanProvenance } = require("./lib/provenance");
+		const { buildScanProvenance } = require("./lib/scan/provenance");
 		projectInfo.provenance = buildScanProvenance({ toolVersion: pkg.version, generatedAt: projectInfo.generatedAt, options,
 			ecosystems:new Set([...resolved.values()].filter(d=>d.provenance!=='binary').map(d=>d.ecosystem)) });
 		if (sourceLimitations.length) projectInfo.provenance.sourceLimitations=sourceLimitations;
@@ -2666,7 +2666,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	let excludedDirs = [];
 	if (options.src && (out.html || out.doc || out.xlsx || out.json)) {
 		try {
-			const { collectExcludedDirs } = require("./lib/path-filter");
+			const { collectExcludedDirs } = require("./lib/inventory/path-filter");
 			excludedDirs = collectExcludedDirs({ srcRoot: options.src, excludePath, defaultExcludes });
 		} catch { /* best effort — never block the report on the appendix walk */ }
 	}
@@ -2690,7 +2690,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			version: e.commercialBuild.version, lastPublic: e.commercialBuild.lastPublic, until: e.extendedSupport,
 			...(e.dep.manifestPaths?.[0] ? { manifestPath: e.dep.manifestPaths[0] } : {}),
 			message: `${e.dep.groupId}:${e.dep.artifactId} ${e.commercialBuild.version} is not on Maven Central and is newer than the last public ${e.product} ${e.cycle} release (${e.commercialBuild.lastPublic}): a vendor build under paid support${e.extendedSupport && e.extendedSupport !== "true" ? ` (until ${e.extendedSupport})` : ""}, not reported as end-of-life.` })),
-		...require('./lib/scan-coverage').applicationWarnings(appState,options.src),
+		...require('./lib/scan/coverage').applicationWarnings(appState,options.src),
 		...(suppressedCount ? [{
 			type: "suppressed", severity:"info",
 			count: suppressedCount,
@@ -2703,7 +2703,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			// Maven probes for these explicitly; every other ecosystem now reports the same thing
 			// out of its registry pass. One warning either way — an auditor wants "here is what
 			// is internal", not one list per package manager.
-			const { buildPrivateItems } = require("./lib/private-deps");
+			const { buildPrivateItems } = require("./lib/inventory/private-deps");
 			const mavenItems = [...new Set([...privateLibIds,...absentMavenPoms])].map(id => {
 				const dep = resolved.get(id);
 				const paths = options.src ? (dep?.pomPaths || []).map(p => path.relative(options.src, p)) : [];
@@ -2711,7 +2711,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 			});
 			const otherItems = buildPrivateItems(registryPrivateHits, { relativise: p => options.src ? path.relative(options.src, p) : '' });
 			// CMS extensions follow the same rule: declared private, or unknown to the public catalogue.
-			const applicationItems = require("./lib/scan-coverage").privateComponents(appState);
+			const applicationItems = require("./lib/scan/coverage").privateComponents(appState);
 			const items = [...mavenItems, ...otherItems, ...applicationItems];
 			if (!items.length) return [];
 			const ecos = [...new Set(items.map(i => i.ecosystem))].sort().join(", ");
@@ -2725,14 +2725,14 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	];
 	// Freshness is provenance, not a source outage. Keep the evidence in JSON
 	// and scan context, without classifying normal provenance as failed work.
-	const informational=require('./lib/diagnostics').partitionDiagnostics(reportWarnings);
+	const informational=require('./lib/scan/diagnostics').partitionDiagnostics(reportWarnings);
 	if(informational.notices.length){
 		projectInfo.provenance ||= {mode:offline?'offline':'online'};
 		projectInfo.provenance.notices=[...(projectInfo.provenance.notices||[]),...informational.notices];
 		reportWarnings.splice(0,reportWarnings.length,...informational.warnings);
 	}
 	const freshnessNotices = [];
-	const { freshnessNotice } = require('./lib/cve-report');
+	const { freshnessNotice } = require('./lib/reports/cve-report');
 	for (let i = reportWarnings.length - 1; i >= 0; i--) {
 		const info = freshnessNotice(reportWarnings[i], !offline);
 		if (info) { freshnessNotices.unshift(info); reportWarnings.splice(i, 1); }
@@ -2756,7 +2756,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 		return;
 	}
 	if (options.failOnIncomplete) {
-		const { requiredCoverageComplete } = require("./lib/scan-coverage");
+		const { requiredCoverageComplete } = require("./lib/scan/coverage");
 		const raw = options.failOnIncomplete === true ? "inventory,advisories,sources" : String(options.failOnIncomplete);
 		const required = [...new Set(raw.split(",").map(x => x.trim()).filter(Boolean))];
 		const known = new Set(["inventory", "advisories", "recipes", "sources"]);
@@ -2784,12 +2784,12 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	if (options.baseline) {
 		try {
 			const baseDoc = baselineDoc;
-			const { buildFindings } = require("./lib/json-export");
+			const { buildFindings } = require("./lib/reports/json-export");
 			const curDoc = buildFindings({ cveMatches, retireMatches, vendoredJsInventory, eolResults, obsoleteResults, outdatedResults, licenseResults,
 				excludedDirs, resolvedDeps: resolved, projectInfo, toolVersion: pkg.version, typosquats,
 				applications: appState.applications, applicationInventory: appState.inventory,
 				applicationRelations, coverage: appState.coverage, warnings: reportWarnings });
-			const { diffFindings, summarizeDiff, baselineProjectWarning } = require("./lib/diff");
+			const { diffFindings, summarizeDiff, baselineProjectWarning } = require("./lib/findings/diff");
 			const warning = baselineProjectWarning(baseDoc, curDoc);
 			if (warning) { reportWarnings.push(warning); ui.warn(warning.message); }
 			const dd = diffFindings(baseDoc, curDoc);
@@ -2828,7 +2828,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 
 	{
-		const { buildInventory } = require("./lib/unmanaged");
+		const { buildInventory } = require("./lib/inventory/unmanaged");
 		const inv = buildInventory(new Map([...resolved].filter(([, dep]) => !dep.artifactTargetId)));
 		if (inv.length) {
 			heading("Unmanaged binaries", inv.length);
@@ -2897,7 +2897,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// the artifacts are complete; cpeFiltered is marked as a property/flag, not dropped.
 	if (out.sbom) {
 		try {
-			const { writeCycloneDx } = require("./lib/sbom-export");
+			const { writeCycloneDx } = require("./lib/reports/sbom-export");
 			await ensureDir(out.sbom);
 			writeCycloneDx(resolved, cveMatches, out.sbom, { projectInfo, toolVersion: pkg.version, timestamp: projectInfo.generatedAt, licenseResults });
 			wrote.push(["CycloneDX SBOM", out.sbom]);
@@ -2905,7 +2905,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 	if (out.csaf) {
 		try {
-			const { writeCsaf } = require("./lib/csaf-export");
+			const { writeCsaf } = require("./lib/reports/csaf-export");
 			await ensureDir(out.csaf);
 			writeCsaf(resolved, cveMatches, out.csaf, { projectInfo, toolVersion: pkg.version, timestamp: projectInfo.generatedAt });
 			wrote.push(["CSAF 2.0 VEX", out.csaf]);
@@ -2913,7 +2913,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 	if (out.json) {
 		try {
-			const { writeFindings } = require("./lib/json-export");
+			const { writeFindings } = require("./lib/reports/json-export");
 			await ensureDir(out.json);
 			writeFindings({ cveMatches, retireMatches, vendoredJsInventory, certFindings, eolResults, obsoleteResults,
 				outdatedResults, licenseResults, excludedDirs, resolvedDeps: resolved, projectInfo, toolVersion: pkg.version,
@@ -2924,7 +2924,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 	if (out.xlsx) {
 		try {
-			const { writeXlsx } = require("./lib/xlsx-export");
+			const { writeXlsx } = require("./lib/reports/xlsx-export");
 			await ensureDir(out.xlsx);
 			writeXlsx({ cveMatches, retireMatches, vendoredJsInventory, certFindings, eolResults, obsoleteResults,
 				outdatedResults, licenseResults, excludedDirs, resolvedDeps: resolved, projectInfo, toolVersion: pkg.version,
@@ -2935,7 +2935,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	}
 	if (out.sarif) {
 		try {
-			const { writeSarif } = require("./lib/sarif-export");
+			const { writeSarif } = require("./lib/reports/sarif-export");
 			await ensureDir(out.sarif);
 			writeSarif(cveMatches.filter(m => !m.suppressed), out.sarif, { projectInfo, toolVersion: pkg.version, certFindings });
 			wrote.push(["SARIF", out.sarif]);
@@ -2947,7 +2947,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// default; --no-checksums disables. Written beside the first artifact.
 	if (wrote.length && options.checksums !== false) {
 		try {
-			const { writeChecksums } = require("./lib/report-integrity");
+			const { writeChecksums } = require("./lib/reports/integrity");
 			const files = wrote.map(([, p]) => p);
 			const manifestDir = path.dirname(path.resolve(files[0]));
 			const manifestPath = path.join(manifestDir, "SHA256SUMS");
@@ -2986,7 +2986,7 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	// Cache preparation only warms the caches: it reports the package and writes its archive.
 	const maliciousActive = warmingOnly ? [] : [...prodActive, ...embeddedActive].filter(m => m.malicious);
 	if ((options.failOn && options.failOn !== "none") || options.failOnNew || maliciousActive.length) {
-		const { evaluateGate } = require("./lib/gate");
+		const { evaluateGate } = require("./lib/findings/gate");
 		// Embedded-binary findings are real production risk → gate on them too.
 		const gate = (options.failOn && options.failOn !== "none")
 			? evaluateGate([...prodActive, ...embeddedActive], options.failOn)
@@ -3005,10 +3005,10 @@ async function runReportFlow(resolved, ecoFlags = {}) {
 	return {imageReferences:imageState.references,cveIds:[...new Set(cveMatches.map(m=>m.cve?.id).filter(id=>/^CVE-\d{4}-\d{4,7}$/.test(id||'')))]};
 }
 
-// mergeBySource now lives in lib/merge-sources.js (extracted to be unit-testable,
+// mergeBySource now lives in lib/findings/merge.js (extracted to be unit-testable,
 // and made alias-aware: the same advisory can arrive keyed by its CVE from one source
 // and by its GHSA remoteId from another — see that module's header).
-const { mergeBySource } = require("./lib/merge-sources");
+const { mergeBySource } = require("./lib/findings/merge");
 
 } // end: regular scan / dedicated CLI commands
 } // end: compiled-binary retire-mode guard (see top of file)

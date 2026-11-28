@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { generateHtmlReport, generateWordReport } = require("../lib/cve-report");
-const { makeDepRecord } = require("../lib/dep-record");
+const { generateHtmlReport, generateWordReport } = require("../lib/reports/cve-report");
+const { makeDepRecord } = require("../lib/inventory/dep-record");
 
 test("report renders a Part C inventory chapter for unmanaged binaries", () => {
 	const resolved = new Map();
