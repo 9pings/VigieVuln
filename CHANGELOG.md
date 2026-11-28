@@ -1,6 +1,6 @@
 # Release notes — VigieVuln
 
-## [1.3.5] — 2026-11-25
+## [1.4.0] — 2026-11-28
 
 - Assess Wolfi and Chainguard OS systems from the security database of their package repositories.
 - Assess Red Hat Enterprise Linux and UBI, CentOS Linux, Oracle Linux, SUSE Linux Enterprise, openSUSE Leap and Tumbleweed, Azure Linux and CBL-Mariner, Mageia and openEuler systems from their `os-release` identity, without any advisory configuration. On a Red Hat UBI 8.6 image every fixed advisory reported by Trivy (567) and Grype (587) is found.

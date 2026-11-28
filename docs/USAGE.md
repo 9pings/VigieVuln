@@ -9,7 +9,9 @@ vigievuln system scan <inventory.json|path|docker-image|archive|disk> [options]
 ```
 
 A system collection defaults to `/`. System scans first resolve an existing local path,
-then a local Docker image, then download the image from its registry. `--offline`
+then a local Docker image, then download the image from its registry (and say so).
+Supported distributions and the limits of system and image scans are listed in the
+[image guide](IMAGES.md#supported-distributions). `--offline`
 requires local data. JSON inputs are identified by their schema. Dependency descriptors
 and extracted project trees use `scan`; system inventories and publisher SBOMs use
 `system scan`. ZIP project input is extracted to a temporary directory that is removed

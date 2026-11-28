@@ -468,14 +468,54 @@ version number. An unknown distribution, repository scope, source version or
 comparison remains indeterminate. Collecting RPM packages does not itself prove
 that suitable advisories exist for that distribution.
 
-Distribution advisories are built in for Debian, Ubuntu, Alpine, AlmaLinux and Rocky
-Linux. Another distribution (RHEL/UBI, Amazon Linux, Fedora, SUSE, Wolfi…) needs
-`--advisory-config`; without it its packages are inventoried and reported as not
-assessed. Details that decide a verdict:
+### Supported distributions
 
+The distribution is read from `os-release`; nothing has to be declared.
+
+| Distribution | Advisory sources | Vulnerabilities without a fix |
+| --- | --- | --- |
+| Debian | OSV Debian records, Debian security tracker; Freexian tracker and ELA for extended LTS | listed |
+| Ubuntu | OSV Ubuntu records | listed |
+| Alpine | OSV Alpine records, Alpine security tracker | listed |
+| Red Hat Enterprise Linux, UBI | Red Hat errata; Red Hat OVAL for releases 6 to 9 | listed for 6 to 9, with Red Hat's state; not for 10 |
+| AlmaLinux, Rocky Linux | their own errata, completed by the Red Hat errata and OVAL of the release they rebuild | listed for 8 and 9, as stated by Red Hat |
+| CentOS Linux, Oracle Linux | Red Hat errata and OVAL of the release they rebuild | listed for 6 to 9, as stated by Red Hat |
+| SUSE Linux Enterprise, SLE Micro | SUSE errata of the product and its modules | not listed |
+| openSUSE Leap, Tumbleweed | openSUSE errata | not listed |
+| Azure Linux, CBL-Mariner | Azure Linux records | listed |
+| Mageia, openEuler | their errata | not listed |
+| Wolfi, Chainguard OS | security database of their package repositories | not listed |
+
+When a source only publishes fixes, the report says that vulnerabilities the distribution
+has not fixed are not listed.
+
+Not supported: **Amazon Linux, Fedora, CentOS Stream, Photon OS, Arch, Gentoo, NixOS** and
+any other distribution. Their packages are inventoried and reported as not assessed, and
+the report is marked incomplete. `--advisory-config` (below) can supply a compatible
+dataset.
+
+### Limits of system and image scans
+
+- **What is assessed is what the sources state.** A distribution package is judged by its
+  distribution's advisories, never by the upstream version number alone: a patched
+  package keeps its old upstream version.
+- **Red Hat statements applied to rebuilds.** AlmaLinux, Rocky Linux, CentOS Linux and
+  Oracle Linux packages built for the same major release (`.el8`, `.el9`) take Red Hat's
+  errata and unfixed statements, since a rebuilt package keeps the version of the package
+  it rebuilds. When AlmaLinux's or Rocky's own errata mention a CVE for a package, their
+  record decides. Module packages are compared within their stream only; module build
+  numbers of two distributions are not compared. Oracle's UEK kernel has no Red Hat
+  equivalent and is not assessed.
+- **Unfixed vulnerabilities, Red Hat family.** One finding per source package states the
+  vulnerability, Red Hat's state (affected, fix deferred, will not fix, out of support
+  scope) and the installed packages concerned. A kernel carries several thousand of them.
+  "Under investigation" is listed as an observation, not as a finding. The OVAL data is
+  refreshed once a day: a fix published since is reflected at the next refresh.
+- **Errata granularity.** An erratum lists the CVEs of an update for all its packages: a
+  CVE can be shown on a package of the same update that it does not concern.
 - **End-of-life release.** Its security tracker is frozen. The report says so and is
   marked incomplete: vulnerabilities published after the end-of-life date are not
-  recorded for its packages.
+  recorded for its packages. There is no fallback on upstream versions.
 - **Debian and Ubuntu kernels.** A signed kernel image (`linux-image-<version>`,
   source `linux-signed-…`) is assessed under the kernel source it was built from
   (`linux`), at the image's own version.
@@ -484,7 +524,24 @@ assessed. Details that decide a verdict:
 - **RPM module streams.** An erratum built for a module stream (`php:7.4`) applies to
   packages of that stream, identified by their modularity label. It is not applied to
   a non-modular package of the same name or to another stream.
+- **RPM signing keys.** `gpg-pubkey` entries of the RPM database are keys, not packages.
 - **Distroless images.** The dpkg `status.d/` directory is read like `status`.
+- **Language packages owned by a distribution package** (`python3-requests`,
+  `/usr/lib/python3/site-packages`) are covered by that package's advisories, not by
+  upstream advisories for the library.
+- **Application gems, modules and libraries** installed outside the package manager are
+  assessed like project dependencies (OSV, native CVE records, the Ruby advisory database).
+- **Go binaries.** Embedded modules and the standard library are assessed. The application
+  itself is assessed when its version is proven (see below); otherwise it is named in the
+  notices.
+- **Multi-platform registry images.** Without `--platform`, every platform of the image is
+  acquired and assessed, each as its own target.
+- **Large systems.** A source package or a component keeps full detail for its 100
+  highest-priority advisories; see [Large reports](USAGE.md#large-reports). A system with
+  several thousand findings needs about 1.5 GB of memory.
+- **Collection without root** cannot read every directory: the report gives the number of
+  unreadable paths and is marked incomplete.
+- **Windows images and packages** are not inventoried.
 
 Installed application and binary collectors inspect supported metadata without
 executing the inspected code. The scanner also consults native CVEProject and GCVE records
@@ -526,7 +583,7 @@ its own record provides the required explicit package and version evidence.
 
 NVD, KEV, EPSS, EUVD and CERT-FR enrich findings by default; derived GCVE aliases are also retained separately from native GCVE evidence. `--enrich kev,epss` selects only
 KEV and EPSS; `--enrich none` disables enrichment. NVD enrichment does not replace the OS
-distribution's vulnerability verdict. EUVD detail retrieval runs even when NVD metadata is present; each CVE retains its own source evidence. Only missing display metadata is filled, and a score is never combined with another source's CVSS vector. Confirmed EUVD details and CERT-FR lookups are cached for offline replay. Missing offline enrichment or failed detail retrieval remains visible.
+distribution's vulnerability verdict. An EUVD detail record is requested for the findings reported in full detail and for any CVE still lacking a score, a severity or a description; each CVE retains its own source evidence. Only missing display metadata is filled, and a score is never combined with another source's CVSS vector. Confirmed EUVD details and CERT-FR lookups are cached for offline replay. Missing offline enrichment or failed detail retrieval remains visible.
 
 Explicit OS data preparation/import is also available:
 
@@ -541,9 +598,9 @@ dataset covering the stated release: a few selected CVEs cannot establish absenc
 of other vulnerabilities. A partial import cannot silently replace a complete
 snapshot.
 
-When `os-release` cannot establish the precise advisory scope, supply a JSON
-configuration through `--advisory-config`. For example, a RHEL EUS repository
-scope must be selected from the actual image's product/repository evidence:
+`--advisory-config` overrides the automatic scope for one release, or supplies a
+compatible dataset for a distribution that has none. For example, to restrict a RHEL
+system to one extended-support repository:
 
 ```json
 {
@@ -554,8 +611,8 @@ scope must be selected from the actual image's product/repository evidence:
 }
 ```
 
-This example covers the specified repository only; it is not a universal RHEL
-configuration. An optional `sourceUrl` points to a compatible dataset mirror.
+This example covers the specified repository only. An optional `sourceUrl` points to a
+compatible dataset mirror.
 
 ## Publisher SBOMs and free data
 
@@ -704,12 +761,10 @@ ranges apply only to coherently declared vendor packages; generic distro builds
 are not matched against upstream ranges because distro backports differ. Package
 signatures and runtime configuration are not inferred from these declarations.
 
-AlmaLinux and Rocky Linux packages are assessed against the distribution's published
-errata: a vulnerability the distribution has not fixed yet has no erratum and is not
-listed, which the report states. Debian, Ubuntu and Alpine trackers also record unfixed
-vulnerabilities. An erratum can cite a CVE identifier that is reserved but not published;
-when NVD answers that it holds no such record, the report says so without treating it
-as a coverage gap.
+An erratum can cite a CVE identifier that is reserved but not published; when NVD
+answers that it holds no such record, the report says so without treating it as a
+coverage gap. Supported distributions and what each source covers are listed under
+[Supported distributions](#supported-distributions).
 
 A Go binary whose `(devel)` main module cannot be given a verified version is listed in
 the scan notices: advisories for the application itself are then not assessed, while its

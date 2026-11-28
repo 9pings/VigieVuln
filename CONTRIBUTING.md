@@ -60,6 +60,9 @@ The skipped-test count therefore depends on the available integration targets.
 - **New ecosystem = new codec.** Implement the interface in
   `lib/codecs/codec.interface.js`, register it, and the orchestrator needs no edits. See
   [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+- **Put code where it belongs.** [`lib/README.md`](lib/README.md) describes the layout: only
+  command entry points and configuration live at the root of `lib/`; a new data source gets
+  its folder under `lib/providers/<name>/`, other modules go in the folder of their theme.
 - Commit messages follow Conventional Commits (`fix(maven): …`, `feat(gradle): …`).
 - [`CLAUDE.md`](CLAUDE.md) is the code-level orientation map — conventions, invariants and the
   reasoning behind the non-obvious ones. Read it before a non-trivial change; it will save you

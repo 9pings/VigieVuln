@@ -10,7 +10,7 @@
 [![CI](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml/badge.svg)](https://github.com/9pings/VigieVuln/actions/workflows/ci.yml)
 
 
-**VigieVuln 1.3.5** is a polyglot dependency auditor for code audits.
+**VigieVuln 1.4.0** is a polyglot dependency auditor for code audits.
 
 It scans dependencies of **10 ecosystems + 11 CMS/frameworks + systems/dockers images** in one pass without build tools, supports **air-gapped** workflows, detects private packages, binaries and certificates, and produces HTML, JSON and other reports.
 
@@ -25,13 +25,13 @@ It scans dependencies of **10 ecosystems + 11 CMS/frameworks + systems/dockers i
 
 - **Multiple ecosystems in one pass**: Maven and Gradle, npm/Yarn/pnpm, Composer, PyPI, NuGet, Go and Ruby — plus **vendored JS**, committed **native binaries** and **embedded JARs**.
 - **No build tools**; No `mvn`/`gradle`/`npm`/`pip`/`dotnet`/`go`, no `node_modules/` → [how](docs/COMPARISON.md#how-its-autonomous-no-build-tools)
-- **CVE from multiple sources, merged & prioritised**; CVEProject + OSV.dev + Packagist security advisories + NVD, ranked **CISA KEV → EPSS → CVSS**.
+- **CVE from multiple sources, merged & prioritised**; CVEProject + OSV.dev + Packagist security advisories + Ruby advisory database + NVD, ranked **CISA KEV → EPSS → CVSS**.
 - **European vulnerability references**: ENISA **EUVD** id + ENISA's exploited flag, **GCVE** id, and the **CERT-FR** advisories citing it. Hosted proxy lookups send relevant CVE identifiers to the proxy.
 - **Beyond CVEs**; Report **EOL and out-of-active-support** frameworks, deprecated/abandoned/yanked, outdated, SPDX **licenses**, and **private/internal packages**
 - **CMS & frameworks audited as instances**; Symfony, Laravel, WordPress, Drupal, Joomla, PrestaShop, TYPO3, Magento/Adobe Commerce and SPIP with per-instance inventory (core, plugins, themes, bundles, components) → [the dedicated guide](docs/CMS-FRAMEWORKS.md)
 - **Crypto material**; committed **certificates**, **private vs public keys** across PEM/OpenSSH/PuTTY/PGP and JKS/PKCS#12 keystores.
 - **Air-gapped flow**; **zero network under `--offline`** → [Benchmark](docs/BENCHMARK.md) · [Air-gapped](#air-gapped-audits)
-- **Native image audits**; Docker/OCI archives, registries and rootfs inventories without Docker; Linux packages, ELF/Go metadata and publisher SBOMs, with explicit coverage. Image analysis in source scans is off by default; use `--images` or the separate `vigievuln system scan` command → [image guide](docs/IMAGES.md)
+- **Native image and system audits**; Docker/OCI archives, registries, root filesystems, VM disks and live-system inventories without Docker; Linux packages of [a dozen distribution families](docs/IMAGES.md#supported-distributions), ELF/Go metadata and publisher SBOMs, with explicit coverage. Image analysis in source scans is off by default; use `--images` or the separate `vigievuln system scan` command → [image guide](docs/IMAGES.md)
 - **Hosted proxy/cache with a verified account**; `--set-proxy-cache vigievuln` → [hosted proxy](docs/USAGE.md#hosted-vigievuln-proxy)
 - **Shared cache for a scanner fleet**; `vigievuln serve-cache` + `--proxy-cache`  → [cache usage](docs/USAGE.md#shared-proxy-cache-server-serve-cache----proxy-cache)
 - **Supply-chain risk**; known-**malicious** advisories and suspected **typosquats** (`--typosquat`).
@@ -82,7 +82,16 @@ The report keeps source and image findings in separate summaries and charts, hig
 
 ### Scan container / system images
 
+`vigievuln system scan` audits an image, an archive, a root filesystem, a VM disk or a publisher SBOM without Docker: distribution packages, installed applications and binaries.
 
+```bash
+vigievuln system scan nginx:1.25                        # image from the local Docker engine or a registry
+vigievuln system scan ./rootfs                          # directory, docker save archive, VM disk or SBOM
+sudo vigievuln system collect / --output server.json    # on the server: inventory only, no network
+vigievuln system scan server.json                       # on the auditor machine
+```
+
+Debian, Ubuntu, Alpine, the Red Hat family, SUSE, Azure Linux, Wolfi and others are assessed from their own advisories; what could not be assessed is stated in the report. [Inputs, supported distributions and limits](docs/IMAGES.md#supported-distributions).
 
 ## Why use vigievuln ?
 
