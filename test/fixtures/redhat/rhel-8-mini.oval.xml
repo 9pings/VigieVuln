@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:oval="http://oval.mitre.org/XMLSchema/oval-common-5">
+<generator>
+<oval:product_name>Fixture</oval:product_name>
+<oval:timestamp>2026-11-28T07:28:39</oval:timestamp>
+</generator>
+<definitions>
+<definition class="vulnerability" id="oval:com.redhat.cve:def:20052541" version="637">
+ <metadata>
+  <title>tar: does not warn about setuid &amp; setgid files (moderate)</title>
+  <reference ref_id="CVE-2005-2541" ref_url="https://access.redhat.com/security/cve/CVE-2005-2541" source="CVE"/>
+  <description>DOCUMENTATION: fixture.</description>
+  <advisory from="secalert@redhat.com">
+   <severity>Moderate</severity>
+   <updated date="2026-03-16"/>
+   <cve cvss3="7.0/CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H" href="https://access.redhat.com/security/cve/CVE-2005-2541" impact="moderate" public="20050804">CVE-2005-2541</cve>
+   <affected>
+    <resolution state="Will not fix">
+     <component>tar</component>
+    </resolution>
+   </affected>
+  </advisory>
+ </metadata>
+ <criteria operator="OR"><criterion comment="tar is installed" test_ref="oval:com.redhat.cve:tst:20052541001"/></criteria>
+</definition>
+<definition class="vulnerability" id="oval:com.redhat.cve:def:202699001" version="637">
+ <metadata>
+  <title>kernel: fixture flaw (important)</title>
+  <advisory from="secalert@redhat.com">
+   <severity>Important</severity>
+   <updated date="2026-10-08"/>
+   <cve cvss3="7.8/CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H" impact="important" public="20260901">CVE-2026-99001</cve>
+   <affected>
+    <resolution state="Fix deferred">
+     <component>kernel</component>
+     <component>kernel-core</component>
+     <component>kernel-modules</component>
+    </resolution>
+    <resolution state="Under investigation">
+     <component>kernel-rt</component>
+    </resolution>
+   </affected>
+  </advisory>
+ </metadata>
+</definition>
+<definition class="vulnerability" id="oval:com.redhat.cve:def:202699002" version="637">
+ <metadata>
+  <title>python2: fixture flaw in a module stream (low)</title>
+  <advisory from="secalert@redhat.com">
+   <severity>Low</severity>
+   <cve impact="low" public="20260102">CVE-2026-99002</cve>
+   <affected>
+    <resolution state="Out of support scope">
+     <component>python27:2.7/python2</component>
+    </resolution>
+    <resolution state="Affected">
+     <component>curl</component>
+     <component>libcurl</component>
+    </resolution>
+   </affected>
+  </advisory>
+ </metadata>
+</definition>
+<definition class="patch" id="oval:com.redhat.rhsa:def:20261234" version="637">
+ <metadata>
+  <title>RHSA-2026:1234: tar security update (Moderate)</title>
+  <advisory from="secalert@redhat.com">
+   <cve impact="moderate" public="20260101">CVE-2026-11111</cve>
+   <affected><resolution state="Affected"><component>tar</component></resolution></affected>
+  </advisory>
+ </metadata>
+</definition>
+<definition class="vulnerability" id="oval:com.redhat.unaffected:def:202622222" version="637">
+ <metadata>
+  <title>bash: not affected</title>
+  <advisory from="secalert@redhat.com">
+   <cve impact="low" public="20260101">CVE-2026-22222</cve>
+   <affected><resolution state="Affected"><component>bash</component></resolution></affected>
+  </advisory>
+ </metadata>
+</definition>
+</definitions>
+<tests><test id="must-not-be-read"/></tests>
+</oval_definitions>

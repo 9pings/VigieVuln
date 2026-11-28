@@ -73,7 +73,8 @@ test('explicit RHEL repository scope is identity bound and mirror credentials ar
  const zip=zipSync({'one.json':strToU8(JSON.stringify(record))});await syncSystemAdvisories(distribution,{advisoryConfig,cacheDir:dir,fetcher:async()=>({ok:true,arrayBuffer:async()=>zip})});
  const snapshot=require('../lib/cache/repository').createCacheRepository(dir).getSnapshot('system-osv:'+advisoryConfig.ecosystem);assert.equal(snapshot.metadata.source,'https://mirror.example/db.zip');
  const result=await assessSystemInventory({distribution,packages:[{name:'pkg',version:'1-1'}]},{advisoryConfig,cacheDir:dir});assert.equal(result.matches.length,1);
- const different=await assessSystemInventory({distribution:{id:'rhel',versionId:'9.7'},packages:[]},{advisoryConfig,cacheDir:dir});assert.equal(different.coverage[0].status,'unknown');
+ // The explicit scope is bound to the release it names: another release gets its own, automatic, scope.
+ const different=await assessSystemInventory({distribution:{id:'rhel',versionId:'9.7'},packages:[]},{advisoryConfig,cacheDir:dir});assert.deepEqual([different.coverage[0].status,different.coverage[0].ecosystem],['missing','Red Hat:enterprise_linux:9']);
  await assert.rejects(syncSystemAdvisories(distribution,{advisoryConfig:{...advisoryConfig,sourceUrl:'http://example.com/db'},cacheDir:dir}),/HTTPS/);
 });
 test('RPM file lists link files to owners without executing package tools',()=>{
@@ -94,11 +95,13 @@ test('metadata limits and malformed records yield incomplete coverage',async t=>
  const result=await collectSystemInventory(dir);assert.equal(result.packages.length,1);assert.equal(result.coverage.find(x=>x.collector==='dpkg').status,'incomplete');assert.equal(result.coverage.find(x=>x.collector==='apk').status,'incomplete');
  const bounded=await collectSystemInventory(dir,{maxSystemMetadataBytes:8});assert.ok(bounded.coverage.some(x=>x.status==='incomplete'));await assert.rejects(collectSystemInventory(dir,{collectors:[{id:'x'},{id:'x'}]}),/collector registry/);
 });
-test('SUSE product and service-pack identity cannot be inferred from a major release',async t=>{
+test('SUSE releases are assessed from their os-release identity; an explicit scope still overrides it',async t=>{
  const dir=root(t);
- for(const distribution of [{id:'opensuse-leap',versionId:'15.6'},{id:'opensuse',versionId:'15.6'},{id:'sles',versionId:'15.6'}]) {
-  const result=await assessSystemInventory({distribution,packages:[]},{cacheDir:dir});assert.equal(result.coverage[0].status,'unknown');
+ // The release and service pack are in os-release: no declaration is needed. Only the advisory data is missing here.
+ for(const [distribution,ecosystem] of [[{id:'opensuse-leap',versionId:'15.6'},'openSUSE:Leap 15.6'],[{id:'sles',versionId:'15.6'},'SUSE:Linux Enterprise 15 SP6']]) {
+  const result=await assessSystemInventory({distribution,packages:[]},{cacheDir:dir});assert.deepEqual([result.coverage[0].status,result.coverage[0].ecosystem],['missing',ecosystem]);
  }
+ const unknown=await assessSystemInventory({distribution:{id:'opensuse',versionId:'15.6'},packages:[]},{cacheDir:dir});assert.equal(unknown.coverage[0].status,'unknown');
  const distribution={id:'opensuse-leap',versionId:'16.0'},advisoryConfig={distribution,base:'openSUSE',ecosystem:'openSUSE:Leap 16.0',versionScheme:'rpm'};
  const record={id:'openSUSE-X',affected:[{package:{ecosystem:advisoryConfig.ecosystem,name:'pkg'},ranges:[{type:'ECOSYSTEM',events:[{introduced:'0'},{fixed:'2-1'}]}]}]};
  await importSystemAdvisories([record],{distribution,advisoryConfig,cacheDir:dir,complete:true});

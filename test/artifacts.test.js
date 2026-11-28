@@ -171,3 +171,11 @@ test('an interrupted extraction removes its temporary root', async t => {
  const code=await new Promise(resolve=>{child.once('exit',resolve);child.kill('SIGINT');});
  assert.equal(code,130);assert.deepEqual(fs.readdirSync(tmp),[]);
 });
+
+test('device nodes and pipes in a layer are not content: no warning, no incomplete inventory', async t => {
+  const d=await fixture(t), file=path.join(d,'archive');
+  await fsp.writeFile(file,await archive([['etc/os-release','ID=ol\nVERSION_ID=8.6\n'],['dev/null','','character-device'],['dev/sda','','block-device'],['dev/initctl','','fifo']]));
+  const opened=await openArtifact(file); t.after(()=>opened.cleanup());
+  assert.deepEqual(opened.targets[0].metadata.warnings||[],[]);
+  assert.deepEqual(await fsp.readdir(opened.targets[0].root),['etc'],'nothing is created for them');
+});
