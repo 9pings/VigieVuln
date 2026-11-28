@@ -130,7 +130,9 @@ test('POSIX backslash and drive-like names are ordinary file names; Windows skip
 });
 test('NUL, absolute names, dot-dot components and depth overflow are still rejected',async t=>{
  const d=await fixture(t),file=path.join(d,'root.tar');
- for(const entries of [[['a','x','file',undefined,{path:'a\0b'}]],[['/etc/x','x']],[['a/../../x','x']],[['a\\..\\..\\b/../x','x']],[['h','','link','../outside']],[['h','','link','a/../../outside']]]){
+ // On Windows a name containing a backslash is skipped with a warning before any path check (see the test above).
+ const backslashes=process.platform==='win32' ? [] : [[['a\\..\\..\\b/../x','x']]];
+ for(const entries of [[['a','x','file',undefined,{path:'a\0b'}]],[['/etc/x','x']],[['a/../../x','x']],...backslashes,[['h','','link','../outside']],[['h','','link','a/../../outside']]]){
   await fsp.writeFile(file,await archive(entries));await assert.rejects(openArtifact(file),/Unsafe archive path/,JSON.stringify(entries));
  }
  await fsp.writeFile(file,await archive([['a/b/c','x']]));await assert.rejects(openArtifact(file,{limits:{maxDepth:2}}),/Unsafe archive path/);
@@ -144,7 +146,9 @@ test('relative symlinks climbing above the root clamp at the root and never reso
  assert.equal(path.resolve(path.join(root,'usr/lib'),await fsp.readlink(path.join(root,'usr/lib/x'))),path.join(root,'etc/os-release'));
  assert.equal(await fsp.readFile(path.join(root,'etc/written'),'utf8'),'in');assert.deepEqual(await fsp.readdir(outside),[]);
  assert.equal(await fsp.readFile(path.join(root,'etc/os-release'),'utf8'),'ID=debian\n');
- for(const p of await walk(root)){const real=await fsp.realpath(p).catch(()=>null);if(real)assert.ok(real===root||real.startsWith(root+path.sep),p);}
+ // The temporary directory can be named through a short alias (C:\\Users\\RUNNER~1): compare resolved paths.
+ const realRoot=await fsp.realpath(root);
+ for(const p of await walk(root)){const real=await fsp.realpath(p).catch(()=>null);if(real)assert.ok(real===realRoot||real.startsWith(realRoot+path.sep),p);}
 });
 test('opaque whiteout over a lower-layer symlink replaces the link and keeps its target',async t=>{
  const d=await fixture(t),file=path.join(d,'image.tar');

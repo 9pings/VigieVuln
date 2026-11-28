@@ -31,5 +31,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
       - run: npm test
-      - run: node vigievuln.js -s test/fixtures/monorepo-mixed --offline --no-report
+      # Offline phase of an air-gapped audit: every codec runs, no advisory data is needed.
+      - run: node vigievuln.js scan test/fixtures/monorepo-mixed --export-anonymized deps-smoke.json
+      - run: node -e "const d=require('./deps-smoke.json');if(!(d.summary&&JSON.stringify(d).length>1000))process.exit(1)"
       - run: npm pack --dry-run

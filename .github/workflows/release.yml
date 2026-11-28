@@ -42,7 +42,9 @@ jobs:
       - name: smoke-test the Linux binary offline
         run: |
           build/linux-x64/vigievuln --version
-          build/linux-x64/vigievuln scan test/fixtures/monorepo-mixed --offline --no-report
+          # Offline phase of an air-gapped audit: every codec runs, no advisory data is needed.
+          build/linux-x64/vigievuln scan test/fixtures/monorepo-mixed --export-anonymized "$RUNNER_TEMP/deps-smoke.json"
+          test -s "$RUNNER_TEMP/deps-smoke.json"
       - name: build and test the musl archive on stock Alpine without network access
         run: npm run build:linux:musl
       - name: verify embedded disk reader in both Linux x64 builds

@@ -89,3 +89,12 @@ test('RPM signing keys are not packages awaiting advisories',async t=>{
  assert.equal(result.artifacts[0].metadata.rpmSigningKeys.length,1);
  assert.equal(result.warnings.filter(w=>/gpg-pubkey/.test(JSON.stringify(w))).length,0);
 });
+test('a path below the collected root is written with forward slashes wherever it was collected',()=>{
+ const {relativeToRoot}=require('../lib/artifacts/scan');
+ assert.equal(relativeToRoot('C:\\tmp\\root\\srv\\news\\plugins\\package.json','C:\\tmp\\root','\\'),'srv/news/plugins/package.json');
+ assert.equal(relativeToRoot('cannot read C:/tmp/root/etc/os-release','C:\\tmp\\root','\\'),'cannot read etc/os-release');
+ assert.equal(relativeToRoot('/tmp/root/srv/a.json','/tmp/root','/'),'srv/a.json');
+ // A value that does not name the root is left alone, backslashes included.
+ assert.equal(relativeToRoot('https://example.org/a\\b','C:\\tmp\\root','\\'),'https://example.org/a\\b');
+ assert.equal(relativeToRoot('name\\with\\backslash','/tmp/root','/'),'name\\with\\backslash');
+});

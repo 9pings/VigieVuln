@@ -18,7 +18,7 @@ async function archive(entries) {
 
 test('collect preserves paths and replays CVEs on a separate auditor without initialising the client cache', async t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-collect-'));
-  t.after(() => fs.rmSync(dir, {recursive:true,force:true}));
+  t.after(() => { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(dir, {recursive:true,force:true}); });
   const root = path.join(dir, 'server'), home = path.join(dir, 'client-home'), output = path.join(dir, 'out.json');
   function put(rel, text) {
     const file = path.join(root, rel);
@@ -176,7 +176,7 @@ test('Docker cache and local archive are inspected locally, deduplicated and lin
 
 test('Ghost themes, Redmine core and installed Ruby libraries retain their identities on collection and replay', async t => {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'vv-gems-'));
-  t.after(() => fs.rmSync(scratch, {recursive:true, force:true}));
+  t.after(() => { require('../lib/cache/db').closeCacheDbs(); fs.rmSync(scratch, {recursive:true, force:true}); });
   const root = path.join(scratch,'host'), output = path.join(scratch,'inventory.json');
   function put(file, data) {
     const full = path.join(root,file);

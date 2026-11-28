@@ -33,11 +33,11 @@ fi
 
 # 0. optionally warm the cache online before recording
 if [[ "${1:-}" == "--warm" ]]; then
-  node "${CACHE_ARGS[@]}" vigievuln.js -s "$FIXTURE" --no-report >/dev/null
+  node "${CACHE_ARGS[@]}" vigievuln.js scan "$FIXTURE" --no-report >/dev/null
 fi
 
 # 1. capture real CLI output in a PTY, preserving ANSI colour
-printf -v RUN '%q ' node --disable-warning=ExperimentalWarning "${CACHE_ARGS[@]}" vigievuln.js -s "$FIXTURE" --offline --no-report
+printf -v RUN '%q ' node --disable-warning=ExperimentalWarning "${CACHE_ARGS[@]}" vigievuln.js scan "$FIXTURE" --offline --no-report
 TERM=xterm-256color script -q -e \
   --log-out "$TMP/raw" \
   -c "stty cols 120 rows 54; $RUN" >/dev/null

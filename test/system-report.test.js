@@ -25,7 +25,7 @@ function fixture() {
 function tempCache(t) {
   const fs=require('node:fs'), path=require('node:path');
   const dir=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'vv-maintenance-'));
-  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  t.after(()=>{require('../lib/cache/db').closeCacheDbs();fs.rmSync(dir,{recursive:true,force:true});});
   return dir;
 }
 const contents = node => DomUtils.textContent(node);

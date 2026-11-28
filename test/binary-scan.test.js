@@ -50,7 +50,7 @@ test('source binary collection excludes Python environments, with an explicit ov
 		fs.writeFileSync(path.join(root,'nested',dir,'library.so'),binary);
 	}
 	const progress=[];
-	assert.deepEqual(scanBinaries(root,{onProgress:p=>progress.push(p)}).map(r=>path.relative(root,r.path)),['nested/committed/library.so']);
+	assert.deepEqual(scanBinaries(root,{onProgress:p=>progress.push(p)}).map(r=>path.relative(root,r.path).split(path.sep).join('/')),['nested/committed/library.so']);
 	assert.equal(progress.length,1);
 	assert.equal(scanBinaries(root,{defaultExcludes:false}).length,excluded.length+1);
 	assert.equal(scanBinaries(path.join(root,'nested','.venv')).length,1,'an explicitly selected scan root is still scanned');
